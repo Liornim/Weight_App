@@ -1,0 +1,13 @@
+{
+  "name": "metrics-lab",
+  "version": "1.0.0",
+  "description": "מעקב יומי אחרי משקל, הרכב גוף ותזונה",
+  "private": true,
+  "scripts": {
+    "test": "node tests/run-tests.js && node tests/smoke.js",
+    "build": "node build/inline.js"
+  },
+  "devDependencies": {
+    "jsdom": "^24.1.3"
+  }
+}
