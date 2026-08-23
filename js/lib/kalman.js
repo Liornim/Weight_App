@@ -75,12 +75,17 @@
     var states = [];
 
     days.forEach(function (day) {
+      // המשקל שהמסנן ניבא לבוקר הזה, לפני שראה את השקילה.
+      // נשמר כדי שאפשר יהיה להציג את החשבון עצמו: ניבוי, מדידה, תיקון.
+      var predictedWeight = w;
+      var tdeeBefore = e;
+      var residual = isNum(day.weight) ? day.weight - w : null;
+
       // --- עדכון לפי השקילה של הבוקר ---
       if (isNum(day.weight)) {
         var s = p00 + o.measurementVar;
         var k0 = p00 / s;
         var k1 = p10 / s;
-        var residual = day.weight - w;
 
         w = w + k0 * residual;
         e = e + k1 * residual;
@@ -94,6 +99,11 @@
 
       states.push({
         date: day.date,
+        predictedWeight: predictedWeight,
+        measuredWeight: isNum(day.weight) ? day.weight : null,
+        residual: residual,
+        tdeeBefore: tdeeBefore,
+        intake: isNum(day.intake) ? day.intake : null,
         weight: w,
         tdee: e,
         tdeeSd: Math.sqrt(Math.max(p11, 0)),

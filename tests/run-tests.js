@@ -1330,6 +1330,29 @@ test('רישום צעדים היום לא מזיז את היעד', () => {
   close(after.base, before.base, 1e-9, 'הבסיס זז בגלל צעדים של היום');
 });
 
+test('כל שלב במסנן שומר את החשבון שהוביל אליו', () => {
+  const days = kalmanDays(30, { startWeight: 88, tdee: 2600, intake: 2100, intakeNoise: 100 });
+  const r = Kalman.run(days, {});
+  const s = r.states[10];
+
+  assert(isFinite(s.predictedWeight), 'חסר המשקל שנוּבא');
+  assert(isFinite(s.measuredWeight), 'חסר המשקל שנמדד');
+  close(s.residual, s.measuredWeight - s.predictedWeight, 1e-9, 'ההפרש לא תואם');
+  assert(isFinite(s.tdeeBefore), 'חסרה ההערכה שלפני התיקון');
+
+  // התיקון תמיד בכיוון ההפרש: משקל גבוה מהצפוי -> שורף פחות ממה שחשבנו
+  const moved = s.tdee - s.tdeeBefore;
+  if (Math.abs(s.residual) > 0.01) {
+    assert((s.residual > 0) === (moved < 0),
+      'כיוון התיקון שגוי: הפרש ' + s.residual.toFixed(2) + ' הזיז את ההערכה ב-' + moved.toFixed(0));
+  }
+
+  // הניבוי נגזר מהיום הקודם לפי מאזן האנרגיה
+  const prev = r.states[9];
+  close(s.predictedWeight, prev.weight + (prev.intake - prev.tdee) / 7700, 1e-9,
+    'הניבוי לא תואם את מאזן האנרגיה');
+});
+
 // ---------- דוח ----------
 // הריצה מופעלת בסוף הקובץ בלבד. אם היא תופעל באמצע, בדיקות שנרשמו
 // אחריה לא ייכנסו לתור וייעלמו בשקט — קרה בפועל.

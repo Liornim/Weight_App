@@ -261,9 +261,9 @@
 
       series = [
         { type: 'band', color: 'rgba(13,110,103,0.14)', points: areaBand },
-        { type: 'line', color: COLORS.over, width: 1.2, dash: '4 4', points: lowLine },
-        { type: 'line', color: '#2E6B4F', width: 1.2, dash: '4 4', points: highLine },
-        { type: 'line', color: COLORS.reference, width: 2, points: eatLine },
+        { type: 'line', color: COLORS.over, width: 1, points: lowLine, opacity: 0.55 },
+        { type: 'line', color: '#2E6B4F', width: 1, points: highLine, opacity: 0.55 },
+        { type: 'line', color: COLORS.reference, width: 2.2, points: eatLine },
         { type: 'line', color: COLORS.measured, width: 2.4, points: burnLine }
       ];
 
@@ -314,10 +314,10 @@
 
       series = [
         { type: 'band', color: COLORS.band, points: band },
-        { type: 'line', color: COLORS.over, width: 1.2, dash: '4 4', points: lowDaily },
-        { type: 'line', color: '#2E6B4F', width: 1.2, dash: '4 4', points: highDaily },
-        { type: 'dots', color: 'rgba(75,85,165,0.35)', points: toPoints(intakeRaw), radius: 2 },
-        { type: 'line', color: COLORS.reference, width: 1.8, dash: '5 3', points: toPoints(intakeMa) },
+        { type: 'line', color: COLORS.over, width: 1, points: lowDaily, opacity: 0.55 },
+        { type: 'line', color: '#2E6B4F', width: 1, points: highDaily, opacity: 0.55 },
+        { type: 'dots', color: 'rgba(75,85,165,0.4)', points: toPoints(intakeRaw), radius: 2 },
+        { type: 'line', color: COLORS.reference, width: 2.2, points: toPoints(intakeMa) },
         { type: 'line', color: COLORS.measured, width: 2.4, points: line }
       ];
 
@@ -340,7 +340,7 @@
         }
         return parts.join('  ·  ');
       };
-      caption = 'הקו הירוק מעל המקווקו הסגול = גירעון';
+      caption = 'ירוק מעל סגול = גירעון. הקווים הדקים הם גבולות ההערכה.';
       legendItems = [
         { color: COLORS.measured, label: 'שורף — הערכה' },
         { color: '#2E6B4F', label: 'גבול עליון' },
@@ -376,6 +376,62 @@
         'אם פחות: ' + Fmt.signed(lastLow, 0) + ' (' + Fmt.signed(toKg(lastLow), 2) + ' ק״ג).' +
         '</p>');
     return true;
+  }
+
+  /**
+   * שלושת ההפרשים לכל יום: בין מה שנאכל בפועל לבין הגבול התחתון,
+   * ההערכה המרכזית והגבול העליון. זה מה שמראה אם הגירעון של אותו יום
+   * ודאי, או שהוא תלוי בשאלה איפה בתוך הטווח נמצאת ההוצאה האמיתית.
+   */
+  function gapsTable(entries, settings) {
+    var r = Metrics.adaptiveTDEE(entries, { kcalPerKg: settings.kcalPerKg });
+    if (!r.ok) return UI.empty('אין מספיק נתונים', '');
+
+    var rows = r.states.slice(-14).reverse().filter(function (s) {
+      return Fmt.isNum(s.intake);
+    }).map(function (s) {
+      var margin = 1.96 * s.tdeeSd;
+      var mid = s.tdee - s.intake;
+      var low = (s.tdee - margin) - s.intake;
+      var high = (s.tdee + margin) - s.intake;
+      var cell = function (v) {
+        return '<td class="n ' + Fmt.deltaClass(v, 'up') + '">' + Fmt.signed(v, 0) + '</td>';
+      };
+      return '<tr><td class="n">' + Fmt.esc(Dates.short(s.date)) + '</td>' +
+        '<td class="n">' + Fmt.n(s.intake, 0) + '</td>' +
+        '<td class="n">' + Fmt.n(s.tdee, 0) + '</td>' +
+        cell(low) + cell(mid) + cell(high) + '</tr>';
+    }).join('');
+
+    if (!rows) return UI.empty('אין ימים עם רישום קלוריות', '');
+
+    return '<div class="table-scroll"><table class="data"><thead><tr>' +
+        '<th>יום</th><th class="n">אכלת</th><th class="n">שורף</th>' +
+        '<th class="n">גבול תחתון</th><th class="n">הערכה</th><th class="n">גבול עליון</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      UI.basis('שלוש העמודות האחרונות הן הגירעון של אותו יום, לפי שלושה תרחישים של ההוצאה. ' +
+        'ירוק = גירעון, אדום = עודף. יום שבו כל השלושה ירוקים הוא יום שבו ירדת בוודאות.');
+  }
+
+  /** החשבון עצמו, יום אחרי יום: ניבוי, מדידה, תיקון */
+  function derivationTable(entries, settings) {
+    var r = Metrics.adaptiveTDEE(entries, { kcalPerKg: settings.kcalPerKg });
+    if (!r.ok) return '';
+
+    var rows = r.states.slice(-8).reverse().map(function (s) {
+      return '<tr><td class="n">' + Fmt.esc(Dates.short(s.date)) + '</td>' +
+        '<td class="n">' + Fmt.n(s.predictedWeight, 2) + '</td>' +
+        '<td class="n">' + (Fmt.isNum(s.measuredWeight) ? Fmt.n(s.measuredWeight, 2) : '—') + '</td>' +
+        '<td class="n">' + (Fmt.isNum(s.residual) ? Fmt.signed(s.residual, 2) : '—') + '</td>' +
+        '<td class="n">' + Fmt.n(s.tdee, 0) + '</td></tr>';
+    }).join('');
+
+    return '<div class="table-scroll"><table class="data"><thead><tr>' +
+        '<th>יום</th><th class="n">ניבוי</th><th class="n">נמדד</th>' +
+        '<th class="n">הפרש</th><th class="n">שורף אחרי התיקון</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      UI.basis('משקל גבוה מהניבוי אומר ששרפת פחות ממה שהמערכת חשבה, וההערכה יורדת. ' +
+        'ההפרש לא נלקח במלואו: חלק ממנו מיוחס לרעש נוזלים ולא לשריפה.');
   }
 
   /** הסבר בשפה פשוטה על מקור המספר, ללא מונחים סטטיסטיים */
@@ -504,8 +560,14 @@
                    'שיטה: מסתגל (קלמן) · כולל הליכה',
                    tdeeMode === 'cumulative'
                      ? 'השטח בין הקווים הוא כל הגירעון שנצבר מתחילת התקופה.'
-                     : 'כשהקו הירוק מעל המקווקו — אתה יורד. הרווח ביניהם הוא הגירעון היומי.') +
-                 UI.details('איך מחושב "שורף"', methodExplanation()) : '') +
+                     : 'הקו הירוק העבה = כמה שורף. הסגול = כמה אוכל. ' +
+                       'כשהירוק מעל הסגול אתה יורד, והרווח ביניהם הוא הגירעון.') +
+                 UI.details('איך מחושב "שורף"',
+                   methodExplanation() +
+                   '<div class="section-label">החשבון של הימים האחרונים</div>' +
+                   derivationTable(all, settings)) +
+                 '<div class="section-label">הגירעון היומי, בשלושה תרחישים</div>' +
+                 UI.card(null, null, gapsTable(all, settings)) : '') +
       (hasKcal ? '<div class="section-label">תזונה</div>' +
                  chartBlock('chart-kcal', 'קלוריות',
                    'עמודה אדומה = חריגה של יותר מ־10% מהיעד') : '') +

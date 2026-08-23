@@ -798,6 +798,62 @@ test('ההסבר על שיטת החישוב זמין ובלי מונחים', () 
 });
 
 
+
+test('טבלת ההפרשים מציגה שלושה תרחישים לכל יום', () => {
+  errors.length = 0;
+  App.setState({ view: 'trends', range: 0, tdeeMode: 'daily' });
+  const host = doc.getElementById('view-trends');
+  const table = [...host.querySelectorAll('table.data')]
+    .find((t) => t.textContent.includes('גבול תחתון') && t.textContent.includes('גבול עליון'));
+  assert(table, 'טבלת ההפרשים חסרה');
+
+  const headers = [...table.querySelectorAll('th')].map((th) => th.textContent.trim());
+  ['יום', 'אכלת', 'שורף', 'גבול תחתון', 'הערכה', 'גבול עליון'].forEach((h) => {
+    assert(headers.indexOf(h) !== -1, 'חסרה עמודה: ' + h);
+  });
+
+  const rows = table.querySelectorAll('tbody tr');
+  assert(rows.length >= 5, 'ציפיתי לכמה ימים, יש ' + rows.length);
+
+  // כל שורה: שלושת ההפרשים עקביים עם "אכלת" ו"שורף"
+  [...rows].forEach((tr) => {
+    const cells = [...tr.children].map((td) => Number(td.textContent.replace(/[^\d.\-−]/g, '').replace('−', '-')));
+    const eaten = cells[1], burn = cells[2], low = cells[3], mid = cells[4], high = cells[5];
+    assert(Math.abs(mid - (burn - eaten)) <= 1,
+      'ההערכה האמצעית לא שווה שורף פחות אכלת: ' + mid + ' מול ' + (burn - eaten));
+    assert(low < mid && mid < high, 'התרחישים לא מסודרים: ' + low + ' ' + mid + ' ' + high);
+  });
+  assert(errors.length === 0, 'שגיאות: ' + errors.join(' | '));
+});
+
+test('ההסבר כולל את החשבון היומי: ניבוי, מדידה ותיקון', () => {
+  App.setState({ view: 'trends', range: 0 });
+  const fold = [...doc.querySelectorAll('#view-trends details.fold')]
+    .find((d) => d.querySelector('summary').textContent.includes('איך מחושב'));
+  assert(fold, 'ההסבר חסר');
+  const table = fold.querySelector('table.data');
+  assert(table, 'חסרה טבלת החשבון');
+  const headers = [...table.querySelectorAll('th')].map((th) => th.textContent.trim());
+  ['יום', 'ניבוי', 'נמדד', 'הפרש', 'שורף אחרי התיקון'].forEach((h) => {
+    assert(headers.indexOf(h) !== -1, 'חסרה עמודה: ' + h);
+  });
+  assert(table.querySelectorAll('tbody tr').length >= 5, 'מעט מדי ימים בטבלה');
+});
+
+test('בגרף נשאר קו מקווקו אחד לכל היותר', () => {
+  ['daily', 'cumulative'].forEach((mode) => {
+    App.setState({ view: 'trends', range: 0, tdeeMode: mode });
+    const dashed = [...doc.querySelectorAll('#chart-tdee path')]
+      .filter((p) => {
+        const d = p.getAttribute('stroke-dasharray');
+        return d && d !== 'none';
+      });
+    assert(dashed.length <= 1, mode + ': יש ' + dashed.length + ' קווים מקווקוים, מבלבל');
+  });
+  App.setState({ tdeeMode: 'daily' });
+});
+
+
 runAll().then(function () {
   
 
