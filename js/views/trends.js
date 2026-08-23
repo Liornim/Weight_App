@@ -255,7 +255,7 @@
       formatX: function (x) { return Dates.short(Dates.fromDayIndex(x)); },
       formatTick: function (v) { return Fmt.n(v, 0); },
       captionEl: document.getElementById('chart-tdee-caption'),
-      idleCaption: 'הרצועה היא טווח אי־הוודאות של ההוצאה',
+      idleCaption: 'הקו הירוק מעל המקווקו = גירעון. העבר אצבע לפרטים.',
       onHover: function (x) {
         var parts = [Dates.long(Dates.fromDayIndex(x))];
         if (tdeeMap[x] !== undefined) parts.push('שורף ' + Fmt.n(tdeeMap[x], 0) + ' ±' + Fmt.n(sdMap[x], 0));

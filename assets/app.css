@@ -547,7 +547,14 @@ table.data .missing { color: var(--ink-faint); }
 
 .chart { margin: var(--gap-3) 0 0; }
 .chart svg { display: block; width: 100%; height: auto; }
-.chart .axis-label { font-family: var(--mono); font-size: 10px; fill: var(--ink-faint); }
+.chart .axis-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  fill: var(--ink-faint);
+  /* תאריך כמו 03/08 מתהפך בהקשר RTL ונחתך בקצה */
+  direction: ltr;
+  unicode-bidi: isolate;
+}
 .chart .grid-line { stroke: var(--rule); stroke-width: 1; }
 .chart .cursor-line { stroke: var(--ink-faint); stroke-width: 1; stroke-dasharray: 2 3; }
 
@@ -557,8 +564,10 @@ table.data .missing { color: var(--ink-faint); }
   color: var(--ink-soft);
   min-height: 18px;
   margin-top: var(--gap-2);
-  direction: ltr;
-  unicode-bidi: isolate;
+  /* הכיתוב מערבב עברית ומספרים; plaintext בוחר כיוון לפי התוכן
+     במקום לכפות LTR ולשבור את המשפט */
+  direction: rtl;
+  unicode-bidi: plaintext;
   text-align: start;
 }
 

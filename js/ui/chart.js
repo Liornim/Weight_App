@@ -41,7 +41,8 @@
   function draw(container, config) {
     var width = Math.max(container.clientWidth || 0, 260);
     var height = config.height || 190;
-    var pad = { top: 12, right: 46, bottom: 22, left: 8 };
+    // left מספיק רחב כדי שתווית התאריך הראשונה לא תיחתך בקצה
+    var pad = { top: 12, right: 46, bottom: 22, left: 18 };
     var innerW = width - pad.left - pad.right;
     var innerH = height - pad.top - pad.bottom;
 
