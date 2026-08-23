@@ -46,7 +46,7 @@
     var withSteps = mode === 'total';
 
     var head = '<div class="table-scroll"><table class="data"><thead><tr>' +
-      '<th></th><th>היום</th><th>ממוצע ' + b.windowDays + ' ימים</th>' +
+      '<th></th><th class="n">היום</th><th>ממוצע ' + b.windowDays + ' ימים</th>' +
       '</tr></thead><tbody>' +
       row('הוצאה בלי צעדים', Fmt.n(b.base, 0), Fmt.n(b.base, 0)) +
       row('אכלת', pick(t, 'intake', 0), pick(p, 'intake', 0));
@@ -82,7 +82,7 @@
     var head = '<p class="card-note">לקצב של ' + Fmt.signed(b.goalRatePerWeek, 2) +
         ' ק״ג בשבוע צריך גירעון של ' + Fmt.n(b.goalDeficit, 0) + ' קלוריות ליום</p>' +
       '<div class="table-scroll"><table class="data"><thead><tr>' +
-        '<th></th><th>היום</th><th>ממוצע ' + b.windowDays + ' ימים</th>' +
+        '<th></th><th class="n">היום</th><th>ממוצע ' + b.windowDays + ' ימים</th>' +
       '</tr></thead><tbody>';
 
     if (mode !== 'total') {
@@ -129,7 +129,7 @@
     }
 
     return '<div class="table-scroll"><table class="data"><thead><tr>' +
-      '<th></th><th>יעד</th><th>היום</th><th>ממוצע</th><th>פער</th>' +
+      '<th></th><th class="n">יעד</th><th class="n">היום</th><th class="n">ממוצע</th><th class="n">פער</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 

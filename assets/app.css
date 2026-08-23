@@ -530,7 +530,12 @@ table.data thead th {
   border-bottom: 1px solid var(--rule-strong);
 }
 
-table.data td.n { direction: ltr; unicode-bidi: isolate; text-align: start; }
+/* עמודות מספריות מיושרות לקצה, וכך גם הכותרות שלהן — אחרת
+   הכותרת והערך לא נמצאים מעל אותו מקום */
+table.data td.n,
+table.data th.n { direction: ltr; unicode-bidi: isolate; text-align: end; }
+table.data th:not(:first-child) { text-align: end; }
+table.data td:first-child, table.data th:first-child { text-align: start; }
 table.data tbody tr:hover { background: #F7FAFB; }
 table.data .missing { color: var(--ink-faint); }
 

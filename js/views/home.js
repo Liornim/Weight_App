@@ -198,7 +198,7 @@
     return UI.card('לסגור את הפער', 'כמה לאכול ביום, לפי כמה ימים תפרוס',
       '<p class="finding">' + headline + '</p>' +
       '<div class="table-scroll"><table class="data"><thead><tr>' +
-        '<th>פריסה</th><th>קק״ל ליום</th>' +
+        '<th>פריסה</th><th class="n">קק״ל ליום</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
       UI.basis(over
         ? 'ככל שתפרוס על יותר ימים, כל יום קל יותר. אפשרויות שיורדות נמוך מדי לא מוצגות.'

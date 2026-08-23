@@ -13,13 +13,21 @@ let passed = 0;
 
 const queue = [];
 
+let started = false;
+
 /** רושם בדיקה. הריצה עצמה בטור בסוף הקובץ, כדי שבדיקות
  *  אסינכרוניות לא ידרסו זו את ה-DOM של זו. */
 function test(name, fn) {
+  if (started) {
+    console.error('בדיקה נרשמה אחרי תחילת הריצה ולא תרוץ: ' + name);
+    process.exitCode = 1;
+    return;
+  }
   queue.push({ name, fn });
 }
 
 function runAll() {
+  started = true;
   return queue.reduce(function (chain, item) {
     return chain.then(function () {
       return Promise.resolve()
@@ -634,8 +642,72 @@ test('בחירת קצב היעד בכפתור במסך הנתונים', () => {
 // ---------- דוח ----------
 // הריצה מופעלת בסוף הקובץ בלבד. אם היא תופעל באמצע, בדיקות שנרשמו
 // אחריה לא ייכנסו לתור וייעלמו בשקט — קרה בפועל.
+test('גרפים: שומן ושריר בנפרד, כל אחד בסקאלה משלו', () => {
+  errors.length = 0;
+  App.setState({ view: 'trends', range: 0 });
+  const fat = doc.getElementById('chart-fat');
+  const muscle = doc.getElementById('chart-muscle');
+  assert(fat && fat.querySelector('svg'), 'גרף השומן חסר');
+  assert(muscle && muscle.querySelector('svg'), 'גרף השריר חסר');
+  assert(!doc.getElementById('chart-comp'), 'הגרף המשולב היה צריך להיעלם');
+
+  // סקאלה נפרדת: תוויות ציר ה-Y של השניים לא זהות
+  const labels = (host) => [...host.querySelectorAll('.axis-label')].map((t) => t.textContent).join(',');
+  assert(labels(fat) !== labels(muscle), 'שני הגרפים חולקים סקאלה');
+  assert(!doc.getElementById('view-trends').textContent.includes('מסה רזה'), 'המונח "מסה רזה" עדיין מופיע');
+  assert(errors.length === 0, 'שגיאות: ' + errors.join(' | '));
+});
+
+test('גרף ההוצאה מציג גם את הצריכה בפועל ומציין את השיטה', () => {
+  App.setState({ view: 'trends', range: 0 });
+  const host = doc.getElementById('chart-tdee');
+  assert(host, 'גרף ההוצאה חסר');
+  assert(host.querySelectorAll('svg polygon').length >= 1, 'רצועת אי־הוודאות חסרה');
+  assert(host.querySelectorAll('svg path').length >= 2, 'חסר קו הצריכה לצד קו ההוצאה');
+  const legendText = doc.getElementById('chart-tdee-legend').textContent;
+  assert(legendText.includes('קלמן'), 'לא צוין איזו שיטה מוצגת');
+  assert(legendText.includes('אוכל'), 'לא מצוינת הצריכה בפועל');
+
+  // הרצועה נחתכת לסקאלה ולא מוחצת את הקווים
+  const rect = host.querySelector('svg').getAttribute('viewBox').split(' ');
+  const height = Number(rect[3]);
+  [...host.querySelectorAll('polygon')].forEach((p) => {
+    p.getAttribute('points').split(' ').forEach((pair) => {
+      const y = Number(pair.split(',')[1]);
+      assert(y >= -1 && y <= height + 1, 'נקודת רצועה מחוץ לגרף: ' + y);
+    });
+  });
+});
+
+test('גרף הקלוריות משתמש ביעד של השיטה שנבחרה', () => {
+  App.setState({ view: 'today', calcWindow: 'adaptive' });
+  App.setState({ view: 'trends', range: 0 });
+  const legendText = doc.getElementById('chart-kcal-legend').textContent;
+  assert(legendText.includes('יעד לפי'), 'לא מצוין לאיזה יעד הכוונה: ' + legendText);
+
+  const report = window.Metrics.windowReport(Store.getEntries(), Store.getSettings(),
+    { windowDays: 'adaptive', endDate: window.Dates.today() });
+  assert(report.ok, 'הדוח נכשל');
+
+  // עמודות אדומות מופיעות בדיוק כשיש חריגה של יותר מ-10% מהיעד
+  const overDays = window.Metrics.series(Store.getEntries(), 'kcal')
+    .filter((p) => p.y > report.target * 1.1).length;
+  const redBars = [...doc.querySelectorAll('#chart-kcal rect')]
+    .filter((r) => r.getAttribute('fill') === '#A32F4B').length;
+  assert(redBars === overDays, 'ציפיתי ל-' + overDays + ' עמודות אדומות, יש ' + redBars);
+});
+
+test('גרף החלבון מסמן את המינימום', () => {
+  Store.updateSettings({ targets: { proteinMinG: 160 } });
+  App.setState({ view: 'trends', range: 0 });
+  const legendText = doc.getElementById('chart-protein-legend').textContent;
+  assert(legendText.includes('מינימום 160'), 'קו המינימום לא מסומן: ' + legendText);
+});
+
 runAll().then(function () {
-  console.log('');
+  
+
+console.log('');
   failures.forEach(function (f) {
     console.log('\u2717 ' + f.name);
     console.log('   ' + f.message);

@@ -36,6 +36,7 @@
       '<div class="field-grid">' +
         numberField('t-kcal', 'קלוריות', t.kcal, 10) +
         numberField('t-proteinG', 'חלבון', t.proteinG, 1, 'גר׳') +
+        numberField('t-proteinMinG', 'מינימום חלבון', t.proteinMinG, 1, 'גר׳') +
         numberField('t-carbG', 'פחמימה', t.carbG, 1, 'גר׳') +
         numberField('t-fatG', 'שומן', t.fatG, 1, 'גר׳') +
         numberField('t-fiberG', 'סיבים', t.fiberG, 1, 'גר׳') +
@@ -201,6 +202,7 @@
       Store.updateSettings({
         targets: {
           kcal: val('#t-kcal'), proteinG: val('#t-proteinG'),
+          proteinMinG: val('#t-proteinMinG'),
           carbG: val('#t-carbG'), fatG: val('#t-fatG'), fiberG: val('#t-fiberG')
         },
         goal: { ratePerWeekKg: val('#g-rate'), targetWeightKg: val('#g-target') },

@@ -42,7 +42,7 @@
 
     return '<div class="section-label">חמשת הימים האחרונים</div>' +
       '<div class="table-scroll"><table class="data"><thead><tr>' +
-        '<th>תאריך</th><th>משקל מגמה</th><th>TDEE</th><th>±</th><th></th>' +
+        '<th>תאריך</th><th>משקל מגמה</th><th class="n">TDEE</th><th class="n">±</th><th></th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
@@ -114,7 +114,7 @@
       '<div class="section-label">כל השיטות</div>' +
       UI.card(null, null,
         '<div class="table-scroll"><table class="data"><thead><tr>' +
-          '<th>שיטה</th><th>בלי צעדים</th><th>±</th>' +
+          '<th>שיטה</th><th class="n">בלי צעדים</th><th class="n">±</th>' +
         '</tr></thead><tbody>' + summaryRows + '</tbody></table></div>' +
         UI.basis(spread < 200
           ? 'הפער בין השיטות הוא ' + Math.round(spread) + ' קלוריות — קטן מרווח הסמך של כל אחת מהן. הן מסכימות.'

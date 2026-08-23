@@ -102,42 +102,56 @@
     ].concat(target ? [{ color: COLORS.over, label: 'משקל יעד' }] : []));
   }
 
-  function drawComposition(entries) {
-    var derived = Metrics.deriveAll(entries);
-    var fat = Metrics.movingAverage(derived, 'bodyFatKg', { windowDays: 7, minPoints: 3 })
+  /**
+   * שומן ושריר בשני גרפים נפרדים, ולא באותו גרף.
+   * שומן נע סביב 22 ק״ג ושריר סביב 35, ובגרף משותף כל אחד מהם
+   * נראה כקו ישר כי הסקאלה נשלטת על ידי המרחק ביניהם.
+   */
+  function drawBodyField(entries, field, elementId, label) {
+    var line = Metrics.movingAverage(entries, field, { windowDays: 7, minPoints: 3 })
       .filter(function (d) { return d.y !== null; });
-    var lean = Metrics.movingAverage(derived, 'leanKg', { windowDays: 7, minPoints: 3 })
-      .filter(function (d) { return d.y !== null; });
-    if (fat.length < 2) return;
+    var raw = Metrics.series(entries, field);
+    if (line.length < 2) return false;
 
-    var fatMap = lookup(fat), leanMap = lookup(lean);
-    Chart.render(document.getElementById('chart-comp'), {
+    var host = document.getElementById(elementId);
+    if (!host) return false;
+
+    var lineMap = lookup(line), rawMap = lookup(raw);
+    Chart.render(host, {
       series: [
-        { type: 'line', color: COLORS.measured, width: 2.2, points: toPoints(fat) },
-        { type: 'line', color: COLORS.lean, width: 2.2, points: toPoints(lean) }
+        { type: 'dots', color: COLORS.measuredFaint, points: toPoints(raw), radius: 2 },
+        { type: 'line', color: COLORS.measured, width: 2.2, points: toPoints(line) }
       ],
-      height: 190,
+      height: 180,
       formatX: function (x) { return Dates.short(Dates.fromDayIndex(x)); },
-      formatTick: function (v) { return Fmt.n(v, 0); },
-      captionEl: document.getElementById('chart-comp-caption'),
-      idleCaption: 'ממוצע נע של שבעה ימים',
+      formatTick: function (v) { return Fmt.n(v, 1); },
+      captionEl: document.getElementById(elementId + '-caption'),
+      idleCaption: 'קו = ממוצע נע של שבעה ימים',
       onHover: function (x) {
         var parts = [Dates.long(Dates.fromDayIndex(x))];
-        if (fatMap[x] !== undefined) parts.push('שומן ' + Fmt.n(fatMap[x], 2));
-        if (leanMap[x] !== undefined) parts.push('רזה ' + Fmt.n(leanMap[x], 2));
+        if (rawMap[x] !== undefined) parts.push('מדידה ' + Fmt.n(rawMap[x], 1));
+        if (lineMap[x] !== undefined) parts.push('ממוצע ' + Fmt.n(lineMap[x], 2));
         return parts.join('  ·  ');
       }
     });
-    document.getElementById('chart-comp-legend').innerHTML = legend([
-      { color: COLORS.measured, label: 'שומן (ק״ג)' },
-      { color: COLORS.lean, label: 'מסה רזה (ק״ג)' }
+    document.getElementById(elementId + '-legend').innerHTML = legend([
+      { color: COLORS.measuredFaint, label: 'מדידות' },
+      { color: COLORS.measured, label: label + ' — ממוצע נע' }
     ]);
+    return true;
   }
 
-  function drawIntake(entries, settings, field, elementId, digits) {
+  /**
+   * גרף צריכה יומית מול יעד.
+   * options.target הוא היעד בפועל — לקלוריות הוא מגיע מהשיטה שנבחרה
+   * במסך הבית ולא משדה קבוע בהגדרות, אחרת לא ברור לאיזה יעד הכוונה
+   * כשיש כמה הערכות TDEE במקביל.
+   */
+  function drawIntake(entries, settings, field, elementId, digits, options) {
+    var opts = options || {};
     var raw = Metrics.series(entries, field);
     if (raw.length < 2) return;
-    var target = settings.targets[field];
+    var target = Fmt.isNum(opts.target) ? opts.target : settings.targets[field];
     var ma = Metrics.movingAverage(entries, field, { windowDays: 7, minPoints: 3 })
       .filter(function (d) { return d.y !== null; });
 
@@ -155,6 +169,9 @@
     var targetLine = horizontal(raw, target, COLORS.reference);
     if (targetLine) series.push(targetLine);
 
+    var minLine = Fmt.isNum(opts.minimum) ? horizontal(raw, opts.minimum, COLORS.over, '2 3') : null;
+    if (minLine) series.push(minLine);
+
     var rawMap = lookup(raw), maMap = lookup(ma);
     Chart.render(document.getElementById(elementId), {
       series: series,
@@ -163,7 +180,9 @@
       formatX: function (x) { return Dates.short(Dates.fromDayIndex(x)); },
       formatTick: function (v) { return Fmt.n(v, 0); },
       captionEl: document.getElementById(elementId + '-caption'),
-      idleCaption: Fmt.isNum(target) ? 'קו סגול = יעד יומי' : 'לא הוגדר יעד',
+      idleCaption: Fmt.isNum(target)
+        ? 'קו סגול = ' + (opts.targetLabel || 'יעד יומי')
+        : 'לא הוגדר יעד',
       onHover: function (x) {
         var parts = [Dates.long(Dates.fromDayIndex(x))];
         if (rawMap[x] !== undefined) parts.push(Fmt.n(rawMap[x], digits));
@@ -175,53 +194,80 @@
     document.getElementById(elementId + '-legend').innerHTML = legend([
       { color: COLORS.measuredFaint, label: 'יומי' },
       { color: COLORS.measured, label: 'ממוצע נע' }
-    ].concat(Fmt.isNum(target) ? [{ color: COLORS.reference, label: 'יעד' }] : []));
+    ].concat(Fmt.isNum(target) ? [{ color: COLORS.reference, label: opts.targetLabel || 'יעד' }] : [])
+     .concat(minLine ? [{ color: COLORS.over, label: 'מינימום ' + Fmt.n(opts.minimum, 0) }] : []));
   }
 
-  /** מסלול ה-TDEE לפי המסנן, עם רצועת אי־ודאות — כאן רואים אם ההוצאה זזה */
+  /**
+   * מסלול ההוצאה לאורך זמן, מול הצריכה בפועל.
+   *
+   * שתי החלטות שנועדו להפוך אותו לקריא:
+   * הסקאלה נקבעת לפי הקווים עצמם והרצועה נחתכת אליה, אחרת רווח סמך
+   * רחב מוחץ את כל השאר לקו ישר. והשיטה נכתבת במפורש, כי יש כמה
+   * הערכות TDEE במקביל ובלי ציון מפורש לא ברור איזו מהן מוצגת.
+   */
   function drawTdee(entries, settings) {
     var r = Metrics.adaptiveTDEE(entries, { kcalPerKg: settings.kcalPerKg });
     if (!r.ok || r.states.length < 5) return false;
-
-    // הימים הראשונים נשלטים על ידי הניחוש ההתחלתי, לא על ידי הנתונים
-    var states = r.states.slice(Math.min(6, r.states.length - 3));
-    var band = states.map(function (s) {
-      return { x: Dates.dayIndex(s.date), lo: s.tdee - 1.96 * s.tdeeSd, hi: s.tdee + 1.96 * s.tdeeSd };
-    });
-    var line = states.map(function (s) { return { x: Dates.dayIndex(s.date), y: s.tdee }; });
-    var intake = Metrics.series(entries, 'kcal').filter(function (p) {
-      return p.x >= line[0].x;
-    });
-
     var host = document.getElementById('chart-tdee');
     if (!host) return false;
+
+    // הימים הראשונים נשלטים על ידי הניחוש ההתחלתי ולא על ידי הנתונים
+    var states = r.states.slice(Math.min(7, r.states.length - 3));
+    var line = states.map(function (s) { return { x: Dates.dayIndex(s.date), y: s.tdee }; });
+    var intakeRaw = Metrics.series(entries, 'kcal').filter(function (p) { return p.x >= line[0].x; });
+    var intakeMa = Metrics.movingAverage(entries, 'kcal', { windowDays: 7, minPoints: 3 })
+      .filter(function (d) { return d.y !== null && Dates.dayIndex(d.date) >= line[0].x; });
+
+    // סקאלה לפי הקווים, ורק אז חיתוך הרצועה אליה
+    var values = line.map(function (p) { return p.y; })
+      .concat(intakeMa.map(function (d) { return d.y; }));
+    var lo = Math.min.apply(null, values);
+    var hi = Math.max.apply(null, values);
+    var pad = Math.max((hi - lo) * 0.35, 150);
+    var yLo = lo - pad, yHi = hi + pad;
+    var clamp = function (v) { return Math.min(Math.max(v, yLo), yHi); };
+
+    var band = states.map(function (s) {
+      return {
+        x: Dates.dayIndex(s.date),
+        lo: clamp(s.tdee - 1.96 * s.tdeeSd),
+        hi: clamp(s.tdee + 1.96 * s.tdeeSd)
+      };
+    });
 
     var tdeeMap = {}, sdMap = {};
     states.forEach(function (s) {
       tdeeMap[Dates.dayIndex(s.date)] = s.tdee;
       sdMap[Dates.dayIndex(s.date)] = 1.96 * s.tdeeSd;
     });
+    var rawMap = lookup(intakeRaw), maMap = lookup(intakeMa);
 
     Chart.render(host, {
       series: [
         { type: 'band', color: COLORS.band, points: band },
-        { type: 'dots', color: COLORS.measuredFaint, points: toPoints(intake), radius: 2 },
-        { type: 'line', color: COLORS.measured, width: 2.2, points: line }
+        { type: 'dots', color: 'rgba(75,85,165,0.35)', points: toPoints(intakeRaw), radius: 2 },
+        { type: 'line', color: COLORS.reference, width: 1.8, dash: '5 3', points: toPoints(intakeMa) },
+        { type: 'line', color: COLORS.measured, width: 2.4, points: line }
       ],
-      height: 200,
+      height: 210,
+      yDomain: [yLo, yHi],
       formatX: function (x) { return Dates.short(Dates.fromDayIndex(x)); },
       formatTick: function (v) { return Fmt.n(v, 0); },
       captionEl: document.getElementById('chart-tdee-caption'),
-      idleCaption: 'הרצועה היא רווח הסמך — היא מצטמצמת ככל שנצברים ימים',
+      idleCaption: 'הרצועה היא טווח אי־הוודאות של ההוצאה',
       onHover: function (x) {
         var parts = [Dates.long(Dates.fromDayIndex(x))];
-        if (tdeeMap[x] !== undefined) parts.push('TDEE ' + Fmt.n(tdeeMap[x], 0) + ' ±' + Fmt.n(sdMap[x], 0));
+        if (tdeeMap[x] !== undefined) parts.push('שורף ' + Fmt.n(tdeeMap[x], 0) + ' ±' + Fmt.n(sdMap[x], 0));
+        if (rawMap[x] !== undefined) parts.push('אכל ' + Fmt.n(rawMap[x], 0));
+        if (maMap[x] !== undefined) parts.push('ממוצע ' + Fmt.n(maMap[x], 0));
         return parts.join('  ·  ');
       }
     });
     document.getElementById('chart-tdee-legend').innerHTML = legend([
-      { color: COLORS.measured, label: 'TDEE מוערך' },
-      { color: COLORS.measuredFaint, label: 'צריכה יומית' }
+      { color: COLORS.measured, label: 'שורף — מסתגל (קלמן), כולל הליכה' },
+      { color: COLORS.reference, label: 'אוכל — ממוצע נע' },
+      { color: 'rgba(75,85,165,0.35)', label: 'אוכל — יומי' }
     ]);
     return true;
   }
@@ -242,6 +288,17 @@
     var hasFat = Metrics.series(entries, 'bodyFatKg').length >= 2;
     var hasKcal = Metrics.series(entries, 'kcal').length >= 2;
     var hasProtein = Metrics.series(entries, 'proteinG').length >= 2;
+    var hasMuscle = Metrics.series(entries, 'muscleKg').length >= 2;
+
+    // אותו יעד שמוצג במסך הבית, לפי אותה שיטה שנבחרה שם
+    var report = Metrics.windowReport(all, settings, {
+      windowDays: root.App.state.calcWindow,
+      endDate: Dates.today()
+    });
+    var kcalTarget = report.ok ? report.target : settings.targets.kcal;
+    var targetLabel = report.ok
+      ? 'יעד לפי ' + (report.windowDays === 'adaptive' ? 'החישוב המסתגל' : 'חלון ' + report.statsDays + ' ימים')
+      : 'יעד';
 
     container.innerHTML = '' +
       '<div class="section-label">טווח</div>' +
@@ -250,18 +307,23 @@
       (hasWeight ? chartBlock('chart-weight', 'משקל', 'נקודות = שקילות, קו מלא = ממוצע נע, מקווקו = מגמה מעריכית')
                  : UI.empty('אין מספיק שקילות בטווח הזה', '')) +
       (hasFat ? '<div class="section-label">הרכב גוף</div>' +
-                chartBlock('chart-comp', 'שומן מול מסה רזה', 'שניהם כממוצע נע, כי המדידה היומית רועשת') : '') +
+                chartBlock('chart-fat', 'שומן', 'בק״ג. נקודות = מדידות, קו = ממוצע נע') : '') +
+      (hasMuscle ? chartBlock('chart-muscle', 'שריר', 'בק״ג. נקודות = מדידות, קו = ממוצע נע') : '') +
       (hasKcal ? '<div class="section-label">הוצאה</div>' +
-                 chartBlock('chart-tdee', 'מסלול ה-TDEE', 'איך ההערכה השתנתה עם הזמן, ורוחב אי־הוודאות') : '') +
+                 chartBlock('chart-tdee', 'כמה שורף מול כמה אוכל', 'ההוצאה המסתגלת עם טווח אי־הוודאות, מול הצריכה בפועל') : '') +
       (hasKcal ? '<div class="section-label">תזונה</div>' +
-                 chartBlock('chart-kcal', 'קלוריות', 'עמודה אדומה = חריגה של יותר מ־10% מהיעד') : '') +
-      (hasProtein ? chartBlock('chart-protein', 'חלבון', null) : '');
+                 chartBlock('chart-kcal', 'קלוריות',
+                   'עמודה אדומה = חריגה של יותר מ־10% מהיעד') : '') +
+      (hasProtein ? chartBlock('chart-protein', 'חלבון', 'קו אדום = מינימום יומי') : '');
 
     if (hasWeight) drawWeight(entries, settings);
-    if (hasFat) drawComposition(entries);
+    if (hasFat) drawBodyField(entries, 'bodyFatKg', 'chart-fat', 'שומן');
+    if (hasMuscle) drawBodyField(entries, 'muscleKg', 'chart-muscle', 'שריר');
     if (hasKcal) drawTdee(all, settings);
-    if (hasKcal) drawIntake(entries, settings, 'kcal', 'chart-kcal', 0);
-    if (hasProtein) drawIntake(entries, settings, 'proteinG', 'chart-protein', 0);
+    if (hasKcal) drawIntake(entries, settings, 'kcal', 'chart-kcal', 0,
+      { target: kcalTarget, targetLabel: targetLabel });
+    if (hasProtein) drawIntake(entries, settings, 'proteinG', 'chart-protein', 0,
+      { minimum: settings.targets.proteinMinG });
 
     container.querySelectorAll('[data-range]').forEach(function (chip) {
       chip.addEventListener('click', function () {

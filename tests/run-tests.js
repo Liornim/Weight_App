@@ -22,13 +22,21 @@ const failures = [];
 
 const queue = [];
 
+let started = false;
+
 /** רושם בדיקה. הריצה עצמה בטור בסוף הקובץ, כדי שבדיקות
  *  אסינכרוניות לא ידרסו זו את ה-DOM של זו. */
 function test(name, fn) {
+  if (started) {
+    console.error('בדיקה נרשמה אחרי תחילת הריצה ולא תרוץ: ' + name);
+    process.exitCode = 1;
+    return;
+  }
   queue.push({ name, fn });
 }
 
 function runAll() {
+  started = true;
   return queue.reduce(function (chain, item) {
     return chain.then(function () {
       return Promise.resolve()

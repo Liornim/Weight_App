@@ -30,7 +30,7 @@
 
   var DEFAULT_SETTINGS = {
     profile: { heightCm: null, birthDate: null, sex: 'male' },
-    targets: { kcal: null, proteinG: null, carbG: null, fatG: null, fiberG: null, steps: null },
+    targets: { kcal: null, proteinG: null, proteinMinG: 160, carbG: null, fatG: null, fiberG: null, steps: null },
     goal: { ratePerWeekKg: null, targetWeightKg: null },   // ratePerWeekKg שלילי = ירידה
     kcalPerKg: Metrics.DEFAULT_KCAL_PER_KG,
     kcalPerStep: 0.030,   // עלות נטו לצעד; 0.025-0.040 הוא הטווח המקובל
