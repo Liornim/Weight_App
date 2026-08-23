@@ -756,8 +756,8 @@ test('גבולות ההערכה מסומנים בקווים, והפער מוצג
     const legendText = doc.getElementById('chart-tdee-legend').textContent;
     assert(legendText.includes('גבול עליון'), mode + ': חסר קו הגבול העליון');
     assert(legendText.includes('גבול תחתון'), mode + ': חסר קו הגבול התחתון');
-    assert(legendText.includes('לפי הגבול העליון'), mode + ': חסר הפער מול הגבול העליון');
-    assert(legendText.includes('לפי הגבול התחתון'), mode + ': חסר הפער מול הגבול התחתון');
+    assert(legendText.includes('אם אתה שורף יותר'), mode + ': חסר הפער מול הגבול העליון');
+    assert(legendText.includes('אם פחות'), mode + ': חסר הפער מול הגבול התחתון');
 
     const colors = [...doc.querySelectorAll('#chart-tdee path')]
       .map((p) => p.getAttribute('stroke'));
