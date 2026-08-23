@@ -120,12 +120,18 @@
     var report = Metrics.progressReport(entries, settings, { endDate: date });
 
     container.innerHTML =
+      '<div class="btn-row" style="margin-bottom:16px">' +
+        '<button type="button" class="btn btn--ghost" id="back-home">‹ חזרה</button></div>' +
       heroBlock(report, settings) +
       planCard(report, settings) +
       changesCard(report) +
       '<div class="btn-row" style="margin-top:16px">' +
         '<button type="button" class="btn" id="open-status">ניתוח מלא</button>' +
       '</div>';
+
+    container.querySelector('#back-home').addEventListener('click', function () {
+      root.App.setState({ view: 'today' });
+    });
 
     container.querySelector('#open-status').addEventListener('click', function () {
       root.App.setState({ view: 'status' });

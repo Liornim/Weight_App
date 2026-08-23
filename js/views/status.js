@@ -355,7 +355,7 @@
         projectionCard(entries, settings, windowDays));
 
     container.querySelector('[data-back]').addEventListener('click', function () {
-      root.App.setState({ view: 'progress' });
+      root.App.setState({ view: 'today' });
     });
 
     container.querySelectorAll('[data-window]').forEach(function (chip) {

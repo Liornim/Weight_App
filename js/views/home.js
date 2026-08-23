@@ -13,33 +13,9 @@
   var Views = root.Views = root.Views || {};
   var Fmt = root.Fmt, Dates = root.Dates, Metrics = root.Metrics, Store = root.Store, UI = root.UI;
 
-  var WINDOW_DAYS = [3, 5, 7, 10, 14, 21, 28];
-
-  /**
-   * חלון של n ימים דורש 2n ימי נתונים, כי הוא משווה n ימים
-   * ל-n שקדמו להם. חלונות שאין להם כיסוי מלא מוצגים מנוטרלים
-   * ולא מחושבים מחלון אחר.
-   */
-  function windowChips(entries, endDate, active) {
-    var options = [{ value: 'adaptive', label: 'מסתגל' }];
-    Metrics.availableWindows(entries, { endDate: endDate, candidates: WINDOW_DAYS })
-      .forEach(function (w) {
-        options.push({
-          value: w.days,
-          label: String(w.days),
-          disabled: !w.available,
-          title: w.available ? '' : 'צריך ' + w.needDays + ' ימי נתונים, יש ' + w.haveDays
-        });
-      });
-    return UI.chips(options, active, 'data-calc');
-  }
-
-  var RATES = [
-    { value: 0, label: 'שמירה' },
-    { value: -0.25, label: '0.25' },
-    { value: -0.5, label: '0.5' },
-    { value: -0.75, label: '0.75' },
-    { value: -1, label: '1' }
+  var UNITS = [
+    { value: 'kg', label: 'ק״ג' },
+    { value: 'kcal', label: 'קלוריות' }
   ];
 
   var RELIABILITY = {
@@ -153,12 +129,21 @@
   }
 
   /** הגירעון שנצבר בשלושה חלונות, מול הירידה שנמדדה בפועל */
-  function deficitCard(entries, settings, date) {
+  function deficitCard(entries, settings, date, unit) {
     var r = Metrics.deficitSummary(entries, settings, { endDate: date, windows: [7, 10, 14] });
     if (!r.ok) return '';
 
-    var cell = function (v) {
-      return '<td class="n ' + Fmt.deltaClass(v, 'down') + '">' + Fmt.signed(v, 2) + '</td>';
+    var kcalPerKg = settings.kcalPerKg || 7700;
+    var inKcal = unit === 'kcal';
+    // בקילוגרמים שלילי = ירידה. בקלוריות נוח יותר להציג את הגירעון
+    // כמספר חיובי, ולכן הסימן מתהפך.
+    var convert = function (kg) { return inKcal ? -kg * kcalPerKg : kg; };
+    var digits = inKcal ? 0 : 2;
+    var goodDirection = inKcal ? 'up' : 'down';
+
+    var cell = function (kg) {
+      var v = convert(kg);
+      return '<td class="n ' + Fmt.deltaClass(v, goodDirection) + '">' + Fmt.signed(v, digits) + '</td>';
     };
 
     var partial = false;
@@ -169,10 +154,11 @@
       }
       if (row.actualKg !== null && !row.actualComplete) partial = true;
 
-      var actualCell = row.actualKg === null
+      var actualValue = row.actualKg === null ? null : convert(row.actualKg);
+      var actualCell = actualValue === null
         ? '<td class="n"><span class="missing">—</span></td>'
-        : '<td class="n"><span class="' + Fmt.deltaClass(row.actualKg, 'down') + '">' +
-          Fmt.signed(row.actualKg, 2) + (row.actualComplete ? '' : '*') + '</span></td>';
+        : '<td class="n"><span class="' + Fmt.deltaClass(actualValue, goodDirection) + '">' +
+          Fmt.signed(actualValue, digits) + (row.actualComplete ? '' : '*') + '</span></td>';
 
       return '<tr><td>' + row.days + ' ימים' +
           (row.loggedDays < row.days ? ' (' + row.loggedDays + ')' : '') + '</td>' +
@@ -180,12 +166,14 @@
     }).join('');
 
     return UI.card('גירעון מול מציאות',
-      'בקילוגרמים. שלושת הראשונים הם מה שהחשבון מנבא, האחרון הוא הפרש ממוצעי המשקל',
+      (inKcal ? 'בקלוריות מצטברות, חיובי = גירעון. ' : 'בקילוגרמים, שלילי = ירידה. ') +
+      'שלושת הראשונים הם מה שהחשבון מנבא, האחרון הוא הפרש ממוצעי המשקל',
       '<div class="table-scroll"><table class="data"><thead><tr>' +
         '<th>תקופה</th><th class="n">זהיר</th><th class="n">הערכה</th>' +
         '<th class="n">נדיב</th><th class="n">בפועל</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
-      UI.basis('"בפועל" = ממוצע המשקל בתקופה פחות ממוצע המשקל בתקופה שקדמה לה. ' +
+      UI.basis('"בפועל" = ממוצע המשקל בתקופה פחות ממוצע המשקל בתקופה שקדמה לה' +
+        (inKcal ? ', מוכפל ב-' + Fmt.n(kcalPerKg, 0) + ' קק״ל לק״ג. ' : '. ') +
         (partial ? 'כוכבית = לתקופה הקודמת אין כיסוי מלא, ולכן ההפרש קטן מהאמת. ' : '') +
         'פער גדול בין "בפועל" ל"הערכה" אומר שהדיווח או השקילה לא מדויקים.'));
   }
@@ -281,6 +269,7 @@
     var entry = Store.getEntry(date) || {};
     var isToday = date === Dates.today();
 
+    var unit = root.App.state.deficitUnit || 'kg';
     var report = Metrics.windowReport(entries, settings, {
       windowDays: state.calcWindow,
       endDate: date
@@ -289,20 +278,16 @@
     var html =
       heroBlock(report, entry) +
 
-      '<div class="section-label">כמה לרדת בשבוע (ק״ג)</div>' +
-      UI.chips(RATES, settings.goal.ratePerWeekKg, 'data-rate') +
-
-      '<div class="section-label">לחשב לפי (ימים)</div>' +
-      windowChips(entries, date, state.calcWindow) +
-
       dashboardCard(entries, settings, date) +
       bodyChangeCard(entries, date) +
-      deficitCard(entries, settings, date) +
+      '<div class="section-label">גירעון</div>' +
+      UI.chips(UNITS, unit, 'data-unit') +
+      deficitCard(entries, settings, date, unit) +
       allowanceCard(entries, settings, date) +
       bonusCard(entry, settings);
 
     html += '<div class="btn-row" style="margin-top:20px">' +
-      '<button type="button" class="btn" id="open-methods">שיטות חישוב</button>' +
+      '<button type="button" class="btn" id="open-progress">התקדמות מלאה</button>' +
       '</div>';
 
     container.innerHTML = html;
@@ -310,21 +295,14 @@
   }
 
   function wire(container, date) {
-    container.querySelectorAll('[data-rate]').forEach(function (chip) {
+    container.querySelectorAll('[data-unit]').forEach(function (chip) {
       chip.addEventListener('click', function () {
-        Store.updateSettings({ goal: { ratePerWeekKg: Number(chip.dataset.rate) } });
+        root.App.setState({ deficitUnit: chip.dataset.unit });
       });
     });
 
-    container.querySelectorAll('[data-calc]').forEach(function (chip) {
-      chip.addEventListener('click', function () {
-        var raw = chip.dataset.calc;
-        root.App.setState({ calcWindow: raw === 'adaptive' ? 'adaptive' : Number(raw) });
-      });
-    });
-
-    container.querySelector('#open-methods').addEventListener('click', function () {
-      root.App.setState({ view: 'methods' });
+    container.querySelector('#open-progress').addEventListener('click', function () {
+      root.App.setState({ view: 'progress' });
     });
   }
 

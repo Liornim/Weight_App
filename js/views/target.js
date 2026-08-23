@@ -215,7 +215,7 @@
     });
 
     container.querySelector('[data-back]').addEventListener('click', function () {
-      root.App.setState({ view: 'progress' });
+      root.App.setState({ view: 'today' });
     });
 
     container.querySelectorAll('[data-period]').forEach(function (chip) {

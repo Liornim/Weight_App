@@ -80,7 +80,7 @@ test('האפליקציה עולה ומציגה ארבעה טאבים', () => {
   assert(doc.getElementById('view-today').classList.contains('is-active'), 'מסך היום פעיל');
 });
 
-['today', 'entry', 'progress', 'target', 'methods', 'status', 'trends', 'data'].forEach((view) => {
+['today', 'entry', 'calc', 'progress', 'target', 'status', 'trends', 'data'].forEach((view) => {
   test('מסך "' + view + '" נטען בלי נתונים', () => {
     App.setState({ view });
     const host = doc.getElementById('view-' + view);
@@ -324,48 +324,59 @@ test('מעבר לתצוגה כולל צעדים מוסיף את השורות', (
   assert(App.state.stepsMode === 'base', 'חזרה לברירת המחדל');
 });
 
-test('מסך השיטות נפתח מתוך מסך הבית וחוזר אליו', () => {
-  App.setState({ view: 'today' });
-  doc.querySelector('#open-methods').dispatchEvent(new window.Event('click', { bubbles: true }));
-  assert(App.state.view === 'methods', 'לא עברנו למסך השיטות');
-  assert(doc.querySelector('#tabs button[data-view="today"]').getAttribute('aria-selected') === 'true',
-    'הטאב "היום" צריך להישאר מסומן');
-  doc.querySelector('#back-to-target').dispatchEvent(new window.Event('click', { bubbles: true }));
-  assert(App.state.view === 'today', 'החזרה לא עבדה');
+test('היעדים מוצגים עם הפער מהממוצע', () => {
+  Store.updateSettings({ targets: { proteinG: 170, steps: 10000, kcal: null } });
+  App.setState({ view: 'target' });
+  const rows = [...doc.querySelectorAll('#view-target table.data tr')]
+    .map((tr) => tr.textContent);
+  assert(rows.some((r) => r.includes('חלבון') && r.includes('170')), 'יעד החלבון לא מוצג');
+  assert(rows.some((r) => r.includes('צעדים') && r.includes('10,000')), 'יעד הצעדים לא מוצג');
 });
 
-test('מסך השיטות מציג את החשבון של כל שיטה', () => {
-  errors.length = 0;
-  App.setState({ view: 'methods' });
-  const host = doc.getElementById('view-methods');
-  const folds = host.querySelectorAll('details.fold');
-  assert(folds.length >= 3, 'ציפיתי לשיטה לכל מקטע, יש ' + folds.length);
-  assert(host.querySelectorAll('.formula').length >= 3, 'חסרות נוסחאות');
-  const body = host.textContent;
-  ['מסנן קלמן', 'רגרסיה', 'בלוקים', 'צריכה ממוצעת', 'רווח סמך', 'בלי צעדים'].forEach((label) => {
-    assert(body.includes(label), 'חסר: ' + label);
-  });
-  assert(errors.length === 0, 'שגיאות: ' + errors.join(' | '));
+test('שינוי העלות לצעד מזיז את הבסיס', () => {
+  const before = window.Metrics.baselineWithoutSteps(Store.getEntries(), Store.getSettings());
+  Store.updateSettings({ kcalPerStep: 0.040 });
+  const after = window.Metrics.baselineWithoutSteps(Store.getEntries(), Store.getSettings());
+  assert(after.base < before.base, 'קבוע גבוה יותר -> בסיס נמוך יותר');
+  Store.updateSettings({ kcalPerStep: 0.030 });
 });
 
-test('בחירת שיטה משנה את המספרים במסך היעד', () => {
-  App.setState({ view: 'methods' });
+
+test('מעבר לתצוגה כולל צעדים מוסיף את השורות', () => {
+  App.setState({ view: 'target' });
+  doc.querySelector('[data-mode="total"]').dispatchEvent(new window.Event('click', { bubbles: true }));
+  assert(App.state.stepsMode === 'total', 'המצב התעדכן');
+  const body = doc.getElementById('view-target').textContent;
+  assert(body.includes('ירידה משוערת הכל'), 'חסרה שורת הצעדים');
+  assert(body.includes('או להוסיף צעדים'), 'חסרה שורת הצעדים החלופיים');
+  doc.querySelector('[data-mode="base"]').dispatchEvent(new window.Event('click', { bubbles: true }));
+  assert(App.state.stepsMode === 'base', 'חזרה לברירת המחדל');
+});
+
+test('בחירת שיטה במסך החישוב משנה את המספרים בסיכום', () => {
+  App.setState({ view: 'calc', date: '2026-08-21' });
   const before = Store.getSettings().tdeeMethod;
-  const button = doc.querySelector('#view-methods [data-pick]');
+  const button = doc.querySelector('#view-calc [data-pick]');
+  assert(button, 'אין כפתור לבחירת שיטה');
   const picked = button.dataset.pick;
   button.dispatchEvent(new window.Event('click', { bubbles: true }));
-  assert(Store.getSettings().tdeeMethod === picked, 'הבחירה נשמרה');
-  assert(picked !== before, 'נבחרה שיטה אחרת');
+  assert(Store.getSettings().tdeeMethod === picked, 'הבחירה לא נשמרה');
+  assert(picked !== before, 'נבחרה אותה שיטה');
 
-  App.setState({ view: 'target' });
-  const shown = doc.getElementById('view-target').textContent;
+  App.setState({ view: 'today', date: '2026-08-21' });
   const expected = Math.round(
-    window.Metrics.tdeeMethods(Store.getEntries(), Store.getSettings()).chosen.base
+    window.Metrics.tdeeMethods(Store.getEntries(), Store.getSettings(),
+      { endDate: '2026-08-21' }).chosen.base
   ).toLocaleString('en-US');
-  assert(shown.includes(expected), 'מסך היעד לא מציג את הבסיס של השיטה שנבחרה (' + expected + ')');
+  // מסך הסיכום מציג את היעד, שהוא הבסיס פחות הגירעון
+  const report = window.Metrics.windowReport(Store.getEntries(), Store.getSettings(),
+    { windowDays: App.state.calcWindow, endDate: '2026-08-21' });
+  assert(report.ok, 'הדוח נכשל אחרי החלפת שיטה');
+  const shown = Number(doc.querySelector('#view-today .hero-value').textContent.replace(/[^\d]/g, ''));
+  assert(Math.abs(shown - Math.round(report.target)) <= 1,
+    'היעד לא התעדכן לפי השיטה שנבחרה: מוצג ' + shown + ' מול ' + Math.round(report.target));
   Store.updateSettings({ tdeeMethod: 'kalman' });
 });
-
 
 test('בחירת השיטה זמינה בראש מסך היעד ומשנה את המספרים', () => {
   App.setState({ view: 'target' });
@@ -484,15 +495,16 @@ test('היעד היומי הוא שמירת משקל פחות הגירעון, ב
 
 test('בחירת חלון החישוב משנה את היעד היומי', () => {
   errors.length = 0;
-  App.setState({ view: 'today', date: '2026-08-21', calcWindow: 'adaptive' });
-  const adaptive = doc.querySelector('#view-today .hero-value').textContent;
+  App.setState({ view: 'calc', date: '2026-08-21', calcWindow: 'adaptive' });
+  const adaptive = doc.querySelector('#view-calc .hero-value').textContent;
 
-  const chip = doc.querySelector('[data-calc="7"]');
+  const chip = doc.querySelector('#view-calc [data-calc="7"]');
   assert(chip, 'אין כפתור לחלון 7');
   chip.dispatchEvent(new window.Event('click', { bubbles: true }));
   assert(App.state.calcWindow === 7, 'החלון לא התעדכן');
-  assert(doc.querySelector('[data-calc="7"]').getAttribute('aria-pressed') === 'true', 'הכפתור לא סומן');
-  assert(doc.querySelector('#view-today .hero-value').textContent !== adaptive,
+  assert(doc.querySelector('#view-calc [data-calc="7"]').getAttribute('aria-pressed') === 'true',
+    'הכפתור לא סומן');
+  assert(doc.querySelector('#view-calc .hero-value').textContent !== adaptive,
     'המספר הראשי לא השתנה (' + adaptive + ')');
 
   App.setState({ calcWindow: 'adaptive' });
@@ -512,10 +524,10 @@ test('כל אורכי החלון נטענים בלי שגיאה', () => {
 });
 
 test('מצב הכפתורים תואם בדיוק את זמינות החלונות', () => {
-  App.setState({ view: 'today', date: '2026-08-21', calcWindow: 'adaptive' });
+  App.setState({ view: 'calc', date: '2026-08-21', calcWindow: 'adaptive' });
   const status = window.Metrics.availableWindows(Store.getEntries(), { endDate: '2026-08-21' });
   const byValue = {};
-  doc.querySelectorAll('#view-today [data-calc]').forEach((c) => { byValue[c.dataset.calc] = c; });
+  doc.querySelectorAll('#view-calc [data-calc]').forEach((c) => { byValue[c.dataset.calc] = c; });
 
   status.forEach((w) => {
     const chip = byValue[String(w.days)];
@@ -602,21 +614,34 @@ test('מסך הרישום מכיל את הטופס', () => {
   assert(host.textContent.includes('שאכלת אתמול'), 'חסרה ההערה על ההיסט');
 });
 
-test('בחירת קצב הירידה זמינה במסך הבית', () => {
-  App.setState({ view: 'today', date: '2026-08-21', calcWindow: 14 });
-  doc.querySelector('#view-today [data-rate="-0.25"]').dispatchEvent(new window.Event('click', { bubbles: true }));
-  assert(Store.getSettings().goal.ratePerWeekKg === -0.25, 'הקצב לא נשמר');
-  const gentle = Number(doc.querySelector('#view-today .hero-value').textContent.replace(/[^\d]/g, ''));
+test('בחירת קצב הירידה במסך החישוב משנה את היעד בסיכום', () => {
+  const heroValue = () => {
+    const el = doc.querySelector('#view-today .hero-value');
+    assert(el, 'אין תשובה ראשית בסיכום: ' +
+      doc.getElementById('view-today').textContent.slice(0, 80));
+    return Number(el.textContent.replace(/[^\d]/g, ''));
+  };
 
-  doc.querySelector('#view-today [data-rate="-1"]').dispatchEvent(new window.Event('click', { bubbles: true }));
-  const steep = Number(doc.querySelector('#view-today .hero-value').textContent.replace(/[^\d]/g, ''));
-  assert(gentle - steep > 500, 'ההפרש בין 0.25 ל-1 ק"ג צריך להיות גדול (' + gentle + ' מול ' + steep + ')');
+  const pickRate = (rate) => {
+    App.setState({ view: 'calc', date: '2026-08-21', calcWindow: 14 });
+    const chip = doc.querySelector('#view-calc [data-rate="' + rate + '"]');
+    assert(chip, 'אין כפתור לקצב ' + rate);
+    chip.dispatchEvent(new window.Event('click', { bubbles: true }));
+    assert(Store.getSettings().goal.ratePerWeekKg === Number(rate), 'הקצב ' + rate + ' לא נשמר');
+    App.setState({ view: 'today', date: '2026-08-21' });
+    return heroValue();
+  };
 
-  doc.querySelector('#view-today [data-rate="0"]').dispatchEvent(new window.Event('click', { bubbles: true }));
-  const maintain = Number(doc.querySelector('#view-today .hero-value').textContent.replace(/[^\d]/g, ''));
+  const gentle = pickRate('-0.25');
+  const steep = pickRate('-1');
+  assert(gentle - steep > 500,
+    'ההפרש בין 0.25 ל-1 ק"ג צריך להיות גדול (' + gentle + ' מול ' + steep + ')');
+
+  const maintain = pickRate('0');
   const report = window.Metrics.windowReport(Store.getEntries(), Store.getSettings(),
     { windowDays: 14, endDate: '2026-08-21' });
-  assert(Math.abs(maintain - Math.round(report.base)) <= 1, 'שמירה צריכה להיות בדיוק הבסיס');
+  assert(Math.abs(maintain - Math.round(report.base)) <= 1,
+    'שמירה צריכה להיות בדיוק הבסיס: ' + maintain + ' מול ' + Math.round(report.base));
 
   Store.updateSettings({ goal: { ratePerWeekKg: -0.5 } });
 });
@@ -1040,7 +1065,7 @@ test('עמודת "בפועל" היא הפרש ממוצעי המשקל', () => {
 
 test('כל מסך שרשום בסרגל הטאבים באמת נטען', () => {
   const registered = Object.keys(window.Views);
-  ['today', 'entry', 'progress', 'trends', 'data', 'methods', 'status', 'target'].forEach((id) => {
+  ['today', 'entry', 'calc', 'progress', 'trends', 'data', 'status', 'target'].forEach((id) => {
     assert(registered.indexOf(id) !== -1, 'המסך ' + id + ' לא נרשם — כנראה חסר בקובץ index.html');
   });
 
@@ -1079,6 +1104,46 @@ test('גיליון הסגנון מבטל את התגית העגולה בתוך �
   App.setState({ view: 'today', date: '2026-08-21' });
   assert(doc.querySelector('#view-today table.data .delta-down, #view-today table.data .delta-up'),
     'לא נמצא ערך צבוע בטבלה');
+});
+
+
+
+test('טבלת הגירעון עוברת בין קילוגרמים לקלוריות', () => {
+  App.setState({ view: 'today', date: '2026-08-21', deficitUnit: 'kg' });
+  const table = () => [...doc.querySelectorAll('#view-today table.data')]
+    .find((t) => t.textContent.includes('בפועל'));
+  const num = (tr, i) => Number(tr.children[i].textContent.replace(/[^\d.\-−]/g, '').replace('−', '-'));
+
+  const kgRow = table().querySelector('tbody tr');
+  const kgMid = num(kgRow, 2);
+
+  doc.querySelector('#view-today [data-unit="kcal"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+  assert(App.state.deficitUnit === 'kcal', 'היחידות לא התחלפו');
+
+  const kcalRow = table().querySelector('tbody tr');
+  const kcalMid = num(kcalRow, 2);
+  const kcalPerKg = Store.getSettings().kcalPerKg;
+
+  // אותו נתון בשתי יחידות: קילוגרם שלילי = גירעון חיובי בקלוריות
+  assert(Math.abs(kcalMid - (-kgMid * kcalPerKg)) < 20,
+    'ההמרה שגויה: ' + kgMid + ' ק"ג מול ' + kcalMid + ' קלוריות');
+  assert(Math.abs(kcalMid) > 100, 'הערך בקלוריות נראה כמו קילוגרמים');
+
+  doc.querySelector('#view-today [data-unit="kg"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+});
+
+test('בוררי החישוב אינם במסך הסיכום', () => {
+  App.setState({ view: 'today', date: '2026-08-21' });
+  const host = doc.getElementById('view-today');
+  assert(!host.querySelector('[data-calc]'), 'בורר החלון עדיין בסיכום');
+  assert(!host.querySelector('[data-rate]'), 'בורר הקצב עדיין בסיכום');
+
+  App.setState({ view: 'calc' });
+  const calc = doc.getElementById('view-calc');
+  assert(calc.querySelector('[data-calc]'), 'בורר החלון חסר במסך החישוב');
+  assert(calc.querySelector('[data-rate]'), 'בורר הקצב חסר במסך החישוב');
 });
 
 

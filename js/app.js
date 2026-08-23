@@ -8,17 +8,17 @@
   var Dates = root.Dates, Store = root.Store, Views = root.Views, Chart = root.Chart;
 
   // הטאבים שמוצגים בסרגל התחתון. חמישה, כדי שייכנסו גם במסך צר.
-  var TABS = ['today', 'entry', 'progress', 'trends', 'data'];
+  var TABS = ['today', 'entry', 'calc', 'trends', 'data'];
 
   // מסכים שנפתחים מתוך מסך אחר ואין להם טאב משלהם.
   // MAP הוא איזה טאב יישאר מסומן כשהם פתוחים.
-  var NESTED = { methods: 'today', status: 'progress', target: 'progress' };
+  var NESTED = { progress: 'today', status: 'today', target: 'today' };
 
   var ORDER = TABS.concat(Object.keys(NESTED));
 
   var App = {
     // חותמת בנייה — מופיעה בראש המסך כדי שאפשר יהיה לדעת איזו גרסה פתוחה
-    BUILD: 'v26',
+    BUILD: 'v27',
     state: {
       view: 'today',
       date: Dates.today(),
@@ -26,6 +26,7 @@
       range: 90,    // טווח התצוגה במסך המגמות
       period: 7,    // תקופת החישוב במסך היעד
       stepsMode: 'base',      // 'base' = בלי צעדים, 'total' = כולל
+      deficitUnit: 'kg',      // יחידות בטבלת הגירעון
       calcWindow: 'adaptive', // חלון החישוב במסך הבית
       tdeeMode: 'daily'       // תצוגת גרף ההוצאה: יומי או מצטבר
     }
