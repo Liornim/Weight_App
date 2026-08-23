@@ -1397,6 +1397,52 @@ test('כל מצב מקבל ערך מוחלק', () => {
   });
 });
 
+// ---------- לוח המחוונים ----------
+
+test('סיכום הגירעון לכמה חלונות', () => {
+  const entries = windowFixture();   // בסיס 2500, צעדים 10000, אכילה 2200
+  const r = Metrics.deficitSummary(entries, WIN_SETTINGS, { endDate: '2026-03-01' });
+  assert(r.ok, 'צריך לרוץ');
+  assert(r.rows.length === 3, 'שלושה חלונות');
+
+  r.rows.forEach((row) => {
+    assert(row.loggedDays === row.days, row.days + ': ציפיתי לכל הימים, יש ' + row.loggedDays);
+    assert(row.sum.low < row.sum.mid && row.sum.mid < row.sum.high, row.days + ': התרחישים לא מסודרים');
+    close(row.kg.mid, -row.sum.mid / 7700, 1e-9, row.days + ': המרה לקילוגרמים');
+    assert(row.actualKg !== null, row.days + ': חסר השינוי שנמדד');
+  });
+
+  // חלון ארוך יותר צובר גירעון גדול יותר
+  assert(Math.abs(r.rows[2].sum.mid) > Math.abs(r.rows[0].sum.mid), '14 יום צריך לצבור יותר מ-7');
+});
+
+test('הגירעון הצפוי עקבי עם הירידה שנמדדה', () => {
+  const entries = windowFixture();
+  const r = Metrics.deficitSummary(entries, WIN_SETTINGS, { endDate: '2026-03-01' });
+  r.rows.forEach((row) => {
+    // הנתונים נבנו כך שהמשקל באמת יורד לפי מאזן האנרגיה
+    assert(Math.abs(row.kg.mid - row.actualKg) < 0.5,
+      row.days + ' ימים: צפוי ' + row.kg.mid.toFixed(2) + ' מול נמדד ' + row.actualKg.toFixed(2));
+  });
+});
+
+test('מספרי לוח המחוונים', () => {
+  const entries = windowFixture();
+  const d = Metrics.dashboard(entries, WIN_SETTINGS, { endDate: '2026-03-01' });
+  assert(d.ok, 'צריך לרוץ');
+  assert(d.spanDays === 60, 'שישים ימים במעקב, קיבלתי ' + d.spanDays);
+  assert(d.weighIns === 60, 'שישים שקילות');
+  assert(d.maxWeight > d.minWeight, 'שיא גבוה משפל');
+  close(d.totalLoss, d.maxWeight - d.minWeight, 1e-9, 'הירידה הכוללת');
+  assert(d.totalLoss > 3, 'ירידה של יותר מ-3 ק"ג לאורך התקופה');
+  close(d.stepsWeek, 10000, 1, 'ממוצע צעדים בשבוע');
+  assert(d.currentWeight < d.maxWeight, 'המשקל הנוכחי נמוך מהשיא');
+});
+
+test('לוח המחוונים בלי נתונים', () => {
+  assert(!Metrics.dashboard([], WIN_SETTINGS).ok, 'צריך להחזיר כישלון');
+});
+
 // ---------- דוח ----------
 // הריצה מופעלת בסוף הקובץ בלבד. אם היא תופעל באמצע, בדיקות שנרשמו
 // אחריה לא ייכנסו לתור וייעלמו בשקט — קרה בפועל.

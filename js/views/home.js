@@ -127,6 +127,101 @@
     return Fmt.isNum(value) ? Fmt.signed(value, 2) + ' ק״ג' : Fmt.EMPTY;
   }
 
+  /** מספרי הפתיחה: כמה זמן, כמה ירד, איפה עומדים */
+  function dashboardCard(entries, settings, date) {
+    var d = Metrics.dashboard(entries, settings, { endDate: date });
+    if (!d.ok) return '';
+
+    return UI.card('התמונה הכללית', null,
+      '<div class="hero-facts" style="border-top:0;padding-top:0;margin-top:0;justify-content:flex-start;gap:28px">' +
+        '<div class="hero-fact"><span class="k">ימים במעקב</span>' +
+          '<span class="v num">' + d.spanDays + '</span></div>' +
+        '<div class="hero-fact"><span class="k">ירדת בסך הכל</span>' +
+          '<span class="v num">' + Fmt.n(d.totalLoss, 1) + ' ק״ג</span></div>' +
+        '<div class="hero-fact"><span class="k">משקל עכשיו</span>' +
+          '<span class="v num">' + Fmt.n(d.currentWeight, 1) + '</span></div>' +
+        '<div class="hero-fact"><span class="k">צעדים בשבוע</span>' +
+          '<span class="v num">' + Fmt.n(d.stepsWeek, 0) + '</span></div>' +
+      '</div>' +
+      '<div class="metric-row" style="margin-top:16px"><span class="label">מהשיא לשפל</span>' +
+        '<span class="value">' + Fmt.n(d.maxWeight, 1) + ' ← ' + Fmt.n(d.minWeight, 1) + ' ק״ג</span></div>' +
+      '<div class="metric-row"><span class="label">שקילות שנרשמו</span>' +
+        '<span class="value">' + d.weighIns + ' מתוך ' + d.spanDays + ' ימים</span></div>' +
+      UI.basis('משקל עכשיו הוא ממוצע ' + d.currentWeightDays + ' השקילות האחרונות, לא השקילה של הבוקר.'));
+  }
+
+  /** הגירעון שנצבר בשלושה חלונות, מול הירידה שנמדדה בפועל */
+  function deficitCard(entries, settings, date) {
+    var r = Metrics.deficitSummary(entries, settings, { endDate: date, windows: [7, 10, 14] });
+    if (!r.ok) return '';
+
+    var cell = function (v) {
+      return '<td class="n ' + Fmt.deltaClass(v, 'down') + '">' + Fmt.signed(v, 2) + '</td>';
+    };
+
+    var rows = r.rows.map(function (row) {
+      if (!row.loggedDays) {
+        return '<tr><td>' + row.days + ' ימים</td>' +
+          '<td colspan="4" class="missing">אין רישומים</td></tr>';
+      }
+      return '<tr><td>' + row.days + ' ימים' +
+          (row.loggedDays < row.days ? ' (' + row.loggedDays + ' דווחו)' : '') + '</td>' +
+        cell(row.kg.low) + cell(row.kg.mid) + cell(row.kg.high) +
+        '<td class="n ' + (row.actualKg === null ? '' : Fmt.deltaClass(row.actualKg, 'down')) + '">' +
+          (row.actualKg === null ? '—' : Fmt.signed(row.actualKg, 2)) + '</td></tr>';
+    }).join('');
+
+    return UI.card('גירעון מול מציאות', 'בקילוגרמים. שלושת הראשונים הם מה שהחשבון מנבא, האחרון הוא מה שקרה',
+      '<div class="table-scroll"><table class="data"><thead><tr>' +
+        '<th>תקופה</th><th class="n">זהיר</th><th class="n">הערכה</th>' +
+        '<th class="n">נדיב</th><th class="n">בפועל</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      UI.basis('"בפועל" הוא השינוי לפי קו המגמה של המשקל באותה תקופה. ' +
+        'פער גדול בינו לבין העמודה האמצעית אומר שהדיווח או השקילה לא מדויקים.'));
+  }
+
+  /** כמה מותר לאכול בימים הקרובים ועדיין להישאר בירוק */
+  function allowanceCard(entries, settings, date) {
+    var r = Metrics.adaptiveTDEE(entries, { kcalPerKg: settings.kcalPerKg, endDate: date });
+    if (!r.ok) return '';
+
+    var days = r.states.slice(-14).filter(function (s) { return Fmt.isNum(s.intake); });
+    if (!days.length) return '';
+
+    var last = r.states[r.states.length - 1];
+    var margin = 1.96 * last.tdeeSd;
+    var stepKcal = 0;
+    var burn = { low: last.tdee - margin - stepKcal, mid: last.tdee - stepKcal, high: last.tdee + margin - stepKcal };
+
+    var carried = { low: 0, mid: 0, high: 0 };
+    days.forEach(function (s) {
+      var m = 1.96 * s.tdeeSd;
+      carried.low += (s.tdee - m) - s.intake;
+      carried.mid += s.tdee - s.intake;
+      carried.high += (s.tdee + m) - s.intake;
+    });
+
+    var labels = { 1: 'מחר', 2: 'יומיים', 3: 'שלושה ימים', 5: 'חמישה ימים', 7: 'שבוע' };
+    var ceiling = last.tdee + 1500;
+
+    var rows = [1, 2, 3, 5, 7].map(function (n) {
+      var cellFor = function (key) {
+        var value = burn[key] + carried[key] / n;
+        return '<td class="n' + (value > ceiling ? ' missing' : '') + '">' +
+          (value < 0 ? '0' : Fmt.n(value, 0)) + '</td>';
+      };
+      return '<tr><td>' + Fmt.esc(labels[n]) + '</td>' +
+        cellFor('low') + cellFor('mid') + cellFor('high') + '</tr>';
+    }).join('');
+
+    return UI.card('כמה אפשר לאכול ולהישאר בירוק', 'ממוצע יומי מרבי, לפי אורך הפריסה',
+      '<div class="table-scroll"><table class="data"><thead><tr>' +
+        '<th>טווח</th><th class="n">זהיר</th><th class="n">הערכה</th><th class="n">נדיב</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      UI.basis('לך לפי העמודה הזהירה — היא מבטיחה ירוק גם אם אתה שורף פחות ממה שנראה. ' +
+        'מספרים אפורים גבוהים מכדי לאכול ביום אחד; פרוס על יותר ימים.'));
+  }
+
   /** התמונה המלאה של החלון שנבחר */
   function panelCard(report) {
     if (!report.ok) return '';
@@ -236,6 +331,9 @@
       '<div class="section-label">לחשב לפי (ימים)</div>' +
       windowChips(entries, date, state.calcWindow) +
 
+      dashboardCard(entries, settings, date) +
+      deficitCard(entries, settings, date) +
+      allowanceCard(entries, settings, date) +
       panelCard(report) +
       compensationCard(report) +
       bonusCard(entry, settings);

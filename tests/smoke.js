@@ -910,20 +910,6 @@ test('טבלת הקצבה אומרת כמה אפשר לאכול ולהישאר �
 
 
 
-test('הגרף מציג גם את ההערכה שהייתה באותו יום', () => {
-  App.setState({ view: 'trends', range: 0, tdeeMode: 'daily' });
-  const legendText = doc.getElementById('chart-tdee-legend').textContent;
-  assert(legendText.includes('ההערכה הטובה ביותר'), 'חסר הקו המוחלק');
-  assert(legendText.includes('מה שנראה באותו יום'), 'חסר הקו של ההערכה בזמן אמת');
-
-  // שני קווים בצבע ההוצאה: אחד עבה ואחד דק ושקוף
-  const teal = [...doc.querySelectorAll('#chart-tdee path')]
-    .filter((p) => p.getAttribute('stroke') === '#0D6E67');
-  assert(teal.length === 2, 'ציפיתי לשני קווי הוצאה, יש ' + teal.length);
-  const widths = teal.map((p) => Number(p.getAttribute('stroke-width'))).sort();
-  assert(widths[0] < widths[1], 'הקווים לא נבדלים בעובי');
-});
-
 test('כשההוצאה יציבה, המסך אומר זאת במקום להיראות שבור', () => {
   App.setState({ view: 'trends', range: 0, tdeeMode: 'daily' });
   const report = window.Metrics.adaptiveTDEE(Store.getEntries(), Store.getSettings());
@@ -937,6 +923,58 @@ test('כשההוצאה יציבה, המסך אומר זאת במקום להיר�
   } else {
     assert(text.includes('נעה בטווח'), 'לא צוין טווח התנועה');
   }
+});
+
+
+
+test('לוח המחוונים מציג את מספרי הפתיחה', () => {
+  errors.length = 0;
+  App.setState({ view: 'today', date: '2026-08-21', calcWindow: 'adaptive' });
+  const host = doc.getElementById('view-today');
+  ['ימים במעקב', 'ירדת בסך הכל', 'משקל עכשיו', 'צעדים בשבוע', 'מהשיא לשפל'].forEach((label) => {
+    assert(host.textContent.includes(label), 'חסר: ' + label);
+  });
+
+  const d = window.Metrics.dashboard(Store.getEntries(), Store.getSettings(), { endDate: '2026-08-21' });
+  assert(host.textContent.includes(String(d.spanDays)), 'מספר הימים לא מוצג');
+  assert(errors.length === 0, 'שגיאות: ' + errors.join(' | '));
+});
+
+test('טבלת הגירעון מול המציאות, לשלושה חלונות', () => {
+  App.setState({ view: 'today', date: '2026-08-21' });
+  const table = [...doc.querySelectorAll('#view-today table.data')]
+    .find((t) => t.textContent.includes('בפועל'));
+  assert(table, 'הטבלה חסרה');
+
+  const headers = [...table.querySelectorAll('th')].map((th) => th.textContent.trim());
+  ['תקופה', 'זהיר', 'הערכה', 'נדיב', 'בפועל'].forEach((h) => {
+    assert(headers.indexOf(h) !== -1, 'חסרה עמודה: ' + h);
+  });
+
+  const labels = [...table.querySelectorAll('tbody tr')].map((tr) => tr.children[0].textContent);
+  [7, 10, 14].forEach((n) => {
+    assert(labels.some((l) => l.indexOf(n + ' ימים') === 0), 'חסר חלון של ' + n + ' ימים');
+  });
+
+  // הערכים תואמים את המודל
+  const summary = window.Metrics.deficitSummary(Store.getEntries(), Store.getSettings(),
+    { endDate: '2026-08-21', windows: [7, 10, 14] });
+  const num = (td) => Number(td.textContent.replace(/[^\d.\-−]/g, '').replace('−', '-'));
+  [...table.querySelectorAll('tbody tr')].forEach((tr, i) => {
+    if (tr.children.length < 5) return;
+    assert(Math.abs(num(tr.children[2]) - summary.rows[i].kg.mid) < 0.02,
+      'שורה ' + i + ': ההערכה לא תואמת את המודל');
+  });
+});
+
+test('טבלת הקצבה נמצאת בדף הבית', () => {
+  App.setState({ view: 'today', date: '2026-08-21' });
+  const host = doc.getElementById('view-today');
+  assert(host.textContent.includes('כמה אפשר לאכול ולהישאר בירוק'), 'הכרטיס חסר');
+  const table = [...host.querySelectorAll('table.data')]
+    .find((t) => t.textContent.includes('מחר') && t.textContent.includes('שבוע'));
+  assert(table, 'טבלת הקצבה חסרה');
+  assert(table.querySelectorAll('tbody tr').length === 5, 'ציפיתי לחמישה טווחים');
 });
 
 

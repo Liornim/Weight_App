@@ -317,15 +317,10 @@
       lowDaily.forEach(function (p) { p.y = clamp(p.y); });
       highDaily.forEach(function (p) { p.y = clamp(p.y); });
 
-      // הקו הדק מראה מה ההערכה הייתה באותו יום, לפני שהתברר מה קרה
-      // אחר כך. הפער בינו לבין הקו העבה הוא בדיוק מה שהמעבר לאחור תיקן.
-      var liveLine = states.map(function (s) { return { x: Dates.dayIndex(s.date), y: s.tdee }; });
-
       series = [
         { type: 'band', color: COLORS.band, points: band },
         { type: 'line', color: COLORS.over, width: 1, points: lowDaily, opacity: 0.45 },
         { type: 'line', color: '#2E6B4F', width: 1, points: highDaily, opacity: 0.45 },
-        { type: 'line', color: COLORS.measured, width: 1.2, points: liveLine, opacity: 0.4 },
         { type: 'dots', color: 'rgba(75,85,165,0.4)', points: toPoints(intakeRaw), radius: 2 },
         { type: 'line', color: COLORS.reference, width: 2.2, points: toPoints(intakeMa) },
         { type: 'line', color: COLORS.measured, width: 2.6, points: line }
@@ -356,8 +351,7 @@
         ? 'הקו הירוק ישר כי ההוצאה שלך יציבה — כל התנועה היא באכילה'
         : 'ירוק מעל סגול = גירעון. הקו הדק הוא מה שנראה באותו יום.';
       legendItems = [
-        { color: COLORS.measured, label: 'שורף — ההערכה הטובה ביותר' },
-        { color: 'rgba(13,110,103,0.4)', label: 'שורף — מה שנראה באותו יום' },
+        { color: COLORS.measured, label: 'שורף — הערכה' },
         { color: '#2E6B4F', label: 'גבול עליון' },
         { color: COLORS.over, label: 'גבול תחתון' },
         { color: COLORS.reference, label: 'אוכל — ממוצע 7 ימים' },

@@ -1258,6 +1258,96 @@
     };
   }
 
+  /**
+   * סיכום הגירעון לכמה חלונות בבת אחת, לצד השינוי שנמדד בפועל.
+   *
+   * הסתירה בין השניים היא המידע החשוב: אם החשבון מנבא ירידה של קילו
+   * והמשקל לא זז, אחד משני הצדדים לא מדויק — הדיווח או השקילה.
+   */
+  function deficitSummary(entries, settings, options) {
+    var opts = options || {};
+    var endDate = opts.endDate || Dates.today();
+    var windows = opts.windows || [7, 10, 14];
+    var kcalPerKg = (settings || {}).kcalPerKg || DEFAULT_KCAL_PER_KG;
+
+    var adaptive = adaptiveTDEE(entries, { kcalPerKg: kcalPerKg, endDate: endDate });
+    if (!adaptive.ok) return { ok: false, reason: adaptive.reason };
+
+    var byDate = {};
+    adaptive.states.forEach(function (s) { byDate[s.date] = s; });
+
+    var rows = windows.map(function (days) {
+      var from = Dates.addDays(endDate, -(days - 1));
+      var sum = { low: 0, mid: 0, high: 0, intake: 0, tdee: 0 };
+      var counted = 0;
+
+      Dates.range(from, endDate).forEach(function (date) {
+        var s = byDate[date];
+        if (!s || !num(s.intake)) return;
+        var margin = 1.96 * s.tdeeSd;
+        sum.low += (s.tdee - margin) - s.intake;
+        sum.mid += s.tdee - s.intake;
+        sum.high += (s.tdee + margin) - s.intake;
+        sum.intake += s.intake;
+        sum.tdee += s.tdee;
+        counted++;
+      });
+
+      var measured = trend(entries, 'weightKg', { windowDays: days, endDate: endDate, minPoints: 3 });
+
+      return {
+        days: days,
+        loggedDays: counted,
+        sum: sum,
+        // הגירעון בקילוגרמים: שלילי = ירידה צפויה
+        kg: {
+          low: -sum.low / kcalPerKg,
+          mid: -sum.mid / kcalPerKg,
+          high: -sum.high / kcalPerKg
+        },
+        actualKg: measured.ok ? measured.changeOverWindow : null,
+        actualPerWeek: measured.ok ? measured.perWeek : null
+      };
+    });
+
+    return { ok: true, endDate: endDate, rows: rows };
+  }
+
+  /** מספרי הפתיחה של מסך הבית */
+  function dashboard(entries, settings, options) {
+    var opts = options || {};
+    var endDate = opts.endDate || Dates.today();
+    var sortedEntries = sorted(entries);
+    if (!sortedEntries.length) return { ok: false };
+
+    var weights = series(entries, 'weightKg');
+    var first = sortedEntries[0].date;
+    var spanDays = (Dates.diffDays(first, endDate) || 0) + 1;
+
+    var maxWeight = Stats.max(weights.map(function (p) { return p.y; }));
+    var minWeight = Stats.min(weights.map(function (p) { return p.y; }));
+
+    var recentSteps = series(inWindow(entries, endDate, 7), 'steps').map(function (p) { return p.y; });
+    var allSteps = series(entries, 'steps').map(function (p) { return p.y; });
+    var ma = latestMovingAverage(entries, 'weightKg', { to: endDate });
+
+    return {
+      ok: true,
+      firstDate: first,
+      spanDays: spanDays,
+      loggedDays: sortedEntries.length,
+      weighIns: weights.length,
+      maxWeight: maxWeight,
+      minWeight: minWeight,
+      // הירידה מהשיא לשפל, ללא קשר למתי כל אחד מהם נמדד
+      totalLoss: (maxWeight === null || minWeight === null) ? null : maxWeight - minWeight,
+      currentWeight: ma ? ma.y : null,
+      currentWeightDays: ma ? ma.n : 0,
+      stepsWeek: Stats.mean(recentSteps),
+      stepsAll: Stats.mean(allSteps)
+    };
+  }
+
   /** BMR לפי Mifflin-St Jeor — משמש רק כנקודת פתיחה לפני שיש מספיק נתונים */
   function bmrMifflin(profile, weightKg) {
     var w = num(weightKg), h = num((profile || {}).heightCm), age = num((profile || {}).ageYears);
@@ -1302,6 +1392,8 @@
     energyBalance: energyBalance,
     progressReport: progressReport,
     windowReport: windowReport,
+    deficitSummary: deficitSummary,
+    dashboard: dashboard,
     availableWindows: availableWindows,
     tdeeMethods: tdeeMethods,
     weightNoiseSd: weightNoiseSd,
