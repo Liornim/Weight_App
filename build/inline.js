@@ -20,14 +20,15 @@ let html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
 
 // CSS
 html = html.replace(/<link rel="stylesheet" href="([^"]+)">/g, (match, href) => {
-  const css = fs.readFileSync(path.join(ROOT, href), 'utf8');
+  // חותמת הגרסה בכתובת אינה חלק משם הקובץ על הדיסק
+  const css = fs.readFileSync(path.join(ROOT, href.split('?')[0]), 'utf8');
   return '<style>\n' + css + '\n  </style>';
 });
 
 // JS — סדר הטעינה נשמר כפי שהוא ב-index.html
 let count = 0;
 html = html.replace(/<script src="([^"]+)"><\/script>/g, (match, src) => {
-  const code = fs.readFileSync(path.join(ROOT, src), 'utf8');
+  const code = fs.readFileSync(path.join(ROOT, src.split('?')[0]), 'utf8');
   count++;
   return '<script>\n/* ' + src + ' */\n' + code + '\n  </script>';
 });
