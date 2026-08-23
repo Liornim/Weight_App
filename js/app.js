@@ -18,7 +18,7 @@
 
   var App = {
     // חותמת בנייה — מופיעה בראש המסך כדי שאפשר יהיה לדעת איזו גרסה פתוחה
-    BUILD: 'v19',
+    BUILD: 'v20',
     state: {
       view: 'today',
       date: Dates.today(),

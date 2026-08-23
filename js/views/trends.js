@@ -287,12 +287,17 @@
       ];
 
     } else {
-      var line = states.map(function (s) { return { x: Dates.dayIndex(s.date), y: s.tdee }; });
+      // ההיסטוריה מוצגת אחרי המעבר לאחור: כל יום מוערך גם לפי מה
+      // שקרה אחריו. היום האחרון זהה בשתי השיטות.
+      var pick = function (s) { return Fmt.isNum(s.smoothTdee) ? s.smoothTdee : s.tdee; };
+      var pickSd = function (s) { return Fmt.isNum(s.smoothTdeeSd) ? s.smoothTdeeSd : s.tdeeSd; };
+
+      var line = states.map(function (s) { return { x: Dates.dayIndex(s.date), y: pick(s) }; });
       var lowDaily = states.map(function (s) {
-        return { x: Dates.dayIndex(s.date), y: s.tdee - 1.96 * s.tdeeSd };
+        return { x: Dates.dayIndex(s.date), y: pick(s) - 1.96 * pickSd(s) };
       });
       var highDaily = states.map(function (s) {
-        return { x: Dates.dayIndex(s.date), y: s.tdee + 1.96 * s.tdeeSd };
+        return { x: Dates.dayIndex(s.date), y: pick(s) + 1.96 * pickSd(s) };
       });
 
       var values = line.map(function (p) { return p.y; })
@@ -341,6 +346,8 @@
         return parts.join('  ·  ');
       };
       caption = 'ירוק מעל סגול = גירעון. הקווים הדקים הם גבולות ההערכה.';
+      var smoothed = states.some(function (s) { return Fmt.isNum(s.smoothTdee); });
+      if (smoothed) caption += ' ההיסטוריה מעודכנת לפי מה שהתברר מאוחר יותר.';
       legendItems = [
         { color: COLORS.measured, label: 'שורף — הערכה' },
         { color: '#2E6B4F', label: 'גבול עליון' },

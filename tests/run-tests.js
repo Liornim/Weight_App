@@ -1353,6 +1353,50 @@ test('כל שלב במסנן שומר את החשבון שהוביל אליו', 
     'הניבוי לא תואם את מאזן האנרגיה');
 });
 
+test('המעבר לאחור מדייק את ההיסטוריה בלי לגעת בהווה', () => {
+  const days = kalmanDays(60, { startWeight: 88, tdee: 2600, intake: 2100, intakeNoise: 150 });
+  const r = Kalman.run(days, {});
+
+  const filteredTail = r.states.slice(10).map((s) => s.tdee);
+  const smoothTail = r.states.slice(10).map((s) => s.smoothTdee);
+  const rmse = (a) => Math.sqrt(a.reduce((sum, v) => sum + (v - 2600) * (v - 2600), 0) / a.length);
+
+  assert(rmse(smoothTail) < rmse(filteredTail),
+    'המוחלק צריך להיות קרוב יותר לאמת: ' + rmse(smoothTail).toFixed(0) +
+    ' מול ' + rmse(filteredTail).toFixed(0));
+
+  // ההערכה של היום האחרון זהה — אין עתיד שישפר אותה
+  const last = r.states[r.states.length - 1];
+  close(last.smoothTdee, last.tdee, 1e-6, 'היום האחרון השתנה');
+  close(last.smoothWeight, last.weight, 1e-6, 'המשקל של היום האחרון השתנה');
+
+  // אי־הוודאות של העבר קטנה יותר אחרי המעבר לאחור
+  const mid = r.states[30];
+  assert(mid.smoothTdeeSd <= mid.tdeeSd + 1e-9,
+    'אי־הוודאות של העבר לא קטנה: ' + mid.smoothTdeeSd + ' מול ' + mid.tdeeSd);
+});
+
+test('ההחלקה לא מזייפת יציבות כשההוצאה באמת משתנה', () => {
+  const days = kalmanDays(80, {
+    startWeight: 92, intake: 2200, intakeNoise: 120,
+    tdee: (i) => (i < 40 ? 2700 : 2300)
+  });
+  const r = Kalman.run(days, {});
+  const early = r.states[20].smoothTdee;
+  const late = r.states[70].smoothTdee;
+  assert(early - late > 200,
+    'המוחלק היה צריך לשקף את הקפיצה: ' + Math.round(early) + ' -> ' + Math.round(late));
+});
+
+test('כל מצב מקבל ערך מוחלק', () => {
+  const days = kalmanDays(30, { startWeight: 88, tdee: 2600, intake: 2100 });
+  const r = Kalman.run(days, {});
+  r.states.forEach(function (s, i) {
+    assert(typeof s.smoothTdee === 'number' && isFinite(s.smoothTdee), 'חסר ערך מוחלק ביום ' + i);
+    assert(typeof s.smoothWeight === 'number' && isFinite(s.smoothWeight), 'חסר משקל מוחלק ביום ' + i);
+  });
+});
+
 // ---------- דוח ----------
 // הריצה מופעלת בסוף הקובץ בלבד. אם היא תופעל באמצע, בדיקות שנרשמו
 // אחריה לא ייכנסו לתור וייעלמו בשקט — קרה בפועל.

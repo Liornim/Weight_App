@@ -73,6 +73,8 @@
     var p00 = o.initialWeightVar, p01 = 0, p10 = 0, p11 = o.initialTdeeVar;
 
     var states = [];
+    var filtered = [];   // המצב אחרי כל עדכון
+    var predicted = [];  // הניבוי ליום הבא, לפני שראינו אותו
 
     days.forEach(function (day) {
       // המשקל שהמסנן ניבא לבוקר הזה, לפני שראה את השקילה.
@@ -112,6 +114,9 @@
         logged: isNum(day.intake)
       });
 
+      // נשמר עבור המעבר לאחור: המצב והשונות אחרי העדכון
+      filtered.push({ w: w, e: e, P: [[p00, p01], [p10, p11]] });
+
       // --- ניבוי ליום הבא לפי מאזן האנרגיה של היום ---
       var intake = isNum(day.intake) ? day.intake : meanIntake;
       // אי־הוודאות בצריכה מתורגמת לאי־ודאות במשקל דרך K
@@ -132,7 +137,11 @@
       p01 = a01;
       p10 = a10;
       p11 = a11 + o.tdeeProcessVar;
+
+      predicted.push({ w: w, e: e, P: [[p00, p01], [p10, p11]], f: f });
     });
+
+    smoothBackward(states, filtered, predicted);
 
     var final = states[states.length - 1];
     return {
@@ -154,6 +163,77 @@
 
   function isNum(v) {
     return typeof v === 'number' && isFinite(v);
+  }
+
+  // --- אלגברה של מטריצות 2x2, לצורך המעבר לאחור ---
+
+  function inverse2(m) {
+    var det = m[0][0] * m[1][1] - m[0][1] * m[1][0];
+    if (!isFinite(det) || Math.abs(det) < 1e-12) return null;
+    return [[m[1][1] / det, -m[0][1] / det], [-m[1][0] / det, m[0][0] / det]];
+  }
+
+  function multiply2(a, b) {
+    return [
+      [a[0][0] * b[0][0] + a[0][1] * b[1][0], a[0][0] * b[0][1] + a[0][1] * b[1][1]],
+      [a[1][0] * b[0][0] + a[1][1] * b[1][0], a[1][0] * b[0][1] + a[1][1] * b[1][1]]
+    ];
+  }
+
+  function transpose2(m) {
+    return [[m[0][0], m[1][0]], [m[0][1], m[1][1]]];
+  }
+
+  /**
+   * מעבר לאחור (RTS smoother).
+   *
+   * המסנן הרגיל מעריך כל יום לפי מה שידע עד אותו רגע בלבד. אבל כשמסתכלים
+   * על ההיסטוריה, כבר ידוע מה קרה אחר כך — ואפשר להשתמש בזה כדי לשפר
+   * את ההערכה של העבר. זו הסיבה שהקו ההיסטורי חלק יותר מהקו המסונן,
+   * בלי שהוא "מוחלק" מלאכותית: הוא פשוט מבוסס על יותר מידע.
+   *
+   * ההערכה של היום האחרון זהה בשתי השיטות — אין עתיד שישפר אותה.
+   */
+  function smoothBackward(states, filtered, predicted) {
+    var n = states.length;
+    if (!n) return;
+
+    var last = filtered[n - 1];
+    var sw = last.w, se = last.e, sP = last.P;
+    states[n - 1].smoothWeight = sw;
+    states[n - 1].smoothTdee = se;
+    states[n - 1].smoothTdeeSd = Math.sqrt(Math.max(sP[1][1], 0));
+
+    for (var t = n - 2; t >= 0; t--) {
+      var f = predicted[t];               // הניבוי ליום t+1
+      var pInv = inverse2(f.P);
+      if (!pInv) {
+        states[t].smoothWeight = filtered[t].w;
+        states[t].smoothTdee = filtered[t].e;
+        states[t].smoothTdeeSd = Math.sqrt(Math.max(filtered[t].P[1][1], 0));
+        continue;
+      }
+
+      var F = [[1, f.f], [0, 1]];
+      var C = multiply2(multiply2(filtered[t].P, transpose2(F)), pInv);
+
+      var dw = sw - f.w;
+      var de = se - f.e;
+      sw = filtered[t].w + C[0][0] * dw + C[0][1] * de;
+      se = filtered[t].e + C[1][0] * dw + C[1][1] * de;
+
+      var diff = [[sP[0][0] - f.P[0][0], sP[0][1] - f.P[0][1]],
+                  [sP[1][0] - f.P[1][0], sP[1][1] - f.P[1][1]]];
+      sP = (function (P, C2, D) {
+        var m = multiply2(multiply2(C2, D), transpose2(C2));
+        return [[P[0][0] + m[0][0], P[0][1] + m[0][1]],
+                [P[1][0] + m[1][0], P[1][1] + m[1][1]]];
+      })(filtered[t].P, C, diff);
+
+      states[t].smoothWeight = sw;
+      states[t].smoothTdee = se;
+      states[t].smoothTdeeSd = Math.sqrt(Math.max(sP[1][1], 0));
+    }
   }
 
   root.Kalman = { run: run, DEFAULTS: DEFAULTS };
