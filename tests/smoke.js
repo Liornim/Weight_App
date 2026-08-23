@@ -665,7 +665,8 @@ test('גרף ההוצאה מציג גם את הצריכה בפועל ומציי�
   assert(host.querySelectorAll('svg polygon').length >= 1, 'רצועת אי־הוודאות חסרה');
   assert(host.querySelectorAll('svg path').length >= 2, 'חסר קו הצריכה לצד קו ההוצאה');
   const legendText = doc.getElementById('chart-tdee-legend').textContent;
-  assert(legendText.includes('קלמן'), 'לא צוין איזו שיטה מוצגת');
+  const tdeeCard = host.closest('.card');
+  assert(tdeeCard.querySelector('.card-note').textContent.includes('קלמן'), 'לא צוין איזו שיטה מוצגת');
   assert(legendText.includes('אוכל'), 'לא מצוינת הצריכה בפועל');
 
   // הרצועה נחתכת לסקאלה ולא מוחצת את הקווים
@@ -704,8 +705,103 @@ test('גרף החלבון מסמן את המינימום', () => {
   assert(legendText.includes('מינימום 160'), 'קו המינימום לא מסומן: ' + legendText);
 });
 
+test('גרף ההוצאה מציין שיטה, מסביר, ומראה את ההפרש', () => {
+  App.setState({ view: 'trends', range: 0 });
+  const card = [...doc.querySelectorAll('#view-trends .card')]
+    .find((c) => c.textContent.includes('כמה שורף מול כמה אוכל'));
+  assert(card, 'הכרטיס חסר');
+
+  assert(card.querySelector('.card-note').textContent.includes('קלמן'), 'לא מצוינת השיטה');
+  assert(card.querySelector('.card-note').textContent.includes('כולל הליכה'), 'לא מצוין אם הצעדים נכללים');
+  assert(card.querySelector('.finding').textContent.includes('הרווח ביניהם הוא הגירעון'),
+    'חסר משפט ההסבר מעל הגרף');
+
+  const legendText = doc.getElementById('chart-tdee-legend').textContent;
+  assert(legendText.includes('הפער כרגע'), 'ההפרש לא מוצג במקרא');
+  assert(legendText.includes('ק״ג'), 'ההפרש לא מתורגם לקילוגרמים');
+});
+
+test('מונחים סטטיסטיים לא מופיעים בשמות שהמשתמש רואה', () => {
+  App.setState({ view: 'trends', range: 0 });
+  const text = doc.getElementById('view-trends').textContent;
+  ['מעריכי', 'EWMA', "Hacker"].forEach((jargon) => {
+    assert(!text.includes(jargon), 'מונח שלא אמור להופיע: ' + jargon);
+  });
+  assert(doc.getElementById('chart-weight-legend').textContent.includes('מגמה מהירה'),
+    'הקו לא קיבל שם מובן');
+});
+
+
+test('גרף ההוצאה: מעבר בין יומי למצטבר', () => {
+  errors.length = 0;
+  App.setState({ view: 'trends', range: 0, tdeeMode: 'daily' });
+  const dailyLegend = doc.getElementById('chart-tdee-legend').textContent;
+  assert(dailyLegend.includes('ממוצע 7 ימים'), 'לא צוין שהממוצע הוא לשבעה ימים');
+  assert(dailyLegend.includes('קלוריות ליום'), 'הפער היומי לא מוצג');
+
+  doc.querySelector('[data-tdee-mode="cumulative"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+  assert(App.state.tdeeMode === 'cumulative', 'המצב לא התעדכן');
+
+  const cumLegend = doc.getElementById('chart-tdee-legend').textContent;
+  assert(cumLegend.includes('מצטבר'), 'המקרא לא עודכן למצטבר');
+  assert(cumLegend.includes('קלוריות מצטברות'), 'הפער המצטבר לא מוצג');
+  assert(doc.querySelectorAll('#chart-tdee polygon').length >= 1, 'השטח בין הקווים חסר');
+  assert(errors.length === 0, 'שגיאות: ' + errors.join(' | '));
+});
+
+test('גבולות ההערכה מסומנים בקווים, והפער מוצג לשלושתם', () => {
+  ['daily', 'cumulative'].forEach((mode) => {
+    App.setState({ view: 'trends', range: 0, tdeeMode: mode });
+    const legendText = doc.getElementById('chart-tdee-legend').textContent;
+    assert(legendText.includes('גבול עליון'), mode + ': חסר קו הגבול העליון');
+    assert(legendText.includes('גבול תחתון'), mode + ': חסר קו הגבול התחתון');
+    assert(legendText.includes('לפי הגבול העליון'), mode + ': חסר הפער מול הגבול העליון');
+    assert(legendText.includes('לפי הגבול התחתון'), mode + ': חסר הפער מול הגבול התחתון');
+
+    const colors = [...doc.querySelectorAll('#chart-tdee path')]
+      .map((p) => p.getAttribute('stroke'));
+    assert(colors.indexOf('#A32F4B') !== -1, mode + ': הגבול התחתון לא אדום');
+    assert(colors.indexOf('#2E6B4F') !== -1, mode + ': הגבול העליון לא ירוק');
+  });
+  App.setState({ tdeeMode: 'daily' });
+});
+
+test('המצטבר מסתכם לגירעון הנכון', () => {
+  App.setState({ view: 'trends', range: 0, tdeeMode: 'cumulative' });
+  const text = doc.getElementById('chart-tdee-legend').textContent;
+  const match = text.match(/הפער כרגע: ([\d,]+)/);
+  assert(match, 'לא נמצא הפער המצטבר');
+  const gap = Number(match[1].replace(/,/g, ''));
+
+  // הגירעון המצטבר חייב להיות עקבי עם הירידה שנמדדה בפועל
+  const entries = Store.getEntries();
+  const first = entries.find((e) => e.weightKg);
+  const last = [...entries].reverse().find((e) => e.weightKg);
+  const measuredKg = first.weightKg - last.weightKg;
+  const impliedKg = gap / 7700;
+  assert(Math.abs(impliedKg - measuredKg) < 3,
+    'הגירעון המצטבר (' + impliedKg.toFixed(1) + ' ק"ג) רחוק מהירידה שנמדדה (' + measuredKg.toFixed(1) + ')');
+  App.setState({ tdeeMode: 'daily' });
+});
+
+test('ההסבר על שיטת החישוב זמין ובלי מונחים', () => {
+  App.setState({ view: 'trends', range: 0 });
+  const fold = [...doc.querySelectorAll('#view-trends details.fold')]
+    .find((d) => d.querySelector('summary').textContent.includes('איך מחושב'));
+  assert(fold, 'ההסבר חסר');
+  const text = fold.textContent;
+  ['מנבא', 'משווה', 'מתקן', '7700'].forEach((label) => {
+    assert(text.includes(label), 'חסר בהסבר: ' + label);
+  });
+  assert(text.includes('בלי הליכה'), 'לא מוסבר ההבדל מהמספר במסך הבית');
+});
+
+
 runAll().then(function () {
   
+
+
 
 console.log('');
   failures.forEach(function (f) {

@@ -18,7 +18,7 @@
 
   var App = {
     // חותמת בנייה — מופיעה בראש המסך כדי שאפשר יהיה לדעת איזו גרסה פתוחה
-    BUILD: 'v16',
+    BUILD: 'v17',
     state: {
       view: 'today',
       date: Dates.today(),
@@ -26,7 +26,8 @@
       range: 90,    // טווח התצוגה במסך המגמות
       period: 7,    // תקופת החישוב במסך היעד
       stepsMode: 'base',      // 'base' = בלי צעדים, 'total' = כולל
-      calcWindow: 'adaptive'  // חלון החישוב במסך הבית
+      calcWindow: 'adaptive', // חלון החישוב במסך הבית
+      tdeeMode: 'daily'       // תצוגת גרף ההוצאה: יומי או מצטבר
     }
   };
 
