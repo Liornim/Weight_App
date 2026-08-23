@@ -994,6 +994,30 @@ test('אריחי לוח המחוונים צבועים ונבדלים זה מזה
 });
 
 
+
+test('עמודת "בפועל" היא הפרש ממוצעי המשקל', () => {
+  App.setState({ view: 'today', date: '2026-08-21' });
+  const summary = window.Metrics.deficitSummary(Store.getEntries(), Store.getSettings(),
+    { endDate: '2026-08-21', windows: [7, 10, 14] });
+
+  const table = [...doc.querySelectorAll('#view-today table.data')]
+    .find((t) => t.textContent.includes('בפועל'));
+  const rows = [...table.querySelectorAll('tbody tr')];
+
+  summary.rows.forEach((row, i) => {
+    const cellText = rows[i].children[4].textContent.trim();
+    if (row.actualKg === null) {
+      assert(cellText.includes('חסרים'), row.days + ': היה צריך לומר שחסרים ימים');
+    } else {
+      const shown = Number(cellText.replace(/[^\d.\-−]/g, '').replace('−', '-'));
+      const expected = row.currentMean - row.previousMean;
+      assert(Math.abs(shown - expected) < 0.02,
+        row.days + ' ימים: מוצג ' + shown + ' אבל הפרש הממוצעים הוא ' + expected.toFixed(2));
+    }
+  });
+});
+
+
 runAll().then(function () {
   
 

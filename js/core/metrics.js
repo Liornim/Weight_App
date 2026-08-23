@@ -1276,6 +1276,18 @@
     var byDate = {};
     adaptive.states.forEach(function (s) { byDate[s.date] = s; });
 
+    var allSorted = sorted(entries);
+    var firstDate = allSorted.length ? allSorted[0].date : null;
+
+    /** ממוצע המשקל בחלון של days ימים שמסתיים ב-end */
+    function blockMean(end, days) {
+      var start = Dates.addDays(end, -(days - 1));
+      var values = series(entries, 'weightKg')
+        .filter(function (p) { return p.date >= start && p.date <= end; })
+        .map(function (p) { return p.y; });
+      return { mean: Stats.mean(values), n: values.length, from: start, to: end };
+    }
+
     var rows = windows.map(function (days) {
       var from = Dates.addDays(endDate, -(days - 1));
       var sum = { low: 0, mid: 0, high: 0, intake: 0, tdee: 0 };
@@ -1293,7 +1305,19 @@
         counted++;
       });
 
-      var measured = trend(entries, 'weightKg', { windowDays: days, endDate: endDate, minPoints: 3 });
+      // השינוי בפועל: ממוצע המשקל של החלון פחות ממוצע החלון שקדם לו.
+      // זו אותה שיטה שבה נמדד הגירעון, ולכן שתי העמודות ניתנות להשוואה
+      // ישירה. שיפוע קו מגמה על החלון עצמו היה מודד משהו אחר.
+      var current = blockMean(endDate, days);
+      var previous = blockMean(Dates.addDays(endDate, -days), days);
+
+      // תקופה קודמת חלקית תיתן השוואה מוטה: הממוצע שלה מייצג רק את
+      // סופה, וההפרש ייראה קטן מהאמת. לכן נדרש כיסוי מלא בשתי התקופות.
+      var minWeighIns = Math.max(2, Math.ceil(days / 2));
+      var complete = firstDate !== null && firstDate <= previous.from &&
+        current.n >= minWeighIns && previous.n >= minWeighIns;
+
+      var actual = complete ? current.mean - previous.mean : null;
 
       return {
         days: days,
@@ -1305,8 +1329,12 @@
           mid: -sum.mid / kcalPerKg,
           high: -sum.high / kcalPerKg
         },
-        actualKg: measured.ok ? measured.changeOverWindow : null,
-        actualPerWeek: measured.ok ? measured.perWeek : null
+        actualKg: actual,
+        actualComplete: complete,
+        currentMean: current.mean,
+        previousMean: previous.mean,
+        currentWeighIns: current.n,
+        previousWeighIns: previous.n
       };
     });
 

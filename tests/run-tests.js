@@ -1416,6 +1416,34 @@ test('סיכום הגירעון לכמה חלונות', () => {
   assert(Math.abs(r.rows[2].sum.mid) > Math.abs(r.rows[0].sum.mid), '14 יום צריך לצבור יותר מ-7');
 });
 
+test('השינוי בפועל הוא הפרש ממוצעים בין שתי תקופות', () => {
+  // ירידה קבועה של 100 גרם ליום: ממוצע 7 ימים מול ה-7 שלפניהם = 0.7 ק"ג
+  const entries = buildSeries('2026-01-01', 40, (i) => ({
+    weightKg: 90 - 0.1 * i, kcal: 2200, steps: 9000
+  }));
+  const r = Metrics.deficitSummary(entries, WIN_SETTINGS,
+    { endDate: '2026-02-09', windows: [7, 10, 14] });
+
+  r.rows.forEach((row) => {
+    close(row.actualKg, -0.1 * row.days, 1e-9,
+      row.days + ' ימים: ההפרש בין הממוצעים');
+    close(row.currentMean - row.previousMean, row.actualKg, 1e-9, 'עקביות פנימית');
+    assert(row.currentWeighIns === row.days, 'כל הימים בחלון הנוכחי');
+    assert(row.previousWeighIns === row.days, 'כל הימים בחלון הקודם');
+  });
+});
+
+test('בלי תקופה קודמת אין השוואה', () => {
+  // 20 ימי נתונים: חלון 14 דורש 28
+  const entries = buildSeries('2026-01-01', 20, (i) => ({
+    weightKg: 90 - 0.05 * i, kcal: 2200, steps: 9000
+  }));
+  const r = Metrics.deficitSummary(entries, WIN_SETTINGS,
+    { endDate: '2026-01-20', windows: [7, 14] });
+  assert(r.rows[0].actualKg !== null, 'חלון 7 אמור לעבוד');
+  assert(r.rows[1].actualKg === null, 'חלון 14 בלי תקופה קודמת צריך להחזיר null');
+});
+
 test('הגירעון הצפוי עקבי עם הירידה שנמדדה', () => {
   const entries = windowFixture();
   const r = Metrics.deficitSummary(entries, WIN_SETTINGS, { endDate: '2026-03-01' });

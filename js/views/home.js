@@ -169,17 +169,21 @@
       return '<tr><td>' + row.days + ' ימים' +
           (row.loggedDays < row.days ? ' (' + row.loggedDays + ' דווחו)' : '') + '</td>' +
         cell(row.kg.low) + cell(row.kg.mid) + cell(row.kg.high) +
-        '<td class="n ' + (row.actualKg === null ? '' : Fmt.deltaClass(row.actualKg, 'down')) + '">' +
-          (row.actualKg === null ? '—' : Fmt.signed(row.actualKg, 2)) + '</td></tr>';
+        '<td class="n">' + (row.actualKg === null
+          ? '<span class="missing">חסרים ימים</span>'
+          : '<span class="' + Fmt.deltaClass(row.actualKg, 'down') + '">' +
+            Fmt.signed(row.actualKg, 2) + '</span>') + '</td></tr>';
     }).join('');
 
-    return UI.card('גירעון מול מציאות', 'בקילוגרמים. שלושת הראשונים הם מה שהחשבון מנבא, האחרון הוא מה שקרה',
+    return UI.card('גירעון מול מציאות',
+      'בקילוגרמים. שלושת הראשונים הם מה שהחשבון מנבא, האחרון הוא הפרש ממוצעי המשקל',
       '<div class="table-scroll"><table class="data"><thead><tr>' +
         '<th>תקופה</th><th class="n">זהיר</th><th class="n">הערכה</th>' +
         '<th class="n">נדיב</th><th class="n">בפועל</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
-      UI.basis('"בפועל" הוא השינוי לפי קו המגמה של המשקל באותה תקופה. ' +
-        'פער גדול בינו לבין העמודה האמצעית אומר שהדיווח או השקילה לא מדויקים.'));
+      UI.basis('"בפועל" = ממוצע המשקל בתקופה פחות ממוצע המשקל בתקופה שקדמה לה. ' +
+        'לחלון של 14 ימים נדרשים 28 ימי נתונים, ובלעדיהם ההשוואה לא מוצגת. ' +
+        'פער גדול בין "בפועל" ל"הערכה" אומר שהדיווח או השקילה לא מדויקים.'));
   }
 
   /** כמה מותר לאכול בימים הקרובים ועדיין להישאר בירוק */
