@@ -132,16 +132,18 @@
     var d = Metrics.dashboard(entries, settings, { endDate: date });
     if (!d.ok) return '';
 
+    var tile = function (tone, label, value) {
+      return '<div class="stat stat--' + tone + '">' +
+        '<span class="k">' + Fmt.esc(label) + '</span>' +
+        '<span class="v">' + value + '</span></div>';
+    };
+
     return UI.card('התמונה הכללית', null,
-      '<div class="hero-facts" style="border-top:0;padding-top:0;margin-top:0;justify-content:flex-start;gap:28px">' +
-        '<div class="hero-fact"><span class="k">ימים במעקב</span>' +
-          '<span class="v num">' + d.spanDays + '</span></div>' +
-        '<div class="hero-fact"><span class="k">ירדת בסך הכל</span>' +
-          '<span class="v num">' + Fmt.n(d.totalLoss, 1) + ' ק״ג</span></div>' +
-        '<div class="hero-fact"><span class="k">משקל עכשיו</span>' +
-          '<span class="v num">' + Fmt.n(d.currentWeight, 1) + '</span></div>' +
-        '<div class="hero-fact"><span class="k">צעדים בשבוע</span>' +
-          '<span class="v num">' + Fmt.n(d.stepsWeek, 0) + '</span></div>' +
+      '<div class="stat-grid">' +
+        tile('teal', 'ימים במעקב', d.spanDays) +
+        tile('good', 'ירדת בסך הכל', Fmt.n(d.totalLoss, 1) + ' ק״ג') +
+        tile('indigo', 'משקל עכשיו', Fmt.n(d.currentWeight, 1)) +
+        tile('accent', 'צעדים בשבוע', Fmt.n(d.stepsWeek, 0)) +
       '</div>' +
       '<div class="metric-row" style="margin-top:16px"><span class="label">מהשיא לשפל</span>' +
         '<span class="value">' + Fmt.n(d.maxWeight, 1) + ' ← ' + Fmt.n(d.minWeight, 1) + ' ק״ג</span></div>' +

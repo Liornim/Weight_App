@@ -978,6 +978,22 @@ test('טבלת הקצבה נמצאת בדף הבית', () => {
 });
 
 
+
+test('אריחי לוח המחוונים צבועים ונבדלים זה מזה', () => {
+  App.setState({ view: 'today', date: '2026-08-21' });
+  const tiles = doc.querySelectorAll('#view-today .stat');
+  assert(tiles.length === 4, 'ציפיתי לארבעה אריחים, יש ' + tiles.length);
+
+  const tones = [...tiles].map((t) => [...t.classList].find((c) => c.indexOf('stat--') === 0));
+  assert(new Set(tones).size === 4, 'האריחים לא נבדלים בצבע: ' + tones.join(','));
+  tones.forEach((t) => assert(t, 'אריח בלי גוון'));
+
+  [...tiles].forEach((t) => {
+    assert(t.querySelector('.k') && t.querySelector('.v'), 'אריח בלי תווית או ערך');
+  });
+});
+
+
 runAll().then(function () {
   
 
