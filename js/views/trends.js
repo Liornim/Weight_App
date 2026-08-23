@@ -317,13 +317,18 @@
       lowDaily.forEach(function (p) { p.y = clamp(p.y); });
       highDaily.forEach(function (p) { p.y = clamp(p.y); });
 
+      // הקו הדק מראה מה ההערכה הייתה באותו יום, לפני שהתברר מה קרה
+      // אחר כך. הפער בינו לבין הקו העבה הוא בדיוק מה שהמעבר לאחור תיקן.
+      var liveLine = states.map(function (s) { return { x: Dates.dayIndex(s.date), y: s.tdee }; });
+
       series = [
         { type: 'band', color: COLORS.band, points: band },
-        { type: 'line', color: COLORS.over, width: 1, points: lowDaily, opacity: 0.55 },
-        { type: 'line', color: '#2E6B4F', width: 1, points: highDaily, opacity: 0.55 },
+        { type: 'line', color: COLORS.over, width: 1, points: lowDaily, opacity: 0.45 },
+        { type: 'line', color: '#2E6B4F', width: 1, points: highDaily, opacity: 0.45 },
+        { type: 'line', color: COLORS.measured, width: 1.2, points: liveLine, opacity: 0.4 },
         { type: 'dots', color: 'rgba(75,85,165,0.4)', points: toPoints(intakeRaw), radius: 2 },
         { type: 'line', color: COLORS.reference, width: 2.2, points: toPoints(intakeMa) },
-        { type: 'line', color: COLORS.measured, width: 2.4, points: line }
+        { type: 'line', color: COLORS.measured, width: 2.6, points: line }
       ];
 
       var tdeeMap = lookup(line), maMap = lookup(intakeMa), rawMap = lookup(intakeRaw);
@@ -345,11 +350,14 @@
         }
         return parts.join('  ·  ');
       };
-      caption = 'ירוק מעל סגול = גירעון. הקווים הדקים הם גבולות ההערכה.';
-      var smoothed = states.some(function (s) { return Fmt.isNum(s.smoothTdee); });
-      if (smoothed) caption += ' ההיסטוריה מעודכנת לפי מה שהתברר מאוחר יותר.';
+      var spread = Math.max.apply(null, line.map(function (p) { return p.y; })) -
+                   Math.min.apply(null, line.map(function (p) { return p.y; }));
+      caption = spread < 120
+        ? 'הקו הירוק ישר כי ההוצאה שלך יציבה — כל התנועה היא באכילה'
+        : 'ירוק מעל סגול = גירעון. הקו הדק הוא מה שנראה באותו יום.';
       legendItems = [
-        { color: COLORS.measured, label: 'שורף — הערכה' },
+        { color: COLORS.measured, label: 'שורף — ההערכה הטובה ביותר' },
+        { color: 'rgba(13,110,103,0.4)', label: 'שורף — מה שנראה באותו יום' },
         { color: '#2E6B4F', label: 'גבול עליון' },
         { color: COLORS.over, label: 'גבול תחתון' },
         { color: COLORS.reference, label: 'אוכל — ממוצע 7 ימים' },
@@ -369,6 +377,16 @@
     if (yDomain) config.yDomain = yDomain;
     Chart.render(host, config);
 
+    var stability = '';
+    if (mode !== 'cumulative') {
+      var ys = line.map(function (p) { return p.y; });
+      var range = Math.max.apply(null, ys) - Math.min.apply(null, ys);
+      stability = range < 120
+        ? ' ההוצאה שלך יציבה לאורך כל התקופה — טווח של ' + Fmt.n(range, 0) +
+          ' קלוריות בלבד. כלומר כל השינוי בגירעון מגיע ממה שאתה אוכל, לא ממה שאתה שורף.'
+        : ' ההוצאה נעה בטווח של ' + Fmt.n(range, 0) + ' קלוריות בתקופה.';
+    }
+
     var unit = mode === 'cumulative' ? ' קלוריות מצטברות' : ' קלוריות ליום';
     var toKg = function (v) { return -(mode === 'cumulative' ? v : v * 7) / kcalPerKg; };
 
@@ -381,6 +399,7 @@
         'אם אתה שורף יותר ממה שנראה: ' + Fmt.signed(lastHigh, 0) +
           ' (' + Fmt.signed(toKg(lastHigh), 2) + ' ק״ג). ' +
         'אם פחות: ' + Fmt.signed(lastLow, 0) + ' (' + Fmt.signed(toKg(lastLow), 2) + ' ק״ג).' +
+        Fmt.esc(stability) +
         '</p>');
     return true;
   }

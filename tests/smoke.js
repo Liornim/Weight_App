@@ -909,6 +909,37 @@ test('טבלת הקצבה אומרת כמה אפשר לאכול ולהישאר �
 });
 
 
+
+test('הגרף מציג גם את ההערכה שהייתה באותו יום', () => {
+  App.setState({ view: 'trends', range: 0, tdeeMode: 'daily' });
+  const legendText = doc.getElementById('chart-tdee-legend').textContent;
+  assert(legendText.includes('ההערכה הטובה ביותר'), 'חסר הקו המוחלק');
+  assert(legendText.includes('מה שנראה באותו יום'), 'חסר הקו של ההערכה בזמן אמת');
+
+  // שני קווים בצבע ההוצאה: אחד עבה ואחד דק ושקוף
+  const teal = [...doc.querySelectorAll('#chart-tdee path')]
+    .filter((p) => p.getAttribute('stroke') === '#0D6E67');
+  assert(teal.length === 2, 'ציפיתי לשני קווי הוצאה, יש ' + teal.length);
+  const widths = teal.map((p) => Number(p.getAttribute('stroke-width'))).sort();
+  assert(widths[0] < widths[1], 'הקווים לא נבדלים בעובי');
+});
+
+test('כשההוצאה יציבה, המסך אומר זאת במקום להיראות שבור', () => {
+  App.setState({ view: 'trends', range: 0, tdeeMode: 'daily' });
+  const report = window.Metrics.adaptiveTDEE(Store.getEntries(), Store.getSettings());
+  const values = report.states.slice(7).map((s) => s.smoothTdee);
+  const range = Math.max(...values) - Math.min(...values);
+
+  const text = doc.getElementById('chart-tdee-legend').textContent;
+  if (range < 120) {
+    assert(text.includes('יציבה'), 'לא הוסבר למה הקו ישר');
+    assert(text.includes('ממה שאתה אוכל'), 'לא נאמר מאיפה מגיע השינוי');
+  } else {
+    assert(text.includes('נעה בטווח'), 'לא צוין טווח התנועה');
+  }
+});
+
+
 runAll().then(function () {
   
 
