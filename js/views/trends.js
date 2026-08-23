@@ -42,8 +42,9 @@
     };
   }
 
-  function chartBlock(id, title, note) {
+  function chartBlock(id, title, note, intro) {
     return UI.card(title, note,
+      (intro ? '<p class="finding" style="font-size:15px;margin-bottom:12px">' + intro + '</p>' : '') +
       '<div class="chart" id="' + id + '"></div>' +
       '<div class="chart-caption" id="' + id + '-caption"></div>' +
       '<div class="legend" id="' + id + '-legend"></div>');
@@ -91,14 +92,14 @@
         var parts = [Dates.long(Dates.fromDayIndex(x))];
         if (rawMap[x] !== undefined) parts.push('שקילה ' + Fmt.n(rawMap[x], 1));
         if (maMap[x] !== undefined) parts.push('ממוצע ' + Fmt.n(maMap[x], 2));
-        if (ewmaMap[x] !== undefined) parts.push('מעריכי ' + Fmt.n(ewmaMap[x], 2));
+        if (ewmaMap[x] !== undefined) parts.push('מגמה מהירה ' + Fmt.n(ewmaMap[x], 2));
         return parts.join('  ·  ');
       }
     });
     document.getElementById('chart-weight-legend').innerHTML = legend([
       { color: COLORS.measuredFaint, label: 'שקילות' },
-      { color: COLORS.measured, label: 'ממוצע נע 7 ימים' },
-      { color: COLORS.reference, label: 'מגמה מעריכית' }
+      { color: COLORS.measured, label: 'ממוצע 7 ימים' },
+      { color: COLORS.reference, label: 'מגמה מהירה' }
     ].concat(target ? [{ color: COLORS.over, label: 'משקל יעד' }] : []));
   }
 
@@ -261,14 +262,26 @@
         if (tdeeMap[x] !== undefined) parts.push('שורף ' + Fmt.n(tdeeMap[x], 0) + ' ±' + Fmt.n(sdMap[x], 0));
         if (rawMap[x] !== undefined) parts.push('אכל ' + Fmt.n(rawMap[x], 0));
         if (maMap[x] !== undefined) parts.push('ממוצע ' + Fmt.n(maMap[x], 0));
+        if (tdeeMap[x] !== undefined && maMap[x] !== undefined) {
+          parts.push('הפרש ' + Fmt.n(tdeeMap[x] - maMap[x], 0));
+        }
         return parts.join('  ·  ');
       }
     });
+    // הפער העדכני בין שני הקווים — זה המספר שקובע אם יורדים
+    var lastTdee = line[line.length - 1].y;
+    var lastIntake = intakeMa.length ? intakeMa[intakeMa.length - 1].y : null;
+    var gap = lastIntake === null ? null : lastTdee - lastIntake;
+
     document.getElementById('chart-tdee-legend').innerHTML = legend([
       { color: COLORS.measured, label: 'שורף — מסתגל (קלמן), כולל הליכה' },
       { color: COLORS.reference, label: 'אוכל — ממוצע נע' },
       { color: 'rgba(75,85,165,0.35)', label: 'אוכל — יומי' }
-    ]);
+    ]) + (gap === null ? '' :
+      '<p class="basis" style="margin-top:10px">ההפרש כרגע: ' +
+      Fmt.n(lastTdee, 0) + ' פחות ' + Fmt.n(lastIntake, 0) + ' = ' +
+      '<strong>' + Fmt.n(gap, 0) + ' קלוריות ליום</strong>, שהם ' +
+      Fmt.signed(-(gap * 7) / (settings.kcalPerKg || 7700), 2) + ' ק״ג בשבוע.</p>');
     return true;
   }
 
@@ -304,13 +317,16 @@
       '<div class="section-label">טווח</div>' +
       UI.chips(RANGES, rangeDays, 'data-range') +
       '<div class="section-label">משקל</div>' +
-      (hasWeight ? chartBlock('chart-weight', 'משקל', 'נקודות = שקילות, קו מלא = ממוצע נע, מקווקו = מגמה מעריכית')
+      (hasWeight ? chartBlock('chart-weight', 'משקל',
+                   'שני קווי מגמה: הממוצע חלק יותר, המהיר מגיב מוקדם יותר לשינוי אמיתי')
                  : UI.empty('אין מספיק שקילות בטווח הזה', '')) +
       (hasFat ? '<div class="section-label">הרכב גוף</div>' +
                 chartBlock('chart-fat', 'שומן', 'בק״ג. נקודות = מדידות, קו = ממוצע נע') : '') +
       (hasMuscle ? chartBlock('chart-muscle', 'שריר', 'בק״ג. נקודות = מדידות, קו = ממוצע נע') : '') +
       (hasKcal ? '<div class="section-label">הוצאה</div>' +
-                 chartBlock('chart-tdee', 'כמה שורף מול כמה אוכל', 'ההוצאה המסתגלת עם טווח אי־הוודאות, מול הצריכה בפועל') : '') +
+                 chartBlock('chart-tdee', 'כמה שורף מול כמה אוכל',
+                   'שיטה: מסתגל (קלמן) · כולל הליכה',
+                   'כשהקו הירוק מעל המקווקו — אתה יורד. הרווח ביניהם הוא הגירעון היומי.') : '') +
       (hasKcal ? '<div class="section-label">תזונה</div>' +
                  chartBlock('chart-kcal', 'קלוריות',
                    'עמודה אדומה = חריגה של יותר מ־10% מהיעד') : '') +

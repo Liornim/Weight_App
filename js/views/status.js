@@ -41,7 +41,7 @@
       UI.readout({ value: t.perWeek, digits: 2, unit: 'ק״ג לשבוע', margin: t.ci95PerWeek, signed: true }) +
       (ma ? '<div class="metric-row" style="margin-top:12px"><span class="label">ממוצע נע נוכחי (7 ימים)</span>' +
         '<span class="value">' + Fmt.n(ma.y, 2) + ' ק״ג</span></div>' : '') +
-      (ewmaNow ? '<div class="metric-row"><span class="label">מגמה מעריכית (Hacker\'s Diet)</span>' +
+      (ewmaNow ? '<div class="metric-row"><span class="label">מגמה מהירה</span>' +
         '<span class="value">' + Fmt.n(ewmaNow.y, 2) + ' ק״ג · סטייה ' + Fmt.signed(ewmaNow.deviation, 2) + '</span></div>' : '') +
       '<div class="metric-row"><span class="label">שינוי מצטבר בחלון</span><span class="value">' +
         Fmt.signed(t.changeOverWindow, 2) + ' ק״ג</span></div>' +
