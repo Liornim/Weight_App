@@ -387,30 +387,103 @@
     var r = Metrics.adaptiveTDEE(entries, { kcalPerKg: settings.kcalPerKg });
     if (!r.ok) return UI.empty('אין מספיק נתונים', '');
 
-    var rows = r.states.slice(-14).reverse().filter(function (s) {
-      return Fmt.isNum(s.intake);
-    }).map(function (s) {
+    var days = r.states.slice(-14).filter(function (s) { return Fmt.isNum(s.intake); });
+    if (!days.length) return UI.empty('אין ימים עם רישום קלוריות', '');
+
+    var sum = { intake: 0, tdee: 0, low: 0, mid: 0, high: 0 };
+    var cell = function (v) {
+      return '<td class="n ' + Fmt.deltaClass(v, 'up') + '">' + Fmt.signed(v, 0) + '</td>';
+    };
+
+    var rows = days.slice().reverse().map(function (s) {
       var margin = 1.96 * s.tdeeSd;
       var mid = s.tdee - s.intake;
       var low = (s.tdee - margin) - s.intake;
       var high = (s.tdee + margin) - s.intake;
-      var cell = function (v) {
-        return '<td class="n ' + Fmt.deltaClass(v, 'up') + '">' + Fmt.signed(v, 0) + '</td>';
-      };
       return '<tr><td class="n">' + Fmt.esc(Dates.short(s.date)) + '</td>' +
         '<td class="n">' + Fmt.n(s.intake, 0) + '</td>' +
         '<td class="n">' + Fmt.n(s.tdee, 0) + '</td>' +
         cell(low) + cell(mid) + cell(high) + '</tr>';
     }).join('');
 
-    if (!rows) return UI.empty('אין ימים עם רישום קלוריות', '');
+    days.forEach(function (s) {
+      var margin = 1.96 * s.tdeeSd;
+      sum.intake += s.intake;
+      sum.tdee += s.tdee;
+      sum.low += (s.tdee - margin) - s.intake;
+      sum.mid += s.tdee - s.intake;
+      sum.high += (s.tdee + margin) - s.intake;
+    });
+
+    var kcalPerKg = settings.kcalPerKg || 7700;
+    var totalRow = '<tr class="summary" style="font-weight:500;border-top:2px solid var(--rule-strong)">' +
+      '<td>סה״כ ' + days.length + ' ימים</td>' +
+      '<td class="n">' + Fmt.n(sum.intake, 0) + '</td>' +
+      '<td class="n">' + Fmt.n(sum.tdee, 0) + '</td>' +
+      cell(sum.low) + cell(sum.mid) + cell(sum.high) + '</tr>' +
+      '<tr class="summary"><td>בקילוגרמים</td><td class="n">—</td><td class="n">—</td>' +
+      '<td class="n">' + Fmt.signed(-sum.low / kcalPerKg, 2) + '</td>' +
+      '<td class="n">' + Fmt.signed(-sum.mid / kcalPerKg, 2) + '</td>' +
+      '<td class="n">' + Fmt.signed(-sum.high / kcalPerKg, 2) + '</td></tr>';
 
     return '<div class="table-scroll"><table class="data"><thead><tr>' +
         '<th>יום</th><th class="n">אכלת</th><th class="n">שורף</th>' +
         '<th class="n">גבול תחתון</th><th class="n">הערכה</th><th class="n">גבול עליון</th>' +
+      '</tr></thead><tbody>' + rows + totalRow + '</tbody></table></div>' +
+      UI.basis('ירוק = גירעון, אדום = עודף. שורת הסה״כ היא המצטבר של התקופה, ' +
+        'ומתחתיה אותו מספר בקילוגרמים. יום שכל שלושת התרחישים בו ירוקים הוא יום ' +
+        'שבו ירדת בוודאות.');
+  }
+
+  /**
+   * כמה מותר לאכול בימים הקרובים ועדיין להישאר בירוק.
+   *
+   * המצטבר הנוכחי הוא G, וההוצאה היומית B. אם אוכלים X ליום במשך N ימים,
+   * המצטבר החדש הוא G + N×(B − X). התנאי להישאר בירוק הוא שהוא לא יורד
+   * מאפס, ומכאן:  X ≤ B + G/N.
+   *
+   * זה מחושב שלוש פעמים, לפי שלושת התרחישים של ההוצאה. העמודה הזהירה
+   * היא זו שמבטיחה ירוק גם אם אתה שורף פחות ממה שנראה.
+   */
+  function allowanceTable(entries, settings) {
+    var r = Metrics.adaptiveTDEE(entries, { kcalPerKg: settings.kcalPerKg });
+    if (!r.ok) return '';
+
+    var days = r.states.slice(-14).filter(function (s) { return Fmt.isNum(s.intake); });
+    if (!days.length) return '';
+
+    var last = r.states[r.states.length - 1];
+    var margin = 1.96 * last.tdeeSd;
+    var burn = { low: last.tdee - margin, mid: last.tdee, high: last.tdee + margin };
+
+    var carried = { low: 0, mid: 0, high: 0 };
+    days.forEach(function (s) {
+      var m = 1.96 * s.tdeeSd;
+      carried.low += (s.tdee - m) - s.intake;
+      carried.mid += s.tdee - s.intake;
+      carried.high += (s.tdee + m) - s.intake;
+    });
+
+    var labels = { 1: 'מחר', 2: 'יומיים', 3: 'שלושה ימים', 5: 'חמישה ימים', 7: 'שבוע' };
+    var practicalCeiling = last.tdee + 1500;
+
+    var rows = [1, 2, 3, 5, 7].map(function (n) {
+      var cellFor = function (key) {
+        var value = burn[key] + carried[key] / n;
+        var over = value > practicalCeiling;
+        return '<td class="n' + (over ? ' missing' : '') + '">' +
+          (value < 0 ? '0' : Fmt.n(value, 0)) + '</td>';
+      };
+      return '<tr><td>' + Fmt.esc(labels[n]) + '</td>' +
+        cellFor('low') + cellFor('mid') + cellFor('high') + '</tr>';
+    }).join('');
+
+    return '<div class="table-scroll"><table class="data"><thead><tr>' +
+        '<th>טווח</th><th class="n">זהיר</th><th class="n">הערכה</th><th class="n">נדיב</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
-      UI.basis('שלוש העמודות האחרונות הן הגירעון של אותו יום, לפי שלושה תרחישים של ההוצאה. ' +
-        'ירוק = גירעון, אדום = עודף. יום שבו כל השלושה ירוקים הוא יום שבו ירדת בוודאות.');
+      UI.basis('הממוצע היומי המרבי שעדיין משאיר את הסה״כ בירוק. ' +
+        'העמודה הזהירה מבטיחה ירוק גם אם אתה שורף פחות ממה שנראה — לך לפיה. ' +
+        'מספרים אפורים הם מעל מה שסביר לאכול ביום אחד; פשוט תפרוס על יותר ימים.');
   }
 
   /** החשבון עצמו, יום אחרי יום: ניבוי, מדידה, תיקון */
@@ -567,7 +640,9 @@
                    '<div class="section-label">החשבון של הימים האחרונים</div>' +
                    derivationTable(all, settings)) +
                  '<div class="section-label">הגירעון היומי, בשלושה תרחישים</div>' +
-                 UI.card(null, null, gapsTable(all, settings)) : '') +
+                 UI.card(null, null, gapsTable(all, settings)) +
+                 '<div class="section-label">כמה אפשר לאכול ולהישאר בירוק</div>' +
+                 UI.card(null, null, allowanceTable(all, settings)) : '') +
       (hasKcal ? '<div class="section-label">תזונה</div>' +
                  chartBlock('chart-kcal', 'קלוריות',
                    'עמודה אדומה = חריגה של יותר מ־10% מהיעד') : '') +

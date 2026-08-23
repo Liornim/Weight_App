@@ -812,7 +812,7 @@ test('טבלת ההפרשים מציגה שלושה תרחישים לכל יום
     assert(headers.indexOf(h) !== -1, 'חסרה עמודה: ' + h);
   });
 
-  const rows = table.querySelectorAll('tbody tr');
+  const rows = table.querySelectorAll('tbody tr:not(.summary)');
   assert(rows.length >= 5, 'ציפיתי לכמה ימים, יש ' + rows.length);
 
   // כל שורה: שלושת ההפרשים עקביים עם "אכלת" ו"שורף"
@@ -851,6 +851,61 @@ test('בגרף נשאר קו מקווקו אחד לכל היותר', () => {
     assert(dashed.length <= 1, mode + ': יש ' + dashed.length + ' קווים מקווקוים, מבלבל');
   });
   App.setState({ tdeeMode: 'daily' });
+});
+
+
+
+test('שורת הסה"כ מסכמת בדיוק את הימים שמעליה', () => {
+  App.setState({ view: 'trends', range: 0 });
+  const table = [...doc.querySelectorAll('#view-trends table.data')]
+    .find((t) => t.textContent.includes('גבול תחתון'));
+  const num = (td) => Number(td.textContent.replace(/[^\d.\-−]/g, '').replace('−', '-'));
+
+  const dayRows = [...table.querySelectorAll('tbody tr:not(.summary)')];
+  const totalRow = table.querySelector('tbody tr.summary');
+  assert(totalRow, 'חסרה שורת סה״כ');
+  assert(totalRow.textContent.includes('סה״כ'), 'שורת הסה״כ לא מסומנת');
+
+  [1, 2, 3, 4, 5].forEach((col) => {
+    const expected = dayRows.reduce((sum, tr) => sum + num(tr.children[col]), 0);
+    const shown = num(totalRow.children[col]);
+    assert(Math.abs(shown - expected) <= dayRows.length,
+      'עמודה ' + col + ': סה״כ ' + shown + ' מול סכום השורות ' + Math.round(expected));
+  });
+
+  const kgRow = [...table.querySelectorAll('tbody tr.summary')][1];
+  assert(kgRow && kgRow.textContent.includes('בקילוגרמים'), 'חסרה שורת הקילוגרמים');
+});
+
+test('טבלת הקצבה אומרת כמה אפשר לאכול ולהישאר בירוק', () => {
+  App.setState({ view: 'trends', range: 0 });
+  const table = [...doc.querySelectorAll('#view-trends table.data')]
+    .find((t) => t.textContent.includes('זהיר') && t.textContent.includes('נדיב'));
+  assert(table, 'טבלת הקצבה חסרה');
+
+  const headers = [...table.querySelectorAll('th')].map((th) => th.textContent.trim());
+  ['טווח', 'זהיר', 'הערכה', 'נדיב'].forEach((h) => {
+    assert(headers.indexOf(h) !== -1, 'חסרה עמודה: ' + h);
+  });
+
+  const rows = [...table.querySelectorAll('tbody tr')];
+  const labels = rows.map((tr) => tr.children[0].textContent.trim());
+  ['מחר', 'יומיים', 'שלושה ימים', 'חמישה ימים', 'שבוע'].forEach((l) => {
+    assert(labels.indexOf(l) !== -1, 'חסר טווח: ' + l);
+  });
+
+  const num = (td) => Number(td.textContent.replace(/[^\d.\-−]/g, '').replace('−', '-'));
+  rows.forEach((tr) => {
+    const low = num(tr.children[1]), mid = num(tr.children[2]), high = num(tr.children[3]);
+    assert(low <= mid && mid <= high,
+      tr.children[0].textContent + ': התרחישים לא מסודרים ' + low + ' ' + mid + ' ' + high);
+    assert(low >= 0, 'הקצבה שלילית: ' + low);
+  });
+
+  // ככל שפורסים על יותר ימים, הקצבה היומית מתקרבת להוצאה עצמה
+  const tomorrow = num(rows[0].children[1]);
+  const week = num(rows[rows.length - 1].children[1]);
+  assert(tomorrow !== week, 'הקצבה לא משתנה עם אורך הפריסה');
 });
 
 
