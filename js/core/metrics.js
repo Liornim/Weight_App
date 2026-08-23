@@ -1341,6 +1341,59 @@
     return { ok: true, endDate: endDate, rows: rows };
   }
 
+  /**
+   * שינוי במשקל, בשומן ובשריר לכמה חלונות.
+   * כל חלון מושווה לחלון שקדם לו, ומוחזרים גם טווחי התאריכים —
+   * בלעדיהם המספר חסר משמעות.
+   */
+  function bodyChangeSummary(entries, options) {
+    var opts = options || {};
+    var endDate = opts.endDate || Dates.today();
+    var windows = opts.windows || [7, 10, 14];
+    var fields = opts.fields || ['weightKg', 'bodyFatKg', 'muscleKg'];
+
+    var derived = deriveAll(entries);
+    var allSorted = sorted(entries);
+    var firstDate = allSorted.length ? allSorted[0].date : null;
+
+    function blockMean(end, days, field) {
+      var start = Dates.addDays(end, -(days - 1));
+      var values = derived
+        .filter(function (e) { return e.date >= start && e.date <= end; })
+        .map(function (e) { return num(e[field]); })
+        .filter(function (v) { return v !== null; });
+      return { mean: Stats.mean(values), n: values.length, from: start, to: end };
+    }
+
+    var rows = windows.map(function (days) {
+      var prevEnd = Dates.addDays(endDate, -days);
+      var minWeighIns = Math.max(2, Math.ceil(days / 2));
+      var row = {
+        days: days,
+        current: { from: Dates.addDays(endDate, -(days - 1)), to: endDate },
+        previous: { from: Dates.addDays(prevEnd, -(days - 1)), to: prevEnd },
+        fields: {}
+      };
+      // תקופה קודמת שמתחילה לפני תחילת המדידות אינה בת־השוואה
+      row.covered = firstDate !== null && firstDate <= row.previous.from;
+
+      fields.forEach(function (field) {
+        var now = blockMean(endDate, days, field);
+        var before = blockMean(prevEnd, days, field);
+        var ok = row.covered && now.n >= minWeighIns && before.n >= minWeighIns;
+        row.fields[field] = {
+          change: ok ? now.mean - before.mean : null,
+          currentMean: now.mean,
+          previousMean: before.mean,
+          measurements: now.n
+        };
+      });
+      return row;
+    });
+
+    return { endDate: endDate, rows: rows };
+  }
+
   /** מספרי הפתיחה של מסך הבית */
   function dashboard(entries, settings, options) {
     var opts = options || {};
@@ -1422,6 +1475,7 @@
     windowReport: windowReport,
     deficitSummary: deficitSummary,
     dashboard: dashboard,
+    bodyChangeSummary: bodyChangeSummary,
     availableWindows: availableWindows,
     tdeeMethods: tdeeMethods,
     weightNoiseSd: weightNoiseSd,

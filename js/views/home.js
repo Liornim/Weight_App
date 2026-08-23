@@ -228,82 +228,36 @@
         'מספרים אפורים גבוהים מכדי לאכול ביום אחד; פרוס על יותר ימים.'));
   }
 
-  /** התמונה המלאה של החלון שנבחר */
-  function panelCard(report) {
-    if (!report.ok) return '';
-    var a = report.actual, t = report.theoretical;
-    var label = report.windowDays === 'adaptive'
-      ? 'לפי כל ההיסטוריה, במשקל גדול יותר לימים האחרונים'
-      : 'חלון מלא של ' + report.statsDays + ' ימים מול ' + report.statsDays + ' שקדמו להם';
+  /** מה קרה בפועל לגוף, בשלושה חלונות, עם טווחי התאריכים */
+  function bodyChangeCard(entries, date) {
+    var r = Metrics.bodyChangeSummary(entries, { endDate: date, windows: [7, 10, 14] });
 
-    return UI.card('מה קורה', label,
-      row('כמה אתה שורף ביום', Fmt.n(report.tdee, 0) + ' ± ' + Fmt.n(report.ci95, 0)) +
-      row('מזה מהליכה', '− ' + Fmt.n(report.stepKcal, 0)) +
-      row('שמירת משקל בלי הליכה', Fmt.n(report.base, 0), 'value--measured') +
+    var cell = function (value, goodDirection) {
+      if (!Fmt.isNum(value)) return '<td class="n"><span class="missing">—</span></td>';
+      return '<td class="n"><span class="' + Fmt.deltaClass(value, goodDirection) + '">' +
+        Fmt.signed(value, 2) + '</span></td>';
+    };
 
-      (report.block ? blockRows(report) : '') +
-
-      '<div class="section-label">עמידה ביעד</div>' +
-      row('היעד היומי', Fmt.n(report.target, 0)) +
-      row('אכלת בממוצע', Fmt.n(report.intake.mean, 0)) +
-      row(report.gapPerDay > 0 ? 'חריגה ליום' : 'מתחת ליעד ליום',
-        Fmt.signed(report.gapPerDay, 0),
-        Fmt.deltaClass(report.gapPerDay, 'down')) +
-      row('ימים בטווח היעד',
-        report.intake.pctInRange === null ? Fmt.EMPTY
-          : report.intake.inRange + ' מתוך ' + report.intake.days) +
-
-      '<div class="section-label">ירידה צפויה לפי החשבון</div>' +
-      row('מהתזונה בלבד', kg(t.withoutSteps)) +
-      row('כולל ההליכה', kg(t.withSteps), 'value--measured') +
-
-      '<div class="section-label">מה קרה בפועל</div>' +
-      row('משקל', kg(a.weightChange), Fmt.deltaClass(a.weightChange, 'down')) +
-      row('שומן', kg(a.fatChange), Fmt.deltaClass(a.fatChange, 'down')) +
-      row('שריר', kg(a.muscleChange), Fmt.deltaClass(a.muscleChange, 'up')) +
-      row('נמדד על פני', report.changeDays + ' ימים מול ה-' + report.changeDays + ' שלפניהם') +
-      row('מגמת משקל',
-        Fmt.isNum(report.trendPerWeek) ? Fmt.signed(report.trendPerWeek, 2) + ' ק״ג בשבוע' : Fmt.EMPTY) +
-
-      UI.basis('"ירידה צפויה" היא מה שהחשבון מנבא. "בפועל" היא מה שהמשקל הראה. ' +
-        'פער ביניהם אומר שהדיווח או השקילה לא מדויקים. ' + RELIABILITY[report.reliability]));
-  }
-
-  /** כמה לאכול בימים הקרובים כדי לסגור את הפער */
-  function compensationCard(report) {
-    if (!report.ok || report.gapTotal === null) return '';
-
-    var gap = report.recent.gap;
-    if (gap === null) return '';
-    var over = gap > 0;
-
-    var headline = over
-      ? 'ב־' + report.recent.loggedDays + ' הימים האחרונים חרגת ב־' +
-        Fmt.numHtml(gap, 0) + ' קלוריות.'
-      : 'ב־' + report.recent.loggedDays + ' הימים האחרונים אכלת ' +
-        Fmt.numHtml(-gap, 0) + ' קלוריות מתחת ליעד.';
-
-    if (!report.compensationFeasible) {
-      return UI.card('לסגור את הפער', null,
-        '<p class="finding">' + headline + '</p>' +
-        '<div class="notice">הפער גדול מכדי לסגור אותו בימים הקרובים בלי לרדת נמוך מדי. ' +
-          'עדיף לחזור ליעד היומי הרגיל ולהמשיך משם.</div>');
-    }
-
-    var labels = { 1: 'מחר', 2: 'מחר ומחרתיים', 3: 'שלושה ימים', 5: 'חמישה ימים', 7: 'שבוע' };
-    var rows = report.compensation.filter(function (c) { return c.feasible; }).map(function (c) {
-      return '<tr><td>' + Fmt.esc(labels[c.days] || c.days + ' ימים') + '</td>' +
-        '<td class="n">' + Fmt.n(c.perDay, 0) + '</td></tr>';
+    var rows = r.rows.map(function (row) {
+      var range = Dates.short(row.current.from) + '–' + Dates.short(row.current.to);
+      var against = Dates.short(row.previous.from) + '–' + Dates.short(row.previous.to);
+      if (!row.covered) {
+        return '<tr><td>' + row.days + ' ימים<br><span class="basis">' + range + '</span></td>' +
+          '<td colspan="3" class="missing">אין תקופה קודמת להשוואה</td></tr>';
+      }
+      return '<tr><td>' + row.days + ' ימים<br>' +
+          '<span class="basis">' + range + ' מול ' + against + '</span></td>' +
+        cell(row.fields.weightKg.change, 'down') +
+        cell(row.fields.bodyFatKg.change, 'down') +
+        cell(row.fields.muscleKg.change, 'up') + '</tr>';
     }).join('');
 
-    return UI.card('לסגור את הפער', 'כמה לאכול ביום, לפי כמה ימים תפרוס',
-      '<p class="finding">' + headline + '</p>' +
+    return UI.card('מה קרה בפועל', 'הפרש ממוצעים בין התקופה לזו שקדמה לה',
       '<div class="table-scroll"><table class="data"><thead><tr>' +
-        '<th>פריסה</th><th class="n">קק״ל ליום</th>' +
+        '<th>תקופה</th><th class="n">משקל</th><th class="n">שומן</th><th class="n">שריר</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
-      UI.basis(over
-        ? 'ככל שתפרוס על יותר ימים, כל יום קל יותר. אפשרויות שיורדות נמוך מדי לא מוצגות.'
-        : 'אכלת פחות מהיעד, אז המספרים גבוהים מהיעד הרגיל.'));
+      UI.basis('בקילוגרמים. ירוק = לכיוון הרצוי — ירידה במשקל ובשומן, שמירה או עלייה בשריר. ' +
+        'מדידות שומן ושריר במשקל ביתי רועשות, אז הן אינדיקטיביות לכיוון ולא למספר.'));
   }
 
   function bonusCard(entry, settings) {
@@ -338,38 +292,13 @@
       windowChips(entries, date, state.calcWindow) +
 
       dashboardCard(entries, settings, date) +
+      bodyChangeCard(entries, date) +
       deficitCard(entries, settings, date) +
       allowanceCard(entries, settings, date) +
-      panelCard(report) +
-      compensationCard(report) +
       bonusCard(entry, settings);
 
-    html +=
-      '<div class="section-label">רישום</div>' +
-      '<div class="date-nav">' +
-        '<button class="step" data-step="-1" aria-label="יום קודם">›</button>' +
-        '<input type="date" id="entry-date" value="' + Fmt.esc(date) + '" max="' + Dates.today() + '">' +
-        '<button class="step" data-step="1" aria-label="יום הבא"' + (isToday ? ' disabled' : '') + '>‹</button>' +
-        '<span class="day-badge">' + Fmt.esc('יום ' + Dates.dayName(date)) + '</span>' +
-      '</div>' +
-
-      '<form id="entry-form" novalidate>' +
-        '<div class="field-grid">' + BODY.map(function (k) { return fieldHtml(k, entry[k]); }).join('') + '</div>' +
-        UI.basis('שקילת הבוקר של היום משקפת את מה שאכלת אתמול. החישוב כבר מביא את זה בחשבון.') +
-        '<div class="field-grid" style="margin-top:14px">' +
-          NUTRITION.map(function (k) { return fieldHtml(k, entry[k]); }).join('') +
-          fieldHtml('steps', entry.steps) +
-        '</div>' +
-        '<div class="field field-wide" style="margin-top:12px"><label for="f-note">הערה</label>' +
-          '<textarea id="f-note" name="note">' + Fmt.esc(entry.note || '') + '</textarea></div>' +
-        '<div id="entry-warnings"></div>' +
-        '<div class="btn-row" style="margin-top:16px">' +
-          '<button type="submit" class="btn btn--primary">שמירה</button>' +
-        '</div>' +
-      '</form>' +
-
-      '<div class="btn-row" style="margin-top:20px">' +
-        '<button type="button" class="btn" id="open-methods">שיטות חישוב</button>' +
+    html += '<div class="btn-row" style="margin-top:20px">' +
+      '<button type="button" class="btn" id="open-methods">שיטות חישוב</button>' +
       '</div>';
 
     container.innerHTML = html;
@@ -390,48 +319,10 @@
       });
     });
 
-    container.querySelectorAll('.step').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        root.App.setState({ date: Dates.addDays(date, Number(btn.dataset.step)) });
-      });
-    });
-
-    container.querySelector('#entry-date').addEventListener('change', function (e) {
-      if (Dates.isIso(e.target.value)) root.App.setState({ date: e.target.value });
-    });
-
-    container.querySelectorAll('#entry-form input[type=number]').forEach(function (input) {
-      input.addEventListener('input', function () {
-        input.classList.toggle('is-filled', input.value !== '');
-      });
-    });
-
     container.querySelector('#open-methods').addEventListener('click', function () {
       root.App.setState({ view: 'methods' });
     });
-
-    container.querySelector('#entry-form').addEventListener('submit', function (e) {
-      e.preventDefault();
-      var form = e.target;
-      var payload = { date: date };
-      Object.keys(Metrics.FIELDS).forEach(function (key) {
-        var input = form.elements[key];
-        if (input) payload[key] = input.value;
-      });
-      payload.note = form.elements.note.value;
-
-      try {
-        var result = Store.upsert(payload);
-        var box = container.querySelector('#entry-warnings');
-        if (box && result.warnings.length) {
-          box.innerHTML = '<div class="notice">' + result.warnings.map(Fmt.esc).join('<br>') + '</div>';
-        }
-        root.App.toast('נשמר');
-      } catch (err) {
-        root.App.toast('השמירה נכשלה: ' + err.message);
-      }
-    });
   }
 
-  Views.today = { id: 'today', label: 'היום', glyph: '+', render: render };
+  Views.today = { id: 'today', label: 'סיכום', glyph: '\u25C9', render: render };
 })(typeof window !== 'undefined' ? window : globalThis);

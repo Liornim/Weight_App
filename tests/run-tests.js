@@ -1471,6 +1471,34 @@ test('לוח המחוונים בלי נתונים', () => {
   assert(!Metrics.dashboard([], WIN_SETTINGS).ok, 'צריך להחזיר כישלון');
 });
 
+test('שינוי בהרכב הגוף לכמה חלונות, עם טווחי תאריכים', () => {
+  // ירידה קבועה: משקל 100 גרם ליום, שומן 80, שריר יציב
+  const entries = buildSeries('2026-01-01', 40, (i) => ({
+    weightKg: 90 - 0.1 * i,
+    bodyFatKg: 25 - 0.08 * i,
+    muscleKg: 36
+  }));
+  const r = Metrics.bodyChangeSummary(entries, { endDate: '2026-02-09', windows: [7, 10, 14] });
+
+  r.rows.forEach((row) => {
+    close(row.fields.weightKg.change, -0.1 * row.days, 1e-9, row.days + ': משקל');
+    close(row.fields.bodyFatKg.change, -0.08 * row.days, 1e-9, row.days + ': שומן');
+    close(row.fields.muscleKg.change, 0, 1e-9, row.days + ': שריר');
+
+    // טווחי התאריכים רציפים ולא חופפים
+    assert(Dates.diffDays(row.current.from, row.current.to) === row.days - 1, 'אורך החלון הנוכחי');
+    assert(Dates.addDays(row.previous.to, 1) === row.current.from, 'החלונות לא צמודים');
+  });
+});
+
+test('חלון בלי תקופה קודמת מלאה מסומן ולא מחושב', () => {
+  const entries = buildSeries('2026-01-01', 20, (i) => ({ weightKg: 90 - 0.05 * i }));
+  const r = Metrics.bodyChangeSummary(entries, { endDate: '2026-01-20', windows: [7, 14] });
+  assert(r.rows[0].covered, 'חלון 7 אמור להיות מכוסה');
+  assert(!r.rows[1].covered, 'חלון 14 לא אמור להיות מכוסה');
+  assert(r.rows[1].fields.weightKg.change === null, 'לא אמור להיות מספר');
+});
+
 // ---------- דוח ----------
 // הריצה מופעלת בסוף הקובץ בלבד. אם היא תופעל באמצע, בדיקות שנרשמו
 // אחריה לא ייכנסו לתור וייעלמו בשקט — קרה בפועל.

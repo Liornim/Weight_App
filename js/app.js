@@ -8,7 +8,7 @@
   var Dates = root.Dates, Store = root.Store, Views = root.Views, Chart = root.Chart;
 
   // הטאבים שמוצגים בסרגל התחתון. חמישה, כדי שייכנסו גם במסך צר.
-  var TABS = ['today', 'progress', 'trends', 'data'];
+  var TABS = ['today', 'entry', 'progress', 'trends', 'data'];
 
   // מסכים שנפתחים מתוך מסך אחר ואין להם טאב משלהם.
   // MAP הוא איזה טאב יישאר מסומן כשהם פתוחים.
@@ -18,7 +18,7 @@
 
   var App = {
     // חותמת בנייה — מופיעה בראש המסך כדי שאפשר יהיה לדעת איזו גרסה פתוחה
-    BUILD: 'v24',
+    BUILD: 'v25',
     state: {
       view: 'today',
       date: Dates.today(),

@@ -54,12 +54,13 @@ window.addEventListener('error', (e) => errors.push(e.message));
 window.console.error = (...args) => errors.push(args.join(' '));
 
 // localStorage אמיתי קיים ב-jsdom, אז נבדקת גם שכבת האחסון
-[
-  'js/lib/stats.js', 'js/lib/dates.js', 'js/lib/kalman.js', 'js/lib/bodycomp.js', 'js/core/metrics.js', 'js/core/store.js', 'js/core/sheets.js',
-  'js/ui/format.js', 'js/ui/chart.js', 'js/ui/components.js',
-  'js/views/home.js', 'js/views/progress.js', 'js/views/target.js', 'js/views/methods.js', 'js/views/status.js', 'js/views/trends.js', 'js/views/data.js',
-  'js/app.js'
-].forEach((rel) => {
+// רשימת הקבצים נקראת מ-index.html ולא מרשימה כפולה כאן.
+// כך קובץ שנשכח מהדף ייתפס בבדיקות במקום להישבר רק בדפדפן.
+const indexHtml = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+const scriptFiles = [...indexHtml.matchAll(/<script src="([^"?]+)/g)].map((m) => m[1]);
+if (!scriptFiles.length) throw new Error('לא נמצאו קבצי סקריפט ב-index.html');
+
+scriptFiles.forEach((rel) => {
   window.eval(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
 });
 
@@ -75,11 +76,11 @@ function noise(i, amplitude) { return Math.sin(i * 2.399963) * amplitude; }
 // ---------- מצב ריק ----------
 
 test('האפליקציה עולה ומציגה ארבעה טאבים', () => {
-  assert(doc.querySelectorAll('#tabs button').length === 4, 'ארבעה טאבים בסרגל');
+  assert(doc.querySelectorAll('#tabs button').length === 5, 'חמישה טאבים בסרגל');
   assert(doc.getElementById('view-today').classList.contains('is-active'), 'מסך היום פעיל');
 });
 
-['today', 'progress', 'target', 'methods', 'status', 'trends', 'data'].forEach((view) => {
+['today', 'entry', 'progress', 'target', 'methods', 'status', 'trends', 'data'].forEach((view) => {
   test('מסך "' + view + '" נטען בלי נתונים', () => {
     App.setState({ view });
     const host = doc.getElementById('view-' + view);
@@ -97,7 +98,7 @@ test('מסכי הניתוח מסבירים מה חסר במקום להציג א�
 // ---------- הזנה דרך הטופס ----------
 
 test('שמירה מהטופס מגיעה לאחסון', () => {
-  App.setState({ view: 'today', date: '2026-03-10' });
+  App.setState({ view: 'entry', date: '2026-03-10' });
   const form = doc.getElementById('entry-form');
   form.elements.weightKg.value = '81.4';
   form.elements.kcal.value = '2150';
@@ -111,21 +112,21 @@ test('שמירה מהטופס מגיעה לאחסון', () => {
 });
 
 test('ניווט בין תאריכים משנה את הרשומה המוצגת', () => {
-  App.setState({ view: 'today', date: '2026-03-10' });
+  App.setState({ view: 'entry', date: '2026-03-10' });
   doc.querySelector('[data-step="-1"]').dispatchEvent(new window.Event('click', { bubbles: true }));
   assert(App.state.date === '2026-03-09', 'יום אחורה: ' + App.state.date);
   assert(doc.getElementById('entry-form').elements.weightKg.value === '', 'טופס ריק ליום ללא נתונים');
 });
 
 test('אי אפשר לנווט אל מעבר להיום', () => {
-  App.setState({ view: 'today', date: Dates.today() });
+  App.setState({ view: 'entry', date: Dates.today() });
   assert(doc.querySelector('[data-step="1"]').hasAttribute('disabled'), 'כפתור "יום הבא" צריך להיות מנוטרל');
   App.setState({ date: Dates.addDays(Dates.today(), -1) });
   assert(!doc.querySelector('[data-step="1"]').hasAttribute('disabled'), 'ביום קודם הוא צריך לעבוד');
 });
 
 test('אזהרה מוצגת על ערך לא הגיוני', () => {
-  App.setState({ view: 'today', date: '2026-03-11' });
+  App.setState({ view: 'entry', date: '2026-03-11' });
   const form = doc.getElementById('entry-form');
   form.elements.weightKg.value = '80';
   form.elements.bodyFatKg.value = '95';
@@ -481,7 +482,7 @@ test('היעד היומי הוא שמירת משקל פחות הגירעון, ב
   assert(Math.abs(shown - expected) <= 1, 'ציפיתי ל-' + expected + ', מוצג ' + shown);
 });
 
-test('בחירת חלון החישוב משנה את כל המספרים במסך', () => {
+test('בחירת חלון החישוב משנה את היעד היומי', () => {
   errors.length = 0;
   App.setState({ view: 'today', date: '2026-08-21', calcWindow: 'adaptive' });
   const adaptive = doc.querySelector('#view-today .hero-value').textContent;
@@ -491,10 +492,8 @@ test('בחירת חלון החישוב משנה את כל המספרים במס�
   chip.dispatchEvent(new window.Event('click', { bubbles: true }));
   assert(App.state.calcWindow === 7, 'החלון לא התעדכן');
   assert(doc.querySelector('[data-calc="7"]').getAttribute('aria-pressed') === 'true', 'הכפתור לא סומן');
-
-  const seven = doc.querySelector('#view-today .hero-value').textContent;
-  assert(seven !== adaptive, 'המספר הראשי לא השתנה (' + adaptive + ')');
-  assert(doc.getElementById('view-today').textContent.includes('7 הימים האחרונים'), 'הכותרת לא התעדכנה');
+  assert(doc.querySelector('#view-today .hero-value').textContent !== adaptive,
+    'המספר הראשי לא השתנה (' + adaptive + ')');
 
   App.setState({ calcWindow: 'adaptive' });
   assert(errors.length === 0, 'שגיאות: ' + errors.join(' | '));
@@ -546,41 +545,58 @@ test('בחירת חלון לא זמין מסבירה במקום להציג מס�
   App.setState({ calcWindow: 'adaptive' });
 });
 
-test('חלון מלא מציג את פירוק החישוב תקופה מול תקופה', () => {
-  App.setState({ view: 'today', date: '2026-08-21', calcWindow: 7 });
-  const text = doc.getElementById('view-today').textContent;
-  ['איך חושב', 'תקופה נוכחית', 'תקופה קודמת', 'משקל ממוצע נוכחי',
-   'משקל ממוצע קודם', 'קלוריות מירידת המשקל'].forEach((label) => {
+test('מסך הבית מציג את הלוח בלי טופס ובלי כרטיסים שהוסרו', () => {
+  App.setState({ view: 'today', date: '2026-08-21', calcWindow: 14 });
+  const host = doc.getElementById('view-today');
+  const text = host.textContent;
+
+  ['התמונה הכללית', 'מה קרה בפועל', 'גירעון מול מציאות',
+   'כמה אפשר לאכול ולהישאר בירוק'].forEach((label) => {
     assert(text.includes(label), 'חסר: ' + label);
   });
-  assert(text.includes('חלון מלא של 7 ימים'), 'חסרה כותרת החלון המלא');
-  App.setState({ calcWindow: 'adaptive' });
+
+  ['מה קורה', 'לסגור את הפער'].forEach((removed) => {
+    assert(!text.includes(removed), 'כרטיס שהוסר עדיין מופיע: ' + removed);
+  });
+  assert(!host.querySelector('#entry-form'), 'טופס הרישום עדיין במסך הבית');
 });
 
-test('מסך הבית מציג את כל המדדים שהתבקשו', () => {
-  App.setState({ view: 'today', date: '2026-08-21', calcWindow: 14 });
-  const text = doc.getElementById('view-today').textContent;
-  ['עמידה ביעד', 'ירידה צפויה לפי החשבון', 'מהתזונה בלבד', 'כולל ההליכה',
-   'מה קרה בפועל', 'שומן', 'שריר', 'מגמת משקל', 'לסגור את הפער'].forEach((label) => {
-    assert(text.includes(label), 'חסר: ' + label);
+test('טבלת מה קרה בפועל מציגה טווחי תאריכים לשלושה חלונות', () => {
+  App.setState({ view: 'today', date: '2026-08-21' });
+  const table = [...doc.querySelectorAll('#view-today table.data')]
+    .find((t) => t.textContent.includes('שריר'));
+  assert(table, 'הטבלה חסרה');
+
+  const headers = [...table.querySelectorAll('th')].map((th) => th.textContent.trim());
+  ['תקופה', 'משקל', 'שומן', 'שריר'].forEach((h) => {
+    assert(headers.indexOf(h) !== -1, 'חסרה עמודה: ' + h);
   });
 
-  // בטבלת הפיצוי מוצגות רק פריסות שאפשר לחיות איתן
-  const card = [...doc.querySelectorAll('#view-today .card')]
-    .find((c) => c.textContent.includes('לסגור את הפער'));
-  assert(card, 'חסר כרטיס הפיצוי');
-  const options = card.querySelectorAll('tbody tr');
-  const labels = ['מחר', 'מחר ומחרתיים', 'שלושה ימים', 'חמישה ימים', 'שבוע'];
-  if (options.length) {
-    [...options].forEach((tr) => {
-      const name = tr.children[0].textContent.trim();
-      assert(labels.indexOf(name) !== -1, 'תווית פריסה לא מוכרת: ' + name);
-      const value = Number(tr.children[1].textContent.replace(/[^\d-]/g, ''));
-      assert(value >= 1200, 'הוצגה אפשרות נמוכה מדי: ' + value);
-    });
-  } else {
-    assert(card.textContent.includes('גדול מכדי'), 'אין אפשרויות ואין הסבר');
-  }
+  const rows = [...table.querySelectorAll('tbody tr')];
+  assert(rows.length === 3, 'ציפיתי לשלושה חלונות, יש ' + rows.length);
+  [7, 10, 14].forEach((n, i) => {
+    const label = rows[i].children[0].textContent;
+    assert(label.indexOf(n + ' ימים') === 0, 'שורה ' + i + ' אינה ' + n + ' ימים');
+    assert(/\d{2}\/\d{2}/.test(label), n + ' ימים: חסר טווח תאריכים');
+  });
+
+  const summary = window.Metrics.bodyChangeSummary(Store.getEntries(),
+    { endDate: '2026-08-21', windows: [7, 10, 14] });
+  summary.rows.forEach((row, i) => {
+    if (!row.covered) return;
+    const shown = Number(rows[i].children[1].textContent.replace(/[^\d.\-−]/g, '').replace('−', '-'));
+    assert(Math.abs(shown - row.fields.weightKg.change) < 0.02,
+      row.days + ' ימים: המשקל לא תואם את המודל');
+  });
+});
+
+test('מסך הרישום מכיל את הטופס', () => {
+  App.setState({ view: 'entry', date: '2026-08-21' });
+  const host = doc.getElementById('view-entry');
+  assert(host.querySelector('#entry-form'), 'הטופס חסר');
+  assert(host.querySelector('#f-weightKg'), 'שדה המשקל חסר');
+  assert(host.querySelector('#f-kcal'), 'שדה הקלוריות חסר');
+  assert(host.textContent.includes('שאכלת אתמול'), 'חסרה ההערה על ההיסט');
 });
 
 test('בחירת קצב הירידה זמינה במסך הבית', () => {
@@ -1014,6 +1030,22 @@ test('עמודת "בפועל" היא הפרש ממוצעי המשקל', () => {
       assert(Math.abs(shown - expected) < 0.02,
         row.days + ' ימים: מוצג ' + shown + ' אבל הפרש הממוצעים הוא ' + expected.toFixed(2));
     }
+  });
+});
+
+
+
+test('כל מסך שרשום בסרגל הטאבים באמת נטען', () => {
+  const registered = Object.keys(window.Views);
+  ['today', 'entry', 'progress', 'trends', 'data', 'methods', 'status', 'target'].forEach((id) => {
+    assert(registered.indexOf(id) !== -1, 'המסך ' + id + ' לא נרשם — כנראה חסר בקובץ index.html');
+  });
+
+  // כל כפתור בסרגל מצביע על מסך קיים
+  doc.querySelectorAll('#tabs button').forEach((b) => {
+    const id = b.dataset.view;
+    assert(window.Views[id], 'הטאב ' + id + ' מצביע על מסך שלא קיים');
+    assert(doc.getElementById('view-' + id), 'חסר מיכל למסך ' + id);
   });
 });
 
