@@ -1317,7 +1317,10 @@
       var complete = firstDate !== null && firstDate <= previous.from &&
         current.n >= minWeighIns && previous.n >= minWeighIns;
 
-      var actual = complete ? current.mean - previous.mean : null;
+      // המספר מוצג תמיד כשיש ממוצע לשתי התקופות. כשהכיסוי חלקי הוא
+      // מסומן, כי התקופה הקודמת מייצגת רק את סופה וההפרש מוטה כלפי מטה.
+      var actual = (current.mean === null || previous.mean === null)
+        ? null : current.mean - previous.mean;
 
       return {
         days: days,
@@ -1331,6 +1334,7 @@
         },
         actualKg: actual,
         actualComplete: complete,
+        previousDaysCovered: previous.n,
         currentMean: current.mean,
         previousMean: previous.mean,
         currentWeighIns: current.n,
@@ -1382,7 +1386,8 @@
         var before = blockMean(prevEnd, days, field);
         var ok = row.covered && now.n >= minWeighIns && before.n >= minWeighIns;
         row.fields[field] = {
-          change: ok ? now.mean - before.mean : null,
+          change: (now.mean === null || before.mean === null) ? null : now.mean - before.mean,
+          complete: ok,
           currentMean: now.mean,
           previousMean: before.mean,
           measurements: now.n

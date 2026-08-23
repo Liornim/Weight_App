@@ -568,16 +568,19 @@ test('טבלת מה קרה בפועל מציגה טווחי תאריכים לש�
   assert(table, 'הטבלה חסרה');
 
   const headers = [...table.querySelectorAll('th')].map((th) => th.textContent.trim());
-  ['תקופה', 'משקל', 'שומן', 'שריר'].forEach((h) => {
+  ['תקופה', 'משקל', 'שומן', 'שריר', 'מול'].forEach((h) => {
     assert(headers.indexOf(h) !== -1, 'חסרה עמודה: ' + h);
   });
 
   const rows = [...table.querySelectorAll('tbody tr')];
   assert(rows.length === 3, 'ציפיתי לשלושה חלונות, יש ' + rows.length);
   [7, 10, 14].forEach((n, i) => {
-    const label = rows[i].children[0].textContent;
-    assert(label.indexOf(n + ' ימים') === 0, 'שורה ' + i + ' אינה ' + n + ' ימים');
-    assert(/\d{2}\/\d{2}/.test(label), n + ' ימים: חסר טווח תאריכים');
+    assert(rows[i].children[0].textContent.indexOf(n + ' ימים') === 0,
+      'שורה ' + i + ' אינה ' + n + ' ימים');
+    // טווחי התאריכים בעמודה נפרדת, כדי שהמספרים יישארו מיושרים
+    assert(/\d{2}\/\d{2}/.test(rows[i].children[4].textContent),
+      n + ' ימים: חסר טווח תאריכים');
+    assert(rows[i].children.length === 5, n + ' ימים: מספר תאים שגוי');
   });
 
   const summary = window.Metrics.bodyChangeSummary(Store.getEntries(),
@@ -1047,6 +1050,35 @@ test('כל מסך שרשום בסרגל הטאבים באמת נטען', () => {
     assert(window.Views[id], 'הטאב ' + id + ' מצביע על מסך שלא קיים');
     assert(doc.getElementById('view-' + id), 'חסר מיכל למסך ' + id);
   });
+});
+
+
+
+test('כל שורה בטבלאות מכילה בדיוק תא לכל כותרת', () => {
+  App.setState({ view: 'today', date: '2026-08-21' });
+  doc.querySelectorAll('#view-today table.data').forEach((table) => {
+    const columns = table.querySelectorAll('thead th').length;
+    table.querySelectorAll('tbody tr').forEach((tr) => {
+      const cells = [...tr.children].reduce(function (sum, td) {
+        return sum + (Number(td.getAttribute('colspan')) || 1);
+      }, 0);
+      assert(cells === columns,
+        'שורה עם ' + cells + ' תאים מול ' + columns + ' כותרות: ' + tr.textContent.slice(0, 40));
+    });
+  });
+});
+
+test('גיליון הסגנון מבטל את התגית העגולה בתוך טבלאות', () => {
+  // jsdom לא טוען את קובץ ה-CSS, ולכן נבדק המקור עצמו
+  const css = fs.readFileSync(path.join(ROOT, 'assets/app.css'), 'utf8');
+  const rule = css.match(/table\.data \.delta-up[\s\S]*?\}/);
+  assert(rule, 'חסר הכלל שמבטל את התגית בטבלה');
+  assert(rule[0].includes('display: inline'), 'התגית עדיין inline-block בטבלה');
+  assert(rule[0].includes('background: none'), 'לרקע התגית עדיין יש צבע בטבלה');
+
+  App.setState({ view: 'today', date: '2026-08-21' });
+  assert(doc.querySelector('#view-today table.data .delta-down, #view-today table.data .delta-up'),
+    'לא נמצא ערך צבוע בטבלה');
 });
 
 

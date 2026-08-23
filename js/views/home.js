@@ -161,18 +161,22 @@
       return '<td class="n ' + Fmt.deltaClass(v, 'down') + '">' + Fmt.signed(v, 2) + '</td>';
     };
 
+    var partial = false;
     var rows = r.rows.map(function (row) {
       if (!row.loggedDays) {
         return '<tr><td>' + row.days + ' ימים</td>' +
           '<td colspan="4" class="missing">אין רישומים</td></tr>';
       }
+      if (row.actualKg !== null && !row.actualComplete) partial = true;
+
+      var actualCell = row.actualKg === null
+        ? '<td class="n"><span class="missing">—</span></td>'
+        : '<td class="n"><span class="' + Fmt.deltaClass(row.actualKg, 'down') + '">' +
+          Fmt.signed(row.actualKg, 2) + (row.actualComplete ? '' : '*') + '</span></td>';
+
       return '<tr><td>' + row.days + ' ימים' +
-          (row.loggedDays < row.days ? ' (' + row.loggedDays + ' דווחו)' : '') + '</td>' +
-        cell(row.kg.low) + cell(row.kg.mid) + cell(row.kg.high) +
-        '<td class="n">' + (row.actualKg === null
-          ? '<span class="missing">חסרים ימים</span>'
-          : '<span class="' + Fmt.deltaClass(row.actualKg, 'down') + '">' +
-            Fmt.signed(row.actualKg, 2) + '</span>') + '</td></tr>';
+          (row.loggedDays < row.days ? ' (' + row.loggedDays + ')' : '') + '</td>' +
+        cell(row.kg.low) + cell(row.kg.mid) + cell(row.kg.high) + actualCell + '</tr>';
     }).join('');
 
     return UI.card('גירעון מול מציאות',
@@ -182,7 +186,7 @@
         '<th class="n">נדיב</th><th class="n">בפועל</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
       UI.basis('"בפועל" = ממוצע המשקל בתקופה פחות ממוצע המשקל בתקופה שקדמה לה. ' +
-        'לחלון של 14 ימים נדרשים 28 ימי נתונים, ובלעדיהם ההשוואה לא מוצגת. ' +
+        (partial ? 'כוכבית = לתקופה הקודמת אין כיסוי מלא, ולכן ההפרש קטן מהאמת. ' : '') +
         'פער גדול בין "בפועל" ל"הערכה" אומר שהדיווח או השקילה לא מדויקים.'));
   }
 
@@ -232,31 +236,31 @@
   function bodyChangeCard(entries, date) {
     var r = Metrics.bodyChangeSummary(entries, { endDate: date, windows: [7, 10, 14] });
 
-    var cell = function (value, goodDirection) {
-      if (!Fmt.isNum(value)) return '<td class="n"><span class="missing">—</span></td>';
-      return '<td class="n"><span class="' + Fmt.deltaClass(value, goodDirection) + '">' +
-        Fmt.signed(value, 2) + '</span></td>';
+    var partial = false;
+    var cell = function (info, goodDirection) {
+      if (!info || !Fmt.isNum(info.change)) return '<td class="n"><span class="missing">—</span></td>';
+      if (!info.complete) partial = true;
+      return '<td class="n"><span class="' + Fmt.deltaClass(info.change, goodDirection) + '">' +
+        Fmt.signed(info.change, 2) + (info.complete ? '' : '*') + '</span></td>';
     };
 
     var rows = r.rows.map(function (row) {
       var range = Dates.short(row.current.from) + '–' + Dates.short(row.current.to);
       var against = Dates.short(row.previous.from) + '–' + Dates.short(row.previous.to);
-      if (!row.covered) {
-        return '<tr><td>' + row.days + ' ימים<br><span class="basis">' + range + '</span></td>' +
-          '<td colspan="3" class="missing">אין תקופה קודמת להשוואה</td></tr>';
-      }
-      return '<tr><td>' + row.days + ' ימים<br>' +
-          '<span class="basis">' + range + ' מול ' + against + '</span></td>' +
-        cell(row.fields.weightKg.change, 'down') +
-        cell(row.fields.bodyFatKg.change, 'down') +
-        cell(row.fields.muscleKg.change, 'up') + '</tr>';
+      return '<tr><td>' + row.days + ' ימים</td>' +
+        cell(row.fields.weightKg, 'down') +
+        cell(row.fields.bodyFatKg, 'down') +
+        cell(row.fields.muscleKg, 'up') +
+        '<td class="basis" style="white-space:nowrap">' + range + '<br>מול ' + against + '</td></tr>';
     }).join('');
 
     return UI.card('מה קרה בפועל', 'הפרש ממוצעים בין התקופה לזו שקדמה לה',
       '<div class="table-scroll"><table class="data"><thead><tr>' +
         '<th>תקופה</th><th class="n">משקל</th><th class="n">שומן</th><th class="n">שריר</th>' +
+        '<th>מול</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
       UI.basis('בקילוגרמים. ירוק = לכיוון הרצוי — ירידה במשקל ובשומן, שמירה או עלייה בשריר. ' +
+        (partial ? 'כוכבית = לתקופה הקודמת אין כיסוי מלא. ' : '') +
         'מדידות שומן ושריר במשקל ביתי רועשות, אז הן אינדיקטיביות לכיוון ולא למספר.'));
   }
 

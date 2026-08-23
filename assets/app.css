@@ -554,9 +554,11 @@ table.data {
   white-space: nowrap;
 }
 
+table.data { table-layout: auto; }
+
 table.data th,
 table.data td {
-  padding: 7px 9px;
+  padding: 7px 8px;
   border-bottom: 1px solid var(--rule);
   text-align: start;
 }
@@ -581,10 +583,20 @@ table.data td:first-child, table.data th:first-child { text-align: start; }
 table.data tbody tr:hover { background: #F7FAFB; }
 table.data .missing { color: var(--ink-faint); }
 
+/* התגית העגולה יפה בשורת מדד, אבל בטבלה צרה היא מרחיבה את התא
+   ומזיזה את הערכים ביחס לכותרות. בטבלאות נשאר צבע טקסט בלבד. */
 .delta-up, .delta-down, .delta-flat {
   border-radius: 100px;
   padding: 2px 8px;
   display: inline-block;
+}
+
+table.data .delta-up,
+table.data .delta-down,
+table.data .delta-flat {
+  background: none;
+  padding: 0;
+  display: inline;
 }
 
 .delta-up   { color: var(--over); background: var(--over-10); }

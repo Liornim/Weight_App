@@ -1433,15 +1433,18 @@ test('השינוי בפועל הוא הפרש ממוצעים בין שתי תק�
   });
 });
 
-test('בלי תקופה קודמת אין השוואה', () => {
-  // 20 ימי נתונים: חלון 14 דורש 28
+test('כיסוי חלקי מוצג עם סימון, לא מוסתר', () => {
+  // 20 ימי נתונים: חלון 14 דורש 28, אז התקופה הקודמת חלקית
   const entries = buildSeries('2026-01-01', 20, (i) => ({
     weightKg: 90 - 0.05 * i, kcal: 2200, steps: 9000
   }));
   const r = Metrics.deficitSummary(entries, WIN_SETTINGS,
     { endDate: '2026-01-20', windows: [7, 14] });
-  assert(r.rows[0].actualKg !== null, 'חלון 7 אמור לעבוד');
-  assert(r.rows[1].actualKg === null, 'חלון 14 בלי תקופה קודמת צריך להחזיר null');
+
+  assert(r.rows[0].actualComplete, 'חלון 7 אמור להיות מלא');
+  assert(r.rows[1].actualKg !== null, 'המספר צריך להיות מוצג גם בכיסוי חלקי');
+  assert(!r.rows[1].actualComplete, 'אבל מסומן כלא מלא');
+  assert(r.rows[1].previousDaysCovered < 14, 'התקופה הקודמת חלקית');
 });
 
 test('הגירעון הצפוי עקבי עם הירידה שנמדדה', () => {
@@ -1491,12 +1494,13 @@ test('שינוי בהרכב הגוף לכמה חלונות, עם טווחי תא
   });
 });
 
-test('חלון בלי תקופה קודמת מלאה מסומן ולא מחושב', () => {
+test('חלון עם כיסוי חלקי מסומן אבל כן מציג מספר', () => {
   const entries = buildSeries('2026-01-01', 20, (i) => ({ weightKg: 90 - 0.05 * i }));
   const r = Metrics.bodyChangeSummary(entries, { endDate: '2026-01-20', windows: [7, 14] });
   assert(r.rows[0].covered, 'חלון 7 אמור להיות מכוסה');
   assert(!r.rows[1].covered, 'חלון 14 לא אמור להיות מכוסה');
-  assert(r.rows[1].fields.weightKg.change === null, 'לא אמור להיות מספר');
+  assert(r.rows[1].fields.weightKg.change !== null, 'המספר צריך להיות מוצג');
+  assert(!r.rows[1].fields.weightKg.complete, 'אבל מסומן כחלקי');
 });
 
 // ---------- דוח ----------
