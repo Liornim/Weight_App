@@ -149,9 +149,13 @@
 
     var partial = false;
     var rows = r.rows.map(function (row) {
+      if (!row.ok) {
+        return '<tr><td>' + row.days + ' ימים</td>' +
+          '<td colspan="4" class="missing">צריך ' + row.needDays + ' ימי נתונים לשני חלונות מלאים</td></tr>';
+      }
       if (!row.loggedDays) {
         return '<tr><td>' + row.days + ' ימים</td>' +
-          '<td colspan="4" class="missing">אין רישומים</td></tr>';
+          '<td colspan="4" class="missing">אין רישומים בחלון</td></tr>';
       }
       if (row.actualKg !== null && !row.actualComplete) partial = true;
 
@@ -161,8 +165,9 @@
         : '<td class="n"><span class="' + Fmt.deltaClass(actualValue, goodDirection) + '">' +
           Fmt.signed(actualValue, digits) + (row.actualComplete ? '' : '*') + '</span></td>';
 
-      return '<tr><td>' + row.days + ' ימים' +
-          (row.loggedDays < row.days ? ' (' + row.loggedDays + ')' : '') + '</td>' +
+      return '<tr><td>' + row.days + ' ימים<br>' +
+          '<span class="basis">' + Dates.short(row.current.from) + '–' + Dates.short(row.current.to) +
+          (row.loggedDays < row.days ? ' · ' + row.loggedDays + ' דווחו' : '') + '</span></td>' +
         cell(row.kg.low) + cell(row.kg.mid) + cell(row.kg.high) + actualCell + '</tr>';
     }).join('');
 
@@ -173,7 +178,8 @@
         '<th>תקופה</th><th class="n">זהיר</th><th class="n">הערכה</th>' +
         '<th class="n">נדיב</th><th class="n">בפועל</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
-      UI.basis('"בפועל" = ממוצע המשקל בתקופה פחות ממוצע המשקל בתקופה שקדמה לה' +
+      UI.basis('כל שורה היא חלון מלא אחד מול החלון שלפניו, מעוגן ליום הראשון של המדידות. ' +
+        '"בפועל" = ממוצע המשקל בחלון פחות ממוצע החלון הקודם' +
         (inKcal ? ', מוכפל ב-' + Fmt.n(kcalPerKg, 0) + ' קק״ל לק״ג. ' : '. ') +
         (partial ? 'כוכבית = לתקופה הקודמת אין כיסוי מלא, ולכן ההפרש קטן מהאמת. ' : '') +
         'פער גדול בין "בפועל" ל"הערכה" אומר שהדיווח או השקילה לא מדויקים.'));
@@ -234,6 +240,10 @@
     };
 
     var rows = r.rows.map(function (row) {
+      if (!row.ok) {
+        return '<tr><td>' + row.days + ' ימים</td>' +
+          '<td colspan="4" class="missing">צריך ' + row.needDays + ' ימים לשני חלונות מלאים</td></tr>';
+      }
       var range = Dates.short(row.current.from) + '–' + Dates.short(row.current.to);
       var against = Dates.short(row.previous.from) + '–' + Dates.short(row.previous.to);
       return '<tr><td>' + row.days + ' ימים</td>' +
@@ -243,13 +253,17 @@
         '<td class="basis" style="white-space:nowrap">' + range + '<br>מול ' + against + '</td></tr>';
     }).join('');
 
-    return UI.card('מה קרה בפועל', 'הפרש ממוצעים בין התקופה לזו שקדמה לה',
+    var trailing = r.rows.find(function (row) { return row.ok && row.partial; });
+
+    return UI.card('מה קרה בפועל', 'חלון מלא מול החלון שלפניו, מעוגן ליום הראשון',
       '<div class="table-scroll"><table class="data"><thead><tr>' +
         '<th>תקופה</th><th class="n">משקל</th><th class="n">שומן</th><th class="n">שריר</th>' +
         '<th>מול</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
       UI.basis('בקילוגרמים. ירוק = לכיוון הרצוי — ירידה במשקל ובשומן, שמירה או עלייה בשריר. ' +
-        (partial ? 'כוכבית = לתקופה הקודמת אין כיסוי מלא. ' : '') +
+        (partial ? 'כוכבית = לחלון אין מספיק שקילות. ' : '') +
+        (trailing ? 'מאז ' + Dates.short(trailing.partial.from) + ' נצברו עוד ' +
+          trailing.partial.days + ' ימים שעדיין לא סוגרים חלון. ' : '') +
         'מדידות שומן ושריר במשקל ביתי רועשות, אז הן אינדיקטיביות לכיוון ולא למספר.'));
   }
 

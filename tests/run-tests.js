@@ -1416,8 +1416,8 @@ test('סיכום הגירעון לכמה חלונות', () => {
   assert(Math.abs(r.rows[2].sum.mid) > Math.abs(r.rows[0].sum.mid), '14 יום צריך לצבור יותר מ-7');
 });
 
-test('השינוי בפועל הוא הפרש ממוצעים בין שתי תקופות', () => {
-  // ירידה קבועה של 100 גרם ליום: ממוצע 7 ימים מול ה-7 שלפניהם = 0.7 ק"ג
+test('השינוי בפועל הוא הפרש ממוצעים בין שני חלונות מלאים', () => {
+  // ירידה קבועה של 100 גרם ליום: הפרש בין חלונות צמודים = 0.1 × ימים
   const entries = buildSeries('2026-01-01', 40, (i) => ({
     weightKg: 90 - 0.1 * i, kcal: 2200, steps: 9000
   }));
@@ -1425,26 +1425,28 @@ test('השינוי בפועל הוא הפרש ממוצעים בין שתי תק�
     { endDate: '2026-02-09', windows: [7, 10, 14] });
 
   r.rows.forEach((row) => {
-    close(row.actualKg, -0.1 * row.days, 1e-9,
-      row.days + ' ימים: ההפרש בין הממוצעים');
+    assert(row.ok, row.days + ': היה צריך לעבוד');
+    close(row.actualKg, -0.1 * row.days, 1e-9, row.days + ' ימים: ההפרש בין הממוצעים');
     close(row.currentMean - row.previousMean, row.actualKg, 1e-9, 'עקביות פנימית');
-    assert(row.currentWeighIns === row.days, 'כל הימים בחלון הנוכחי');
-    assert(row.previousWeighIns === row.days, 'כל הימים בחלון הקודם');
+    // החלונות צמודים ומעוגנים ליום הראשון
+    assert(Dates.addDays(row.previous.to, 1) === row.current.from, row.days + ': חלונות לא צמודים');
+    assert(row.current.from >= '2026-01-01', 'החלון מתחיל אחרי תחילת הנתונים');
+    assert(row.loggedDays === row.days, 'כל ימי החלון דווחו');
   });
 });
 
-test('כיסוי חלקי מוצג עם סימון, לא מוסתר', () => {
-  // 20 ימי נתונים: חלון 14 דורש 28, אז התקופה הקודמת חלקית
+test('בלי שני חלונות מלאים הדוח אומר כמה חסר', () => {
+  // 20 ימי נתונים: חלון 14 דורש 28
   const entries = buildSeries('2026-01-01', 20, (i) => ({
     weightKg: 90 - 0.05 * i, kcal: 2200, steps: 9000
   }));
   const r = Metrics.deficitSummary(entries, WIN_SETTINGS,
     { endDate: '2026-01-20', windows: [7, 14] });
 
-  assert(r.rows[0].actualComplete, 'חלון 7 אמור להיות מלא');
-  assert(r.rows[1].actualKg !== null, 'המספר צריך להיות מוצג גם בכיסוי חלקי');
-  assert(!r.rows[1].actualComplete, 'אבל מסומן כלא מלא');
-  assert(r.rows[1].previousDaysCovered < 14, 'התקופה הקודמת חלקית');
+  assert(r.rows[0].ok, 'חלון 7 אמור לעבוד');
+  assert(!r.rows[1].ok && r.rows[1].reason === 'blocks', 'חלון 14 היה צריך להיפסל');
+  assert(r.rows[1].completeBlocks === 1, 'חלון מלא אחד');
+  assert(r.rows[1].needDays === 28, 'צריך 28 ימים');
 });
 
 test('הגירעון הצפוי עקבי עם הירידה שנמדדה', () => {
@@ -1484,23 +1486,60 @@ test('שינוי בהרכב הגוף לכמה חלונות, עם טווחי תא
   const r = Metrics.bodyChangeSummary(entries, { endDate: '2026-02-09', windows: [7, 10, 14] });
 
   r.rows.forEach((row) => {
+    assert(row.ok, row.days + ': היה צריך לעבוד');
     close(row.fields.weightKg.change, -0.1 * row.days, 1e-9, row.days + ': משקל');
     close(row.fields.bodyFatKg.change, -0.08 * row.days, 1e-9, row.days + ': שומן');
     close(row.fields.muscleKg.change, 0, 1e-9, row.days + ': שריר');
 
-    // טווחי התאריכים רציפים ולא חופפים
     assert(Dates.diffDays(row.current.from, row.current.to) === row.days - 1, 'אורך החלון הנוכחי');
     assert(Dates.addDays(row.previous.to, 1) === row.current.from, 'החלונות לא צמודים');
+    assert(row.blockIndex >= 2, 'מספר החלון');
   });
 });
 
-test('חלון עם כיסוי חלקי מסומן אבל כן מציג מספר', () => {
+test('הרכב הגוף נמדד על חלונות מלאים בלבד', () => {
   const entries = buildSeries('2026-01-01', 20, (i) => ({ weightKg: 90 - 0.05 * i }));
   const r = Metrics.bodyChangeSummary(entries, { endDate: '2026-01-20', windows: [7, 14] });
-  assert(r.rows[0].covered, 'חלון 7 אמור להיות מכוסה');
-  assert(!r.rows[1].covered, 'חלון 14 לא אמור להיות מכוסה');
-  assert(r.rows[1].fields.weightKg.change !== null, 'המספר צריך להיות מוצג');
-  assert(!r.rows[1].fields.weightKg.complete, 'אבל מסומן כחלקי');
+  assert(r.rows[0].ok, 'חלון 7 אמור לעבוד');
+  assert(!r.rows[1].ok, 'חלון 14 בלי שני חלונות מלאים');
+  assert(r.rows[1].fields.weightKg.change === null, 'אין מספר בלי חלון מלא');
+});
+
+// ---------- חלונות מעוגנים ----------
+
+test('חלונות רצופים מעוגנים ליום הראשון', () => {
+  // 26/07 עד 25/08 = 31 ימים, חלונות של 7 -> ארבעה מלאים ושארית של 3
+  const entries = buildSeries('2026-07-26', 31, () => ({ weightKg: 88 }));
+  const b = Metrics.anchoredBlocks(entries, 7, { endDate: '2026-08-25' });
+
+  assert(b.ok, 'צריך להצליח');
+  assert(b.completeBlocks === 4, 'ארבעה חלונות מלאים, קיבלתי ' + b.completeBlocks);
+  assert(b.current.from === '2026-08-16' && b.current.to === '2026-08-22',
+    'חלון 4: ' + b.current.from + '–' + b.current.to);
+  assert(b.current.index === 4, 'מספר החלון');
+  assert(b.previous.from === '2026-08-09' && b.previous.to === '2026-08-15',
+    'חלון 3: ' + b.previous.from + '–' + b.previous.to);
+  assert(b.partial && b.partial.days === 3, 'שארית של שלושה ימים');
+  assert(b.partial.from === '2026-08-23', 'השארית מתחילה למחרת');
+});
+
+test('החלונות צמודים ולא חופפים', () => {
+  const entries = buildSeries('2026-07-26', 31, () => ({ weightKg: 88 }));
+  [3, 5, 7, 10, 14].forEach((n) => {
+    const b = Metrics.anchoredBlocks(entries, n, { endDate: '2026-08-25' });
+    if (!b.ok) return;
+    assert(Dates.addDays(b.previous.to, 1) === b.current.from,
+      n + ': החלונות לא צמודים');
+    assert(Dates.diffDays(b.current.from, b.current.to) === n - 1, n + ': אורך שגוי');
+  });
+});
+
+test('פחות משני חלונות מלאים מדווח ככישלון', () => {
+  const entries = buildSeries('2026-07-26', 20, () => ({ weightKg: 88 }));
+  const b = Metrics.anchoredBlocks(entries, 14, { endDate: '2026-08-14' });
+  assert(!b.ok && b.reason === 'blocks', 'צריך לדווח שאין מספיק חלונות');
+  assert(b.completeBlocks === 1, 'חלון מלא אחד');
+  assert(b.needDays === 28, 'צריך 28 ימים');
 });
 
 // ---------- דוח ----------

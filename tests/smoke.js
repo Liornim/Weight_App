@@ -1171,6 +1171,37 @@ test('בוררי החישוב אינם במסך הסיכום', () => {
 });
 
 
+
+test('הטבלאות משתמשות בחלונות מלאים מעוגנים, לא בחלון נע', () => {
+  App.setState({ view: 'today', date: '2026-08-21' });
+  const summary = window.Metrics.bodyChangeSummary(Store.getEntries(),
+    { endDate: '2026-08-21', windows: [7, 10, 14] });
+  const first = Store.getEntries()[0].date;
+
+  summary.rows.forEach((row) => {
+    if (!row.ok) return;
+    // החלון מעוגן ליום הראשון: המרחק ממנו הוא כפולה שלמה של אורך החלון
+    const offset = window.Dates.diffDays(first, row.current.from);
+    assert(offset % row.days === 0,
+      row.days + ' ימים: החלון לא מעוגן ליום הראשון (מרחק ' + offset + ')');
+    // והחלון לא בהכרח מסתיים היום — זה בדיוק ההבדל מחלון נע
+    assert(window.Dates.addDays(row.previous.to, 1) === row.current.from,
+      row.days + ': החלונות לא צמודים');
+  });
+
+  // הטבלה מציגה את הטווחים שהמודל חישב
+  const table = [...doc.querySelectorAll('#view-today table.data')]
+    .find((t) => t.textContent.includes('שריר'));
+  summary.rows.forEach((row, i) => {
+    if (!row.ok) return;
+    const tr = table.querySelectorAll('tbody tr')[i];
+    const shown = tr.children[4].textContent;
+    assert(shown.includes(window.Dates.short(row.current.from)),
+      row.days + ' ימים: הטווח המוצג לא תואם את המודל');
+  });
+});
+
+
 runAll().then(function () {
   
 

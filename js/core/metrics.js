@@ -1259,6 +1259,60 @@
   }
 
   /**
+   * חלונות רצופים שמעוגנים ליום הראשון של המדידות.
+   *
+   * חלון 1 מתחיל ביום הראשון, חלון 2 אחריו, וכן הלאה — בדיוק כמו
+   * בגיליון. זה שונה מחלון נע שמסתיים היום: שם כל יום שעובר מזיז
+   * את שתי התקופות, וההשוואה בין "14 עד היום" ל"14 עד אתמול" חופפת
+   * ב-13 ימים ולכן כמעט חסרת משמעות.
+   *
+   * מוחזרים החלון המלא האחרון והחלון שלפניו, יחד עם החלון החלקי
+   * שעוד מצטבר.
+   */
+  function anchoredBlocks(entries, days, options) {
+    var opts = options || {};
+    var endDate = opts.endDate || Dates.today();
+    var all = sorted(entries);
+    if (!all.length || !days) return { ok: false, reason: 'empty' };
+
+    var start = opts.startDate || all[0].date;
+    var span = (Dates.diffDays(start, endDate) || 0) + 1;
+    var completeCount = Math.floor(span / days);
+
+    function block(index) {
+      var from = Dates.addDays(start, index * days);
+      return { index: index + 1, from: from, to: Dates.addDays(from, days - 1) };
+    }
+
+    if (completeCount < 2) {
+      return {
+        ok: false, reason: 'blocks', days: days,
+        completeBlocks: completeCount,
+        needDays: days * 2, haveDays: span
+      };
+    }
+
+    var current = block(completeCount - 1);
+    var previous = block(completeCount - 2);
+
+    // מה שנצבר מאז סוף החלון המלא האחרון
+    var partialFrom = Dates.addDays(current.to, 1);
+    var partialDays = (Dates.diffDays(partialFrom, endDate) || -1) + 1;
+
+    return {
+      ok: true,
+      days: days,
+      startDate: start,
+      completeBlocks: completeCount,
+      current: current,
+      previous: previous,
+      partial: partialDays > 0
+        ? { from: partialFrom, to: endDate, days: partialDays, index: completeCount + 1 }
+        : null
+    };
+  }
+
+  /**
    * סיכום הגירעון לכמה חלונות בבת אחת, לצד השינוי שנמדד בפועל.
    *
    * הסתירה בין השניים היא המידע החשוב: אם החשבון מנבא ירידה של קילו
@@ -1279,66 +1333,65 @@
     var allSorted = sorted(entries);
     var firstDate = allSorted.length ? allSorted[0].date : null;
 
-    /** ממוצע המשקל בחלון של days ימים שמסתיים ב-end */
-    function blockMean(end, days) {
-      var start = Dates.addDays(end, -(days - 1));
+    /** ממוצע המשקל בטווח נתון */
+    function blockMean(range) {
       var values = series(entries, 'weightKg')
-        .filter(function (p) { return p.date >= start && p.date <= end; })
+        .filter(function (p) { return p.date >= range.from && p.date <= range.to; })
         .map(function (p) { return p.y; });
-      return { mean: Stats.mean(values), n: values.length, from: start, to: end };
+      return { mean: Stats.mean(values), n: values.length };
     }
 
     var rows = windows.map(function (days) {
-      var from = Dates.addDays(endDate, -(days - 1));
+      var blocks = anchoredBlocks(entries, days, { endDate: endDate });
+      if (!blocks.ok) {
+        return {
+          days: days, ok: false, reason: blocks.reason,
+          completeBlocks: blocks.completeBlocks, needDays: blocks.needDays,
+          loggedDays: 0, sum: { low: 0, mid: 0, high: 0, intake: 0, tdee: 0 },
+          kg: { low: null, mid: null, high: null }, actualKg: null
+        };
+      }
+
       var sum = { low: 0, mid: 0, high: 0, intake: 0, tdee: 0 };
       var counted = 0;
 
-      Dates.range(from, endDate).forEach(function (date) {
-        var s = byDate[date];
-        if (!s || !num(s.intake)) return;
-        var margin = 1.96 * s.tdeeSd;
-        sum.low += (s.tdee - margin) - s.intake;
-        sum.mid += s.tdee - s.intake;
-        sum.high += (s.tdee + margin) - s.intake;
-        sum.intake += s.intake;
-        sum.tdee += s.tdee;
+      // הגירעון נסכם על אותו חלון שבו נמדד השינוי במשקל
+      Dates.range(blocks.current.from, blocks.current.to).forEach(function (date) {
+        var st = byDate[date];
+        if (!st || !num(st.intake)) return;
+        var margin = 1.96 * st.tdeeSd;
+        sum.low += (st.tdee - margin) - st.intake;
+        sum.mid += st.tdee - st.intake;
+        sum.high += (st.tdee + margin) - st.intake;
+        sum.intake += st.intake;
+        sum.tdee += st.tdee;
         counted++;
       });
 
-      // השינוי בפועל: ממוצע המשקל של החלון פחות ממוצע החלון שקדם לו.
-      // זו אותה שיטה שבה נמדד הגירעון, ולכן שתי העמודות ניתנות להשוואה
-      // ישירה. שיפוע קו מגמה על החלון עצמו היה מודד משהו אחר.
-      var current = blockMean(endDate, days);
-      var previous = blockMean(Dates.addDays(endDate, -days), days);
-
-      // תקופה קודמת חלקית תיתן השוואה מוטה: הממוצע שלה מייצג רק את
-      // סופה, וההפרש ייראה קטן מהאמת. לכן נדרש כיסוי מלא בשתי התקופות.
+      var current = blockMean(blocks.current);
+      var previous = blockMean(blocks.previous);
       var minWeighIns = Math.max(2, Math.ceil(days / 2));
-      var complete = firstDate !== null && firstDate <= previous.from &&
-        current.n >= minWeighIns && previous.n >= minWeighIns;
-
-      // המספר מוצג תמיד כשיש ממוצע לשתי התקופות. כשהכיסוי חלקי הוא
-      // מסומן, כי התקופה הקודמת מייצגת רק את סופה וההפרש מוטה כלפי מטה.
-      var actual = (current.mean === null || previous.mean === null)
-        ? null : current.mean - previous.mean;
+      var complete = current.n >= minWeighIns && previous.n >= minWeighIns;
 
       return {
         days: days,
+        ok: true,
+        blockIndex: blocks.current.index,
+        current: blocks.current,
+        previous: blocks.previous,
+        partial: blocks.partial,
         loggedDays: counted,
         sum: sum,
-        // הגירעון בקילוגרמים: שלילי = ירידה צפויה
         kg: {
           low: -sum.low / kcalPerKg,
           mid: -sum.mid / kcalPerKg,
           high: -sum.high / kcalPerKg
         },
-        actualKg: actual,
+        actualKg: (current.mean === null || previous.mean === null)
+          ? null : current.mean - previous.mean,
         actualComplete: complete,
-        previousDaysCovered: previous.n,
         currentMean: current.mean,
-        previousMean: previous.mean,
-        currentWeighIns: current.n,
-        previousWeighIns: previous.n
+        previousMean: previous.mean
       };
     });
 
@@ -1357,37 +1410,40 @@
     var fields = opts.fields || ['weightKg', 'bodyFatKg', 'muscleKg'];
 
     var derived = deriveAll(entries);
-    var allSorted = sorted(entries);
-    var firstDate = allSorted.length ? allSorted[0].date : null;
 
-    function blockMean(end, days, field) {
-      var start = Dates.addDays(end, -(days - 1));
+    function blockMean(range, field) {
       var values = derived
-        .filter(function (e) { return e.date >= start && e.date <= end; })
+        .filter(function (e) { return e.date >= range.from && e.date <= range.to; })
         .map(function (e) { return num(e[field]); })
         .filter(function (v) { return v !== null; });
-      return { mean: Stats.mean(values), n: values.length, from: start, to: end };
+      return { mean: Stats.mean(values), n: values.length };
     }
 
     var rows = windows.map(function (days) {
-      var prevEnd = Dates.addDays(endDate, -days);
-      var minWeighIns = Math.max(2, Math.ceil(days / 2));
-      var row = {
-        days: days,
-        current: { from: Dates.addDays(endDate, -(days - 1)), to: endDate },
-        previous: { from: Dates.addDays(prevEnd, -(days - 1)), to: prevEnd },
-        fields: {}
-      };
-      // תקופה קודמת שמתחילה לפני תחילת המדידות אינה בת־השוואה
-      row.covered = firstDate !== null && firstDate <= row.previous.from;
+      var blocks = anchoredBlocks(entries, days, { endDate: endDate });
+      var row = { days: days, ok: blocks.ok, fields: {} };
+
+      if (!blocks.ok) {
+        row.reason = blocks.reason;
+        row.completeBlocks = blocks.completeBlocks;
+        row.needDays = blocks.needDays;
+        row.haveDays = blocks.haveDays;
+        fields.forEach(function (field) { row.fields[field] = { change: null }; });
+        return row;
+      }
+
+      row.current = blocks.current;
+      row.previous = blocks.previous;
+      row.partial = blocks.partial;
+      row.blockIndex = blocks.current.index;
 
       fields.forEach(function (field) {
-        var now = blockMean(endDate, days, field);
-        var before = blockMean(prevEnd, days, field);
-        var ok = row.covered && now.n >= minWeighIns && before.n >= minWeighIns;
+        var now = blockMean(blocks.current, field);
+        var before = blockMean(blocks.previous, field);
+        var minWeighIns = Math.max(2, Math.ceil(days / 2));
         row.fields[field] = {
           change: (now.mean === null || before.mean === null) ? null : now.mean - before.mean,
-          complete: ok,
+          complete: now.n >= minWeighIns && before.n >= minWeighIns,
           currentMean: now.mean,
           previousMean: before.mean,
           measurements: now.n
@@ -1481,6 +1537,7 @@
     deficitSummary: deficitSummary,
     dashboard: dashboard,
     bodyChangeSummary: bodyChangeSummary,
+    anchoredBlocks: anchoredBlocks,
     availableWindows: availableWindows,
     tdeeMethods: tdeeMethods,
     weightNoiseSd: weightNoiseSd,
