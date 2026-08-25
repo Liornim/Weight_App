@@ -1295,6 +1295,54 @@ test('עמודת התאריך בטבלאות מסומנת ומיושרת בנפ�
 });
 
 
+
+test('גרף המשקל מציג את קצב התוכנית ומגיב לשינוי שלו', () => {
+  const setRate = (kg) => {
+    App.setState({ view: 'today' });
+    const slider = doc.querySelector('#rate-slider');
+    slider.value = String(kg);
+    slider.dispatchEvent(new window.Event('change', { bubbles: true }));
+    App.setState({ view: 'trends', range: 0 });
+  };
+
+  const planPath = () => {
+    const paths = [...doc.querySelectorAll('#chart-weight path')]
+      .map((p) => p.getAttribute('d')).filter(Boolean);
+    // קו התוכנית הוא היחיד המקווקו בכתום
+    const el = [...doc.querySelectorAll('#chart-weight path')]
+      .find((p) => p.getAttribute('stroke') === '#E07A34');
+    assert(el, 'קו התוכנית חסר (' + paths.length + ' קווים בגרף)');
+    return el.getAttribute('d');
+  };
+
+  setRate(0.25);
+  const gentle = planPath();
+  assert(doc.getElementById('chart-weight-legend').textContent.includes('קצב מתוכנן'),
+    'קו התוכנית לא מופיע במקרא');
+
+  setRate(1);
+  const steep = planPath();
+  assert(gentle !== steep, 'קו התוכנית לא השתנה עם הקצב');
+
+  // שיפוע חד יותר = הנקודה האחרונה נמוכה יותר, כלומר y גדול יותר בפיקסלים
+  const lastY = (d) => Number(d.trim().split(/[ML]/).filter(Boolean).pop().trim().split(' ')[1]);
+  assert(lastY(steep) > lastY(gentle),
+    'קצב מהיר יותר אמור לייצר קו יורד יותר');
+
+  Store.updateSettings({ goal: { ratePerWeekKg: -0.5 } });
+});
+
+test('גרף ההוצאה מציג את יעד הצריכה שנגזר מהקצב', () => {
+  App.setState({ view: 'trends', range: 0, tdeeMode: 'daily' });
+  const legend = doc.getElementById('chart-tdee-legend').textContent;
+  assert(legend.includes('יעד הצריכה'), 'יעד הצריכה חסר במקרא');
+
+  const target = [...doc.querySelectorAll('#chart-tdee path')]
+    .find((p) => p.getAttribute('stroke') === '#E07A34');
+  assert(target, 'קו יעד הצריכה חסר בגרף');
+});
+
+
 runAll().then(function () {
   
 

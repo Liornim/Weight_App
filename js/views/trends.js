@@ -8,6 +8,7 @@
   var COLORS = {
     measured: '#0D6E67',
     measuredFaint: 'rgba(13,110,103,0.35)',
+    accent: '#E07A34',
     reference: '#4B55A5',
     over: '#A32F4B',
     lean: '#4B55A5',
@@ -62,6 +63,20 @@
     return map;
   }
 
+  /**
+   * קו התוכנית: מאיפה שהמגמה התחילה בטווח המוצג, בשיפוע שנבחר.
+   * בלעדיו הבחירה "0.5 ק״ג בשבוע" היא מספר בהגדרות בלי שום ייצוג
+   * מול מה שקורה בפועל.
+   */
+  function planLine(ma, ratePerWeekKg) {
+    if (!Fmt.isNum(ratePerWeekKg) || ma.length < 2) return null;
+    var start = ma[0];
+    var perDay = ratePerWeekKg / 7;
+    return ma.map(function (point) {
+      return { x: point.x, y: start.y + perDay * (point.x - start.x) };
+    });
+  }
+
   function drawWeight(entries, settings) {
     var raw = Metrics.series(entries, 'weightKg');
     if (raw.length < 2) return;
@@ -80,19 +95,34 @@
     var target = horizontal(raw, settings.goal.targetWeightKg, COLORS.over, '2 4');
     if (target) series.push(target);
 
+    var plan = planLine(ma, settings.goal.ratePerWeekKg);
+    if (plan) series.push({ type: 'line', color: COLORS.accent, width: 1.8, dash: '6 4', points: plan });
+
     var rawMap = lookup(raw), maMap = lookup(ma), ewmaMap = lookup(ewmaLine);
+    var planMap = plan ? lookup(plan) : {};
     Chart.render(document.getElementById('chart-weight'), {
       series: series,
       height: 200,
       formatX: function (x) { return Dates.short(Dates.fromDayIndex(x)); },
       formatTick: function (v) { return Fmt.n(v, 1); },
       captionEl: document.getElementById('chart-weight-caption'),
-      idleCaption: 'העבר את האצבע על הגרף',
+      idleCaption: plan
+        ? (function () {
+            var last = ma[ma.length - 1];
+            var gap = last.y - plan[plan.length - 1].y;
+            return Math.abs(gap) < 0.05
+              ? 'אתה בדיוק על הקצב שתכננת'
+              : (gap > 0 ? 'מעל התוכנית ב-' : 'מתחת לתוכנית ב-') + Fmt.n(Math.abs(gap), 2) + ' ק״ג';
+          })()
+        : 'העבר את האצבע על הגרף',
       onHover: function (x) {
         var parts = [Dates.long(Dates.fromDayIndex(x))];
         if (rawMap[x] !== undefined) parts.push('שקילה ' + Fmt.n(rawMap[x], 1));
         if (maMap[x] !== undefined) parts.push('ממוצע ' + Fmt.n(maMap[x], 2));
         if (ewmaMap[x] !== undefined) parts.push('מגמה מהירה ' + Fmt.n(ewmaMap[x], 2));
+        if (planMap[x] !== undefined && maMap[x] !== undefined) {
+          parts.push('מול התוכנית ' + Fmt.signed(maMap[x] - planMap[x], 2));
+        }
         return parts.join('  ·  ');
       }
     });
@@ -100,7 +130,8 @@
       { color: COLORS.measuredFaint, label: 'שקילות' },
       { color: COLORS.measured, label: 'ממוצע 7 ימים' },
       { color: COLORS.reference, label: 'מגמה מהירה' }
-    ].concat(target ? [{ color: COLORS.over, label: 'משקל יעד' }] : []));
+    ].concat(plan ? [{ color: COLORS.accent, label: 'קצב מתוכנן' }] : [])
+     .concat(target ? [{ color: COLORS.over, label: 'משקל יעד' }] : []));
   }
 
   /**
@@ -214,7 +245,7 @@
    * גבולות רצועת אי־הוודאות מסומנים בקווים: אדום בתחתית (התרחיש
    * שבו אתה שורף פחות ממה שנראה) וירוק בעליון.
    */
-  function drawTdee(entries, settings, mode) {
+  function drawTdee(entries, settings, mode, options) {
     var r = Metrics.adaptiveTDEE(entries, { kcalPerKg: settings.kcalPerKg });
     if (!r.ok || r.states.length < 5) return false;
     var host = document.getElementById('chart-tdee');
@@ -317,6 +348,9 @@
       lowDaily.forEach(function (p) { p.y = clamp(p.y); });
       highDaily.forEach(function (p) { p.y = clamp(p.y); });
 
+      var targetIntake = options && Fmt.isNum(options.intakeTarget)
+        ? horizontal(line, options.intakeTarget, COLORS.accent, '6 4') : null;
+
       series = [
         { type: 'band', color: COLORS.band, points: band },
         { type: 'line', color: COLORS.over, width: 1, points: lowDaily, opacity: 0.45 },
@@ -325,6 +359,7 @@
         { type: 'line', color: COLORS.reference, width: 2.2, points: toPoints(intakeMa) },
         { type: 'line', color: COLORS.measured, width: 2.6, points: line }
       ];
+      if (targetIntake) series.push(targetIntake);
 
       var tdeeMap = lookup(line), maMap = lookup(intakeMa), rawMap = lookup(intakeRaw);
       var last = line[line.length - 1].y;
@@ -356,7 +391,7 @@
         { color: COLORS.over, label: 'גבול תחתון' },
         { color: COLORS.reference, label: 'אוכל — ממוצע 7 ימים' },
         { color: 'rgba(75,85,165,0.35)', label: 'אוכל — יומי' }
-      ];
+      ].concat(targetIntake ? [{ color: COLORS.accent, label: 'יעד הצריכה' }] : []);
     }
 
     var config = {
@@ -672,7 +707,7 @@
     if (hasWeight) drawWeight(entries, settings);
     if (hasFat) drawBodyField(entries, 'bodyFatKg', 'chart-fat', 'שומן');
     if (hasMuscle) drawBodyField(entries, 'muscleKg', 'chart-muscle', 'שריר');
-    if (hasKcal) drawTdee(all, settings, tdeeMode);
+    if (hasKcal) drawTdee(all, settings, tdeeMode, { intakeTarget: kcalTarget });
     if (hasKcal) drawIntake(entries, settings, 'kcal', 'chart-kcal', 0,
       { target: kcalTarget, targetLabel: targetLabel });
     if (hasProtein) drawIntake(entries, settings, 'proteinG', 'chart-protein', 0,
