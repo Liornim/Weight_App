@@ -94,10 +94,11 @@
           '<td colspan="2" class="missing">אין מספיק שקילות</td></tr>';
       }
       return '<tr><td>' + r.days + ' ימים' + (r.noisy ? ' *' : '') + '</td>' +
-        '<td class="n ' + Fmt.deltaClass(r.weightChange, 'down') + '">' +
-          Fmt.signed(r.weightChange, 2) + '</td>' +
-        '<td class="n ' + (r.fatPctChange === null ? '' : Fmt.deltaClass(r.fatPctChange, 'down')) + '">' +
-          (r.fatPctChange === null ? '—' : Fmt.signed(r.fatPctChange, 1)) + '</td></tr>';
+        '<td class="n"><span class="' + Fmt.deltaClass(r.weightChange, 'down') + '">' +
+          Fmt.signed(r.weightChange, 2) + '</span></td>' +
+        '<td class="n"><span class="' +
+          (r.fatPctChange === null ? '' : Fmt.deltaClass(r.fatPctChange, 'down')) + '">' +
+          (r.fatPctChange === null ? '—' : Fmt.signed(r.fatPctChange, 1)) + '</span></td></tr>';
     }).join('');
 
     return UI.card('כמה ירדת', 'כל תקופה מושווית לתקופה שלפניה',

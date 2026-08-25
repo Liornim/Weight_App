@@ -1093,17 +1093,40 @@ test('כל שורה בטבלאות מכילה בדיוק תא לכל כותרת'
   });
 });
 
-test('גיליון הסגנון מבטל את התגית העגולה בתוך טבלאות', () => {
+test('התגית העגולה מוגבלת ל-span ולא חלה על תאי טבלה', () => {
   // jsdom לא טוען את קובץ ה-CSS, ולכן נבדק המקור עצמו
   const css = fs.readFileSync(path.join(ROOT, 'assets/app.css'), 'utf8');
-  const rule = css.match(/table\.data \.delta-up[\s\S]*?\}/);
-  assert(rule, 'חסר הכלל שמבטל את התגית בטבלה');
-  assert(rule[0].includes('display: inline'), 'התגית עדיין inline-block בטבלה');
-  assert(rule[0].includes('background: none'), 'לרקע התגית עדיין יש צבע בטבלה');
+  const pill = css.match(/span\.delta-up[^{]*\{[\s\S]*?\}/);
+  assert(pill, 'כלל התגית חייב להיות מוגבל ל-span');
+  assert(pill[0].includes('inline-block'), 'התגית אמורה להיות inline-block');
+  assert(!/^\.delta-(up|down)[^{]*\{[^}]*inline-block/m.test(css),
+    'יש כלל inline-block שחל על כל אלמנט, כולל תאי טבלה');
+});
 
-  App.setState({ view: 'today', date: '2026-08-21' });
-  assert(doc.querySelector('#view-today table.data .delta-down, #view-today table.data .delta-up'),
-    'לא נמצא ערך צבוע בטבלה');
+test('שום תא בטבלה לא נושא מחלקת צבע ישירות', () => {
+  // תא עם המחלקה הופך ל-inline-block והטבלה מתפרקת. קרה בפועל.
+  ['today', 'calc', 'trends', 'progress', 'status'].forEach((view) => {
+    App.setState({ view: view, date: '2026-08-21' });
+    doc.querySelectorAll('#view-' + view + ' table.data td').forEach((td) => {
+      ['delta-up', 'delta-down', 'delta-flat'].forEach((cls) => {
+        assert(!td.classList.contains(cls),
+          view + ': תא נושא ' + cls + ' — הצבע צריך להיות על span בתוכו');
+      });
+    });
+  });
+  App.setState({ view: 'today' });
+});
+
+test('הגרפים חוסמים גלילה ותפריט הקשר במגע', () => {
+  const css = fs.readFileSync(path.join(ROOT, 'assets/app.css'), 'utf8');
+  const rule = css.match(/\.chart svg \{[\s\S]*?\}/);
+  assert(rule, 'חסר כלל לגרף');
+  assert(rule[0].includes('touch-action: none'), 'חסר touch-action');
+  assert(rule[0].includes('user-select: none'), 'חסר חסימת בחירת טקסט');
+
+  const chartJs = fs.readFileSync(path.join(ROOT, 'js/ui/chart.js'), 'utf8');
+  assert(chartJs.includes('preventDefault'), 'המאזין לא מונע את התנהגות ברירת המחדל');
+  assert(chartJs.includes('touchmove'), 'אין טיפול בגרירה במגע');
 });
 
 
@@ -1126,7 +1149,8 @@ test('טבלת הגירעון עוברת בין קילוגרמים לקלורי�
   const kcalPerKg = Store.getSettings().kcalPerKg;
 
   // אותו נתון בשתי יחידות: קילוגרם שלילי = גירעון חיובי בקלוריות
-  assert(Math.abs(kcalMid - (-kgMid * kcalPerKg)) < 20,
+  // הערך בק"ג מעוגל לשתי ספרות, ולכן סטייה של עד ~40 קלוריות היא עיגול
+  assert(Math.abs(kcalMid - (-kgMid * kcalPerKg)) < 50,
     'ההמרה שגויה: ' + kgMid + ' ק"ג מול ' + kcalMid + ' קלוריות');
   assert(Math.abs(kcalMid) > 100, 'הערך בקלוריות נראה כמו קילוגרמים');
 

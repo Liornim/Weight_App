@@ -143,7 +143,8 @@
 
     var cell = function (kg) {
       var v = convert(kg);
-      return '<td class="n ' + Fmt.deltaClass(v, goodDirection) + '">' + Fmt.signed(v, digits) + '</td>';
+      return '<td class="n"><span class="' + Fmt.deltaClass(v, goodDirection) + '">' +
+        Fmt.signed(v, digits) + '</span></td>';
     };
 
     var partial = false;

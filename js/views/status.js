@@ -272,7 +272,8 @@
         '<td>' + Fmt.esc(label) + '</td>' +
         '<td class="n">' + Fmt.n(current.mean, row.digits) + '</td>' +
         '<td class="n">' + Fmt.n(previous.mean, row.digits) + '</td>' +
-        '<td class="n ' + (good ? Fmt.deltaClass(delta, good) : '') + '">' + Fmt.signed(delta, row.digits) + '</td>' +
+        '<td class="n"><span class="' + (good ? Fmt.deltaClass(delta, good) : '') + '">' +
+          Fmt.signed(delta, row.digits) + '</span></td>' +
         '</tr>';
     }).join('');
 

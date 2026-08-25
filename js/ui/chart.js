@@ -180,9 +180,13 @@
       caption.textContent = idle;
 
       var handle = function (event) {
+        // מונע גלילה, בחירת טקסט ותפריט הקשר בזמן מעבר על הגרף
+        if (event.cancelable) event.preventDefault();
         var rect = svg.getBoundingClientRect();
         var ratio = width / rect.width;
-        var localX = (event.clientX - rect.left) * ratio;
+        var point = event.touches && event.touches.length ? event.touches[0] : event;
+        if (point.clientX === undefined) return;
+        var localX = (point.clientX - rect.left) * ratio;
         var value = xEx[0] + ((localX - pad.left) / innerW) * xSpan;
         var x = Math.round(Math.min(Math.max(value, xEx[0]), xEx[1]));
         cursor.setAttribute('x1', sx(x));
@@ -190,8 +194,11 @@
         caption.textContent = config.onHover(x) || idle;
       };
 
-      svg.addEventListener('pointermove', handle);
-      svg.addEventListener('pointerdown', handle);
+      svg.addEventListener('pointermove', handle, { passive: false });
+      svg.addEventListener('pointerdown', handle, { passive: false });
+      svg.addEventListener('touchstart', handle, { passive: false });
+      svg.addEventListener('touchmove', handle, { passive: false });
+      svg.addEventListener('contextmenu', function (event) { event.preventDefault(); });
       svg.addEventListener('pointerleave', function () {
         cursor.setAttribute('x1', -10);
         cursor.setAttribute('x2', -10);

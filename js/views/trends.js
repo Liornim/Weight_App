@@ -412,7 +412,8 @@
 
     var sum = { intake: 0, tdee: 0, low: 0, mid: 0, high: 0 };
     var cell = function (v) {
-      return '<td class="n ' + Fmt.deltaClass(v, 'up') + '">' + Fmt.signed(v, 0) + '</td>';
+      return '<td class="n"><span class="' + Fmt.deltaClass(v, 'up') + '">' +
+        Fmt.signed(v, 0) + '</span></td>';
     };
 
     var rows = days.slice().reverse().map(function (s) {

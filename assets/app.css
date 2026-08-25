@@ -583,30 +583,43 @@ table.data td:first-child, table.data th:first-child { text-align: start; }
 table.data tbody tr:hover { background: #F7FAFB; }
 table.data .missing { color: var(--ink-faint); }
 
-/* התגית העגולה יפה בשורת מדד, אבל בטבלה צרה היא מרחיבה את התא
-   ומזיזה את הערכים ביחס לכותרות. בטבלאות נשאר צבע טקסט בלבד. */
-.delta-up, .delta-down, .delta-flat {
+/* צבע בלבד — חל על כל אלמנט, כולל תאי טבלה */
+.delta-up   { color: var(--over); }
+.delta-down { color: var(--good); }
+.delta-flat { color: var(--ink-faint); }
+
+/* התגית העגולה היא עיטור, ולכן היא מוגבלת ל-span מחוץ לטבלאות.
+   כשהיא חלה על תא, התא הופך ל-inline-block והטבלה מתפרקת — קרה בפועל. */
+span.delta-up, span.delta-down {
   border-radius: 100px;
   padding: 2px 8px;
   display: inline-block;
 }
 
-table.data .delta-up,
-table.data .delta-down,
-table.data .delta-flat {
+table.data span.delta-up,
+table.data span.delta-down,
+table.data span.delta-flat {
   background: none;
   padding: 0;
   display: inline;
 }
 
-.delta-up   { color: var(--over); background: var(--over-10); }
-.delta-down { color: var(--good); background: var(--good-10); }
-.delta-flat { color: var(--ink-faint); }
+span.delta-up   { background: var(--over-10); }
+span.delta-down { background: var(--good-10); }
 
 /* -------------------------------------------------------------- גרף */
 
 .chart { margin: var(--gap-3) 0 0; }
-.chart svg { display: block; width: 100%; height: auto; }
+.chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* בלי זה, גרירה על הגרף בטלפון גוללת את הדף או פותחת תפריט בחירה */
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
 .chart .axis-label {
   font-family: var(--mono);
   font-size: 10px;
