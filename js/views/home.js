@@ -200,6 +200,78 @@
         'פער גדול בין "בפועל" ל"הערכה" אומר שהדיווח או השקילה לא מדויקים.'));
   }
 
+  var SCENARIOS = [
+    { value: 'low', label: 'זהיר' },
+    { value: 'mid', label: 'הערכה' },
+    { value: 'high', label: 'נדיב' }
+  ];
+
+  /**
+   * כל החלונות זה לצד זה: כמה כל אחד אומר שאתה שורף, מה הגירעון
+   * בפועל, ולאיזו ירידה שבועית זה מתורגם בשלושת התרחישים.
+   */
+  function comparisonCard(entries, settings, date, active) {
+    var r = Metrics.windowComparison(entries, settings, { endDate: date });
+    if (!r.ok || r.meanIntake === null) return '';
+
+    var rows = r.rows.map(function (row) {
+      if (!row.ok) {
+        return '<tr><td>' + Fmt.esc(row.window === 'adaptive' ? 'מסתגל' : row.window) + '</td>' +
+          '<td colspan="5" class="missing">צריך ' + row.needDays + ' ימי נתונים</td></tr>';
+      }
+      var isActive = String(row.window) === String(active);
+      var kgCell = function (key) {
+        return '<td class="n"><span class="' + Fmt.deltaClass(row.weeklyKg[key], 'down') + '">' +
+          Fmt.signed(row.weeklyKg[key], 2) + '</span></td>';
+      };
+      return '<tr' + (isActive ? ' style="font-weight:500;background:var(--measured-10)"' : '') + '>' +
+        '<td>' + Fmt.esc(row.label) + (isActive ? ' ✓' : '') + '</td>' +
+        '<td class="n">' + Fmt.n(row.tdee, 0) + '</td>' +
+        '<td class="n"><span class="' + Fmt.deltaClass(-row.dailyDeficit.mid, 'down') + '">' +
+          Fmt.signed(row.dailyDeficit.mid, 0) + '</span></td>' +
+        kgCell('low') + kgCell('mid') + kgCell('high') + '</tr>';
+    }).join('');
+
+    return UI.card('כמה אתה בגירעון, לפי כל חלון',
+      'הגירעון מול צריכה ממוצעת של ' + Fmt.n(r.meanIntake, 0) + ' קק״ל ב-' + r.recentDays + ' הימים האחרונים',
+      '<div class="table-scroll"><table class="data"><thead><tr>' +
+        '<th>חלון</th><th class="n">שורף</th><th class="n">גירעון ליום</th>' +
+        '<th class="n">זהיר</th><th class="n">הערכה</th><th class="n">נדיב</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      UI.basis('שלוש העמודות האחרונות הן הירידה השבועית הצפויה בק״ג, לפי שלושת ' +
+        'תרחישי ההוצאה. השורה המסומנת היא החלון שנבחר בפס הבקרה.'));
+  }
+
+  /** כמה לאכול בימים הקרובים, לפי כל חלון ולפי התרחיש שנבחר */
+  function eatByWindowCard(entries, settings, date, scenario) {
+    var r = Metrics.windowComparison(entries, settings, { endDate: date, horizons: [1, 2, 3, 7] });
+    if (!r.ok || r.meanIntake === null) return '';
+
+    var labels = r.todayLogged
+      ? { 1: 'מחר', 2: 'יומיים', 3: '3 ימים', 7: 'שבוע' }
+      : { 1: 'היום', 2: 'יומיים', 3: '3 ימים', 7: 'שבוע' };
+
+    var rows = r.rows.map(function (row) {
+      if (!row.ok) return '';
+      var cells = row.allowance[scenario].map(function (option) {
+        return '<td class="n">' + (option.perDay < 0 ? '0' : Fmt.n(option.perDay, 0)) + '</td>';
+      }).join('');
+      return '<tr><td>' + Fmt.esc(row.label) + '</td>' + cells + '</tr>';
+    }).join('');
+
+    return UI.card('כמה לאכול, לפי כל חלון',
+      'ממוצע יומי מרבי שעדיין משאיר את הסך הכל בגירעון',
+      UI.chips(SCENARIOS, scenario, 'data-scenario') +
+      '<div class="table-scroll" style="margin-top:12px"><table class="data"><thead><tr>' +
+        '<th>חלון</th>' +
+        r.horizons.map(function (n) {
+          return '<th class="n">' + Fmt.esc(labels[n] || n + ' ימים') + '</th>';
+        }).join('') +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      UI.basis('"זהיר" מבטיח גירעון גם אם אתה שורף פחות ממה שנראה. ' +
+        '"נדיב" מניח שאתה שורף בקצה הגבוה, ולכן הוא הימור.'));
+  }
+
   /** כמה מותר לאכול בימים הקרובים ועדיין להישאר בירוק */
   function allowanceCard(entries, settings, date, windowDays) {
     var burnData = Metrics.dailyBurn(entries, settings, { endDate: date, windowDays: windowDays });
@@ -325,6 +397,9 @@
       UI.chips(UNITS, unit, 'data-unit') +
       deficitCard(entries, settings, date, unit, state.calcWindow) +
       allowanceCard(entries, settings, date, state.calcWindow) +
+      '<div class="section-label">השוואה בין חלונות</div>' +
+      comparisonCard(entries, settings, date, state.calcWindow) +
+      eatByWindowCard(entries, settings, date, state.scenario || 'mid') +
       bonusCard(entry, settings);
 
     html += '<div class="btn-row" style="margin-top:20px">' +
@@ -336,6 +411,12 @@
   }
 
   function wire(container, date) {
+    container.querySelectorAll('[data-scenario]').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        root.App.setState({ scenario: chip.dataset.scenario });
+      });
+    });
+
     container.querySelectorAll('[data-unit]').forEach(function (chip) {
       chip.addEventListener('click', function () {
         root.App.setState({ deficitUnit: chip.dataset.unit });

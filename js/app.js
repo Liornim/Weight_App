@@ -18,7 +18,7 @@
 
   var App = {
     // חותמת בנייה — מופיעה בראש המסך כדי שאפשר יהיה לדעת איזו גרסה פתוחה
-    BUILD: 'v33',
+    BUILD: 'v34',
     state: {
       view: 'today',
       date: Dates.today(),
@@ -28,6 +28,7 @@
       stepsMode: 'base',      // 'base' = בלי צעדים, 'total' = כולל
       deficitUnit: 'kg',      // יחידות בטבלת הגירעון
       controlsOpen: false,    // האם פס הבקרה פתוח
+      scenario: 'mid',        // תרחיש ההוצאה בטבלת הקצבה
       calcWindow: 'adaptive', // חלון החישוב במסך הבית
       tdeeMode: 'daily'       // תצוגת גרף ההוצאה: יומי או מצטבר
     }

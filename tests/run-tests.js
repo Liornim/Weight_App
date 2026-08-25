@@ -1585,6 +1585,69 @@ test('הלוח מתעלם מרשומות שאחרי תאריך הסיום', () =
   close(d.minWeight, 90 - 0.05 * 19, 1e-9, 'השפל בתוך הטווח');
 });
 
+// ---------- השוואת חלונות ----------
+
+test('השוואת חלונות מחזירה שורה לכל חלון', () => {
+  const entries = windowFixture();   // 60 ימים, בסיס 2500, צעדים 10000, אכילה 2200
+  const r = Metrics.windowComparison(entries, WIN_SETTINGS,
+    { endDate: '2026-03-01', windows: ['adaptive', 7, 14, 28] });
+
+  assert(r.rows.length === 4, 'ארבע שורות');
+  close(r.meanIntake, 2200, 1, 'צריכה ממוצעת');
+
+  r.rows.filter((row) => row.ok).forEach((row) => {
+    // שלושת התרחישים מסודרים: זהיר < הערכה < נדיב
+    assert(row.dailyDeficit.low < row.dailyDeficit.mid, row.label + ': סדר תרחישים');
+    assert(row.dailyDeficit.mid < row.dailyDeficit.high, row.label + ': סדר תרחישים');
+
+    // גירעון גדול יותר = ירידה שבועית גדולה יותר
+    assert(row.weeklyKg.high < row.weeklyKg.mid, row.label + ': ירידה לפי תרחיש');
+    close(row.weeklyKg.mid, -(row.dailyDeficit.mid * 7) / 7700, 1e-9, row.label + ': המרה לק"ג');
+
+    // הגירעון מתיישב עם ההוצאה פחות הצריכה
+    close(row.dailyDeficit.mid, row.tdee - row.meanIntake, 1e-9, row.label + ': גירעון יומי');
+  });
+});
+
+test('חלון בלי כיסוי מסומן ולא מחושב', () => {
+  const entries = buildSeries('2026-01-01', 20, (i) => ({
+    weightKg: 90 - 0.05 * i, kcal: 2200, steps: 9000
+  }));
+  const r = Metrics.windowComparison(entries, WIN_SETTINGS,
+    { endDate: '2026-01-20', windows: [7, 28] });
+
+  assert(r.rows[0].ok, 'חלון 7 אמור לעבוד');
+  assert(!r.rows[1].ok && r.rows[1].reason === 'window', 'חלון 28 היה צריך להיפסל');
+  assert(r.rows[1].needDays === 56, 'צריך 56 ימים');
+});
+
+test('הקצבה לימים הקרובים סוגרת את החוב שנצבר', () => {
+  const entries = windowFixture();
+  const r = Metrics.windowComparison(entries, WIN_SETTINGS,
+    { endDate: '2026-03-01', windows: [7], horizons: [1, 3, 7] });
+  const row = r.rows[0];
+
+  row.allowance.mid.forEach((option) => {
+    // אכילה של perDay במשך days ימים משאירה את המצטבר באפס
+    const projected = row.carried.mid + option.days * (row.tdee - option.perDay);
+    close(projected, 0, 1e-6, option.days + ' ימים: הקצבה לא מאפסת את החוב');
+  });
+
+  // פריסה ארוכה יותר מקרבת את הקצבה להוצאה עצמה
+  const single = row.allowance.mid.find((o) => o.days === 1);
+  const week = row.allowance.mid.find((o) => o.days === 7);
+  assert(Math.abs(week.perDay - row.tdee) < Math.abs(single.perDay - row.tdee),
+    'פריסה ארוכה אמורה להתקרב להוצאה');
+});
+
+test('הקצבה בתרחיש זהיר נמוכה מזו שבנדיב', () => {
+  const entries = windowFixture();
+  const row = Metrics.windowComparison(entries, WIN_SETTINGS,
+    { endDate: '2026-03-01', windows: ['adaptive'], horizons: [3] }).rows[0];
+  assert(row.allowance.low[0].perDay < row.allowance.mid[0].perDay, 'זהיר < הערכה');
+  assert(row.allowance.mid[0].perDay < row.allowance.high[0].perDay, 'הערכה < נדיב');
+});
+
 // ---------- דוח ----------
 // הריצה מופעלת בסוף הקובץ בלבד. אם היא תופעל באמצע, בדיקות שנרשמו
 // אחריה לא ייכנסו לתור וייעלמו בשקט — קרה בפועל.

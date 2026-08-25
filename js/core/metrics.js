@@ -1333,6 +1333,105 @@
   }
 
   /**
+   * השוואה בין כל אורכי החלון בבת אחת.
+   *
+   * לכל חלון: כמה הוא אומר שאתה שורף, מה הגירעון בפועל מול מה שאכלת,
+   * לאיזו ירידה שבועית זה מתורגם בשלושת התרחישים, וכמה מותר לאכול
+   * בימים הקרובים כדי להישאר בגירעון.
+   *
+   * הטבלה הזו קיימת כי בחירת חלון היא לא החלטה טכנית — היא משנה את
+   * כל המספרים, וכדאי לראות את כולם יחד לפני שבוחרים.
+   */
+  function windowComparison(entries, settings, options) {
+    var opts = options || {};
+    var endDate = opts.endDate || Dates.today();
+    var windows = opts.windows || ['adaptive', 3, 5, 7, 10, 14, 21, 28];
+    var horizons = opts.horizons || [1, 3, 7];
+    var recentDays = opts.recentDays || 7;
+    var kcalPerKg = (settings || {}).kcalPerKg || DEFAULT_KCAL_PER_KG;
+
+    var recent = series(inWindow(entries, endDate, recentDays), 'kcal')
+      .map(function (p) { return p.y; });
+    var meanIntake = Stats.mean(recent);
+
+    var todayEntry = (entries || []).find(function (e) { return e.date === endDate; });
+    var todayLogged = todayEntry ? num(todayEntry.kcal) !== null : false;
+
+    var rows = windows.map(function (win) {
+      var burn = dailyBurn(entries, settings, { endDate: endDate, windowDays: win });
+      if (!burn.ok) {
+        return {
+          window: win, ok: false, reason: burn.reason,
+          needDays: burn.needDays, haveDays: burn.haveDays
+        };
+      }
+
+      // הגירעון שנצבר בפועל בימים האחרונים שדווחו
+      var carried = { low: 0, mid: 0, high: 0 };
+      var loggedDays = 0;
+      Dates.range(Dates.addDays(endDate, -(13)), endDate).forEach(function (date) {
+        var day = burn.byDate[date];
+        if (!day || num(day.intake) === null) return;
+        var margin = 1.96 * day.sd;
+        carried.low += (day.tdee - margin) - day.intake;
+        carried.mid += day.tdee - day.intake;
+        carried.high += (day.tdee + margin) - day.intake;
+        loggedDays++;
+      });
+
+      var scenarios = {
+        low: burn.tdee - burn.ci95,
+        mid: burn.tdee,
+        high: burn.tdee + burn.ci95
+      };
+
+      var daily = {}, weeklyKg = {}, allowance = {};
+      Object.keys(scenarios).forEach(function (key) {
+        daily[key] = meanIntake === null ? null : scenarios[key] - meanIntake;
+        weeklyKg[key] = daily[key] === null ? null : -(daily[key] * 7) / kcalPerKg;
+        allowance[key] = horizons.map(function (n) {
+          return { days: n, perDay: scenarios[key] + carried[key] / n };
+        });
+      });
+
+      return {
+        window: win,
+        ok: true,
+        label: win === 'adaptive' ? 'מסתגל' : String(win),
+        tdee: burn.tdee,
+        ci95: burn.ci95,
+        base: burn.tdee - stepAllowance(entries, settings, endDate),
+        meanIntake: meanIntake,
+        loggedDays: loggedDays,
+        carried: carried,
+        dailyDeficit: daily,
+        weeklyKg: weeklyKg,
+        allowance: allowance
+      };
+    });
+
+    return {
+      ok: true,
+      endDate: endDate,
+      horizons: horizons,
+      recentDays: recentDays,
+      meanIntake: meanIntake,
+      todayLogged: todayLogged,
+      rows: rows
+    };
+  }
+
+  /** תרומת ההליכה הממוצעת, לחישוב ההוצאה בלי צעדים */
+  function stepAllowance(entries, settings, endDate) {
+    var kcalPerStep = num((settings || {}).kcalPerStep);
+    if (kcalPerStep === null) kcalPerStep = 0.030;
+    var steps = series(inWindow(entries, Dates.addDays(endDate, -1), 28), 'steps')
+      .map(function (p) { return p.y; });
+    var mean = Stats.mean(steps);
+    return mean === null ? 0 : mean * kcalPerStep;
+  }
+
+  /**
    * חלונות רצופים שמעוגנים ליום הראשון של המדידות.
    *
    * חלון 1 מתחיל ביום הראשון, חלון 2 אחריו, וכן הלאה — בדיוק כמו
@@ -1627,6 +1726,7 @@
     bodyChangeSummary: bodyChangeSummary,
     anchoredBlocks: anchoredBlocks,
     dailyBurn: dailyBurn,
+    windowComparison: windowComparison,
     availableWindows: availableWindows,
     tdeeMethods: tdeeMethods,
     weightNoiseSd: weightNoiseSd,

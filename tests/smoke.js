@@ -1420,6 +1420,72 @@ test('הגרפים אינם משתנים עם החלון, רק החישובים'
 });
 
 
+
+test('טבלת ההשוואה מציגה שורה לכל חלון עם שלושת התרחישים', () => {
+  App.setState({ view: 'today', date: '2026-08-21', calcWindow: 'adaptive' });
+  const table = [...doc.querySelectorAll('#view-today table.data')]
+    .find((t) => t.textContent.includes('גירעון ליום'));
+  assert(table, 'טבלת ההשוואה חסרה');
+
+  const headers = [...table.querySelectorAll('th')].map((th) => th.textContent.trim());
+  ['חלון', 'שורף', 'גירעון ליום', 'זהיר', 'הערכה', 'נדיב'].forEach((h) => {
+    assert(headers.indexOf(h) !== -1, 'חסרה עמודה: ' + h);
+  });
+
+  const model = window.Metrics.windowComparison(Store.getEntries(), Store.getSettings(),
+    { endDate: '2026-08-21' });
+  const rows = [...table.querySelectorAll('tbody tr')];
+  assert(rows.length === model.rows.length, 'מספר שורות לא תואם');
+
+  const num = (td) => Number(td.textContent.replace(/[^\d.\-−]/g, '').replace('−', '-'));
+  model.rows.forEach((row, i) => {
+    if (!row.ok) return;
+    assert(Math.abs(num(rows[i].children[1]) - Math.round(row.tdee)) <= 1,
+      row.label + ': השורף לא תואם');
+    // שלושת התרחישים מסודרים משמאל לימין בטבלה
+    const low = num(rows[i].children[3]), mid = num(rows[i].children[4]), high = num(rows[i].children[5]);
+    assert(low > mid && mid > high, row.label + ': התרחישים לא מסודרים');
+  });
+});
+
+test('החלון הפעיל מסומן בטבלת ההשוואה', () => {
+  App.setState({ view: 'today', date: '2026-08-21' });
+  doc.querySelector('#controls [data-calc="7"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+
+  const table = [...doc.querySelectorAll('#view-today table.data')]
+    .find((t) => t.textContent.includes('גירעון ליום'));
+  const marked = [...table.querySelectorAll('tbody tr')]
+    .filter((tr) => tr.textContent.includes('✓'));
+  assert(marked.length === 1, 'ציפיתי לשורה מסומנת אחת, יש ' + marked.length);
+  assert(marked[0].children[0].textContent.indexOf('7') === 0,
+    'הסימון על החלון הלא נכון: ' + marked[0].children[0].textContent);
+
+  doc.querySelector('#controls [data-calc="adaptive"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+});
+
+test('טבלת "כמה לאכול" מגיבה לבחירת התרחיש', () => {
+  App.setState({ view: 'today', date: '2026-08-21', scenario: 'mid' });
+  const table = () => [...doc.querySelectorAll('#view-today table.data')]
+    .find((t) => t.textContent.includes('שבוע') && t.textContent.includes('חלון'));
+  const firstValue = () => Number(
+    table().querySelector('tbody tr').children[1].textContent.replace(/[^\d]/g, ''));
+
+  const mid = firstValue();
+  doc.querySelector('[data-scenario="low"]').dispatchEvent(new window.Event('click', { bubbles: true }));
+  assert(App.state.scenario === 'low', 'התרחיש לא התעדכן');
+  const low = firstValue();
+
+  doc.querySelector('[data-scenario="high"]').dispatchEvent(new window.Event('click', { bubbles: true }));
+  const high = firstValue();
+
+  assert(low < mid && mid < high,
+    'הקצבה לא מסודרת לפי תרחיש: ' + low + ' / ' + mid + ' / ' + high);
+  App.setState({ scenario: 'mid' });
+});
+
+
 runAll().then(function () {
   
 
