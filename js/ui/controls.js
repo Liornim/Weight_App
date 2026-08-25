@@ -48,9 +48,15 @@
     var daily = weekly / 7;
 
     var windowLabel = state.calcWindow === 'adaptive' ? 'מסתגל' : state.calcWindow + ' ימים';
-    var summary = slider === 0
-      ? 'שמירת משקל · חלון ' + windowLabel
-      : Fmt.n(slider, 2) + ' ק״ג בשבוע · חלון ' + windowLabel;
+
+    // מה שהבחירות האלה מייצרות בפועל — המספר שהמשתמש בא לראות
+    var report = Metrics.windowReport(entries, settings, {
+      windowDays: state.calcWindow, endDate: date
+    });
+
+    var summary = (slider === 0 ? 'שמירת משקל' : Fmt.n(slider, 2) + ' ק״ג בשבוע') +
+      ' · ' + windowLabel +
+      (report.ok ? ' · לאכול ' + Fmt.n(report.target, 0) : ' · אין נתונים לחלון');
 
     container.innerHTML =
       '<details class="fold controls"' + (state.controlsOpen ? ' open' : '') + '>' +
@@ -78,6 +84,18 @@
 
           '<div class="section-label">לחשב לפי (ימים)</div>' +
           windowChips(entries, date, state.calcWindow) +
+          (report.ok
+            ? '<div class="metric-row" style="margin-top:10px"><span class="label">שורף לפי החלון</span>' +
+                '<span class="value">' + Fmt.n(report.tdee, 0) + ' ± ' + Fmt.n(report.ci95, 0) + '</span></div>' +
+              '<div class="metric-row"><span class="label">בלי הליכה</span>' +
+                '<span class="value">' + Fmt.n(report.base, 0) + '</span></div>' +
+              '<div class="metric-row" style="font-weight:500"><span class="label">צריכה צפויה</span>' +
+                '<span class="value">' + Fmt.n(report.target, 0) + ' קק״ל</span></div>'
+            : '<div class="notice">' +
+                (report.reason === 'window'
+                  ? 'לחלון הזה דרושים ' + report.needDays + ' ימי נתונים, יש ' + report.haveDays + '.'
+                  : 'אין מספיק נתונים לחישוב.') +
+              '</div>') +
           UI.basis('חלון של n ימים משווה חלון מלא לחלון המלא שלפניו, ולכן דורש פי שניים ימי נתונים. ' +
             'מנוטרל = אין עדיין כיסוי מלא.') +
 

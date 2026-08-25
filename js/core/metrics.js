@@ -1259,6 +1259,80 @@
   }
 
   /**
+   * ההוצאה היומית לפי החלון שנבחר — מקור אמת אחד לכל הטבלאות.
+   *
+   * במצב 'adaptive' יש ערך משלו לכל יום, כי המסנן מעדכן בכל שקילה.
+   * בחלון מספרי יש הערכה אחת לכל החלון, ולכן אותו ערך חל על כל ימיו.
+   * בלי הפרדה כזו הטבלאות המשיכו להשתמש במסנן גם כשנבחר חלון אחר,
+   * ורק הכותרת השתנתה.
+   */
+  function dailyBurn(entries, settings, options) {
+    var opts = options || {};
+    var endDate = opts.endDate || Dates.today();
+    var kcalPerKg = (settings || {}).kcalPerKg || DEFAULT_KCAL_PER_KG;
+    var window = opts.windowDays === 'adaptive' ? 'adaptive' : Number(opts.windowDays || 14);
+
+    var byDate = {};
+    (entries || []).forEach(function (e) { byDate[e.date] = e; });
+
+    if (window === 'adaptive') {
+      var adaptive = adaptiveTDEE(entries, { kcalPerKg: kcalPerKg, endDate: endDate });
+      if (!adaptive.ok) return { ok: false, reason: adaptive.reason, windowDays: window };
+
+      return {
+        ok: true,
+        windowDays: 'adaptive',
+        source: 'adaptive',
+        tdee: adaptive.final.tdee,
+        ci95: adaptive.final.ci95,
+        byDate: adaptive.states.reduce(function (map, s) {
+          map[s.date] = { date: s.date, tdee: s.tdee, sd: s.tdeeSd, intake: s.intake };
+          return map;
+        }, {}),
+        states: adaptive.states
+      };
+    }
+
+    var blocks = blockWindows(entries, {
+      days: window, count: 1, kcalPerKg: kcalPerKg, endDate: endDate,
+      kcalPerStep: (settings || {}).kcalPerStep
+    });
+    var row = blocks.rows[0];
+    if (!row || !row.complete) {
+      var status = availableWindows(entries, { endDate: endDate, candidates: [window] })[0];
+      return {
+        ok: false, reason: 'window', windowDays: window,
+        haveDays: status.haveDays, needDays: status.needDays, missingDays: status.missingDays
+      };
+    }
+
+    // אותה הערכה לכל יום בטווח, כי החלון מייצר מספר אחד
+    var sd = row.ci95 / 1.96;
+    var map = {};
+    var all = sorted(entries);
+    var from = all.length ? all[0].date : endDate;
+    Dates.range(from, endDate).forEach(function (date) {
+      var entry = byDate[date];
+      map[date] = {
+        date: date,
+        tdee: row.tdee,
+        sd: sd,
+        intake: entry ? num(entry.kcal) : null
+      };
+    });
+
+    return {
+      ok: true,
+      windowDays: window,
+      source: 'block',
+      tdee: row.tdee,
+      ci95: row.ci95,
+      block: row,
+      byDate: map
+    };
+  }
+
+  /**
    * חלונות רצופים שמעוגנים ליום הראשון של המדידות.
    *
    * חלון 1 מתחיל ביום הראשון, חלון 2 אחריו, וכן הלאה — בדיוק כמו
@@ -1324,11 +1398,11 @@
     var windows = opts.windows || [7, 10, 14];
     var kcalPerKg = (settings || {}).kcalPerKg || DEFAULT_KCAL_PER_KG;
 
-    var adaptive = adaptiveTDEE(entries, { kcalPerKg: kcalPerKg, endDate: endDate });
-    if (!adaptive.ok) return { ok: false, reason: adaptive.reason };
-
-    var byDate = {};
-    adaptive.states.forEach(function (s) { byDate[s.date] = s; });
+    var burn = dailyBurn(entries, settings, {
+      endDate: endDate, windowDays: opts.windowDays || 'adaptive'
+    });
+    if (!burn.ok) return { ok: false, reason: burn.reason, burn: burn };
+    var byDate = burn.byDate;
 
     var allSorted = sorted(entries);
     var firstDate = allSorted.length ? allSorted[0].date : null;
@@ -1359,7 +1433,7 @@
       Dates.range(blocks.current.from, blocks.current.to).forEach(function (date) {
         var st = byDate[date];
         if (!st || !num(st.intake)) return;
-        var margin = 1.96 * st.tdeeSd;
+        var margin = 1.96 * st.sd;
         sum.low += (st.tdee - margin) - st.intake;
         sum.mid += st.tdee - st.intake;
         sum.high += (st.tdee + margin) - st.intake;
@@ -1552,6 +1626,7 @@
     dashboard: dashboard,
     bodyChangeSummary: bodyChangeSummary,
     anchoredBlocks: anchoredBlocks,
+    dailyBurn: dailyBurn,
     availableWindows: availableWindows,
     tdeeMethods: tdeeMethods,
     weightNoiseSd: weightNoiseSd,

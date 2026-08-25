@@ -1343,6 +1343,83 @@ test('גרף ההוצאה מציג את יעד הצריכה שנגזר מהקצ�
 });
 
 
+
+test('החלפת חלון משנה את ה"שורף" בכל הטבלאות', () => {
+  const burnFromTable = () => {
+    App.setState({ view: 'trends', range: 0 });
+    const table = [...doc.querySelectorAll('#view-trends table.data')]
+      .find((t) => t.textContent.includes('גבול תחתון'));
+    assert(table, 'טבלת הגירעון היומי חסרה');
+    const row = table.querySelector('tbody tr:not(.summary)');
+    return Number(row.children[2].textContent.replace(/[^\d]/g, ''));
+  };
+
+  const setWindow = (value) => {
+    App.setState({ view: 'today' });
+    const chip = doc.querySelector('#controls [data-calc="' + value + '"]');
+    assert(chip && !chip.hasAttribute('disabled'), 'חלון ' + value + ' לא זמין');
+    chip.dispatchEvent(new window.Event('click', { bubbles: true }));
+  };
+
+  setWindow('adaptive');
+  const adaptive = burnFromTable();
+
+  setWindow('14');
+  const fixed = burnFromTable();
+
+  assert(adaptive !== fixed,
+    'ה"שורף" בטבלה לא השתנה עם החלון (' + adaptive + ' בשניהם)');
+
+  // בחלון מספרי ההערכה קבועה, ולכן כל הימים מציגים אותו ערך
+  const table = [...doc.querySelectorAll('#view-trends table.data')]
+    .find((t) => t.textContent.includes('גבול תחתון'));
+  const values = [...table.querySelectorAll('tbody tr:not(.summary)')]
+    .map((tr) => tr.children[2].textContent.trim());
+  assert(new Set(values).size === 1, 'בחלון מספרי ההוצאה אמורה להיות קבועה');
+
+  setWindow('adaptive');
+});
+
+test('פס הבקרה מציג את הצריכה הצפויה לחלון שנבחר', () => {
+  App.setState({ view: 'today', date: '2026-08-21' });
+  const summary = doc.querySelector('#controls summary').textContent;
+  assert(summary.includes('לאכול'), 'הצריכה הצפויה לא מופיעה בשורת הסיכום');
+
+  const body = doc.querySelector('#controls .fold-body').textContent;
+  ['שורף לפי החלון', 'בלי הליכה', 'צריכה צפויה'].forEach((label) => {
+    assert(body.includes(label), 'חסר: ' + label);
+  });
+
+  const report = window.Metrics.windowReport(Store.getEntries(), Store.getSettings(),
+    { windowDays: App.state.calcWindow, endDate: '2026-08-21' });
+  assert(body.includes(window.Fmt.n(report.target, 0)), 'הצריכה הצפויה לא תואמת את המודל');
+});
+
+test('הגרפים אינם משתנים עם החלון, רק החישובים', () => {
+  const weightPath = () => {
+    App.setState({ view: 'trends', range: 0 });
+    return [...doc.querySelectorAll('#chart-weight path')]
+      .find((p) => p.getAttribute('stroke') === '#0D6E67').getAttribute('d');
+  };
+
+  App.setState({ view: 'today' });
+  doc.querySelector('#controls [data-calc="adaptive"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+  const before = weightPath();
+
+  App.setState({ view: 'today' });
+  doc.querySelector('#controls [data-calc="14"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+  const after = weightPath();
+
+  assert(before === after, 'קו המשקל השתנה עם החלון, והוא לא אמור');
+
+  App.setState({ view: 'today' });
+  doc.querySelector('#controls [data-calc="adaptive"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+});
+
+
 runAll().then(function () {
   
 

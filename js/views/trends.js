@@ -439,10 +439,14 @@
    * ודאי, או שהוא תלוי בשאלה איפה בתוך הטווח נמצאת ההוצאה האמיתית.
    */
   function gapsTable(entries, settings) {
-    var r = Metrics.adaptiveTDEE(entries, { kcalPerKg: settings.kcalPerKg });
-    if (!r.ok) return UI.empty('אין מספיק נתונים', '');
+    var windowDays = root.App.state.calcWindow;
+    var burn = Metrics.dailyBurn(entries, settings, { windowDays: windowDays });
+    if (!burn.ok) return UI.empty('אין מספיק נתונים לחלון שנבחר', 'אפשר לשנות אותו בפס שבראש המסך.');
 
-    var days = r.states.slice(-14).filter(function (s) { return Fmt.isNum(s.intake); });
+    var today = Dates.today();
+    var days = Dates.range(Dates.addDays(today, -13), today)
+      .map(function (d) { return burn.byDate[d]; })
+      .filter(function (d) { return d && Fmt.isNum(d.intake); });
     if (!days.length) return UI.empty('אין ימים עם רישום קלוריות', '');
 
     var sum = { intake: 0, tdee: 0, low: 0, mid: 0, high: 0 };
@@ -452,7 +456,7 @@
     };
 
     var rows = days.slice().reverse().map(function (s) {
-      var margin = 1.96 * s.tdeeSd;
+      var margin = 1.96 * s.sd;
       var mid = s.tdee - s.intake;
       var low = (s.tdee - margin) - s.intake;
       var high = (s.tdee + margin) - s.intake;
@@ -463,7 +467,7 @@
     }).join('');
 
     days.forEach(function (s) {
-      var margin = 1.96 * s.tdeeSd;
+      var margin = 1.96 * s.sd;
       sum.intake += s.intake;
       sum.tdee += s.tdee;
       sum.low += (s.tdee - margin) - s.intake;
@@ -488,7 +492,10 @@
       '</tr></thead><tbody>' + rows + totalRow + '</tbody></table></div>' +
       UI.basis('ירוק = גירעון, אדום = עודף. שורת הסה״כ היא המצטבר של התקופה, ' +
         'ומתחתיה אותו מספר בקילוגרמים. יום שכל שלושת התרחישים בו ירוקים הוא יום ' +
-        'שבו ירדת בוודאות.');
+        'שבו ירדת בוודאות. ' +
+        (burn.source === 'block'
+          ? 'ההוצאה קבועה על ' + Fmt.n(burn.tdee, 0) + ' לפי חלון של ' + burn.windowDays + ' ימים.'
+          : 'ההוצאה מתעדכנת בכל יום לפי המסנן.'));
   }
 
   /**
@@ -502,26 +509,27 @@
    * היא זו שמבטיחה ירוק גם אם אתה שורף פחות ממה שנראה.
    */
   function allowanceTable(entries, settings) {
-    var r = Metrics.adaptiveTDEE(entries, { kcalPerKg: settings.kcalPerKg });
-    if (!r.ok) return '';
+    var data = Metrics.dailyBurn(entries, settings, { windowDays: root.App.state.calcWindow });
+    if (!data.ok) return '';
 
-    var days = r.states.slice(-14).filter(function (s) { return Fmt.isNum(s.intake); });
+    var today = Dates.today();
+    var days = Dates.range(Dates.addDays(today, -13), today)
+      .map(function (d) { return data.byDate[d]; })
+      .filter(function (d) { return d && Fmt.isNum(d.intake); });
     if (!days.length) return '';
 
-    var last = r.states[r.states.length - 1];
-    var margin = 1.96 * last.tdeeSd;
-    var burn = { low: last.tdee - margin, mid: last.tdee, high: last.tdee + margin };
+    var burn = { low: data.tdee - data.ci95, mid: data.tdee, high: data.tdee + data.ci95 };
 
     var carried = { low: 0, mid: 0, high: 0 };
     days.forEach(function (s) {
-      var m = 1.96 * s.tdeeSd;
+      var m = 1.96 * s.sd;
       carried.low += (s.tdee - m) - s.intake;
       carried.mid += s.tdee - s.intake;
       carried.high += (s.tdee + m) - s.intake;
     });
 
     var labels = { 1: 'מחר', 2: 'יומיים', 3: 'שלושה ימים', 5: 'חמישה ימים', 7: 'שבוע' };
-    var practicalCeiling = last.tdee + 1500;
+    var practicalCeiling = data.tdee + 1500;
 
     var rows = [1, 2, 3, 5, 7].map(function (n) {
       var cellFor = function (key) {

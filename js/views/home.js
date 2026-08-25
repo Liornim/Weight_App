@@ -138,9 +138,15 @@
   }
 
   /** הגירעון שנצבר בשלושה חלונות, מול הירידה שנמדדה בפועל */
-  function deficitCard(entries, settings, date, unit) {
-    var r = Metrics.deficitSummary(entries, settings, { endDate: date, windows: [7, 10, 14] });
-    if (!r.ok) return '';
+  function deficitCard(entries, settings, date, unit, windowDays) {
+    var r = Metrics.deficitSummary(entries, settings, {
+      endDate: date, windows: [7, 10, 14], windowDays: windowDays
+    });
+    if (!r.ok) {
+      return UI.card('גירעון מול מציאות', null,
+        UI.empty('אין מספיק נתונים לחלון שנבחר',
+          'נסה חלון אחר בפס הבקרה שבראש המסך.'));
+    }
 
     var kcalPerKg = settings.kcalPerKg || 7700;
     var inKcal = unit === 'kcal';
@@ -195,24 +201,28 @@
   }
 
   /** כמה מותר לאכול בימים הקרובים ועדיין להישאר בירוק */
-  function allowanceCard(entries, settings, date) {
-    var r = Metrics.adaptiveTDEE(entries, { kcalPerKg: settings.kcalPerKg, endDate: date });
-    if (!r.ok) return '';
+  function allowanceCard(entries, settings, date, windowDays) {
+    var burnData = Metrics.dailyBurn(entries, settings, { endDate: date, windowDays: windowDays });
+    if (!burnData.ok) return '';
 
-    var days = r.states.slice(-14).filter(function (s) { return Fmt.isNum(s.intake); });
-    if (!days.length) return '';
+    var recent = Dates.range(Dates.addDays(date, -13), date)
+      .map(function (d) { return burnData.byDate[d]; })
+      .filter(function (d) { return d && Fmt.isNum(d.intake); });
+    if (!recent.length) return '';
 
-    var last = r.states[r.states.length - 1];
-    var margin = 1.96 * last.tdeeSd;
-    var stepKcal = 0;
-    var burn = { low: last.tdee - margin - stepKcal, mid: last.tdee - stepKcal, high: last.tdee + margin - stepKcal };
+    var margin = 1.96 * (burnData.ci95 / 1.96);
+    var burn = {
+      low: burnData.tdee - burnData.ci95,
+      mid: burnData.tdee,
+      high: burnData.tdee + burnData.ci95
+    };
 
     var carried = { low: 0, mid: 0, high: 0 };
-    days.forEach(function (s) {
-      var m = 1.96 * s.tdeeSd;
-      carried.low += (s.tdee - m) - s.intake;
-      carried.mid += s.tdee - s.intake;
-      carried.high += (s.tdee + m) - s.intake;
+    recent.forEach(function (d) {
+      var m = 1.96 * d.sd;
+      carried.low += (d.tdee - m) - d.intake;
+      carried.mid += d.tdee - d.intake;
+      carried.high += (d.tdee + m) - d.intake;
     });
 
     // אם הקלוריות של היום עוד לא נרשמו, היום הוא היום הראשון שאפשר
@@ -221,7 +231,7 @@
     var labels = todayLogged
       ? { 1: 'מחר', 2: 'יומיים', 3: 'שלושה ימים', 5: 'חמישה ימים', 7: 'שבוע' }
       : { 1: 'היום', 2: 'היום ומחר', 3: 'שלושה ימים', 5: 'חמישה ימים', 7: 'שבוע' };
-    var ceiling = last.tdee + 1500;
+    var ceiling = burnData.tdee + 1500;
 
     var rows = [1, 2, 3, 5, 7].map(function (n) {
       var cellFor = function (key) {
@@ -313,8 +323,8 @@
       bodyChangeCard(entries, date) +
       '<div class="section-label">גירעון</div>' +
       UI.chips(UNITS, unit, 'data-unit') +
-      deficitCard(entries, settings, date, unit) +
-      allowanceCard(entries, settings, date) +
+      deficitCard(entries, settings, date, unit, state.calcWindow) +
+      allowanceCard(entries, settings, date, state.calcWindow) +
       bonusCard(entry, settings);
 
     html += '<div class="btn-row" style="margin-top:20px">' +
