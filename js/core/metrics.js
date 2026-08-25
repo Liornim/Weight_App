@@ -1459,19 +1459,29 @@
   function dashboard(entries, settings, options) {
     var opts = options || {};
     var endDate = opts.endDate || Dates.today();
-    var sortedEntries = sorted(entries);
+    // כל המספרים מוגבלים לטווח שמסתיים ב-endDate. בלי זה הלוח סופר
+    // גם רשומות עתידיות, והספירה לא מסתדרת מול הימים המוצגים.
+    var sortedEntries = sorted(entries).filter(function (e) { return e.date <= endDate; });
     if (!sortedEntries.length) return { ok: false };
 
-    var weights = series(entries, 'weightKg');
+    var weights = series(sortedEntries, 'weightKg');
     var first = sortedEntries[0].date;
     var spanDays = (Dates.diffDays(first, endDate) || 0) + 1;
 
     var maxWeight = Stats.max(weights.map(function (p) { return p.y; }));
     var minWeight = Stats.min(weights.map(function (p) { return p.y; }));
 
-    var recentSteps = series(inWindow(entries, endDate, 7), 'steps').map(function (p) { return p.y; });
-    var allSteps = series(entries, 'steps').map(function (p) { return p.y; });
-    var ma = latestMovingAverage(entries, 'weightKg', { to: endDate });
+    var recentSteps = series(inWindow(sortedEntries, endDate, 7), 'steps').map(function (p) { return p.y; });
+    var allSteps = series(sortedEntries, 'steps').map(function (p) { return p.y; });
+    var ma = latestMovingAverage(sortedEntries, 'weightKg', { to: endDate });
+
+    // אילו ימים בטווח אין בהם שקילה. עדיף לומר איזה יום חסר מאשר
+    // להציג יחס שהמשתמש לא יכול לאמת.
+    var weighedOn = {};
+    weights.forEach(function (p) { weighedOn[p.date] = true; });
+    var missing = Dates.range(first, endDate).filter(function (d) { return !weighedOn[d]; });
+
+    var latest = weights.length ? weights[weights.length - 1] : null;
 
     return {
       ok: true,
@@ -1483,8 +1493,12 @@
       minWeight: minWeight,
       // הירידה מהשיא לשפל, ללא קשר למתי כל אחד מהם נמדד
       totalLoss: (maxWeight === null || minWeight === null) ? null : maxWeight - minWeight,
+      // המשקל האחרון שנרשם בפועל, לצד הממוצע שמנקה רעש
+      latestWeight: latest ? latest.y : null,
+      latestWeightDate: latest ? latest.date : null,
       currentWeight: ma ? ma.y : null,
       currentWeightDays: ma ? ma.n : 0,
+      missingWeighIns: missing,
       stepsWeek: Stats.mean(recentSteps),
       stepsAll: Stats.mean(allSteps)
     };

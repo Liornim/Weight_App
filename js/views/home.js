@@ -118,14 +118,23 @@
       '<div class="stat-grid">' +
         tile('teal', 'ימים במעקב', d.spanDays) +
         tile('good', 'ירדת בסך הכל', Fmt.n(d.totalLoss, 1) + ' ק״ג') +
-        tile('indigo', 'משקל עכשיו', Fmt.n(d.currentWeight, 1)) +
+        tile('indigo', 'שקילה אחרונה', Fmt.n(d.latestWeight, 1)) +
         tile('accent', 'צעדים בשבוע', Fmt.n(d.stepsWeek, 0)) +
       '</div>' +
-      '<div class="metric-row" style="margin-top:16px"><span class="label">מהשיא לשפל</span>' +
+      '<div class="metric-row" style="margin-top:16px"><span class="label">משקל מגמה</span>' +
+        '<span class="value">' + Fmt.n(d.currentWeight, 2) + ' ק״ג</span></div>' +
+      '<div class="metric-row"><span class="label">מהשיא לשפל</span>' +
         '<span class="value">' + Fmt.n(d.maxWeight, 1) + ' ← ' + Fmt.n(d.minWeight, 1) + ' ק״ג</span></div>' +
-      '<div class="metric-row"><span class="label">שקילות שנרשמו</span>' +
-        '<span class="value">' + d.weighIns + ' מתוך ' + d.spanDays + ' ימים</span></div>' +
-      UI.basis('משקל עכשיו הוא ממוצע ' + d.currentWeightDays + ' השקילות האחרונות, לא השקילה של הבוקר.'));
+      '<div class="metric-row"><span class="label">שקילות</span>' +
+        '<span class="value">' + d.weighIns + ' ב-' + d.spanDays + ' ימים</span></div>' +
+      (d.missingWeighIns.length
+        ? UI.basis('ימים ללא שקילה: ' +
+            d.missingWeighIns.slice(0, 6).map(Dates.long).join(', ') +
+            (d.missingWeighIns.length > 6 ? ' ועוד ' + (d.missingWeighIns.length - 6) : ''))
+        : UI.basis('נשקלת בכל יום בטווח.')) +
+      UI.basis('"שקילה אחרונה" היא המספר מהמשקל, מ-' + Dates.long(d.latestWeightDate) + '. ' +
+        '"משקל מגמה" הוא ממוצע ' + d.currentWeightDays + ' השקילות האחרונות — הוא זז פחות, ' +
+        'ולכן כל החישובים נשענים עליו ולא על שקילה בודדת.'));
   }
 
   /** הגירעון שנצבר בשלושה חלונות, מול הירידה שנמדדה בפועל */

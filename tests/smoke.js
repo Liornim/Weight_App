@@ -975,7 +975,8 @@ test('לוח המחוונים מציג את מספרי הפתיחה', () => {
   errors.length = 0;
   App.setState({ view: 'today', date: '2026-08-21', calcWindow: 'adaptive' });
   const host = doc.getElementById('view-today');
-  ['ימים במעקב', 'ירדת בסך הכל', 'משקל עכשיו', 'צעדים בשבוע', 'מהשיא לשפל'].forEach((label) => {
+  ['ימים במעקב', 'ירדת בסך הכל', 'שקילה אחרונה', 'צעדים בשבוע',
+   'משקל מגמה', 'מהשיא לשפל', 'שקילות'].forEach((label) => {
     assert(host.textContent.includes(label), 'חסר: ' + label);
   });
 
@@ -1199,6 +1200,31 @@ test('הטבלאות משתמשות בחלונות מלאים מעוגנים, ל
     assert(shown.includes(window.Dates.short(row.current.from)),
       row.days + ' ימים: הטווח המוצג לא תואם את המודל');
   });
+});
+
+
+
+test('הלוח מציג את השקילה האחרונה ומפרט ימים חסרים', () => {
+  App.setState({ view: 'today', date: '2026-08-21' });
+  const d = window.Metrics.dashboard(Store.getEntries(), Store.getSettings(),
+    { endDate: '2026-08-21' });
+  const text = doc.getElementById('view-today').textContent;
+
+  assert(text.includes(window.Fmt.n(d.latestWeight, 1)), 'השקילה האחרונה לא מוצגת');
+  assert(text.includes(d.weighIns + ' ב-' + d.spanDays + ' ימים'),
+    'ספירת השקילות לא מוצגת: ציפיתי ל-' + d.weighIns + ' ב-' + d.spanDays);
+
+  if (d.missingWeighIns.length) {
+    assert(text.includes('ימים ללא שקילה'), 'לא פורטו הימים החסרים');
+    assert(text.includes(window.Dates.long(d.missingWeighIns[0])),
+      'היום החסר הראשון לא מוצג: ' + d.missingWeighIns[0]);
+  } else {
+    assert(text.includes('בכל יום'), 'לא נאמר שאין ימים חסרים');
+  }
+
+  // הספירה חייבת להיות עקבית: ימים בטווח = שקילות + חסרים
+  assert(d.weighIns + d.missingWeighIns.length === d.spanDays,
+    'ספירה לא עקבית: ' + d.weighIns + ' + ' + d.missingWeighIns.length + ' ≠ ' + d.spanDays);
 });
 
 

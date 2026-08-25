@@ -1542,6 +1542,49 @@ test('פחות משני חלונות מלאים מדווח ככישלון', () =
   assert(b.needDays === 28, 'צריך 28 ימים');
 });
 
+test('לוח המחוונים מדווח אילו ימים חסרים', () => {
+  // 20 ימים, בלי שקילה בשניים מהם
+  const entries = buildSeries('2026-01-01', 20, (i) => {
+    const row = { kcal: 2200, steps: 9000 };
+    if (i !== 5 && i !== 12) row.weightKg = 90 - 0.05 * i;
+    return row;
+  });
+  const d = Metrics.dashboard(entries, WIN_SETTINGS, { endDate: '2026-01-20' });
+
+  assert(d.spanDays === 20, 'עשרים ימים בטווח');
+  assert(d.weighIns === 18, 'שמונה עשרה שקילות, קיבלתי ' + d.weighIns);
+  assert(d.missingWeighIns.length === 2, 'שני ימים חסרים');
+  assert(d.missingWeighIns[0] === '2026-01-06', 'היום החסר הראשון: ' + d.missingWeighIns[0]);
+  assert(d.missingWeighIns[1] === '2026-01-13', 'היום החסר השני: ' + d.missingWeighIns[1]);
+});
+
+test('שקילה בכל יום -> אין ימים חסרים והספירה מלאה', () => {
+  const entries = buildSeries('2026-01-01', 31, (i) => ({ weightKg: 90 - 0.05 * i }));
+  const d = Metrics.dashboard(entries, WIN_SETTINGS, { endDate: '2026-01-31' });
+  assert(d.spanDays === 31 && d.weighIns === 31, d.weighIns + ' מתוך ' + d.spanDays);
+  assert(d.missingWeighIns.length === 0, 'לא אמורים להיות ימים חסרים');
+});
+
+test('השקילה האחרונה והממוצע הם שני מספרים שונים', () => {
+  const entries = buildSeries('2026-01-01', 20, (i) => ({ weightKg: 90 + noise(i, 0.8) }));
+  const d = Metrics.dashboard(entries, WIN_SETTINGS, { endDate: '2026-01-20' });
+  assert(d.latestWeightDate === '2026-01-20', 'תאריך השקילה האחרונה');
+  close(d.latestWeight, 90 + noise(19, 0.8), 1e-9, 'השקילה האחרונה היא הערך הגולמי');
+  assert(Math.abs(d.currentWeight - d.latestWeight) > 0.01, 'הממוצע אמור להיות שונה מהשקילה');
+});
+
+test('הלוח מתעלם מרשומות שאחרי תאריך הסיום', () => {
+  const entries = buildSeries('2026-01-01', 40, (i) => ({ weightKg: 90 - 0.05 * i }));
+  const d = Metrics.dashboard(entries, WIN_SETTINGS, { endDate: '2026-01-20' });
+
+  assert(d.spanDays === 20, 'עשרים ימים, קיבלתי ' + d.spanDays);
+  assert(d.weighIns === 20, 'עשרים שקילות, קיבלתי ' + d.weighIns);
+  assert(d.weighIns + d.missingWeighIns.length === d.spanDays, 'הספירה לא מסתדרת');
+  assert(d.latestWeightDate === '2026-01-20', 'השקילה האחרונה בטווח: ' + d.latestWeightDate);
+  // המשקל הנמוך ביותר שייך לטווח ולא לעתיד
+  close(d.minWeight, 90 - 0.05 * 19, 1e-9, 'השפל בתוך הטווח');
+});
+
 // ---------- דוח ----------
 // הריצה מופעלת בסוף הקובץ בלבד. אם היא תופעל באמצע, בדיקות שנרשמו
 // אחריה לא ייכנסו לתור וייעלמו בשקט — קרה בפועל.
