@@ -217,16 +217,20 @@
     var rows = r.rows.map(function (row) {
       if (!row.ok) {
         return '<tr><td>' + Fmt.esc(row.window === 'adaptive' ? 'מסתגל' : row.window) + '</td>' +
-          '<td colspan="5" class="missing">צריך ' + row.needDays + ' ימי נתונים</td></tr>';
+          '<td colspan="6" class="missing">צריך ' + row.needDays + ' ימי נתונים</td></tr>';
       }
       var isActive = String(row.window) === String(active);
       var kgCell = function (key) {
         return '<td class="n"><span class="' + Fmt.deltaClass(row.weeklyKg[key], 'down') + '">' +
           Fmt.signed(row.weeklyKg[key], 2) + '</span></td>';
       };
+      // חלון שרווח הסמך שלו רחב מ-600 קלוריות לא יכול לבסס החלטה
+      var noisy = row.ci95 > 600;
       return '<tr' + (isActive ? ' style="font-weight:500;background:var(--measured-10)"' : '') + '>' +
-        '<td>' + Fmt.esc(row.label) + (isActive ? ' ✓' : '') + '</td>' +
+        '<td>' + Fmt.esc(row.label) + (isActive ? ' ✓' : '') +
+          (noisy ? '<br><span class="basis">רועש</span>' : '') + '</td>' +
         '<td class="n">' + Fmt.n(row.tdee, 0) + '</td>' +
+        '<td class="n' + (noisy ? ' missing' : '') + '">±' + Fmt.n(row.ci95, 0) + '</td>' +
         '<td class="n"><span class="' + Fmt.deltaClass(-row.dailyDeficit.mid, 'down') + '">' +
           Fmt.signed(row.dailyDeficit.mid, 0) + '</span></td>' +
         kgCell('low') + kgCell('mid') + kgCell('high') + '</tr>';
@@ -235,11 +239,14 @@
     return UI.card('כמה אתה בגירעון, לפי כל חלון',
       'הגירעון מול צריכה ממוצעת של ' + Fmt.n(r.meanIntake, 0) + ' קק״ל ב-' + r.recentDays + ' הימים האחרונים',
       '<div class="table-scroll"><table class="data"><thead><tr>' +
-        '<th>חלון</th><th class="n">שורף</th><th class="n">גירעון ליום</th>' +
+        '<th>חלון</th><th class="n">שורף</th><th class="n">±</th><th class="n">גירעון ליום</th>' +
         '<th class="n">זהיר</th><th class="n">הערכה</th><th class="n">נדיב</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
       UI.basis('שלוש העמודות האחרונות הן הירידה השבועית הצפויה בק״ג, לפי שלושת ' +
-        'תרחישי ההוצאה. השורה המסומנת היא החלון שנבחר בפס הבקרה.'));
+        'תרחישי ההוצאה. השורה המסומנת היא החלון שנבחר בפס הבקרה.') +
+      UI.basis('"רועש" = רווח הסמך רחב מ-600 קלוריות. חלון קצר מחלק את רעש השקילה ' +
+        'במספר ימים קטן, ולכן הוא מגדיל אותו: אותם 500 גרם של נוזלים שווים ' +
+        '1,280 קלוריות ביום בחלון של 3 ימים, ורק 137 בחלון של 28.'));
   }
 
   /** כמה לאכול בימים הקרובים, לפי כל חלון ולפי התרחיש שנבחר */

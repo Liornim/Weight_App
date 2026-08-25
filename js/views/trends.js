@@ -246,10 +246,28 @@
    * שבו אתה שורף פחות ממה שנראה) וירוק בעליון.
    */
   function drawTdee(entries, settings, mode, options) {
-    var r = Metrics.adaptiveTDEE(entries, { kcalPerKg: settings.kcalPerKg });
-    if (!r.ok || r.states.length < 5) return false;
+    var opts = options || {};
+    var windowDays = opts.windowDays || 'adaptive';
     var host = document.getElementById('chart-tdee');
     if (!host) return false;
+
+    // הקו חייב לשקף את החלון שנבחר. בחלון מספרי ההערכה קבועה,
+    // ולכן הקו ישר — וזה נכון, כי זה מה שהחלון אומר.
+    var r = Metrics.adaptiveTDEE(entries, { kcalPerKg: settings.kcalPerKg });
+    if (!r.ok || r.states.length < 5) return false;
+
+    var fixed = null;
+    if (windowDays !== 'adaptive') {
+      var burn = Metrics.dailyBurn(entries, settings, { windowDays: windowDays });
+      if (!burn.ok) {
+        host.innerHTML = '';
+        var caption = document.getElementById('chart-tdee-caption');
+        if (caption) caption.textContent = 'אין מספיק נתונים לחלון של ' + windowDays + ' ימים';
+        document.getElementById('chart-tdee-legend').innerHTML = '';
+        return false;
+      }
+      fixed = { tdee: burn.tdee, sd: burn.ci95 / 1.96 };
+    }
 
     var kcalPerKg = settings.kcalPerKg || 7700;
     // הימים הראשונים נשלטים על ידי הניחוש ההתחלתי ולא על ידי הנתונים
@@ -274,10 +292,12 @@
         var eaten = intakeByDay[x];
         if (eaten === undefined) { eaten = meanIntake; missing++; }
 
-        cumBurn += s.tdee;
+        var dayTdee = fixed ? fixed.tdee : s.tdee;
+        var daySd = fixed ? fixed.sd : s.tdeeSd;
+        cumBurn += dayTdee;
         cumEat += eaten;
-        cumLow += s.tdee - 1.96 * s.tdeeSd;
-        cumHigh += s.tdee + 1.96 * s.tdeeSd;
+        cumLow += dayTdee - 1.96 * daySd;
+        cumHigh += dayTdee + 1.96 * daySd;
 
         burnLine.push({ x: x, y: cumBurn });
         eatLine.push({ x: x, y: cumEat });
@@ -311,7 +331,8 @@
       caption = 'השטח בין הקווים הוא הגירעון שנצבר' +
         (missing ? '. ' + missing + ' ימים ללא רישום הושלמו לפי הממוצע' : '');
       legendItems = [
-        { color: COLORS.measured, label: 'שרף — מצטבר' },
+        { color: COLORS.measured,
+          label: 'שרף — מצטבר' + (fixed ? ' (חלון ' + windowDays + ')' : '') },
         { color: COLORS.reference, label: 'אכל — מצטבר' },
         { color: '#2E6B4F', label: 'גבול עליון' },
         { color: COLORS.over, label: 'גבול תחתון' }
@@ -320,8 +341,12 @@
     } else {
       // ההיסטוריה מוצגת אחרי המעבר לאחור: כל יום מוערך גם לפי מה
       // שקרה אחריו. היום האחרון זהה בשתי השיטות.
-      var pick = function (s) { return Fmt.isNum(s.smoothTdee) ? s.smoothTdee : s.tdee; };
-      var pickSd = function (s) { return Fmt.isNum(s.smoothTdeeSd) ? s.smoothTdeeSd : s.tdeeSd; };
+      var pick = fixed
+        ? function () { return fixed.tdee; }
+        : function (s) { return Fmt.isNum(s.smoothTdee) ? s.smoothTdee : s.tdee; };
+      var pickSd = fixed
+        ? function () { return fixed.sd; }
+        : function (s) { return Fmt.isNum(s.smoothTdeeSd) ? s.smoothTdeeSd : s.tdeeSd; };
 
       var line = states.map(function (s) { return { x: Dates.dayIndex(s.date), y: pick(s) }; });
       var lowDaily = states.map(function (s) {
@@ -386,7 +411,8 @@
         ? 'הקו הירוק ישר כי ההוצאה שלך יציבה — כל התנועה היא באכילה'
         : 'ירוק מעל סגול = גירעון. הקו הדק הוא מה שנראה באותו יום.';
       legendItems = [
-        { color: COLORS.measured, label: 'שורף — הערכה' },
+        { color: COLORS.measured,
+        label: 'שורף — ' + (fixed ? 'חלון ' + windowDays + ' ימים' : 'מסתגל') },
         { color: '#2E6B4F', label: 'גבול עליון' },
         { color: COLORS.over, label: 'גבול תחתון' },
         { color: COLORS.reference, label: 'אוכל — ממוצע 7 ימים' },
@@ -694,7 +720,9 @@
       (hasKcal ? '<div class="section-label">הוצאה</div>' +
                  UI.chips(TDEE_MODES, tdeeMode, 'data-tdee-mode') +
                  chartBlock('chart-tdee', 'כמה שורף מול כמה אוכל',
-                   'שיטה: מסתגל (קלמן) · כולל הליכה',
+                   'שיטה: ' + (root.App.state.calcWindow === 'adaptive'
+                     ? 'מסתגל (קלמן)' : 'חלון ' + root.App.state.calcWindow + ' ימים') +
+                     ' · כולל הליכה',
                    tdeeMode === 'cumulative'
                      ? 'השטח בין הקווים הוא כל הגירעון שנצבר מתחילת התקופה.'
                      : 'הקו הירוק העבה = כמה שורף. הסגול = כמה אוכל. ' +
@@ -715,7 +743,9 @@
     if (hasWeight) drawWeight(entries, settings);
     if (hasFat) drawBodyField(entries, 'bodyFatKg', 'chart-fat', 'שומן');
     if (hasMuscle) drawBodyField(entries, 'muscleKg', 'chart-muscle', 'שריר');
-    if (hasKcal) drawTdee(all, settings, tdeeMode, { intakeTarget: kcalTarget });
+    if (hasKcal) drawTdee(all, settings, tdeeMode, {
+      intakeTarget: kcalTarget, windowDays: root.App.state.calcWindow
+    });
     if (hasKcal) drawIntake(entries, settings, 'kcal', 'chart-kcal', 0,
       { target: kcalTarget, targetLabel: targetLabel });
     if (hasProtein) drawIntake(entries, settings, 'proteinG', 'chart-protein', 0,

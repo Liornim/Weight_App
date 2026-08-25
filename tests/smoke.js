@@ -1428,7 +1428,7 @@ test('טבלת ההשוואה מציגה שורה לכל חלון עם שלוש�
   assert(table, 'טבלת ההשוואה חסרה');
 
   const headers = [...table.querySelectorAll('th')].map((th) => th.textContent.trim());
-  ['חלון', 'שורף', 'גירעון ליום', 'זהיר', 'הערכה', 'נדיב'].forEach((h) => {
+  ['חלון', 'שורף', '±', 'גירעון ליום', 'זהיר', 'הערכה', 'נדיב'].forEach((h) => {
     assert(headers.indexOf(h) !== -1, 'חסרה עמודה: ' + h);
   });
 
@@ -1442,8 +1442,10 @@ test('טבלת ההשוואה מציגה שורה לכל חלון עם שלוש�
     if (!row.ok) return;
     assert(Math.abs(num(rows[i].children[1]) - Math.round(row.tdee)) <= 1,
       row.label + ': השורף לא תואם');
+    assert(Math.abs(num(rows[i].children[2]) - Math.round(row.ci95)) <= 1,
+      row.label + ': רווח הסמך לא תואם');
     // שלושת התרחישים מסודרים משמאל לימין בטבלה
-    const low = num(rows[i].children[3]), mid = num(rows[i].children[4]), high = num(rows[i].children[5]);
+    const low = num(rows[i].children[4]), mid = num(rows[i].children[5]), high = num(rows[i].children[6]);
     assert(low > mid && mid > high, row.label + ': התרחישים לא מסודרים');
   });
 });
@@ -1483,6 +1485,65 @@ test('טבלת "כמה לאכול" מגיבה לבחירת התרחיש', () => 
   assert(low < mid && mid < high,
     'הקצבה לא מסודרת לפי תרחיש: ' + low + ' / ' + mid + ' / ' + high);
   App.setState({ scenario: 'mid' });
+});
+
+
+
+test('גרף ההוצאה מתעדכן לפי החלון שנבחר', () => {
+  const setWindow = (value) => {
+    App.setState({ view: 'today' });
+    doc.querySelector('#controls [data-calc="' + value + '"]').dispatchEvent(
+      new window.Event('click', { bubbles: true }));
+    App.setState({ view: 'trends', range: 0, tdeeMode: 'daily' });
+  };
+
+  const burnPath = () => {
+    const el = [...doc.querySelectorAll('#chart-tdee path')]
+      .find((p) => p.getAttribute('stroke') === '#0D6E67' &&
+        Number(p.getAttribute('stroke-width')) > 2);
+    assert(el, 'קו ההוצאה חסר');
+    return el.getAttribute('d');
+  };
+
+  setWindow('adaptive');
+  const adaptive = burnPath();
+  const adaptiveNote = [...doc.querySelectorAll('#view-trends .card-note')]
+    .find((n) => n.textContent.includes('שיטה')).textContent;
+  assert(adaptiveNote.includes('מסתגל'), 'הכותרת לא מציינת מסתגל');
+
+  setWindow('10');
+  const fixed = burnPath();
+  assert(adaptive !== fixed, 'קו ההוצאה לא השתנה עם החלון');
+
+  const note = [...doc.querySelectorAll('#view-trends .card-note')]
+    .find((n) => n.textContent.includes('שיטה')).textContent;
+  assert(note.includes('10 ימים'), 'הכותרת לא מציינת את החלון: ' + note);
+  assert(doc.getElementById('chart-tdee-legend').textContent.includes('חלון 10'),
+    'המקרא לא מציין את החלון');
+
+  // בחלון מספרי ההערכה קבועה, ולכן הקו אופקי: כל ערכי ה-y זהים
+  const ys = fixed.trim().split(/[ML]/).filter(Boolean)
+    .map((pair) => Number(pair.trim().split(' ')[1]));
+  const spread = Math.max(...ys) - Math.min(...ys);
+  assert(spread < 0.5, 'הקו אמור להיות ישר בחלון מספרי, פיזור ' + spread.toFixed(2));
+
+  setWindow('adaptive');
+});
+
+test('חלון רועש מסומן בטבלת ההשוואה', () => {
+  App.setState({ view: 'today', date: '2026-08-21' });
+  const table = [...doc.querySelectorAll('#view-today table.data')]
+    .find((t) => t.textContent.includes('גירעון ליום'));
+  const model = window.Metrics.windowComparison(Store.getEntries(), Store.getSettings(),
+    { endDate: '2026-08-21' });
+
+  const rows = [...table.querySelectorAll('tbody tr')];
+  model.rows.forEach((row, i) => {
+    if (!row.ok) return;
+    const marked = rows[i].children[0].textContent.includes('רועש');
+    assert(marked === (row.ci95 > 600),
+      row.label + ': סימון "רועש" לא תואם רווח סמך של ±' + Math.round(row.ci95));
+  });
 });
 
 
