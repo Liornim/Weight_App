@@ -421,7 +421,7 @@
       var mid = s.tdee - s.intake;
       var low = (s.tdee - margin) - s.intake;
       var high = (s.tdee + margin) - s.intake;
-      return '<tr><td class="n">' + Fmt.esc(Dates.short(s.date)) + '</td>' +
+      return '<tr><td class="date-cell">' + Fmt.esc(Dates.short(s.date)) + '</td>' +
         '<td class="n">' + Fmt.n(s.intake, 0) + '</td>' +
         '<td class="n">' + Fmt.n(s.tdee, 0) + '</td>' +
         cell(low) + cell(mid) + cell(high) + '</tr>';
@@ -448,7 +448,7 @@
       '<td class="n">' + Fmt.signed(-sum.high / kcalPerKg, 2) + '</td></tr>';
 
     return '<div class="table-scroll"><table class="data"><thead><tr>' +
-        '<th>יום</th><th class="n">אכלת</th><th class="n">שורף</th>' +
+        '<th class="date-cell">יום</th><th class="n">אכלת</th><th class="n">שורף</th>' +
         '<th class="n">גבול תחתון</th><th class="n">הערכה</th><th class="n">גבול עליון</th>' +
       '</tr></thead><tbody>' + rows + totalRow + '</tbody></table></div>' +
       UI.basis('ירוק = גירעון, אדום = עודף. שורת הסה״כ היא המצטבר של התקופה, ' +

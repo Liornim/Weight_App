@@ -580,6 +580,15 @@ table.data td.n,
 table.data th.n { direction: ltr; unicode-bidi: isolate; text-align: end; }
 table.data th:not(:first-child) { text-align: end; }
 table.data td:first-child, table.data th:first-child { text-align: start; }
+
+/* תא תאריך: מספרים בסדר LTR אבל מיושר כמו תווית ולא כמספר */
+table.data td.date-cell,
+table.data th.date-cell {
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: end;
+  white-space: nowrap;
+}
 table.data tbody tr:hover { background: #F7FAFB; }
 table.data .missing { color: var(--ink-faint); }
 

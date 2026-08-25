@@ -215,7 +215,12 @@
       carried.high += (s.tdee + m) - s.intake;
     });
 
-    var labels = { 1: 'מחר', 2: 'יומיים', 3: 'שלושה ימים', 5: 'חמישה ימים', 7: 'שבוע' };
+    // אם הקלוריות של היום עוד לא נרשמו, היום הוא היום הראשון שאפשר
+    // לפעול בו. אם הן כבר נרשמו, הספירה מתחילה ממחר.
+    var todayLogged = Fmt.isNum((entries.find(function (e) { return e.date === date; }) || {}).kcal);
+    var labels = todayLogged
+      ? { 1: 'מחר', 2: 'יומיים', 3: 'שלושה ימים', 5: 'חמישה ימים', 7: 'שבוע' }
+      : { 1: 'היום', 2: 'היום ומחר', 3: 'שלושה ימים', 5: 'חמישה ימים', 7: 'שבוע' };
     var ceiling = last.tdee + 1500;
 
     var rows = [1, 2, 3, 5, 7].map(function (n) {
@@ -228,7 +233,9 @@
         cellFor('low') + cellFor('mid') + cellFor('high') + '</tr>';
     }).join('');
 
-    return UI.card('כמה אפשר לאכול ולהישאר בירוק', 'ממוצע יומי מרבי, לפי אורך הפריסה',
+    return UI.card('כמה אפשר לאכול ולהישאר בירוק',
+      (todayLogged ? 'הקלוריות של היום כבר נרשמו, אז הספירה מתחילה ממחר. ' : '') +
+      'ממוצע יומי מרבי, לפי אורך הפריסה',
       '<div class="table-scroll"><table class="data"><thead><tr>' +
         '<th>טווח</th><th class="n">זהיר</th><th class="n">הערכה</th><th class="n">נדיב</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div>' +

@@ -18,7 +18,7 @@
 
   var App = {
     // חותמת בנייה — מופיעה בראש המסך כדי שאפשר יהיה לדעת איזו גרסה פתוחה
-    BUILD: 'v27',
+    BUILD: 'v31',
     state: {
       view: 'today',
       date: Dates.today(),
@@ -27,6 +27,7 @@
       period: 7,    // תקופת החישוב במסך היעד
       stepsMode: 'base',      // 'base' = בלי צעדים, 'total' = כולל
       deficitUnit: 'kg',      // יחידות בטבלת הגירעון
+      controlsOpen: false,    // האם פס הבקרה פתוח
       calcWindow: 'adaptive', // חלון החישוב במסך הבית
       tdeeMode: 'daily'       // תצוגת גרף ההוצאה: יומי או מצטבר
     }
@@ -55,6 +56,7 @@
 
   function renderActiveView() {
     Chart.sweep();
+    if (elements.controls && root.Controls) root.Controls.render(elements.controls);
     ORDER.forEach(function (id) {
       var host = document.getElementById('view-' + id);
       var active = id === App.state.view;
@@ -90,6 +92,7 @@
     elements.tabs = document.getElementById('tabs');
     elements.toast = document.getElementById('toast');
     elements.stamp = document.getElementById('stamp');
+    elements.controls = document.getElementById('controls');
 
     Store.init();
     // כל כתיבה לחנות מרעננת את המסך הפעיל, כך שאין צורך לרנדר ידנית

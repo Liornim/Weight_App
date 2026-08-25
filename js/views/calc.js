@@ -49,7 +49,7 @@
   function traceTable(trace) {
     if (!trace || !trace.length) return '';
     var rows = trace.map(function (s) {
-      return '<tr><td class="n">' + Fmt.esc(Dates.short(s.date)) + '</td>' +
+      return '<tr><td class="date-cell">' + Fmt.esc(Dates.short(s.date)) + '</td>' +
         '<td class="n">' + Fmt.n(s.weight, 2) + '</td>' +
         '<td class="n">' + Fmt.n(s.tdee, 0) + '</td>' +
         '<td class="n">±' + Fmt.n(s.ci95, 0) + '</td></tr>';
@@ -57,7 +57,7 @@
 
     return '<div class="section-label">חמשת הימים האחרונים</div>' +
       '<div class="table-scroll"><table class="data"><thead><tr>' +
-        '<th>תאריך</th><th class="n">משקל מגמה</th><th class="n">TDEE</th><th class="n">±</th>' +
+        '<th class="date-cell">תאריך</th><th class="n">משקל מגמה</th><th class="n">TDEE</th><th class="n">±</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
@@ -131,13 +131,7 @@
     container.innerHTML =
       hero +
 
-      '<div class="section-label">כמה לרדת בשבוע (ק״ג)</div>' +
-      UI.chips(RATES, settings.goal.ratePerWeekKg, 'data-rate') +
-
-      '<div class="section-label">לחשב לפי (ימים)</div>' +
-      windowChips(entries, date, root.App.state.calcWindow) +
-      UI.basis('חלון של n ימים משווה n ימים ל-n שקדמו להם, ולכן דורש פי שניים ימי נתונים. ' +
-        'חלונות מנוטרלים הם כאלה שאין להם עדיין כיסוי מלא.') +
+      UI.basis('את קצב הירידה ואת חלון החישוב אפשר לשנות בפס שבראש המסך, בכל דף.') +
 
       (picked.methods.length
         ? '<div class="section-label">השוואת שיטות</div>' +
@@ -148,19 +142,6 @@
           '<div class="section-label">איך כל אחת חושבה</div>' +
           picked.methods.map(function (m) { return methodBlock(m, chosen ? chosen.id : null); }).join('')
         : '');
-
-    container.querySelectorAll('[data-rate]').forEach(function (chip) {
-      chip.addEventListener('click', function () {
-        Store.updateSettings({ goal: { ratePerWeekKg: Number(chip.dataset.rate) } });
-      });
-    });
-
-    container.querySelectorAll('[data-calc]').forEach(function (chip) {
-      chip.addEventListener('click', function () {
-        var raw = chip.dataset.calc;
-        root.App.setState({ calcWindow: raw === 'adaptive' ? 'adaptive' : Number(raw) });
-      });
-    });
 
     container.querySelectorAll('[data-pick]').forEach(function (button) {
       button.addEventListener('click', function () {

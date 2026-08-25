@@ -498,11 +498,11 @@ test('בחירת חלון החישוב משנה את היעד היומי', () =>
   App.setState({ view: 'calc', date: '2026-08-21', calcWindow: 'adaptive' });
   const adaptive = doc.querySelector('#view-calc .hero-value').textContent;
 
-  const chip = doc.querySelector('#view-calc [data-calc="7"]');
+  const chip = doc.querySelector('#controls [data-calc="7"]');
   assert(chip, 'אין כפתור לחלון 7');
   chip.dispatchEvent(new window.Event('click', { bubbles: true }));
   assert(App.state.calcWindow === 7, 'החלון לא התעדכן');
-  assert(doc.querySelector('#view-calc [data-calc="7"]').getAttribute('aria-pressed') === 'true',
+  assert(doc.querySelector('#controls [data-calc="7"]').getAttribute('aria-pressed') === 'true',
     'הכפתור לא סומן');
   assert(doc.querySelector('#view-calc .hero-value').textContent !== adaptive,
     'המספר הראשי לא השתנה (' + adaptive + ')');
@@ -527,7 +527,7 @@ test('מצב הכפתורים תואם בדיוק את זמינות החלונו
   App.setState({ view: 'calc', date: '2026-08-21', calcWindow: 'adaptive' });
   const status = window.Metrics.availableWindows(Store.getEntries(), { endDate: '2026-08-21' });
   const byValue = {};
-  doc.querySelectorAll('#view-calc [data-calc]').forEach((c) => { byValue[c.dataset.calc] = c; });
+  doc.querySelectorAll('#controls [data-calc]').forEach((c) => { byValue[c.dataset.calc] = c; });
 
   status.forEach((w) => {
     const chip = byValue[String(w.days)];
@@ -614,34 +614,63 @@ test('מסך הרישום מכיל את הטופס', () => {
   assert(host.textContent.includes('שאכלת אתמול'), 'חסרה ההערה על ההיסט');
 });
 
-test('בחירת קצב הירידה במסך החישוב משנה את היעד בסיכום', () => {
-  const heroValue = () => {
-    const el = doc.querySelector('#view-today .hero-value');
-    assert(el, 'אין תשובה ראשית בסיכום: ' +
-      doc.getElementById('view-today').textContent.slice(0, 80));
+test('המחוון בפס הבקרה משנה את היעד בכל המסכים', () => {
+  const heroValue = (view) => {
+    const el = doc.querySelector('#view-' + view + ' .hero-value');
+    assert(el, 'אין תשובה ראשית ב-' + view);
     return Number(el.textContent.replace(/[^\d]/g, ''));
   };
 
-  const pickRate = (rate) => {
-    App.setState({ view: 'calc', date: '2026-08-21', calcWindow: 14 });
-    const chip = doc.querySelector('#view-calc [data-rate="' + rate + '"]');
-    assert(chip, 'אין כפתור לקצב ' + rate);
-    chip.dispatchEvent(new window.Event('click', { bubbles: true }));
-    assert(Store.getSettings().goal.ratePerWeekKg === Number(rate), 'הקצב ' + rate + ' לא נשמר');
-    App.setState({ view: 'today', date: '2026-08-21' });
-    return heroValue();
+  const setRate = (kg) => {
+    const slider = doc.querySelector('#rate-slider');
+    assert(slider, 'המחוון חסר');
+    slider.value = String(kg);
+    slider.dispatchEvent(new window.Event('change', { bubbles: true }));
+    assert(Math.abs(Store.getSettings().goal.ratePerWeekKg + kg) < 1e-9,
+      'הקצב ' + kg + ' לא נשמר');
   };
 
-  const gentle = pickRate('-0.25');
-  const steep = pickRate('-1');
+  App.setState({ view: 'today', date: '2026-08-21', calcWindow: 14 });
+  setRate(0.25);
+  const gentle = heroValue('today');
+
+  setRate(1);
+  const steep = heroValue('today');
   assert(gentle - steep > 500,
     'ההפרש בין 0.25 ל-1 ק"ג צריך להיות גדול (' + gentle + ' מול ' + steep + ')');
 
-  const maintain = pickRate('0');
+  setRate(0);
   const report = window.Metrics.windowReport(Store.getEntries(), Store.getSettings(),
     { windowDays: 14, endDate: '2026-08-21' });
-  assert(Math.abs(maintain - Math.round(report.base)) <= 1,
-    'שמירה צריכה להיות בדיוק הבסיס: ' + maintain + ' מול ' + Math.round(report.base));
+  assert(Math.abs(heroValue('today') - Math.round(report.base)) <= 1,
+    'שמירה צריכה להיות בדיוק הבסיס');
+
+  Store.updateSettings({ goal: { ratePerWeekKg: -0.5 } });
+});
+
+test('המחוון מוגבל לטווח 0 עד 1.5 ק"ג', () => {
+  App.setState({ view: 'today' });
+  const slider = doc.querySelector('#rate-slider');
+  assert(slider.getAttribute('min') === '0', 'מינימום שגוי');
+  assert(slider.getAttribute('max') === '1.5', 'מקסימום שגוי');
+  assert(slider.getAttribute('step') === '0.05', 'צעד שגוי');
+});
+
+test('גירעון קלורי לשבוע וליום מסונכרנים עם הקצב', () => {
+  App.setState({ view: 'today' });
+  const kcalPerKg = Store.getSettings().kcalPerKg;
+
+  const weekly = doc.querySelector('#rate-week');
+  weekly.value = '3850';
+  weekly.dispatchEvent(new window.Event('change', { bubbles: true }));
+  assert(Math.abs(Store.getSettings().goal.ratePerWeekKg + 3850 / kcalPerKg) < 1e-9,
+    'גירעון שבועי לא הומר לקצב');
+
+  const daily = doc.querySelector('#rate-day');
+  daily.value = '500';
+  daily.dispatchEvent(new window.Event('change', { bubbles: true }));
+  assert(Math.abs(Store.getSettings().goal.ratePerWeekKg + (500 * 7) / kcalPerKg) < 1e-9,
+    'גירעון יומי לא הומר לקצב');
 
   Store.updateSettings({ goal: { ratePerWeekKg: -0.5 } });
 });
@@ -1159,16 +1188,15 @@ test('טבלת הגירעון עוברת בין קילוגרמים לקלורי�
     new window.Event('click', { bubbles: true }));
 });
 
-test('בוררי החישוב אינם במסך הסיכום', () => {
-  App.setState({ view: 'today', date: '2026-08-21' });
-  const host = doc.getElementById('view-today');
-  assert(!host.querySelector('[data-calc]'), 'בורר החלון עדיין בסיכום');
-  assert(!host.querySelector('[data-rate]'), 'בורר הקצב עדיין בסיכום');
-
-  App.setState({ view: 'calc' });
-  const calc = doc.getElementById('view-calc');
-  assert(calc.querySelector('[data-calc]'), 'בורר החלון חסר במסך החישוב');
-  assert(calc.querySelector('[data-rate]'), 'בורר הקצב חסר במסך החישוב');
+test('פס הבקרה זמין בכל מסך, ולא בתוך מסך מסוים', () => {
+  ['today', 'entry', 'calc', 'trends', 'data'].forEach((view) => {
+    App.setState({ view: view, date: '2026-08-21' });
+    assert(doc.querySelector('#controls #rate-slider'), view + ': המחוון חסר בפס הבקרה');
+    assert(doc.querySelector('#controls [data-calc]'), view + ': בורר החלון חסר בפס הבקרה');
+    assert(!doc.querySelector('#view-' + view + ' [data-calc]'),
+      view + ': בורר החלון שוכפל בתוך המסך');
+  });
+  App.setState({ view: 'today' });
 });
 
 
@@ -1225,6 +1253,45 @@ test('הלוח מציג את השקילה האחרונה ומפרט ימים ח�
   // הספירה חייבת להיות עקבית: ימים בטווח = שקילות + חסרים
   assert(d.weighIns + d.missingWeighIns.length === d.spanDays,
     'ספירה לא עקבית: ' + d.weighIns + ' + ' + d.missingWeighIns.length + ' ≠ ' + d.spanDays);
+});
+
+
+
+test('טבלת הקצבה מתחילה מהיום כשהקלוריות עוד לא נרשמו', () => {
+  const date = '2026-08-21';
+  Store.upsert({ date: date, kcal: '' });   // מבטלים את הרישום של אותו יום
+  App.setState({ view: 'today', date: date });
+
+  const table = [...doc.querySelectorAll('#view-today table.data')]
+    .find((t) => t.textContent.includes('שבוע') && t.textContent.includes('זהיר'));
+  assert(table, 'טבלת הקצבה חסרה');
+  const first = table.querySelector('tbody tr').children[0].textContent.trim();
+  assert(first === 'היום', 'ציפיתי ל"היום", קיבלתי "' + first + '"');
+
+  // ואחרי שנרשמו — הספירה מתחילה ממחר
+  Store.upsert({ date: date, kcal: 2400 });
+  App.setState({ view: 'today', date: date });
+  const table2 = [...doc.querySelectorAll('#view-today table.data')]
+    .find((t) => t.textContent.includes('שבוע') && t.textContent.includes('זהיר'));
+  const first2 = table2.querySelector('tbody tr').children[0].textContent.trim();
+  assert(first2 === 'מחר', 'ציפיתי ל"מחר", קיבלתי "' + first2 + '"');
+});
+
+test('עמודת התאריך בטבלאות מסומנת ומיושרת בנפרד', () => {
+  App.setState({ view: 'trends', range: 0 });
+  const table = [...doc.querySelectorAll('#view-trends table.data')]
+    .find((t) => t.textContent.includes('גבול תחתון'));
+  assert(table, 'הטבלה חסרה');
+
+  const header = table.querySelector('thead th');
+  assert(header.classList.contains('date-cell'), 'כותרת התאריך לא מסומנת');
+  table.querySelectorAll('tbody tr:not(.summary)').forEach((tr) => {
+    assert(tr.children[0].classList.contains('date-cell'), 'תא תאריך לא מסומן');
+    assert(!tr.children[0].classList.contains('n'), 'תא התאריך עדיין מיושר כמספר');
+  });
+
+  const css = fs.readFileSync(path.join(ROOT, 'assets/app.css'), 'utf8');
+  assert(/table\.data td\.date-cell/.test(css), 'חסר כלל עיצוב לתא התאריך');
 });
 
 
