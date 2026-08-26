@@ -1713,6 +1713,61 @@ test('התקופה שנבחרת היא זו שמכילה את היום', () => {
   assert(r.remainingDays > 0, 'חייבים להישאר ימים לפעול בהם');
 });
 
+test('סבבי הבלוקים מעוגנים ליום הראשון, כמו בגיליון', () => {
+  // 26/07 עד 24/08 = 30 ימים, סבבים של 5 -> שישה סבבים מלאים
+  const entries = buildSeries('2026-07-26', 30, (i) => ({
+    weightKg: 89 - 0.03 * i, kcal: 2400, steps: 9000
+  }));
+  const r = Metrics.blockWindows(entries, { days: 5, count: 6, endDate: '2026-08-24' });
+
+  assert(r.totalBlocks === 6, 'שישה סבבים מלאים, קיבלתי ' + r.totalBlocks);
+  assert(r.first === '2026-07-26', 'העיגון ליום הראשון');
+
+  var latest = r.rows[0];
+  assert(latest.index === 6, 'הסבב האחרון הוא 6, קיבלתי ' + latest.index);
+  assert(latest.from === '2026-08-20' && latest.to === '2026-08-24',
+    'סבב 6: ' + latest.from + '–' + latest.to);
+  assert(latest.prevFrom === '2026-08-15' && latest.prevTo === '2026-08-19',
+    'סבב 5: ' + latest.prevFrom + '–' + latest.prevTo);
+
+  // סבב 2 הוא 31/07 עד 04/08, בדיוק כמו בגיליון
+  var second = r.rows.find(function (row) { return row.index === 2; });
+  assert(second.from === '2026-07-31' && second.to === '2026-08-04',
+    'סבב 2: ' + second.from + '–' + second.to);
+});
+
+test('סבב חלקי בסוף לא נספר', () => {
+  // 32 ימים: שישה סבבים של 5 ועוד שארית של 2
+  const entries = buildSeries('2026-07-26', 32, () => ({ weightKg: 88, kcal: 2400 }));
+  const r = Metrics.blockWindows(entries, { days: 5, count: 3, endDate: '2026-08-26' });
+  assert(r.totalBlocks === 6, 'שישה סבבים מלאים');
+  assert(r.rows[0].to === '2026-08-24', 'הסבב האחרון מסתיים ב-24/08, לא ב-26/08');
+});
+
+test('העיגון לא זז כשעובר עוד יום', () => {
+  const entries = buildSeries('2026-07-26', 31, (i) => ({
+    weightKg: 89 - 0.03 * i, kcal: 2400, steps: 9000
+  }));
+  const at24 = Metrics.blockWindows(entries, { days: 5, count: 1, endDate: '2026-08-24' });
+  const at25 = Metrics.blockWindows(entries, { days: 5, count: 1, endDate: '2026-08-25' });
+  assert(at24.rows[0].from === at25.rows[0].from,
+    'הסבב זז ביום: ' + at24.rows[0].from + ' מול ' + at25.rows[0].from);
+});
+
+test('התחזוקה בסבב מחושבת כמו בגיליון', () => {
+  const entries = buildSeries('2026-07-26', 30, (i) => ({
+    weightKg: 89 - 0.03 * i, kcal: 2400, steps: 10000
+  }));
+  const row = Metrics.blockWindows(entries,
+    { days: 5, count: 1, endDate: '2026-08-24', kcalPerStep: 0.04 }).rows[0];
+
+  // צריכה + קלוריות מירידת המשקל − קלוריות מצעדים
+  close(row.base, row.meanKcal + row.fromWeight - row.fromSteps, 1e-9, 'תחזוקה בלי צעדים');
+  close(row.fromSteps, 10000 * 0.04, 1e-9, 'קלוריות מצעדים');
+  close(row.fromWeight, (row.prevMeanWeight - row.meanWeight) * 7700 / 5, 1e-9,
+    'קלוריות מירידת המשקל');
+});
+
 // ---------- דוח ----------
 // הריצה מופעלת בסוף הקובץ בלבד. אם היא תופעל באמצע, בדיקות שנרשמו
 // אחריה לא ייכנסו לתור וייעלמו בשקט — קרה בפועל.

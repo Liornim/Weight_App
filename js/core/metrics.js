@@ -644,10 +644,15 @@
   }
 
   /**
-   * שיטת בלוקים: משווה ממוצע של n ימים לממוצע n הימים שקדמו להם.
-   * זו השיטה הידנית הנפוצה, והיא נכונה במבנה — אבל רועשת מאוד בחלונות
-   * קצרים, ולכן כל שורה מוחזרת עם רווח הסמך שלה. בלי המספר הזה
-   * קל להסתכל על שורה בודדת ולהסיק ממנה מסקנה שאין לה כיסוי.
+   * שיטת בלוקים: סבבים רצופים באורך n, מעוגנים ליום הראשון של התיעוד.
+   *
+   * סבב 1 מתחיל ביום הראשון, סבב 2 אחריו, וכן הלאה — כמו בגיליון.
+   * כל סבב מושווה לסבב שקדם לו, וסבב חלקי בסוף פשוט לא נספר: מוצג
+   * הסבב המלא האחרון. עיגון לתאריך הסיום, לעומת זאת, היה מזיז את כל
+   * החלונות בכל יום שעובר.
+   *
+   * כל שורה מוחזרת עם רווח הסמך שלה, כי בחלון קצר הוא רחב מאוד ובלי
+   * המספר הזה קל להסיק משורה בודדת מסקנה שאין לה כיסוי.
    */
   function blockWindows(entries, options) {
     var opts = options || {};
@@ -658,62 +663,63 @@
     var noiseSd = opts.weightNoiseSd || weightNoiseSd(entries);
     var stepCost = num(opts.kcalPerStep);
     if (stepCost === null) stepCost = 0.030;
-    var all = sorted(entries);
-    var first = all.length ? all[0].date : null;
+
+    var all = sorted(entries).filter(function (e) { return e.date <= endDate; });
+    if (!all.length) return { days: n, weightNoiseSd: noiseSd, rows: [] };
+
+    var first = all[0].date;
+    var span = (Dates.diffDays(first, endDate) || 0) + 1;
+    var totalBlocks = Math.floor(span / n);   // רק סבבים שהושלמו
+
+    function stats(index) {
+      var from = Dates.addDays(first, index * n);
+      var to = Dates.addDays(from, n - 1);
+      var inRange = all.filter(function (e) { return e.date >= from && e.date <= to; });
+      var weights = series(inRange, 'weightKg').map(function (p) { return p.y; });
+      var kcals = series(inRange, 'kcal').map(function (p) { return p.y; });
+      var steps = series(inRange, 'steps').map(function (p) { return p.y; });
+      return {
+        index: index + 1, from: from, to: to,
+        meanWeight: Stats.mean(weights), weighIns: weights.length,
+        meanKcal: Stats.mean(kcals), loggedDays: kcals.length,
+        meanSteps: Stats.mean(steps), sdKcal: Stats.stdDev(kcals)
+      };
+    }
 
     var rows = [];
-    for (var i = 0; i < count; i++) {
-      var to = Dates.addDays(endDate, -i * n);
-      var from = Dates.addDays(to, -(n - 1));
-      var prevTo = Dates.addDays(from, -1);
-      var prevFrom = Dates.addDays(prevTo, -(n - 1));
+    var minWeighIns = Math.max(2, Math.ceil(n / 2));
 
-      var cur = inWindow(entries, to, n);
-      var prev = inWindow(entries, prevTo, n);
+    // מהסבב המלא האחרון אחורה
+    for (var i = totalBlocks - 1; i >= 1 && rows.length < count; i--) {
+      var cur = stats(i);
+      var prev = stats(i - 1);
+      if (cur.meanWeight === null || prev.meanWeight === null || cur.meanKcal === null) continue;
 
-      var w = Stats.mean(series(cur, 'weightKg').map(function (p) { return p.y; }));
-      var wPrev = Stats.mean(series(prev, 'weightKg').map(function (p) { return p.y; }));
-      var kcalValues = series(cur, 'kcal').map(function (p) { return p.y; });
-      var kcal = Stats.mean(kcalValues);
-      var stepsValues = series(cur, 'steps').map(function (p) { return p.y; });
-
-      var weighIns = series(cur, 'weightKg').length;
-      var prevWeighIns = series(prev, 'weightKg').length;
-      var minWeighIns = Math.max(2, Math.ceil(n / 2));
-
-      // חלון נחשב מלא רק אם שתי התקופות נמצאות בתוך טווח הנתונים
-      // ויש בשתיהן מספיק שקילות. חלון חלקי מייצר "תחזוקה" שנראית
-      // אמיתית אבל מבוססת על השוואה לתקופה שלא קיימת.
-      var complete = !!(first && first <= prevFrom) &&
-        weighIns >= minWeighIns && prevWeighIns >= minWeighIns;
-
-      if (w === null || wPrev === null || kcal === null) continue;
-
-      var deltaKg = wPrev - w;                  // חיובי = ירידה
+      var deltaKg = prev.meanWeight - cur.meanWeight;        // חיובי = ירידה
       var fromWeight = (deltaKg * kcalPerKg) / n;
+      var fromSteps = cur.meanSteps === null ? 0 : cur.meanSteps * stepCost;
 
-      // אי־ודאות: רעש בשני ממוצעי המשקל, ועוד פיזור הצריכה
       var weightErr = (Math.sqrt(2) * noiseSd / Math.sqrt(n)) * kcalPerKg / n;
-      var sdKcal = Stats.stdDev(kcalValues);
-      var intakeErr = sdKcal === null ? 0 : sdKcal / Math.sqrt(kcalValues.length);
+      var intakeErr = cur.sdKcal === null ? 0 : cur.sdKcal / Math.sqrt(cur.loggedDays);
 
       rows.push({
-        index: i,
-        from: from, to: to, prevFrom: prevFrom, prevTo: prevTo,
+        index: cur.index,
+        from: cur.from, to: cur.to,
+        prevFrom: prev.from, prevTo: prev.to,
         days: n,
-        meanWeight: w, prevMeanWeight: wPrev, deltaKg: deltaKg,
-        meanKcal: kcal, meanSteps: Stats.mean(stepsValues),
-        fromWeight: fromWeight,
-        fromSteps: Stats.mean(stepsValues) === null ? 0 : Stats.mean(stepsValues) * stepCost,
-        complete: complete,
-        tdee: kcal + fromWeight,
+        meanWeight: cur.meanWeight, prevMeanWeight: prev.meanWeight, deltaKg: deltaKg,
+        meanKcal: cur.meanKcal, meanSteps: cur.meanSteps,
+        fromWeight: fromWeight, fromSteps: fromSteps,
+        tdee: cur.meanKcal + fromWeight,
+        base: cur.meanKcal + fromWeight - fromSteps,
         ci95: 1.96 * Math.sqrt(weightErr * weightErr + intakeErr * intakeErr),
-        weighIns: weighIns,
-        prevWeighIns: prevWeighIns,
-        loggedDays: kcalValues.length
+        complete: cur.weighIns >= minWeighIns && prev.weighIns >= minWeighIns,
+        weighIns: cur.weighIns, prevWeighIns: prev.weighIns,
+        loggedDays: cur.loggedDays
       });
     }
-    return { days: n, weightNoiseSd: noiseSd, rows: rows };
+
+    return { days: n, weightNoiseSd: noiseSd, totalBlocks: totalBlocks, first: first, rows: rows };
   }
 
   /**
@@ -1070,9 +1076,12 @@
       return {
         days: n,
         available: !!(row && row.complete),
+        // דרושים שני סבבים מלאים, כלומר פי שניים ימים
         haveDays: haveDays,
         needDays: 2 * n,
-        missingDays: Math.max(2 * n - haveDays, 0)
+        missingDays: Math.max(2 * n - haveDays, 0),
+        completeBlocks: blocks.totalBlocks || 0,
+        latest: row ? { index: row.index, from: row.from, to: row.to } : null
       };
     });
   }

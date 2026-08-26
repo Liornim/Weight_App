@@ -82,6 +82,57 @@
       body);
   }
 
+  /** כל הסבבים המלאים של החלון שנבחר, כמו בגיליון */
+  function blocksTable(entries, settings, date) {
+    var days = root.App.state.calcWindow;
+    if (days === 'adaptive') {
+      return UI.card('סבבים', null,
+        UI.empty('החישוב המסתגל אינו עובד בסבבים',
+          'הוא מעדכן את ההערכה בכל שקילה. בחר חלון מספרי בפס הבקרה כדי לראות סבבים.'));
+    }
+
+    var r = Metrics.blockWindows(entries, {
+      days: days, count: 12, endDate: date,
+      kcalPerKg: settings.kcalPerKg, kcalPerStep: settings.kcalPerStep
+    });
+    // סבב שאין בו מספיק שקילות אינו בר־השוואה, גם אם התאריכים חלפו
+    var usable = r.rows.filter(function (row) { return row.complete; });
+    var skipped = r.rows.length - usable.length;
+    if (!usable.length) {
+      return UI.card('סבבים', null,
+        UI.empty('אין עדיין שני סבבים מלאים',
+          'סבב של ' + days + ' ימים דורש ' + (days * 2) + ' ימי נתונים.'));
+    }
+
+    var rows = usable.slice().reverse().map(function (row) {
+      return '<tr><td class="n">' + row.index + '</td>' +
+        '<td class="date-cell">' + Fmt.esc(Dates.short(row.from) + '–' + Dates.short(row.to)) + '</td>' +
+        '<td class="n">' + Fmt.n(row.meanWeight, 2) + '</td>' +
+        '<td class="n">' + Fmt.n(row.prevMeanWeight, 2) + '</td>' +
+        '<td class="n"><span class="' + Fmt.deltaClass(-row.deltaKg, 'down') + '">' +
+          Fmt.signed(-row.deltaKg, 2) + '</span></td>' +
+        '<td class="n">' + Fmt.n(row.meanKcal, 0) + '</td>' +
+        '<td class="n">' + Fmt.n(row.meanSteps, 0) + '</td>' +
+        '<td class="n">' + Fmt.signed(row.fromWeight, 0) + '</td>' +
+        '<td class="n">−' + Fmt.n(row.fromSteps, 0) + '</td>' +
+        '<td class="n"><strong>' + Fmt.n(row.base, 0) + '</strong></td></tr>';
+    }).join('');
+
+    return UI.card('סבבים של ' + days + ' ימים',
+      usable.length + ' סבבים מלאים מאז ' + Dates.short(r.first) +
+      (skipped ? ' · ' + skipped + ' סבבים ללא מספיק שקילות לא מוצגים' : '') +
+      '. סבב חלקי בסוף אינו נספר',
+      '<div class="table-scroll"><table class="data"><thead><tr>' +
+        '<th class="n">סבב</th><th class="date-cell">תקופה</th>' +
+        '<th class="n">משקל</th><th class="n">קודם</th><th class="n">שינוי</th>' +
+        '<th class="n">קלוריות</th><th class="n">צעדים</th>' +
+        '<th class="n">ממשקל</th><th class="n">מצעדים</th><th class="n">תחזוקה</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      UI.basis('"תחזוקה" = קלוריות ממוצעות + קלוריות מירידת המשקל − קלוריות מצעדים. ' +
+        'זו ההוצאה בלי הליכה, ולכן היא מה שמזין את היעד היומי. ' +
+        'רעש השקילה שנמדד אצלך: ' + Fmt.n(r.weightNoiseSd, 2) + ' ק״ג.'));
+  }
+
   function render(container) {
     var entries = Store.getEntries();
     var settings = Store.getSettings();
@@ -132,6 +183,9 @@
       hero +
 
       UI.basis('את קצב הירידה ואת חלון החישוב אפשר לשנות בפס שבראש המסך, בכל דף.') +
+
+      '<div class="section-label">סבבים</div>' +
+      blocksTable(entries, settings, date) +
 
       (picked.methods.length
         ? '<div class="section-label">השוואת שיטות</div>' +

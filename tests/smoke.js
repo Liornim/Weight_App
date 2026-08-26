@@ -1577,6 +1577,55 @@ test('גרף המשקל מסביר מה כל קו', () => {
 });
 
 
+
+test('מסך החישוב מציג את כל הסבבים המלאים', () => {
+  App.setState({ view: 'today' });
+  doc.querySelector('#controls [data-calc="5"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+  App.setState({ view: 'calc', date: '2026-08-21' });
+
+  const table = [...doc.querySelectorAll('#view-calc table.data')]
+    .find((t) => t.textContent.includes('תחזוקה'));
+  assert(table, 'טבלת הסבבים חסרה');
+
+  const headers = [...table.querySelectorAll('th')].map((th) => th.textContent.trim());
+  ['סבב', 'תקופה', 'משקל', 'קודם', 'שינוי', 'קלוריות', 'צעדים', 'ממשקל', 'מצעדים', 'תחזוקה']
+    .forEach((h) => assert(headers.indexOf(h) !== -1, 'חסרה עמודה: ' + h));
+
+  const model = window.Metrics.blockWindows(Store.getEntries(),
+    { days: 5, count: 12, endDate: '2026-08-21' });
+  const rows = [...table.querySelectorAll('tbody tr')];
+  assert(rows.length === model.rows.length, 'מספר סבבים לא תואם');
+
+  // הסבבים מוצגים בסדר עולה, והאחרון הוא הסבב המלא האחרון
+  const indexes = rows.map((tr) => Number(tr.children[0].textContent));
+  assert(indexes[0] < indexes[indexes.length - 1], 'הסדר לא עולה');
+  assert(indexes[indexes.length - 1] === model.rows[0].index, 'הסבב האחרון לא תואם');
+
+  // התחזוקה בטבלה תואמת את החשבון
+  const shown = Number(rows[rows.length - 1].children[9].textContent.replace(/[^\d]/g, ''));
+  assert(Math.abs(shown - Math.round(model.rows[0].base)) <= 1,
+    'התחזוקה לא תואמת: ' + shown + ' מול ' + Math.round(model.rows[0].base));
+
+  App.setState({ view: 'today' });
+  doc.querySelector('#controls [data-calc="adaptive"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+});
+
+test('הסבבים מעוגנים ליום הראשון ולא נעים עם התאריך', () => {
+  const first = Store.getEntries()[0].date;
+  ['2026-08-21', '2026-08-22', '2026-08-25'].forEach((end) => {
+    const r = window.Metrics.blockWindows(Store.getEntries(), { days: 7, count: 3, endDate: end });
+    r.rows.forEach((row) => {
+      const offset = window.Dates.diffDays(first, row.from);
+      assert(offset % 7 === 0,
+        end + ': סבב שמתחיל ב-' + row.from + ' אינו מעוגן (מרחק ' + offset + ')');
+      assert(row.to <= end, end + ': סבב שמסתיים ב-' + row.to + ' חורג מהתאריך');
+    });
+  });
+});
+
+
 runAll().then(function () {
   
 
