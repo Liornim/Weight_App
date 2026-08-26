@@ -808,6 +808,28 @@ span.delta-down { background: var(--good-10); }
   border-top: 1px solid var(--rule);
 }
 
+/* פרמטרים מתחת לגרף */
+
+.param-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px 14px;
+  margin-top: var(--gap-3);
+  padding-top: var(--gap-3);
+  border-top: 1px solid var(--rule);
+}
+
+.param {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--gap-2);
+  font-size: 12.5px;
+}
+
+.param .k { color: var(--ink-soft); }
+.param .v { color: var(--ink); }
+
 /* ------------------------------------------------------- מצבים ריקים */
 
 .empty {

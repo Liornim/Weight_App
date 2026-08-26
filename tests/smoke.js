@@ -563,7 +563,7 @@ test('מסך הבית מציג את הלוח בלי טופס ובלי כרטיס
   const text = host.textContent;
 
   ['התמונה הכללית', 'מה קרה בפועל', 'גירעון מול מציאות',
-   'כמה אפשר לאכול ולהישאר בירוק'].forEach((label) => {
+   'לסגור את התקופה בירוק'].forEach((label) => {
     assert(text.includes(label), 'חסר: ' + label);
   });
 
@@ -1041,18 +1041,6 @@ test('טבלת הגירעון מול המציאות, לשלושה חלונות',
   });
 });
 
-test('טבלת הקצבה נמצאת בדף הבית', () => {
-  App.setState({ view: 'today', date: '2026-08-21' });
-  const host = doc.getElementById('view-today');
-  assert(host.textContent.includes('כמה אפשר לאכול ולהישאר בירוק'), 'הכרטיס חסר');
-  const table = [...host.querySelectorAll('table.data')]
-    .find((t) => t.textContent.includes('מחר') && t.textContent.includes('שבוע'));
-  assert(table, 'טבלת הקצבה חסרה');
-  assert(table.querySelectorAll('tbody tr').length === 5, 'ציפיתי לחמישה טווחים');
-});
-
-
-
 test('אריחי לוח המחוונים צבועים ונבדלים זה מזה', () => {
   App.setState({ view: 'today', date: '2026-08-21' });
   const tiles = doc.querySelectorAll('#view-today .stat');
@@ -1256,26 +1244,6 @@ test('הלוח מציג את השקילה האחרונה ומפרט ימים ח�
 });
 
 
-
-test('טבלת הקצבה מתחילה מהיום כשהקלוריות עוד לא נרשמו', () => {
-  const date = '2026-08-21';
-  Store.upsert({ date: date, kcal: '' });   // מבטלים את הרישום של אותו יום
-  App.setState({ view: 'today', date: date });
-
-  const table = [...doc.querySelectorAll('#view-today table.data')]
-    .find((t) => t.textContent.includes('שבוע') && t.textContent.includes('זהיר'));
-  assert(table, 'טבלת הקצבה חסרה');
-  const first = table.querySelector('tbody tr').children[0].textContent.trim();
-  assert(first === 'היום', 'ציפיתי ל"היום", קיבלתי "' + first + '"');
-
-  // ואחרי שנרשמו — הספירה מתחילה ממחר
-  Store.upsert({ date: date, kcal: 2400 });
-  App.setState({ view: 'today', date: date });
-  const table2 = [...doc.querySelectorAll('#view-today table.data')]
-    .find((t) => t.textContent.includes('שבוע') && t.textContent.includes('זהיר'));
-  const first2 = table2.querySelector('tbody tr').children[0].textContent.trim();
-  assert(first2 === 'מחר', 'ציפיתי ל"מחר", קיבלתי "' + first2 + '"');
-});
 
 test('עמודת התאריך בטבלאות מסומנת ומיושרת בנפרד', () => {
   App.setState({ view: 'trends', range: 0 });
@@ -1544,6 +1512,68 @@ test('חלון רועש מסומן בטבלת ההשוואה', () => {
     assert(marked === (row.ci95 > 600),
       row.label + ': סימון "רועש" לא תואם רווח סמך של ±' + Math.round(row.ci95));
   });
+});
+
+
+
+test('כרטיס סגירת התקופה מציג מצב, יעד ושלושה תרחישים', () => {
+  App.setState({ view: 'today', date: '2026-08-21', periodDays: 14, calcWindow: 'adaptive' });
+  const card = [...doc.querySelectorAll('#view-today .card')]
+    .find((c) => c.textContent.includes('לסגור את התקופה בירוק'));
+  assert(card, 'הכרטיס חסר');
+
+  const note = card.querySelector('.card-note').textContent;
+  assert(/\d{2}\/\d{2}–\d{2}\/\d{2}/.test(note), 'חסר טווח התקופה: ' + note);
+  assert(note.includes('עברו') && note.includes('נותרו'), 'חסרה ספירת הימים');
+
+  const rows = [...card.querySelectorAll('tbody tr')];
+  assert(rows.length === 3, 'ציפיתי לשלושה תרחישים');
+  ['זהיר', 'הערכה', 'נדיב'].forEach((label, i) => {
+    assert(rows[i].children[0].textContent.indexOf(label) === 0, 'תרחיש ' + label + ' חסר');
+  });
+
+  // המספר בטבלה תואם את המודל
+  const model = window.Metrics.periodTarget(Store.getEntries(), Store.getSettings(),
+    { endDate: '2026-08-21', days: 14, windowDays: 'adaptive' });
+  const shown = Number(rows[1].children[2].textContent.replace(/[^\d]/g, ''));
+  assert(Math.abs(shown - Math.max(Math.round(model.required.mid), 0)) <= 1,
+    'הערך לא תואם: ' + shown + ' מול ' + Math.round(model.required.mid));
+});
+
+test('אורך התקופה נבחר ומשנה את החישוב', () => {
+  App.setState({ view: 'today', date: '2026-08-21', periodDays: 14 });
+  const required = () => {
+    const card = [...doc.querySelectorAll('#view-today .card')]
+      .find((c) => c.textContent.includes('לסגור את התקופה בירוק'));
+    return card.querySelector('tbody tr').children[2].textContent;
+  };
+  const twoWeeks = required();
+
+  doc.querySelector('[data-period="7"]').dispatchEvent(new window.Event('click', { bubbles: true }));
+  assert(App.state.periodDays === 7, 'אורך התקופה לא התעדכן');
+  assert(required() !== twoWeeks, 'החישוב לא השתנה עם אורך התקופה');
+
+  App.setState({ periodDays: 14 });
+});
+
+test('מקרא גרף ההוצאה כולל את כל הפרמטרים', () => {
+  App.setState({ view: 'trends', range: 0, tdeeMode: 'daily' });
+  const legend = doc.getElementById('chart-tdee-legend').textContent;
+  ['שיטה', 'שורף', 'כולל הליכה', 'קצב מבוקש', 'יעד צריכה', 'צריכה בפועל'].forEach((label) => {
+    assert(legend.includes(label), 'חסר פרמטר במקרא: ' + label);
+  });
+  assert(doc.querySelectorAll('#chart-tdee-legend .param').length === 6, 'חסרים פרמטרים');
+});
+
+test('גרף המשקל מסביר מה כל קו', () => {
+  App.setState({ view: 'trends', range: 0 });
+  const card = doc.getElementById('chart-weight').closest('.card');
+  const text = card.textContent;
+  ['ממוצע 7 ימים', 'מגמה מהירה', 'קצב מתוכנן'].forEach((term) => {
+    assert(text.includes(term), 'חסר הסבר ל-' + term);
+  });
+  assert(text.includes('רעש נוזלים'), 'לא מוסבר מה הממוצע עושה');
+  assert(text.includes('שבחרת'), 'לא מוסבר מה קו התוכנית');
 });
 
 

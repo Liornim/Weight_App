@@ -432,6 +432,14 @@
     if (yDomain) config.yDomain = yDomain;
     Chart.render(host, config);
 
+    var lastTdeeValue = mode === 'cumulative'
+      ? states[states.length - 1].tdee
+      : line[line.length - 1].y;
+    var lastCi = mode === 'cumulative'
+      ? 1.96 * states[states.length - 1].tdeeSd
+      : (fixed ? fixed.sd * 1.96 : 1.96 * states[states.length - 1].tdeeSd);
+    var lastIntakeValue = intakeMa.length ? intakeMa[intakeMa.length - 1].y : null;
+
     var stability = '';
     if (mode !== 'cumulative') {
       var ys = line.map(function (p) { return p.y; });
@@ -445,8 +453,22 @@
     var unit = mode === 'cumulative' ? ' קלוריות מצטברות' : ' קלוריות ליום';
     var toKg = function (v) { return -(mode === 'cumulative' ? v : v * 7) / kcalPerKg; };
 
+    var rate = settings.goal.ratePerWeekKg;
+    var params = [
+      { label: 'שיטה', value: fixed ? 'חלון ' + windowDays + ' ימים' : 'מסתגל (קלמן)' },
+      { label: 'שורף', value: Fmt.n(lastTdeeValue, 0) + ' ± ' + Fmt.n(lastCi, 0) },
+      { label: 'כולל הליכה', value: 'כן' },
+      { label: 'קצב מבוקש', value: Fmt.isNum(rate) ? Fmt.signed(rate, 2) + ' ק״ג לשבוע' : '—' },
+      { label: 'יעד צריכה', value: Fmt.isNum(opts.intakeTarget) ? Fmt.n(opts.intakeTarget, 0) : '—' },
+      { label: 'צריכה בפועל', value: lastIntakeValue === null ? '—' : Fmt.n(lastIntakeValue, 0) }
+    ];
+
     document.getElementById('chart-tdee-legend').innerHTML =
       legend(legendItems) +
+      '<div class="param-grid">' + params.map(function (p) {
+        return '<div class="param"><span class="k">' + Fmt.esc(p.label) + '</span>' +
+          '<span class="v num">' + Fmt.esc(p.value) + '</span></div>';
+      }).join('') + '</div>' +
       (lastGap === null ? '' :
         '<p class="basis" style="margin-top:10px;line-height:1.7">' +
         '<strong>הפער כרגע: ' + Fmt.n(lastGap, 0) + unit + '</strong> — ' +
@@ -711,8 +733,10 @@
       '<div class="section-label">טווח</div>' +
       UI.chips(RANGES, rangeDays, 'data-range') +
       '<div class="section-label">משקל</div>' +
-      (hasWeight ? chartBlock('chart-weight', 'משקל',
-                   'שני קווי מגמה: הממוצע חלק יותר, המהיר מגיב מוקדם יותר לשינוי אמיתי')
+      (hasWeight ? chartBlock('chart-weight', 'משקל', null,
+                   'נקודות = שקילות. <b>ממוצע 7 ימים</b> מנקה רעש נוזלים. ' +
+                   '<b>מגמה מהירה</b> נותנת משקל גדול יותר לימים האחרונים, ולכן מזהה שינוי מוקדם. ' +
+                   '<b>קצב מתוכנן</b> הוא הקו שהיית אמור להיות עליו לפי הקצב שבחרת.')
                  : UI.empty('אין מספיק שקילות בטווח הזה', '')) +
       (hasFat ? '<div class="section-label">הרכב גוף</div>' +
                 chartBlock('chart-fat', 'שומן', 'בק״ג. נקודות = מדידות, קו = ממוצע נע') : '') +

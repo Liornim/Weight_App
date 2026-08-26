@@ -200,6 +200,12 @@
         'פער גדול בין "בפועל" ל"הערכה" אומר שהדיווח או השקילה לא מדויקים.'));
   }
 
+  var PERIODS = [
+    { value: 7, label: 'שבוע' },
+    { value: 14, label: 'שבועיים' },
+    { value: 28, label: 'חודש' }
+  ];
+
   var SCENARIOS = [
     { value: 'low', label: 'זהיר' },
     { value: 'mid', label: 'הערכה' },
@@ -279,60 +285,53 @@
         '"נדיב" מניח שאתה שורף בקצה הגבוה, ולכן הוא הימור.'));
   }
 
-  /** כמה מותר לאכול בימים הקרובים ועדיין להישאר בירוק */
-  function allowanceCard(entries, settings, date, windowDays) {
-    var burnData = Metrics.dailyBurn(entries, settings, { endDate: date, windowDays: windowDays });
-    if (!burnData.ok) return '';
+  /**
+   * המטרה: לסגור את התקופה הנוכחית בירוק. מוצג המצב עד כה, וכמה
+   * מותר לאכול בכל אחד מהימים שנותרו כדי שהסך הכל יישאר חיובי.
+   */
+  function periodCard(entries, settings, date, windowDays, periodDays) {
+    var r = Metrics.periodTarget(entries, settings, {
+      endDate: date, days: periodDays, windowDays: windowDays
+    });
+    if (!r.ok) {
+      return UI.card('לסגור את התקופה בירוק', null,
+        UI.empty('אין מספיק נתונים לחלון שנבחר', 'אפשר לשנות אותו בפס הבקרה שבראש המסך.'));
+    }
 
-    var recent = Dates.range(Dates.addDays(date, -13), date)
-      .map(function (d) { return burnData.byDate[d]; })
-      .filter(function (d) { return d && Fmt.isNum(d.intake); });
-    if (!recent.length) return '';
+    var kcalPerKg = settings.kcalPerKg || 7700;
+    var headline;
+    if (r.carried.mid > 0) {
+      headline = 'עד עכשיו צברת גירעון של ' + Fmt.numHtml(r.carried.mid, 0) +
+        ' קלוריות בתקופה — ' + Fmt.numHtml(r.carried.mid / kcalPerKg, 2) + ' ק״ג.';
+    } else {
+      headline = 'עד עכשיו אתה בעודף של ' + Fmt.numHtml(-r.carried.mid, 0) +
+        ' קלוריות בתקופה. צריך לקזז אותו בימים שנותרו.';
+    }
 
-    var margin = 1.96 * (burnData.ci95 / 1.96);
-    var burn = {
-      low: burnData.tdee - burnData.ci95,
-      mid: burnData.tdee,
-      high: burnData.tdee + burnData.ci95
+    var scenarioRow = function (key, label, note) {
+      var value = r.required[key];
+      return '<tr><td>' + Fmt.esc(label) + '<br><span class="basis">' + Fmt.esc(note) + '</span></td>' +
+        '<td class="n"><span class="' + Fmt.deltaClass(r.carried[key], 'up') + '">' +
+          Fmt.signed(r.carried[key], 0) + '</span></td>' +
+        '<td class="n">' + (Fmt.isNum(value) ? Fmt.n(Math.max(value, 0), 0) : '—') + '</td></tr>';
     };
 
-    var carried = { low: 0, mid: 0, high: 0 };
-    recent.forEach(function (d) {
-      var m = 1.96 * d.sd;
-      carried.low += (d.tdee - m) - d.intake;
-      carried.mid += d.tdee - d.intake;
-      carried.high += (d.tdee + m) - d.intake;
-    });
-
-    // אם הקלוריות של היום עוד לא נרשמו, היום הוא היום הראשון שאפשר
-    // לפעול בו. אם הן כבר נרשמו, הספירה מתחילה ממחר.
-    var todayLogged = Fmt.isNum((entries.find(function (e) { return e.date === date; }) || {}).kcal);
-    var labels = todayLogged
-      ? { 1: 'מחר', 2: 'יומיים', 3: 'שלושה ימים', 5: 'חמישה ימים', 7: 'שבוע' }
-      : { 1: 'היום', 2: 'היום ומחר', 3: 'שלושה ימים', 5: 'חמישה ימים', 7: 'שבוע' };
-    var ceiling = burnData.tdee + 1500;
-
-    var rows = [1, 2, 3, 5, 7].map(function (n) {
-      var cellFor = function (key) {
-        var value = burn[key] + carried[key] / n;
-        return '<td class="n' + (value > ceiling ? ' missing' : '') + '">' +
-          (value < 0 ? '0' : Fmt.n(value, 0)) + '</td>';
-      };
-      return '<tr><td>' + Fmt.esc(labels[n]) + '</td>' +
-        cellFor('low') + cellFor('mid') + cellFor('high') + '</tr>';
-    }).join('');
-
-    return UI.card('כמה אפשר לאכול ולהישאר בירוק',
-      (todayLogged ? 'הקלוריות של היום כבר נרשמו, אז הספירה מתחילה ממחר. ' : '') +
-      'ממוצע יומי מרבי, לפי אורך הפריסה',
-      '<div class="table-scroll"><table class="data"><thead><tr>' +
-        '<th>טווח</th><th class="n">זהיר</th><th class="n">הערכה</th><th class="n">נדיב</th>' +
-      '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
-      UI.basis('לך לפי העמודה הזהירה — היא מבטיחה ירוק גם אם אתה שורף פחות ממה שנראה. ' +
-        'מספרים אפורים גבוהים מכדי לאכול ביום אחד; פרוס על יותר ימים.'));
+    return UI.card('לסגור את התקופה בירוק',
+      periodDays + ' ימים · ' + Dates.short(r.period.from) + '–' + Dates.short(r.period.to) +
+      ' · עברו ' + r.elapsedDays + ', נותרו ' + r.remainingDays,
+      '<p class="finding">' + headline + '</p>' +
+      '<div class="table-scroll" style="margin-top:14px"><table class="data"><thead><tr>' +
+        '<th>תרחיש</th><th class="n">נצבר</th><th class="n">לאכול ליום</th>' +
+      '</tr></thead><tbody>' +
+        scenarioRow('low', 'זהיר', 'אם אתה שורף פחות ממה שנראה') +
+        scenarioRow('mid', 'הערכה', 'ההערכה המרכזית') +
+        scenarioRow('high', 'נדיב', 'אם אתה שורף יותר') +
+      '</tbody></table></div>' +
+      UI.basis('"לאכול ליום" הוא הממוצע המרבי ל-' + r.remainingDays +
+        ' הימים שנותרו, כדי שהתקופה כולה תיסגר בגירעון. ' +
+        'לך לפי השורה הזהירה — היא מבטיחה ירוק גם בתרחיש הפחות טוב.'));
   }
 
-  /** מה קרה בפועל לגוף, בשלושה חלונות, עם טווחי התאריכים */
   function bodyChangeCard(entries, date) {
     var r = Metrics.bodyChangeSummary(entries, { endDate: date, windows: [7, 10, 14] });
 
@@ -403,7 +402,9 @@
       '<div class="section-label">גירעון</div>' +
       UI.chips(UNITS, unit, 'data-unit') +
       deficitCard(entries, settings, date, unit, state.calcWindow) +
-      allowanceCard(entries, settings, date, state.calcWindow) +
+      '<div class="section-label">לסגור את התקופה בירוק</div>' +
+      UI.chips(PERIODS, state.periodDays || 14, 'data-period') +
+      periodCard(entries, settings, date, state.calcWindow, state.periodDays || 14) +
       '<div class="section-label">השוואה בין חלונות</div>' +
       comparisonCard(entries, settings, date, state.calcWindow) +
       eatByWindowCard(entries, settings, date, state.scenario || 'mid') +
@@ -418,6 +419,12 @@
   }
 
   function wire(container, date) {
+    container.querySelectorAll('[data-period]').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        root.App.setState({ periodDays: Number(chip.dataset.period) });
+      });
+    });
+
     container.querySelectorAll('[data-scenario]').forEach(function (chip) {
       chip.addEventListener('click', function () {
         root.App.setState({ scenario: chip.dataset.scenario });
