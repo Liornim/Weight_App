@@ -305,11 +305,11 @@ test('היעדים מוצגים עם הפער מהממוצע', () => {
 });
 
 test('שינוי העלות לצעד מזיז את הבסיס', () => {
+  Store.updateSettings({ kcalPerStep: 0.030 });
   const before = window.Metrics.baselineWithoutSteps(Store.getEntries(), Store.getSettings());
   Store.updateSettings({ kcalPerStep: 0.040 });
   const after = window.Metrics.baselineWithoutSteps(Store.getEntries(), Store.getSettings());
   assert(after.base < before.base, 'קבוע גבוה יותר -> בסיס נמוך יותר');
-  Store.updateSettings({ kcalPerStep: 0.030 });
 });
 
 
@@ -334,11 +334,11 @@ test('היעדים מוצגים עם הפער מהממוצע', () => {
 });
 
 test('שינוי העלות לצעד מזיז את הבסיס', () => {
+  Store.updateSettings({ kcalPerStep: 0.030 });
   const before = window.Metrics.baselineWithoutSteps(Store.getEntries(), Store.getSettings());
   Store.updateSettings({ kcalPerStep: 0.040 });
   const after = window.Metrics.baselineWithoutSteps(Store.getEntries(), Store.getSettings());
   assert(after.base < before.base, 'קבוע גבוה יותר -> בסיס נמוך יותר');
-  Store.updateSettings({ kcalPerStep: 0.030 });
 });
 
 

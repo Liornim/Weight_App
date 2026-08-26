@@ -373,7 +373,7 @@
 
   function bonusCard(entry, settings) {
     if (!Fmt.isNum(entry.steps)) return '';
-    var kcal = entry.steps * (settings.kcalPerStep || 0.03);
+    var kcal = entry.steps * (settings.kcalPerStep || 0.04);
     return UI.card('בונוס מהליכה', null,
       '<p class="finding">' + Fmt.numHtml(entry.steps, 0) + ' צעדים היום, בערך ' +
         Fmt.numHtml(kcal, 0) + ' קלוריות נוספות.</p>' +

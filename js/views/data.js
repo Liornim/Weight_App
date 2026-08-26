@@ -60,7 +60,8 @@
         numberField('g-rate', 'או ערך אחר', g.ratePerWeekKg, 0.05, 'ק״ג, שלילי = ירידה') +
         numberField('g-target', 'משקל יעד', g.targetWeightKg, 0.1, 'ק״ג') +
         numberField('s-kcalPerKg', 'קק״ל לק״ג', settings.kcalPerKg, 100, 'ברירת מחדל 7700') +
-        numberField('s-kcalPerStep', 'קק״ל לצעד', settings.kcalPerStep, 0.005, 'נטו, 0.025-0.040') +
+        numberField('s-kcalPerStep', 'קק״ל לצעד', settings.kcalPerStep, 0.005,
+          '0.040 = 25 צעדים לקלוריה') +
       '</div>' +
 
       '<div class="section-label">פרופיל</div>' +
@@ -212,7 +213,7 @@
           sex: container.querySelector('#p-sex').value
         },
         kcalPerKg: val('#s-kcalPerKg') || Metrics.DEFAULT_KCAL_PER_KG,
-        kcalPerStep: val('#s-kcalPerStep') || 0.030,
+        kcalPerStep: val('#s-kcalPerStep') || 0.040,
         autoTargetFromTdee: container.querySelector('#s-autoTarget').value === 'tdee'
       });
       root.App.toast('ההגדרות נשמרו');

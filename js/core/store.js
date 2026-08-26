@@ -33,7 +33,7 @@
     targets: { kcal: null, proteinG: null, proteinMinG: 160, carbG: null, fatG: null, fiberG: null, steps: null },
     goal: { ratePerWeekKg: null, targetWeightKg: null },   // ratePerWeekKg שלילי = ירידה
     kcalPerKg: Metrics.DEFAULT_KCAL_PER_KG,
-    kcalPerStep: 0.030,   // עלות נטו לצעד; 0.025-0.040 הוא הטווח המקובל
+    kcalPerStep: 0.040,   // 25 צעדים לקלוריה, לפי המוסכמה בגיליון
     tdeeMethod: 'kalman', // איזו שיטה מזינה את שאר המסכים
     sync: { url: '', lastSyncAt: null },  // כתובת ה-Apps Script של הגיליון
     autoTargetFromTdee: false,

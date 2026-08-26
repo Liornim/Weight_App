@@ -662,12 +662,16 @@
     var kcalPerKg = opts.kcalPerKg || DEFAULT_KCAL_PER_KG;
     var noiseSd = opts.weightNoiseSd || weightNoiseSd(entries);
     var stepCost = num(opts.kcalPerStep);
-    if (stepCost === null) stepCost = 0.030;
+    if (stepCost === null) stepCost = 0.040;
 
     var all = sorted(entries).filter(function (e) { return e.date <= endDate; });
     if (!all.length) return { days: n, weightNoiseSd: noiseSd, rows: [] };
 
-    var first = all[0].date;
+    // העיגון הוא השקילה הראשונה ולא הרשומה הראשונה. רשומת תזונה
+    // בודדת שקדמה לה הייתה מזיזה את כל הסבבים ביום.
+    var weighed = series(all, 'weightKg');
+    if (!weighed.length) return { days: n, weightNoiseSd: noiseSd, rows: [] };
+    var first = weighed[0].date;
     var span = (Dates.diffDays(first, endDate) || 0) + 1;
     var totalBlocks = Math.floor(span / n);   // רק סבבים שהושלמו
 
@@ -738,7 +742,7 @@
     var opts = options || {};
     var kcalPerStep = num(opts.kcalPerStep);
     if (kcalPerStep === null) kcalPerStep = num((settings || {}).kcalPerStep);
-    if (kcalPerStep === null) kcalPerStep = 0.030;
+    if (kcalPerStep === null) kcalPerStep = 0.040;
 
     var tdee = num(opts.tdee);
     var tdeeCi = num(opts.tdeeCi);
@@ -869,7 +873,7 @@
     var endDate = opts.endDate || Dates.today();
     var kcalPerKg = (settings || {}).kcalPerKg || DEFAULT_KCAL_PER_KG;
     var kcalPerStep = num((settings || {}).kcalPerStep);
-    if (kcalPerStep === null) kcalPerStep = 0.030;
+    if (kcalPerStep === null) kcalPerStep = 0.040;
 
     var stepWindow = series(inWindow(entries, endDate, 28), 'steps').map(function (p) { return p.y; });
     var meanSteps = Stats.mean(stepWindow);
@@ -1100,7 +1104,7 @@
     var endDate = opts.endDate || Dates.today();
     var kcalPerKg = (settings || {}).kcalPerKg || DEFAULT_KCAL_PER_KG;
     var kcalPerStep = num((settings || {}).kcalPerStep);
-    if (kcalPerStep === null) kcalPerStep = 0.030;
+    if (kcalPerStep === null) kcalPerStep = 0.040;
     var window = opts.windowDays === 'adaptive' ? 'adaptive' : Number(opts.windowDays || 14);
     if (!entries || !entries.length) return { ok: false, windowDays: window, reason: 'insufficient' };
 
@@ -1363,7 +1367,8 @@
     // חשוב לבחור את זו שמכילה את endDate ולא את האחרונה שהסתיימה,
     // אחרת "נותרו" יוצא אפס והכרטיס חסר משמעות.
     var all = sorted(entries);
-    var first = all.length ? all[0].date : endDate;
+    var weighedDays = series(all, 'weightKg');
+    var first = weighedDays.length ? weighedDays[0].date : (all.length ? all[0].date : endDate);
     var index = Math.floor(((Dates.diffDays(first, endDate) || 0)) / days);
     var from = Dates.addDays(first, index * days);
     var to = Dates.addDays(from, days - 1);
@@ -1512,7 +1517,7 @@
   /** תרומת ההליכה הממוצעת, לחישוב ההוצאה בלי צעדים */
   function stepAllowance(entries, settings, endDate) {
     var kcalPerStep = num((settings || {}).kcalPerStep);
-    if (kcalPerStep === null) kcalPerStep = 0.030;
+    if (kcalPerStep === null) kcalPerStep = 0.040;
     var steps = series(inWindow(entries, Dates.addDays(endDate, -1), 28), 'steps')
       .map(function (p) { return p.y; });
     var mean = Stats.mean(steps);
@@ -1536,7 +1541,8 @@
     var all = sorted(entries);
     if (!all.length || !days) return { ok: false, reason: 'empty' };
 
-    var start = opts.startDate || all[0].date;
+    var weighed = series(all, 'weightKg');
+    var start = opts.startDate || (weighed.length ? weighed[0].date : all[0].date);
     var span = (Dates.diffDays(start, endDate) || 0) + 1;
     var completeCount = Math.floor(span / days);
 

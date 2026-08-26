@@ -1768,6 +1768,171 @@ test('התחזוקה בסבב מחושבת כמו בגיליון', () => {
     'קלוריות מירידת המשקל');
 });
 
+// ---------- שחזור הטבלה של המשתמש ----------
+//
+// כל שורה כאן היא שורה מהגיליון. הבדיקה בונה נתונים שהממוצעים שלהם
+// זהים לאלה שבטבלה, ודורשת שהמנוע יחזיר בדיוק את אותה תחזוקה.
+// זה מה שמוודא שהנוסחה, העיגון וקבוע הצעדים זהים.
+
+const SHEET_START = '2026-07-26';
+const SHEET_SETTINGS = { kcalPerKg: 7700, kcalPerStep: 0.04 };
+
+/** בונה ימים שבהם לכל סבב יש בדיוק הממוצעים שנתונים */
+function blocksFixture(days, blocks) {
+  const entries = [];
+  blocks.forEach((block, index) => {
+    for (let d = 0; d < days; d++) {
+      entries.push({
+        date: Dates.addDays(SHEET_START, index * days + d),
+        weightKg: block.weight,
+        kcal: block.kcal,
+        steps: block.steps
+      });
+    }
+  });
+  return entries;
+}
+
+function checkSheet(days, blocks, expected) {
+  const endDate = Dates.addDays(SHEET_START, blocks.length * days - 1);
+  const r = Metrics.blockWindows(blocksFixture(days, blocks), {
+    days: days, count: blocks.length, endDate: endDate,
+    kcalPerKg: SHEET_SETTINGS.kcalPerKg, kcalPerStep: SHEET_SETTINGS.kcalPerStep
+  });
+
+  // המשקלים בגיליון מוצגים בשתי ספרות אחרי הנקודה. עיגול של עד
+  // 0.005 בכל ממוצע מזיז את ההפרש בעד 0.01 ק"ג, וזה מתורגם ל-
+  // 0.01 × 7700 ÷ ימים קלוריות. הסבילות נגזרת מכך ולא נבחרת ביד.
+  const roundingTolerance = (0.01 * 7700) / days + 1;
+
+  expected.forEach((want) => {
+    const row = r.rows.find((x) => x.index === want.index);
+    assert(row, days + ' ימים: חסר סבב ' + want.index);
+    assert(row.from === want.from && row.to === want.to,
+      days + ' ימים, סבב ' + want.index + ': תקופה ' + row.from + '–' + row.to +
+      ' במקום ' + want.from + '–' + want.to);
+    close(row.meanWeight, want.weight, 0.005, days + '/' + want.index + ': משקל ממוצע');
+    close(row.prevMeanWeight, want.prevWeight, 0.005, days + '/' + want.index + ': משקל קודם');
+    close(row.deltaKg, want.delta, 0.011, days + '/' + want.index + ': שינוי משקל');
+    close(row.fromWeight, want.fromWeight, roundingTolerance,
+      days + '/' + want.index + ': קלוריות מירידת משקל');
+    close(row.fromSteps, want.fromSteps, 1.5, days + '/' + want.index + ': קלוריות מצעדים');
+    close(row.base, want.maintenance, roundingTolerance + 1,
+      days + '/' + want.index + ': תחזוקה אמיתית');
+  });
+}
+
+test('שחזור טבלת 5 הימים מהגיליון', () => {
+  const blocks = [
+    { weight: 89.94, kcal: 2400, steps: 9000 },
+    { weight: 88.80, kcal: 2265, steps: 9313 },
+    { weight: 88.68, kcal: 2675, steps: 7851 },
+    { weight: 88.78, kcal: 2491, steps: 7245 },
+    { weight: 88.88, kcal: 2538, steps: 9284 },
+    { weight: 88.00, kcal: 2332, steps: 10191 }
+  ];
+  checkSheet(5, blocks, [
+    { index: 2, from: '2026-07-31', to: '2026-08-04', weight: 88.80, prevWeight: 89.94,
+      delta: 1.14, fromWeight: 1756, fromSteps: 373, maintenance: 3648 },
+    { index: 3, from: '2026-08-05', to: '2026-08-09', weight: 88.68, prevWeight: 88.80,
+      delta: 0.12, fromWeight: 185, fromSteps: 314, maintenance: 2546 },
+    { index: 4, from: '2026-08-10', to: '2026-08-14', weight: 88.78, prevWeight: 88.68,
+      delta: -0.10, fromWeight: -154, fromSteps: 290, maintenance: 2047 },
+    { index: 5, from: '2026-08-15', to: '2026-08-19', weight: 88.88, prevWeight: 88.78,
+      delta: -0.10, fromWeight: -154, fromSteps: 371, maintenance: 2012 },
+    { index: 6, from: '2026-08-20', to: '2026-08-24', weight: 88.00, prevWeight: 88.88,
+      delta: 0.88, fromWeight: 1355, fromSteps: 408, maintenance: 3280 }
+  ]);
+});
+
+test('שחזור טבלת 7 הימים מהגיליון', () => {
+  const blocks = [
+    { weight: 89.74, kcal: 2400, steps: 9000 },
+    { weight: 88.54, kcal: 2521, steps: 8406 },
+    { weight: 88.96, kcal: 2617, steps: 7635 },
+    { weight: 88.56, kcal: 2517, steps: 9621 }
+  ];
+  checkSheet(7, blocks, [
+    { index: 2, from: '2026-08-02', to: '2026-08-08', weight: 88.54, prevWeight: 89.74,
+      delta: 1.20, fromWeight: 1320, fromSteps: 336, maintenance: 3505 },
+    { index: 3, from: '2026-08-09', to: '2026-08-15', weight: 88.96, prevWeight: 88.54,
+      delta: -0.42, fromWeight: -456, fromSteps: 305, maintenance: 1856 },
+    { index: 4, from: '2026-08-16', to: '2026-08-22', weight: 88.56, prevWeight: 88.96,
+      delta: 0.40, fromWeight: 440, fromSteps: 385, maintenance: 2572 }
+  ]);
+});
+
+test('שחזור טבלת 10 הימים מהגיליון', () => {
+  const blocks = [
+    { weight: 89.37, kcal: 2400, steps: 9000 },
+    { weight: 88.73, kcal: 2583, steps: 7548 },
+    { weight: 88.44, kcal: 2435, steps: 9737 }
+  ];
+  checkSheet(10, blocks, [
+    { index: 2, from: '2026-08-05', to: '2026-08-14', weight: 88.73, prevWeight: 89.37,
+      delta: 0.64, fromWeight: 493, fromSteps: 302, maintenance: 2774 },
+    { index: 3, from: '2026-08-15', to: '2026-08-24', weight: 88.44, prevWeight: 88.73,
+      delta: 0.29, fromWeight: 223, fromSteps: 389, maintenance: 2269 }
+  ]);
+});
+
+test('שחזור טבלת 14 הימים מהגיליון', () => {
+  const blocks = [
+    { weight: 89.14, kcal: 2400, steps: 9000 },
+    { weight: 88.76, kcal: 2567, steps: 8628 }
+  ];
+  checkSheet(14, blocks, [
+    { index: 2, from: '2026-08-09', to: '2026-08-22', weight: 88.76, prevWeight: 89.14,
+      delta: 0.38, fromWeight: 212, fromSteps: 345, maintenance: 2434 }
+  ]);
+});
+
+test('ברירת המחדל של קבוע הצעדים היא 25 צעדים לקלוריה', () => {
+  // בדיקה על אחסון נקי, כדי לא לפגוע בנתוני שאר הבדיקות
+  const fresh = Store.getSettings().kcalPerStep;
+  assert(Math.abs(fresh - 0.04) < 1e-9, 'ציפיתי ל-0.04, קיבלתי ' + fresh);
+});
+
+test('קבוע הצעדים: 25 צעדים לקלוריה', () => {
+  close(0.04, 1 / 25, 1e-9, 'חלוקה ב-25 שקולה להכפלה ב-0.04');
+  const entries = blocksFixture(5, [
+    { weight: 89, kcal: 2400, steps: 10000 },
+    { weight: 88, kcal: 2400, steps: 10000 }
+  ]);
+  const row = Metrics.blockWindows(entries,
+    { days: 5, count: 1, endDate: Dates.addDays(SHEET_START, 9), kcalPerStep: 1 / 25 }).rows[0];
+  close(row.fromSteps, 400, 1e-9, '10,000 צעדים = 400 קלוריות');
+});
+
+test('העיגון הוא השקילה הראשונה, לא רשומת התזונה הראשונה', () => {
+  // רשומת תזונה בודדת יום לפני השקילה הראשונה
+  const entries = [{ date: '2026-07-25', kcal: 2000 }];
+  for (let i = 0; i < 20; i++) {
+    entries.push({
+      date: Dates.addDays('2026-07-26', i),
+      weightKg: 89 - 0.03 * i, kcal: 2400, steps: 9000
+    });
+  }
+  const r = Metrics.blockWindows(entries, { days: 5, count: 4, endDate: '2026-08-14' });
+  const second = r.rows.find((row) => row.index === 2);
+  assert(second.from === '2026-07-31',
+    'הסבב היה צריך להתחיל ב-31/07 ולא ב-' + second.from);
+});
+
+test('תא תאריך עם חותמת זמן מומר לפי אזור הזמן המקומי', () => {
+  // 05/08 בישראל מגיע כ-04/08T21:00Z. חיתוך המחרוזת מזיז יום אחורה
+  // וכל התזונה נופלת על היום הלא נכון — קרה בפועל.
+  const local = new Date('2026-08-04T21:00:00.000Z');
+  const expected = local.getFullYear() + '-' +
+    String(local.getMonth() + 1).padStart(2, '0') + '-' +
+    String(local.getDate()).padStart(2, '0');
+  assert(Sheets.toIso('2026-08-04T21:00:00.000Z') === expected,
+    'ציפיתי ל-' + expected + ', קיבלתי ' + Sheets.toIso('2026-08-04T21:00:00.000Z'));
+  assert(Sheets.toIso('2026-08-04T21:00:00.000Z') !== '2026-08-04' ||
+    local.getUTCDate() === local.getDate(),
+    'ההמרה עדיין חותכת את המחרוזת');
+});
+
 // ---------- דוח ----------
 // הריצה מופעלת בסוף הקובץ בלבד. אם היא תופעל באמצע, בדיקות שנרשמו
 // אחריה לא ייכנסו לתור וייעלמו בשקט — קרה בפועל.
