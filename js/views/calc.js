@@ -133,6 +133,42 @@
         'רעש השקילה שנמדד אצלך: ' + Fmt.n(r.weightNoiseSd, 2) + ' ק״ג.'));
   }
 
+  /** ממוצע מתגלגל: כל אורך חלון, מסתיים היום */
+  function rollingTable(entries, settings, date) {
+    var r = Metrics.rollingWindows(entries, {
+      endDate: date, lengths: [3, 5, 7, 10, 14],
+      kcalPerKg: settings.kcalPerKg, kcalPerStep: settings.kcalPerStep
+    });
+
+    var rows = r.rows.map(function (row) {
+      if (!row.ok || !row.covered) {
+        return '<tr><td class="n">' + row.days + '</td>' +
+          '<td colspan="8" class="missing">אין עדיין ' + (row.days * 2) + ' ימי נתונים</td></tr>';
+      }
+      return '<tr><td class="n">' + row.days + '</td>' +
+        '<td class="date-cell">' + Fmt.esc(Dates.short(row.current.from) + '–' + Dates.short(row.current.to)) + '</td>' +
+        '<td class="date-cell">' + Fmt.esc(Dates.short(row.previous.from) + '–' + Dates.short(row.previous.to)) + '</td>' +
+        '<td class="n">' + Fmt.n(row.meanWeight, 2) + '</td>' +
+        '<td class="n">' + Fmt.n(row.prevMeanWeight, 2) + '</td>' +
+        '<td class="n"><span class="' + Fmt.deltaClass(-row.deltaKg, 'down') + '">' +
+          Fmt.signed(-row.deltaKg, 2) + '</span></td>' +
+        '<td class="n">' + Fmt.n(row.meanKcal, 0) + '</td>' +
+        '<td class="n">' + Fmt.n(row.meanSteps, 0) + '</td>' +
+        '<td class="n"><strong>' + Fmt.n(row.base, 0) + '</strong>' +
+          '<br><span class="basis">±' + Fmt.n(row.ci95, 0) + '</span></td></tr>';
+    }).join('');
+
+    return UI.card('ממוצע מתגלגל', 'כל חלון מסתיים היום ומושווה לימים שקדמו לו מיד',
+      '<div class="table-scroll"><table class="data"><thead><tr>' +
+        '<th class="n">ימים</th><th class="date-cell">נוכחי</th><th class="date-cell">קודם</th>' +
+        '<th class="n">משקל</th><th class="n">קודם</th><th class="n">שינוי</th>' +
+        '<th class="n">קלוריות</th><th class="n">צעדים</th><th class="n">תחזוקה</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      UI.basis('בניגוד לסבבים, החלון המתגלגל זז בכל יום ולכן תמיד עדכני — ' +
+        'אבל שתי מדידות עוקבות חולקות ימים ואינן עצמאיות. ' +
+        'הסבב עונה על "מה קרה בתקופה שנסגרה", המתגלגל על "מה קורה עכשיו".'));
+  }
+
   function render(container) {
     var entries = Store.getEntries();
     var settings = Store.getSettings();
@@ -183,6 +219,9 @@
       hero +
 
       UI.basis('את קצב הירידה ואת חלון החישוב אפשר לשנות בפס שבראש המסך, בכל דף.') +
+
+      '<div class="section-label">ממוצע מתגלגל</div>' +
+      rollingTable(entries, settings, date) +
 
       '<div class="section-label">סבבים</div>' +
       blocksTable(entries, settings, date) +

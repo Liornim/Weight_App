@@ -1585,7 +1585,7 @@ test('מסך החישוב מציג את כל הסבבים המלאים', () => {
   App.setState({ view: 'calc', date: '2026-08-21' });
 
   const table = [...doc.querySelectorAll('#view-calc table.data')]
-    .find((t) => t.textContent.includes('תחזוקה'));
+    .find((t) => t.closest('.card').querySelector('h2').textContent.indexOf('סבבים של') === 0);
   assert(table, 'טבלת הסבבים חסרה');
 
   const headers = [...table.querySelectorAll('th')].map((th) => th.textContent.trim());
@@ -1623,6 +1623,58 @@ test('הסבבים מעוגנים ליום הראשון ולא נעים עם ה�
       assert(row.to <= end, end + ': סבב שמסתיים ב-' + row.to + ' חורג מהתאריך');
     });
   });
+});
+
+
+
+test('טבלת הממוצע המתגלגל מציגה חלון לכל אורך', () => {
+  App.setState({ view: 'calc', date: '2026-08-21' });
+  const table = [...doc.querySelectorAll('#view-calc table.data')]
+    .find((t) => t.closest('.card').textContent.includes('ממוצע מתגלגל'));
+  assert(table, 'הטבלה חסרה');
+
+  const headers = [...table.querySelectorAll('th')].map((th) => th.textContent.trim());
+  ['ימים', 'נוכחי', 'קודם', 'משקל', 'שינוי', 'קלוריות', 'צעדים', 'תחזוקה']
+    .forEach((h) => assert(headers.indexOf(h) !== -1, 'חסרה עמודה: ' + h));
+
+  const model = window.Metrics.rollingWindows(Store.getEntries(),
+    { endDate: '2026-08-21', lengths: [3, 5, 7, 10, 14] });
+  const rows = [...table.querySelectorAll('tbody tr')];
+  assert(rows.length === 5, 'ציפיתי לחמישה אורכי חלון, יש ' + rows.length);
+
+  model.rows.forEach((row, i) => {
+    assert(Number(rows[i].children[0].textContent) === row.days, 'שורה ' + i + ': אורך לא תואם');
+    if (!row.ok || !row.covered) return;
+    // טווחי התאריכים צמודים ומסתיימים היום
+    assert(rows[i].children[1].textContent.includes(window.Dates.short(row.current.to)),
+      row.days + ': החלון הנוכחי לא מסתיים בתאריך הנכון');
+    assert(rows[i].children[2].textContent.includes(window.Dates.short(row.previous.from)),
+      row.days + ': החלון הקודם שגוי');
+  });
+});
+
+test('המתגלגל והסבב נותנים תשובות שונות, ושניהם מוצגים', () => {
+  App.setState({ view: 'today' });
+  doc.querySelector('#controls [data-calc="7"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+  App.setState({ view: 'calc', date: '2026-08-21' });
+
+  const text = doc.getElementById('view-calc').textContent;
+  assert(text.includes('ממוצע מתגלגל'), 'טבלת המתגלגל חסרה');
+  assert(text.includes('סבבים של 7 ימים'), 'טבלת הסבבים חסרה');
+
+  const rolling = window.Metrics.rollingWindows(Store.getEntries(),
+    { endDate: '2026-08-21', lengths: [7] }).rows[0];
+  const block = window.Metrics.blockWindows(Store.getEntries(),
+    { days: 7, count: 1, endDate: '2026-08-21' }).rows[0];
+  if (rolling.ok && block) {
+    assert(rolling.current.to === '2026-08-21', 'המתגלגל אמור להסתיים היום');
+    assert(block.to <= '2026-08-21', 'הסבב לא חורג מהתאריך');
+  }
+
+  App.setState({ view: 'today' });
+  doc.querySelector('#controls [data-calc="adaptive"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
 });
 
 

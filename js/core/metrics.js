@@ -1525,6 +1525,81 @@
   }
 
   /**
+   * ממוצע מתגלגל: n הימים האחרונים מול n הימים שקדמו להם מיד.
+   *
+   * שונה מסבבים מעוגנים בכך שהחלון זז בכל יום — 24–26 מול 21–23,
+   * ומחר 25–27 מול 22–24. היתרון: תמיד עדכני עד היום. החיסרון:
+   * שתי מדידות עוקבות חולקות ימים, ולכן אין ביניהן עצמאות.
+   *
+   * שתי הצורות מוצגות זו לצד זו כי הן עונות על שאלות שונות:
+   * הסבב שואל "מה קרה בתקופה שנסגרה", והמתגלגל "מה קורה עכשיו".
+   */
+  function rollingWindows(entries, options) {
+    var opts = options || {};
+    var endDate = opts.endDate || Dates.today();
+    var lengths = opts.lengths || [3, 5, 7, 10, 14];
+    var kcalPerKg = opts.kcalPerKg || DEFAULT_KCAL_PER_KG;
+    var stepCost = num(opts.kcalPerStep);
+    if (stepCost === null) stepCost = 0.040;
+    var noiseSd = opts.weightNoiseSd || weightNoiseSd(entries);
+
+    var all = sorted(entries).filter(function (e) { return e.date <= endDate; });
+    var weighed = series(all, 'weightKg');
+    var first = weighed.length ? weighed[0].date : null;
+
+    function stats(from, to) {
+      var inRange = all.filter(function (e) { return e.date >= from && e.date <= to; });
+      var weights = series(inRange, 'weightKg').map(function (p) { return p.y; });
+      var kcals = series(inRange, 'kcal').map(function (p) { return p.y; });
+      var steps = series(inRange, 'steps').map(function (p) { return p.y; });
+      return {
+        from: from, to: to,
+        meanWeight: Stats.mean(weights), weighIns: weights.length,
+        meanKcal: Stats.mean(kcals), loggedDays: kcals.length,
+        meanSteps: Stats.mean(steps), sdKcal: Stats.stdDev(kcals)
+      };
+    }
+
+    var rows = lengths.map(function (n) {
+      var cur = stats(Dates.addDays(endDate, -(n - 1)), endDate);
+      var prev = stats(Dates.addDays(endDate, -(2 * n - 1)), Dates.addDays(endDate, -n));
+      var minWeighIns = Math.max(2, Math.ceil(n / 2));
+      var covered = first !== null && first <= prev.from;
+
+      if (cur.meanWeight === null || prev.meanWeight === null || cur.meanKcal === null) {
+        return { days: n, ok: false, current: cur, previous: prev, covered: covered };
+      }
+
+      var deltaKg = prev.meanWeight - cur.meanWeight;   // חיובי = ירידה
+      var fromWeight = (deltaKg * kcalPerKg) / n;
+      var fromSteps = cur.meanSteps === null ? 0 : cur.meanSteps * stepCost;
+      var weightErr = (Math.sqrt(2) * noiseSd / Math.sqrt(n)) * kcalPerKg / n;
+      var intakeErr = cur.sdKcal === null ? 0 : cur.sdKcal / Math.sqrt(cur.loggedDays);
+
+      return {
+        days: n,
+        ok: true,
+        current: cur,
+        previous: prev,
+        covered: covered,
+        complete: covered && cur.weighIns >= minWeighIns && prev.weighIns >= minWeighIns,
+        meanWeight: cur.meanWeight,
+        prevMeanWeight: prev.meanWeight,
+        deltaKg: deltaKg,
+        meanKcal: cur.meanKcal,
+        meanSteps: cur.meanSteps,
+        fromWeight: fromWeight,
+        fromSteps: fromSteps,
+        tdee: cur.meanKcal + fromWeight,
+        base: cur.meanKcal + fromWeight - fromSteps,
+        ci95: 1.96 * Math.sqrt(weightErr * weightErr + intakeErr * intakeErr)
+      };
+    });
+
+    return { endDate: endDate, weightNoiseSd: noiseSd, rows: rows };
+  }
+
+  /**
    * חלונות רצופים שמעוגנים ליום הראשון של המדידות.
    *
    * חלון 1 מתחיל ביום הראשון, חלון 2 אחריו, וכן הלאה — בדיוק כמו
@@ -1819,6 +1894,7 @@
     dashboard: dashboard,
     bodyChangeSummary: bodyChangeSummary,
     anchoredBlocks: anchoredBlocks,
+    rollingWindows: rollingWindows,
     dailyBurn: dailyBurn,
     windowComparison: windowComparison,
     periodTarget: periodTarget,

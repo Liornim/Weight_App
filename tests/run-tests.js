@@ -1933,6 +1933,54 @@ test('תא תאריך עם חותמת זמן מומר לפי אזור הזמן �
     'ההמרה עדיין חותכת את המחרוזת');
 });
 
+// ---------- ממוצע מתגלגל ----------
+
+test('החלון המתגלגל מסתיים היום ומושווה לימים שקדמו לו', () => {
+  const entries = buildSeries('2026-08-01', 26, (i) => ({
+    weightKg: 89 - 0.02 * i, kcal: 2400, steps: 9000
+  }));
+  const r = Metrics.rollingWindows(entries, { endDate: '2026-08-26', lengths: [3] });
+  const row = r.rows[0];
+
+  // בדיוק הדוגמה שנשאלה: 24 עד 26 מול 21 עד 23
+  assert(row.current.from === '2026-08-24' && row.current.to === '2026-08-26',
+    'החלון הנוכחי: ' + row.current.from + '–' + row.current.to);
+  assert(row.previous.from === '2026-08-21' && row.previous.to === '2026-08-23',
+    'החלון הקודם: ' + row.previous.from + '–' + row.previous.to);
+  assert(Dates.addDays(row.previous.to, 1) === row.current.from, 'החלונות לא צמודים');
+});
+
+test('החלון המתגלגל זז עם התאריך, בניגוד לסבב', () => {
+  const entries = buildSeries('2026-08-01', 26, (i) => ({
+    weightKg: 89 - 0.02 * i, kcal: 2400, steps: 9000
+  }));
+  const at26 = Metrics.rollingWindows(entries, { endDate: '2026-08-26', lengths: [5] }).rows[0];
+  const at25 = Metrics.rollingWindows(entries, { endDate: '2026-08-25', lengths: [5] }).rows[0];
+  assert(at26.current.from !== at25.current.from, 'החלון המתגלגל אמור לזוז');
+  assert(Dates.diffDays(at25.current.from, at26.current.from) === 1, 'הוא אמור לזוז יום אחד');
+});
+
+test('התחזוקה בחלון מתגלגל מחושבת באותה נוסחה', () => {
+  const entries = buildSeries('2026-08-01', 26, (i) => ({
+    weightKg: 89 - 0.05 * i, kcal: 2500, steps: 10000
+  }));
+  const row = Metrics.rollingWindows(entries,
+    { endDate: '2026-08-26', lengths: [7], kcalPerStep: 0.04 }).rows[0];
+
+  close(row.fromWeight, (row.prevMeanWeight - row.meanWeight) * 7700 / 7, 1e-9, 'קלוריות מירידת משקל');
+  close(row.fromSteps, 10000 * 0.04, 1e-9, 'קלוריות מצעדים');
+  close(row.base, row.meanKcal + row.fromWeight - row.fromSteps, 1e-9, 'תחזוקה');
+  // ירידה קבועה של 50 גרם ליום -> ההפרש בין החלונות הוא 7 × 0.05
+  close(row.deltaKg, 0.35, 1e-9, 'הפרש הממוצעים');
+});
+
+test('חלון מתגלגל בלי כיסוי מלא לתקופה הקודמת מסומן', () => {
+  const entries = buildSeries('2026-08-01', 10, (i) => ({ weightKg: 89, kcal: 2400 }));
+  const rows = Metrics.rollingWindows(entries, { endDate: '2026-08-10', lengths: [3, 7] }).rows;
+  assert(rows[0].covered, 'חלון 3 מכוסה');
+  assert(!rows[1].covered, 'חלון 7 דורש 14 ימים ואין');
+});
+
 // ---------- דוח ----------
 // הריצה מופעלת בסוף הקובץ בלבד. אם היא תופעל באמצע, בדיקות שנרשמו
 // אחריה לא ייכנסו לתור וייעלמו בשקט — קרה בפועל.
