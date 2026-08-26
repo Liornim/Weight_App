@@ -1359,24 +1359,19 @@
     var endDate = opts.endDate || Dates.today();
     var days = opts.days || 14;
     var windowDays = opts.windowDays || 'adaptive';
+    var horizons = opts.horizons || [1, 2, 3, 5, 7];
 
     var burn = dailyBurn(entries, settings, { endDate: endDate, windowDays: windowDays });
     if (!burn.ok) return { ok: false, reason: burn.reason, needDays: burn.needDays };
 
-    // התקופה הנוכחית: זו שמכילה את היום, בחלוקה רצופה מהיום הראשון.
-    // חשוב לבחור את זו שמכילה את endDate ולא את האחרונה שהסתיימה,
-    // אחרת "נותרו" יוצא אפס והכרטיס חסר משמעות.
-    var all = sorted(entries);
-    var weighedDays = series(all, 'weightKg');
-    var first = weighedDays.length ? weighedDays[0].date : (all.length ? all[0].date : endDate);
-    var index = Math.floor(((Dates.diffDays(first, endDate) || 0)) / days);
-    var from = Dates.addDays(first, index * days);
-    var to = Dates.addDays(from, days - 1);
-    var elapsed = Dates.range(from, endDate);
+    // התקופה היא N הימים האחרונים ומסתיימת היום. כך החלפה בין
+    // שבוע לחודש באמת משנה את מה שנצבר. תקופות מעוגנות לתחילת
+    // התיעוד היו יכולות להתחיל כולן באותו יום ולתת מספר זהה.
+    var from = Dates.addDays(endDate, -(days - 1));
     var carried = { low: 0, mid: 0, high: 0 };
     var loggedDays = 0;
 
-    elapsed.forEach(function (date) {
+    Dates.range(from, endDate).forEach(function (date) {
       var day = burn.byDate[date];
       if (!day || num(day.intake) === null) return;
       var margin = 1.96 * day.sd;
@@ -1389,39 +1384,34 @@
     var todayEntry = (entries || []).find(function (e) { return e.date === endDate; });
     var todayLogged = todayEntry ? num(todayEntry.kcal) !== null : false;
 
-    // הימים שנותרו לפעול בהם. אם היום כבר נרשם, הוא לא אחד מהם.
-    var remaining = (Dates.diffDays(endDate, to) || 0) + (todayLogged ? 0 : 1);
     var scenarios = {
       low: burn.tdee - burn.ci95,
       mid: burn.tdee,
       high: burn.tdee + burn.ci95
     };
 
-    var required = {};
+    // כמה מותר לאכול, לפי מספר הימים שעליהם פורסים את הפער
+    var plan = {};
     Object.keys(scenarios).forEach(function (key) {
-      required[key] = remaining > 0 ? scenarios[key] + carried[key] / remaining : null;
+      plan[key] = horizons.map(function (n) {
+        return { days: n, perDay: scenarios[key] + carried[key] / n };
+      });
     });
 
     return {
       ok: true,
       days: days,
-      periodIndex: index + 1,
-      period: { from: from, to: to },
-      elapsedDays: elapsed.length,
+      period: { from: from, to: endDate },
       loggedDays: loggedDays,
-      remainingDays: Math.max(remaining, 0),
+      missingDays: days - loggedDays,
       todayLogged: todayLogged,
+      horizons: horizons,
       carried: carried,
-      required: required,
+      plan: plan,
       tdee: burn.tdee,
       ci95: burn.ci95,
       windowDays: burn.windowDays,
-      // האם התקופה כבר בירוק בכל תרחיש, ובאיזה
-      green: {
-        low: carried.low > 0,
-        mid: carried.mid > 0,
-        high: carried.high > 0
-      }
+      green: { low: carried.low > 0, mid: carried.mid > 0, high: carried.high > 0 }
     };
   }
 

@@ -1650,42 +1650,46 @@ test('הקצבה בתרחיש זהיר נמוכה מזו שבנדיב', () => {
 
 // ---------- סגירת התקופה בירוק ----------
 
-test('נדרש ליום סוגר את התקופה בדיוק על אפס', () => {
+test('התקופה היא N הימים האחרונים ומסתיימת היום', () => {
   const entries = windowFixture();
-  const r = Metrics.periodTarget(entries, WIN_SETTINGS,
-    { endDate: '2026-03-01', days: 14, windowDays: 'adaptive' });
-
-  assert(r.ok, 'צריך לרוץ');
-  assert(r.remainingDays > 0, 'אמורים להישאר ימים');
-
-  Object.keys(r.required).forEach((key) => {
-    const scenarioBurn = key === 'low' ? r.tdee - r.ci95 : key === 'high' ? r.tdee + r.ci95 : r.tdee;
-    const projected = r.carried[key] + r.remainingDays * (scenarioBurn - r.required[key]);
-    close(projected, 0, 1e-6, key + ': הסך הכל לא מתאפס');
+  [7, 14, 28].forEach((n) => {
+    const r = Metrics.periodTarget(entries, WIN_SETTINGS,
+      { endDate: '2026-03-01', days: n, windowDays: 'adaptive' });
+    assert(r.ok, n + ': צריך לרוץ');
+    assert(r.period.to === '2026-03-01', n + ': התקופה אמורה להסתיים היום');
+    assert(Dates.diffDays(r.period.from, r.period.to) === n - 1, n + ': אורך שגוי');
   });
 });
 
-test('התקופה באורך שנקבע, והימים שנותרו מסתדרים', () => {
+test('החלפת אורך התקופה משנה את מה שנצבר', () => {
   const entries = windowFixture();
-  const r = Metrics.periodTarget(entries, WIN_SETTINGS, { endDate: '2026-03-01', days: 14 });
-  assert(Dates.diffDays(r.period.from, r.period.to) === 13, 'התקופה אמורה להיות 14 ימים');
-  assert(r.period.from <= r.endDate || true, 'התקופה מתחילה לפני הסוף');
-  assert(r.elapsedDays + r.remainingDays >= r.days - 1, 'ספירת הימים לא מסתדרת');
-  assert(r.remainingDays <= r.days, 'לא יכולים להישאר יותר ימים מאורך התקופה');
+  const week = Metrics.periodTarget(entries, WIN_SETTINGS, { endDate: '2026-03-01', days: 7 });
+  const month = Metrics.periodTarget(entries, WIN_SETTINGS, { endDate: '2026-03-01', days: 28 });
+
+  assert(week.loggedDays < month.loggedDays, 'חודש אמור לכלול יותר ימים');
+  assert(Math.abs(month.carried.mid) > Math.abs(week.carried.mid),
+    'המצטבר בחודש אמור להיות גדול יותר: ' + Math.round(month.carried.mid) +
+    ' מול ' + Math.round(week.carried.mid));
 });
 
-test('חוב גדול דורש אכילה נמוכה יותר בימים שנותרו', () => {
-  const base = windowFixture();
-  // אותם נתונים, אבל עם שבוע של אכילת יתר בסוף
-  const heavy = base.map((e) => (e.date >= '2026-02-23' ? Object.assign({}, e, { kcal: 4000 }) : e));
+test('הפריסה סוגרת את הפער לאורך מספר הימים שנבחר', () => {
+  const entries = windowFixture();
+  const r = Metrics.periodTarget(entries, WIN_SETTINGS,
+    { endDate: '2026-03-01', days: 14, horizons: [1, 3, 7] });
 
-  const calm = Metrics.periodTarget(base, WIN_SETTINGS, { endDate: '2026-03-01', days: 14 });
-  const messy = Metrics.periodTarget(heavy, WIN_SETTINGS, { endDate: '2026-03-01', days: 14 });
+  ['low', 'mid', 'high'].forEach((key) => {
+    const burn = key === 'low' ? r.tdee - r.ci95 : key === 'high' ? r.tdee + r.ci95 : r.tdee;
+    r.plan[key].forEach((option) => {
+      const projected = r.carried[key] + option.days * (burn - option.perDay);
+      close(projected, 0, 1e-6, key + '/' + option.days + ': הפריסה לא מאפסת את הפער');
+    });
+  });
 
-  assert(messy.carried.mid < calm.carried.mid, 'החוב אמור להיות גדול יותר');
-  assert(messy.required.mid < calm.required.mid,
-    'אחרי חריגה צריך לאכול פחות: ' + Math.round(messy.required.mid) +
-    ' מול ' + Math.round(calm.required.mid));
+  // פריסה ארוכה מתקרבת להוצאה עצמה
+  const single = r.plan.mid.find((o) => o.days === 1);
+  const week = r.plan.mid.find((o) => o.days === 7);
+  assert(Math.abs(week.perDay - r.tdee) < Math.abs(single.perDay - r.tdee),
+    'פריסה ארוכה אמורה להתקרב להוצאה');
 });
 
 test('סטטוס הירוק תואם את הסימן של המצטבר', () => {
@@ -1696,8 +1700,7 @@ test('סטטוס הירוק תואם את הסימן של המצטבר', () => {
   });
 });
 
-test('התקופה שנבחרת היא זו שמכילה את היום', () => {
-  // 27 ימים מ-26/07: התקופה השנייה היא 09/08 עד 22/08
+test('התקופה מסתיימת היום ומכסה את N הימים האחרונים', () => {
   const entries = buildSeries('2026-07-26', 27, (i) => ({
     weightKg: 88 - 0.05 * i, kcal: 2200, steps: 9000
   }));
@@ -1705,12 +1708,9 @@ test('התקופה שנבחרת היא זו שמכילה את היום', () => {
     { endDate: '2026-08-21', days: 14, windowDays: 'adaptive' });
 
   assert(r.ok, 'צריך לרוץ');
-  assert(r.period.from === '2026-08-09', 'תחילת התקופה: ' + r.period.from);
-  assert(r.period.to === '2026-08-22', 'סוף התקופה: ' + r.period.to);
-  assert(r.periodIndex === 2, 'התקופה השנייה');
-  assert(r.period.from <= '2026-08-21' && '2026-08-21' <= r.period.to,
-    'התקופה חייבת להכיל את היום');
-  assert(r.remainingDays > 0, 'חייבים להישאר ימים לפעול בהם');
+  assert(r.period.to === '2026-08-21', 'סוף התקופה: ' + r.period.to);
+  assert(r.period.from === '2026-08-08', 'תחילת התקופה: ' + r.period.from);
+  assert(r.loggedDays > 0, 'אמורים להיות ימים מדווחים');
 });
 
 test('סבבי הבלוקים מעוגנים ליום הראשון, כמו בגיליון', () => {

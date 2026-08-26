@@ -291,7 +291,8 @@
    */
   function periodCard(entries, settings, date, windowDays, periodDays) {
     var r = Metrics.periodTarget(entries, settings, {
-      endDate: date, days: periodDays, windowDays: windowDays
+      endDate: date, days: periodDays, windowDays: windowDays,
+      horizons: [1, 2, 3, 5, 7]
     });
     if (!r.ok) {
       return UI.card('לסגור את התקופה בירוק', null,
@@ -299,39 +300,128 @@
     }
 
     var kcalPerKg = settings.kcalPerKg || 7700;
-    var headline;
-    if (r.carried.mid > 0) {
-      headline = 'עד עכשיו צברת גירעון של ' + Fmt.numHtml(r.carried.mid, 0) +
-        ' קלוריות בתקופה — ' + Fmt.numHtml(r.carried.mid / kcalPerKg, 2) + ' ק״ג.';
-    } else {
-      headline = 'עד עכשיו אתה בעודף של ' + Fmt.numHtml(-r.carried.mid, 0) +
-        ' קלוריות בתקופה. צריך לקזז אותו בימים שנותרו.';
-    }
+    var headline = r.carried.mid > 0
+      ? 'ב-' + periodDays + ' הימים האחרונים צברת גירעון של ' +
+        Fmt.numHtml(r.carried.mid, 0) + ' קלוריות — ' +
+        Fmt.numHtml(r.carried.mid / kcalPerKg, 2) + ' ק״ג.'
+      : 'ב-' + periodDays + ' הימים האחרונים אתה בעודף של ' +
+        Fmt.numHtml(-r.carried.mid, 0) + ' קלוריות.';
 
-    var scenarioRow = function (key, label, note) {
-      var value = r.required[key];
-      return '<tr><td>' + Fmt.esc(label) + '<br><span class="basis">' + Fmt.esc(note) + '</span></td>' +
-        '<td class="n"><span class="' + Fmt.deltaClass(r.carried[key], 'up') + '">' +
-          Fmt.signed(r.carried[key], 0) + '</span></td>' +
-        '<td class="n">' + (Fmt.isNum(value) ? Fmt.n(Math.max(value, 0), 0) : '—') + '</td></tr>';
-    };
+    var status = ['low', 'mid', 'high'].map(function (key) {
+      var labels = { low: 'זהיר', mid: 'הערכה', high: 'נדיב' };
+      return '<div class="metric-row"><span class="label">' + labels[key] + '</span>' +
+        '<span class="value"><span class="' + Fmt.deltaClass(r.carried[key], 'up') + '">' +
+        Fmt.signed(r.carried[key], 0) + '</span></span></div>';
+    }).join('');
+
+    var labels = r.todayLogged
+      ? { 1: 'מחר', 2: 'יומיים', 3: '3 ימים', 5: '5 ימים', 7: 'שבוע' }
+      : { 1: 'היום', 2: 'יומיים', 3: '3 ימים', 5: '5 ימים', 7: 'שבוע' };
+
+    var rows = ['low', 'mid', 'high'].map(function (key) {
+      var names = { low: 'זהיר', mid: 'הערכה', high: 'נדיב' };
+      var cells = r.plan[key].map(function (option) {
+        return '<td class="n">' + (option.perDay < 0 ? '0' : Fmt.n(option.perDay, 0)) + '</td>';
+      }).join('');
+      return '<tr><td>' + names[key] + '</td>' + cells + '</tr>';
+    }).join('');
 
     return UI.card('לסגור את התקופה בירוק',
-      periodDays + ' ימים · ' + Dates.short(r.period.from) + '–' + Dates.short(r.period.to) +
-      ' · עברו ' + r.elapsedDays + ', נותרו ' + r.remainingDays,
+      periodDays + ' הימים האחרונים · ' + Dates.short(r.period.from) + '–' + Dates.short(r.period.to) +
+      ' · ' + r.loggedDays + ' ימים דווחו',
       '<p class="finding">' + headline + '</p>' +
-      '<div class="table-scroll" style="margin-top:14px"><table class="data"><thead><tr>' +
-        '<th>תרחיש</th><th class="n">נצבר</th><th class="n">לאכול ליום</th>' +
-      '</tr></thead><tbody>' +
-        scenarioRow('low', 'זהיר', 'אם אתה שורף פחות ממה שנראה') +
-        scenarioRow('mid', 'הערכה', 'ההערכה המרכזית') +
-        scenarioRow('high', 'נדיב', 'אם אתה שורף יותר') +
-      '</tbody></table></div>' +
-      UI.basis('"לאכול ליום" הוא הממוצע המרבי ל-' + r.remainingDays +
-        ' הימים שנותרו, כדי שהתקופה כולה תיסגר בגירעון. ' +
-        'לך לפי השורה הזהירה — היא מבטיחה ירוק גם בתרחיש הפחות טוב.'));
+
+      '<div class="section-label">מה נצבר, לפי תרחיש</div>' + status +
+
+      '<div class="section-label">כמה לאכול כדי לאזן</div>' +
+      '<div class="table-scroll"><table class="data"><thead><tr>' +
+        '<th>תרחיש</th>' +
+        r.horizons.map(function (n) {
+          return '<th class="n">' + Fmt.esc(labels[n] || n + ' ימים') + '</th>';
+        }).join('') +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      UI.basis('כל מספר הוא הממוצע היומי שיאפס את הפער על פני אותו מספר ימים. ' +
+        'שורת "זהיר" מבטיחה ירוק גם אם אתה שורף פחות ממה שנראה. ' +
+        (r.missingDays ? r.missingDays + ' ימים בתקופה ללא רישום לא נספרו.' : '')));
   }
 
+  /**
+   * כל החלונות זה לצד זה: כמה כל אחד אומר שאתה שורף, מה הגירעון
+   * בפועל, ולאיזו ירידה שבועית זה מתורגם בשלושת התרחישים.
+   */
+  function comparisonCard(entries, settings, date, active) {
+    var r = Metrics.windowComparison(entries, settings, { endDate: date });
+    if (!r.ok || r.meanIntake === null) return '';
+
+    var rows = r.rows.map(function (row) {
+      if (!row.ok) {
+        return '<tr><td>' + Fmt.esc(row.window === 'adaptive' ? 'מסתגל' : row.window) + '</td>' +
+          '<td colspan="6" class="missing">צריך ' + row.needDays + ' ימי נתונים</td></tr>';
+      }
+      var isActive = String(row.window) === String(active);
+      var kgCell = function (key) {
+        return '<td class="n"><span class="' + Fmt.deltaClass(row.weeklyKg[key], 'down') + '">' +
+          Fmt.signed(row.weeklyKg[key], 2) + '</span></td>';
+      };
+      // חלון שרווח הסמך שלו רחב מ-600 קלוריות לא יכול לבסס החלטה
+      var noisy = row.ci95 > 600;
+      return '<tr' + (isActive ? ' style="font-weight:500;background:var(--measured-10)"' : '') + '>' +
+        '<td>' + Fmt.esc(row.label) + (isActive ? ' ✓' : '') +
+          (noisy ? '<br><span class="basis">רועש</span>' : '') + '</td>' +
+        '<td class="n">' + Fmt.n(row.tdee, 0) + '</td>' +
+        '<td class="n' + (noisy ? ' missing' : '') + '">±' + Fmt.n(row.ci95, 0) + '</td>' +
+        '<td class="n"><span class="' + Fmt.deltaClass(-row.dailyDeficit.mid, 'down') + '">' +
+          Fmt.signed(row.dailyDeficit.mid, 0) + '</span></td>' +
+        kgCell('low') + kgCell('mid') + kgCell('high') + '</tr>';
+    }).join('');
+
+    return UI.card('כמה אתה בגירעון, לפי כל חלון',
+      'הגירעון מול צריכה ממוצעת של ' + Fmt.n(r.meanIntake, 0) + ' קק״ל ב-' + r.recentDays + ' הימים האחרונים',
+      '<div class="table-scroll"><table class="data"><thead><tr>' +
+        '<th>חלון</th><th class="n">שורף</th><th class="n">±</th><th class="n">גירעון ליום</th>' +
+        '<th class="n">זהיר</th><th class="n">הערכה</th><th class="n">נדיב</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      UI.basis('שלוש העמודות האחרונות הן הירידה השבועית הצפויה בק״ג, לפי שלושת ' +
+        'תרחישי ההוצאה. השורה המסומנת היא החלון שנבחר בפס הבקרה.') +
+      UI.basis('"רועש" = רווח הסמך רחב מ-600 קלוריות. חלון קצר מחלק את רעש השקילה ' +
+        'במספר ימים קטן, ולכן הוא מגדיל אותו: אותם 500 גרם של נוזלים שווים ' +
+        '1,280 קלוריות ביום בחלון של 3 ימים, ורק 137 בחלון של 28.'));
+  }
+
+  /** כמה לאכול בימים הקרובים, לפי כל חלון ולפי התרחיש שנבחר */
+  function eatByWindowCard(entries, settings, date, scenario) {
+    var r = Metrics.windowComparison(entries, settings, { endDate: date, horizons: [1, 2, 3, 7] });
+    if (!r.ok || r.meanIntake === null) return '';
+
+    var labels = r.todayLogged
+      ? { 1: 'מחר', 2: 'יומיים', 3: '3 ימים', 7: 'שבוע' }
+      : { 1: 'היום', 2: 'יומיים', 3: '3 ימים', 7: 'שבוע' };
+
+    var rows = r.rows.map(function (row) {
+      if (!row.ok) return '';
+      var cells = row.allowance[scenario].map(function (option) {
+        return '<td class="n">' + (option.perDay < 0 ? '0' : Fmt.n(option.perDay, 0)) + '</td>';
+      }).join('');
+      return '<tr><td>' + Fmt.esc(row.label) + '</td>' + cells + '</tr>';
+    }).join('');
+
+    return UI.card('כמה לאכול, לפי כל חלון',
+      'ממוצע יומי מרבי שעדיין משאיר את הסך הכל בגירעון',
+      UI.chips(SCENARIOS, scenario, 'data-scenario') +
+      '<div class="table-scroll" style="margin-top:12px"><table class="data"><thead><tr>' +
+        '<th>חלון</th>' +
+        r.horizons.map(function (n) {
+          return '<th class="n">' + Fmt.esc(labels[n] || n + ' ימים') + '</th>';
+        }).join('') +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      UI.basis('"זהיר" מבטיח גירעון גם אם אתה שורף פחות ממה שנראה. ' +
+        '"נדיב" מניח שאתה שורף בקצה הגבוה, ולכן הוא הימור.'));
+  }
+
+  /**
+   * המטרה: לסגור את התקופה הנוכחית בירוק. מוצג המצב עד כה, וכמה
+   * מותר לאכול בכל אחד מהימים שנותרו כדי שהסך הכל יישאר חיובי.
+   */
   function bodyChangeCard(entries, date) {
     var r = Metrics.bodyChangeSummary(entries, { endDate: date, windows: [7, 10, 14] });
 

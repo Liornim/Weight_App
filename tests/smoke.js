@@ -1516,42 +1516,48 @@ test('חלון רועש מסומן בטבלת ההשוואה', () => {
 
 
 
-test('כרטיס סגירת התקופה מציג מצב, יעד ושלושה תרחישים', () => {
+test('כרטיס סגירת התקופה מציג את הימים האחרונים ואת הפריסה', () => {
   App.setState({ view: 'today', date: '2026-08-21', periodDays: 14, calcWindow: 'adaptive' });
   const card = [...doc.querySelectorAll('#view-today .card')]
     .find((c) => c.textContent.includes('לסגור את התקופה בירוק'));
   assert(card, 'הכרטיס חסר');
 
   const note = card.querySelector('.card-note').textContent;
-  assert(/\d{2}\/\d{2}–\d{2}\/\d{2}/.test(note), 'חסר טווח התקופה: ' + note);
-  assert(note.includes('עברו') && note.includes('נותרו'), 'חסרה ספירת הימים');
+  assert(note.includes('14 הימים האחרונים'), 'לא צוין שמדובר בימים האחרונים: ' + note);
+  assert(/\d{2}\/\d{2}–\d{2}\/\d{2}/.test(note), 'חסר טווח התקופה');
+  assert(note.includes('דווחו'), 'לא צוין כמה ימים דווחו');
 
   const rows = [...card.querySelectorAll('tbody tr')];
   assert(rows.length === 3, 'ציפיתי לשלושה תרחישים');
   ['זהיר', 'הערכה', 'נדיב'].forEach((label, i) => {
-    assert(rows[i].children[0].textContent.indexOf(label) === 0, 'תרחיש ' + label + ' חסר');
+    assert(rows[i].children[0].textContent.trim() === label, 'תרחיש ' + label + ' חסר');
   });
 
-  // המספר בטבלה תואם את המודל
   const model = window.Metrics.periodTarget(Store.getEntries(), Store.getSettings(),
-    { endDate: '2026-08-21', days: 14, windowDays: 'adaptive' });
-  const shown = Number(rows[1].children[2].textContent.replace(/[^\d]/g, ''));
-  assert(Math.abs(shown - Math.max(Math.round(model.required.mid), 0)) <= 1,
-    'הערך לא תואם: ' + shown + ' מול ' + Math.round(model.required.mid));
+    { endDate: '2026-08-21', days: 14, windowDays: 'adaptive', horizons: [1, 2, 3, 5, 7] });
+  const shown = Number(rows[1].children[1].textContent.replace(/[^\d]/g, ''));
+  assert(Math.abs(shown - Math.max(Math.round(model.plan.mid[0].perDay), 0)) <= 1,
+    'הערך לא תואם: ' + shown + ' מול ' + Math.round(model.plan.mid[0].perDay));
 });
 
-test('אורך התקופה נבחר ומשנה את החישוב', () => {
-  App.setState({ view: 'today', date: '2026-08-21', periodDays: 14 });
-  const required = () => {
+test('אורך התקופה משנה גם את מה שנצבר וגם את היעד', () => {
+  const carried = () => {
     const card = [...doc.querySelectorAll('#view-today .card')]
       .find((c) => c.textContent.includes('לסגור את התקופה בירוק'));
-    return card.querySelector('tbody tr').children[2].textContent;
+    const row = [...card.querySelectorAll('.metric-row')]
+      .find((r) => r.querySelector('.label').textContent === 'הערכה');
+    return row.querySelector('.value').textContent.trim();
   };
-  const twoWeeks = required();
 
-  doc.querySelector('[data-period="7"]').dispatchEvent(new window.Event('click', { bubbles: true }));
-  assert(App.state.periodDays === 7, 'אורך התקופה לא התעדכן');
-  assert(required() !== twoWeeks, 'החישוב לא השתנה עם אורך התקופה');
+  App.setState({ view: 'today', date: '2026-08-21', periodDays: 7 });
+  const week = carried();
+
+  doc.querySelector('[data-period="28"]').dispatchEvent(new window.Event('click', { bubbles: true }));
+  assert(App.state.periodDays === 28, 'אורך התקופה לא התעדכן');
+  const month = carried();
+
+  assert(week !== month,
+    'המצטבר לא השתנה בין שבוע לחודש (' + week + ' בשניהם) — סימן שהתקופה לא זזה');
 
   App.setState({ periodDays: 14 });
 });
