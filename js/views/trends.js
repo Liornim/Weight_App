@@ -8,7 +8,11 @@
   var COLORS = {
     measured: '#0D6E67',
     measuredFaint: 'rgba(13,110,103,0.35)',
-    accent: '#E07A34',
+    accent: '#E07A34',      /* תוכנית — כתום */
+    bound: '#B5174E',       /* גבול תחתון — ורוד־אדום עמוק, רחוק מהכתום */
+    boundHigh: '#7BB661',   /* גבול עליון — ירוק בהיר, רחוק מהטורקיז */
+    intake: '#6B4FE0',      /* אכילה — סגול רווי */
+    intakeFaint: 'rgba(107,79,224,0.30)',
     reference: '#4B55A5',
     over: '#A32F4B',
     lean: '#4B55A5',
@@ -89,14 +93,17 @@
 
     var series = [
       { type: 'dots', color: COLORS.measuredFaint, points: toPoints(raw), radius: 2.5 },
-      { type: 'line', color: COLORS.reference, width: 1.6, dash: '5 3', points: toPoints(ewmaLine) },
+      { type: 'line', color: COLORS.intake, width: 1.8, dash: '5 3', points: toPoints(ewmaLine) },
       { type: 'line', color: COLORS.measured, width: 2.2, points: toPoints(ma) }
     ];
     var target = horizontal(raw, settings.goal.targetWeightKg, COLORS.over, '2 4');
     if (target) series.push(target);
 
     var plan = planLine(ma, settings.goal.ratePerWeekKg);
-    if (plan) series.push({ type: 'line', color: COLORS.accent, width: 1.8, dash: '6 4', points: plan });
+    if (plan) series.push({
+      type: 'line', color: COLORS.accent, width: 2, dash: '6 4',
+      ignoreExtent: true, points: plan
+    });
 
     var rawMap = lookup(raw), maMap = lookup(ma), ewmaMap = lookup(ewmaLine);
     var planMap = plan ? lookup(plan) : {};
@@ -129,7 +136,7 @@
     document.getElementById('chart-weight-legend').innerHTML = legend([
       { color: COLORS.measuredFaint, label: 'שקילות' },
       { color: COLORS.measured, label: 'ממוצע 7 ימים' },
-      { color: COLORS.reference, label: 'מגמה מהירה' }
+      { color: COLORS.intake, label: 'מגמה מהירה' }
     ].concat(plan ? [{ color: COLORS.accent, label: 'קצב מתוכנן' }] : [])
      .concat(target ? [{ color: COLORS.over, label: 'משקל יעד' }] : []));
   }
@@ -312,9 +319,9 @@
 
       series = [
         { type: 'band', color: 'rgba(13,110,103,0.14)', points: areaBand },
-        { type: 'line', color: COLORS.over, width: 1, points: lowLine, opacity: 0.55 },
-        { type: 'line', color: '#2E6B4F', width: 1, points: highLine, opacity: 0.55 },
-        { type: 'line', color: COLORS.reference, width: 2.2, points: eatLine },
+        { type: 'line', color: COLORS.bound, width: 1.4, points: lowLine, ignoreExtent: true },
+        { type: 'line', color: COLORS.boundHigh, width: 1.4, points: highLine, ignoreExtent: true },
+        { type: 'line', color: COLORS.intake, width: 2.4, points: eatLine },
         { type: 'line', color: COLORS.measured, width: 2.4, points: burnLine }
       ];
 
@@ -333,8 +340,8 @@
       legendItems = [
         { color: COLORS.measured,
           label: 'שרף — מצטבר' + (fixed ? ' (חלון ' + windowDays + ')' : '') },
-        { color: COLORS.reference, label: 'אכל — מצטבר' },
-        { color: '#2E6B4F', label: 'גבול עליון' },
+        { color: COLORS.intake, label: 'אכל — מצטבר' },
+        { color: COLORS.boundHigh, label: 'גבול עליון' },
         { color: COLORS.over, label: 'גבול תחתון' }
       ];
 
@@ -378,10 +385,10 @@
 
       series = [
         { type: 'band', color: COLORS.band, points: band },
-        { type: 'line', color: COLORS.over, width: 1, points: lowDaily, opacity: 0.45 },
-        { type: 'line', color: '#2E6B4F', width: 1, points: highDaily, opacity: 0.45 },
-        { type: 'dots', color: 'rgba(75,85,165,0.4)', points: toPoints(intakeRaw), radius: 2 },
-        { type: 'line', color: COLORS.reference, width: 2.2, points: toPoints(intakeMa) },
+        { type: 'line', color: COLORS.bound, width: 1.4, points: lowDaily, ignoreExtent: true },
+        { type: 'line', color: COLORS.boundHigh, width: 1.4, points: highDaily, ignoreExtent: true },
+        { type: 'dots', color: COLORS.intakeFaint, points: toPoints(intakeRaw), radius: 2.5 },
+        { type: 'line', color: COLORS.intake, width: 2.4, points: toPoints(intakeMa) },
         { type: 'line', color: COLORS.measured, width: 2.6, points: line }
       ];
       if (targetIntake) series.push(targetIntake);
@@ -413,10 +420,10 @@
       legendItems = [
         { color: COLORS.measured,
         label: 'שורף — ' + (fixed ? 'חלון ' + windowDays + ' ימים' : 'מסתגל') },
-        { color: '#2E6B4F', label: 'גבול עליון' },
-        { color: COLORS.over, label: 'גבול תחתון' },
-        { color: COLORS.reference, label: 'אוכל — ממוצע 7 ימים' },
-        { color: 'rgba(75,85,165,0.35)', label: 'אוכל — יומי' }
+        { color: COLORS.boundHigh, label: 'גבול עליון' },
+        { color: COLORS.bound, label: 'גבול תחתון' },
+        { color: COLORS.intake, label: 'אוכל — ממוצע 7 ימים' },
+        { color: COLORS.intakeFaint, label: 'אוכל — יומי' }
       ].concat(targetIntake ? [{ color: COLORS.accent, label: 'יעד הצריכה' }] : []);
     }
 

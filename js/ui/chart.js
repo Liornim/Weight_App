@@ -50,6 +50,10 @@
     (config.series || []).forEach(function (s) {
       (s.points || []).forEach(function (p) {
         allX.push(p.x);
+        // סדרה עם ignoreExtent אינה קובעת את הסקאלה. קווי ייחוס —
+        // יעד, תוכנית, גבולות — יכולים להימתח רחוק מהנתונים, ואז
+        // הם מועכים את המדידות עצמן לקו שטוח.
+        if (s.ignoreExtent) return;
         if (s.type === 'band') { allY.push(p.lo); allY.push(p.hi); }
         else allY.push(p.y);
       });
@@ -61,14 +65,20 @@
     if (!xEx || !yEx) return;
 
     if (config.yDomain) yEx = config.yDomain.slice();
-    var yPadding = (yEx[1] - yEx[0]) * 0.12 || 1;
+    var yPadding = (yEx[1] - yEx[0]) * 0.08 || 1;
     var yLo = config.yDomain ? yEx[0] : yEx[0] - yPadding;
     var yHi = config.yDomain ? yEx[1] : yEx[1] + yPadding;
     if (yLo === yHi) { yLo -= 1; yHi += 1; }
 
     var xSpan = xEx[1] - xEx[0] || 1;
     function sx(x) { return pad.left + ((x - xEx[0]) / xSpan) * innerW; }
-    function sy(y) { return pad.top + innerH - ((y - yLo) / (yHi - yLo)) * innerH; }
+
+    // קווי ייחוס נחתכים לתוך הסקאלה במקום לחרוג ממנה
+    function clampY(v) { return Math.min(Math.max(v, yLo), yHi); }
+    function sy(y) {
+      var clamped = Math.min(Math.max(y, yLo), yHi);
+      return pad.top + innerH - ((clamped - yLo) / (yHi - yLo)) * innerH;
+    }
 
     var svg = el('svg', {
       viewBox: '0 0 ' + width + ' ' + height,

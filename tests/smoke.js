@@ -834,8 +834,8 @@ test('גבולות ההערכה מסומנים בקווים, והפער מוצג
 
     const colors = [...doc.querySelectorAll('#chart-tdee path')]
       .map((p) => p.getAttribute('stroke'));
-    assert(colors.indexOf('#A32F4B') !== -1, mode + ': הגבול התחתון לא אדום');
-    assert(colors.indexOf('#2E6B4F') !== -1, mode + ': הגבול העליון לא ירוק');
+    assert(colors.indexOf('#B5174E') !== -1, mode + ': הגבול התחתון לא אדום');
+    assert(colors.indexOf('#7BB661') !== -1, mode + ': הגבול העליון לא ירוק');
   });
   App.setState({ tdeeMode: 'daily' });
 });
@@ -1726,6 +1726,55 @@ test('שורת הסיכום המקופלת כוללת את טווח החלון',
       'הטווח לא מופיע בשורת הסיכום: ' + summary);
   }
   App.setState({ calcWindow: 'adaptive' });
+});
+
+
+
+test('קווי ייחוס לא מותחים את הסקאלה', () => {
+  App.setState({ view: 'trends', range: 0 });
+
+  const svg = doc.querySelector('#chart-weight svg');
+  const height = Number(svg.getAttribute('viewBox').split(' ')[3]);
+
+  // כל נקודה מצוירת בתוך גבולות הגרף, כולל קווי התוכנית והיעד
+  [...doc.querySelectorAll('#chart-weight path')].forEach((p) => {
+    p.getAttribute('d').trim().split(/[ML]/).filter(Boolean).forEach((pair) => {
+      const y = Number(pair.trim().split(' ')[1]);
+      assert(y >= -1 && y <= height + 1, 'נקודה מחוץ לגרף: ' + y);
+    });
+  });
+
+  // הסקאלה נקבעת לפי המדידות: התוויות קרובות לטווח המשקל בפועל
+  const weights = window.Metrics.series(Store.getEntries(), 'weightKg').map((p) => p.y);
+  const span = Math.max(...weights) - Math.min(...weights);
+  const ticks = [...doc.querySelectorAll('#chart-weight .axis-label')]
+    .map((t) => Number(t.textContent.replace(/[^\d.]/g, '')))
+    .filter((v) => v > 40 && v < 200);
+  if (ticks.length >= 2) {
+    const tickSpan = Math.max(...ticks) - Math.min(...ticks);
+    assert(tickSpan < span * 3 + 3,
+      'הסקאלה רחבה פי כמה מהנתונים: ' + tickSpan.toFixed(1) + ' מול ' + span.toFixed(1));
+  }
+});
+
+test('צבעי הסדרות נבדלים זה מזה', () => {
+  App.setState({ view: 'trends', range: 0, tdeeMode: 'daily' });
+  const strokes = [...doc.querySelectorAll('#chart-tdee path')]
+    .map((p) => p.getAttribute('stroke'))
+    .filter((c) => c && c.indexOf('rgba') !== 0);
+  assert(new Set(strokes).size === strokes.length,
+    'יש שתי סדרות באותו צבע: ' + strokes.join(', '));
+
+  // המרחק בין הצבעים גדול מספיק כדי להבחין
+  const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.substr(i, 2), 16));
+  const unique = [...new Set(strokes)];
+  for (let i = 0; i < unique.length; i++) {
+    for (let j = i + 1; j < unique.length; j++) {
+      const a = rgb(unique[i]), b = rgb(unique[j]);
+      const dist = Math.sqrt(a.reduce((sum, v, k) => sum + (v - b[k]) * (v - b[k]), 0));
+      assert(dist > 60, 'הצבעים ' + unique[i] + ' ו-' + unique[j] + ' קרובים מדי (' + dist.toFixed(0) + ')');
+    }
+  }
 });
 
 
