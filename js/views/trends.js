@@ -55,9 +55,21 @@
       '<div class="legend" id="' + id + '-legend"></div>');
   }
 
+  /**
+   * המקרא מצייר את הצורה שבה הסדרה מופיעה בגרף: נקודה לנקודות,
+   * קו לקווים, מקווקו לקו מקווקו, מלבן לעמודות. סמל אחיד לכולם
+   * גורם לחפש בגרף קו שלא קיים.
+   */
   function legend(items) {
     return items.map(function (i) {
-      return '<span><i style="background:' + i.color + '"></i>' + Fmt.esc(i.label) + '</span>';
+      var shape = i.shape || 'line';
+      var style = shape === 'dot' || shape === 'bar'
+        ? 'background:' + i.color
+        : shape === 'dashed'
+          ? 'background:repeating-linear-gradient(90deg,' + i.color + ' 0 5px,transparent 5px 9px)'
+          : 'background:' + i.color;
+      return '<span><i class="swatch swatch--' + shape + '" style="' + style + '"></i>' +
+        Fmt.esc(i.label) + '</span>';
     }).join('');
   }
 
@@ -134,11 +146,11 @@
       }
     });
     document.getElementById('chart-weight-legend').innerHTML = legend([
-      { color: COLORS.measuredFaint, label: 'שקילות' },
+      { color: COLORS.measuredFaint, label: 'שקילות', shape: 'dot' },
       { color: COLORS.measured, label: 'ממוצע 7 ימים' },
-      { color: COLORS.intake, label: 'מגמה מהירה' }
-    ].concat(plan ? [{ color: COLORS.accent, label: 'קצב מתוכנן' }] : [])
-     .concat(target ? [{ color: COLORS.over, label: 'משקל יעד' }] : []));
+      { color: COLORS.intake, label: 'מגמה מהירה', shape: 'dashed' }
+    ].concat(plan ? [{ color: COLORS.accent, label: 'קצב מתוכנן', shape: 'dashed' }] : [])
+     .concat(target ? [{ color: COLORS.over, label: 'משקל יעד', shape: 'dashed' }] : []));
   }
 
   /**
@@ -174,7 +186,7 @@
       }
     });
     document.getElementById(elementId + '-legend').innerHTML = legend([
-      { color: COLORS.measuredFaint, label: 'מדידות' },
+      { color: COLORS.measuredFaint, label: 'מדידות', shape: 'dot' },
       { color: COLORS.measured, label: label + ' — ממוצע נע' }
     ]);
     return true;
@@ -231,10 +243,12 @@
       }
     });
     document.getElementById(elementId + '-legend').innerHTML = legend([
-      { color: COLORS.measuredFaint, label: 'יומי' },
+      { color: COLORS.measuredFaint, label: 'יומי', shape: 'bar' },
       { color: COLORS.measured, label: 'ממוצע נע' }
-    ].concat(Fmt.isNum(target) ? [{ color: COLORS.reference, label: opts.targetLabel || 'יעד' }] : [])
-     .concat(minLine ? [{ color: COLORS.over, label: 'מינימום ' + Fmt.n(opts.minimum, 0) }] : []));
+    ].concat(Fmt.isNum(target)
+        ? [{ color: COLORS.reference, label: opts.targetLabel || 'יעד', shape: 'dashed' }] : [])
+     .concat(minLine
+        ? [{ color: COLORS.over, label: 'מינימום ' + Fmt.n(opts.minimum, 0), shape: 'dashed' }] : []));
   }
 
   var TDEE_MODES = [
@@ -423,8 +437,9 @@
         { color: COLORS.boundHigh, label: 'גבול עליון' },
         { color: COLORS.bound, label: 'גבול תחתון' },
         { color: COLORS.intake, label: 'אוכל — ממוצע 7 ימים' },
-        { color: COLORS.intakeFaint, label: 'אוכל — יומי' }
-      ].concat(targetIntake ? [{ color: COLORS.accent, label: 'יעד הצריכה' }] : []);
+        { color: COLORS.intakeFaint, label: 'אוכל — יומי', shape: 'dot' }
+      ].concat(targetIntake
+        ? [{ color: COLORS.accent, label: 'יעד הצריכה', shape: 'dashed' }] : []);
     }
 
     var config = {
@@ -701,10 +716,12 @@
       }
     });
     document.getElementById(elementId + '-legend').innerHTML = legend([
-      { color: COLORS.measuredFaint, label: 'יומי' },
+      { color: COLORS.measuredFaint, label: 'יומי', shape: 'bar' },
       { color: COLORS.measured, label: 'ממוצע נע' }
-    ].concat(Fmt.isNum(target) ? [{ color: COLORS.reference, label: opts.targetLabel || 'יעד' }] : [])
-     .concat(minLine ? [{ color: COLORS.over, label: 'מינימום ' + Fmt.n(opts.minimum, 0) }] : []));
+    ].concat(Fmt.isNum(target)
+        ? [{ color: COLORS.reference, label: opts.targetLabel || 'יעד', shape: 'dashed' }] : [])
+     .concat(minLine
+        ? [{ color: COLORS.over, label: 'מינימום ' + Fmt.n(opts.minimum, 0), shape: 'dashed' }] : []));
   }
 
   function render(container) {

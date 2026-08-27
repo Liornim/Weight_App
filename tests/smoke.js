@@ -1778,6 +1778,49 @@ test('צבעי הסדרות נבדלים זה מזה', () => {
 });
 
 
+
+test('סמל המקרא תואם לצורה שמצוירת בגרף', () => {
+  App.setState({ view: 'trends', range: 0, tdeeMode: 'daily' });
+
+  const checks = [
+    { chart: 'chart-weight', label: 'שקילות', shape: 'dot' },
+    { chart: 'chart-weight', label: 'ממוצע 7 ימים', shape: 'line' },
+    { chart: 'chart-weight', label: 'מגמה מהירה', shape: 'dashed' },
+    { chart: 'chart-fat', label: 'מדידות', shape: 'dot' },
+    { chart: 'chart-tdee', label: 'אוכל — יומי', shape: 'dot' },
+    { chart: 'chart-kcal', label: 'יומי', shape: 'bar' },
+    { chart: 'chart-tdee', label: 'יעד הצריכה', shape: 'dashed' }
+  ];
+
+  checks.forEach((check) => {
+    const box = doc.getElementById(check.chart + '-legend');
+    if (!box) return;
+    const item = [...box.querySelectorAll('span')]
+      .find((el) => el.textContent.trim() === check.label);
+    assert(item, check.chart + ': חסר פריט "' + check.label + '"');
+    const swatch = item.querySelector('i');
+    assert(swatch.classList.contains('swatch--' + check.shape),
+      check.label + ': הסמל הוא ' + swatch.className + ' במקום ' + check.shape);
+  });
+
+  // סדרת נקודות בגרף חייבת לקבל סמל עגול, לא קו
+  const dots = doc.querySelectorAll('#chart-weight circle').length;
+  if (dots > 0) {
+    assert(doc.querySelector('#chart-weight-legend .swatch--dot'),
+      'יש נקודות בגרף אבל אין סמל נקודה במקרא');
+  }
+});
+
+test('כל פריט במקרא נושא סמל מוכר', () => {
+  App.setState({ view: 'trends', range: 0 });
+  const known = ['swatch--dot', 'swatch--line', 'swatch--dashed', 'swatch--bar'];
+  doc.querySelectorAll('#view-trends .legend i').forEach((swatch) => {
+    assert(known.some((c) => swatch.classList.contains(c)),
+      'סמל לא מוכר: ' + swatch.className);
+  });
+});
+
+
 runAll().then(function () {
   
 
