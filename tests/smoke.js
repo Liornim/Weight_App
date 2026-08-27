@@ -1684,6 +1684,51 @@ test('המתגלגל והסבב נותנים תשובות שונות, ושניה
 });
 
 
+
+test('פס הבקרה מציג את הטווחים שכל חלון משווה', () => {
+  App.setState({ view: 'today', date: '2026-08-21', calcWindow: 7 });
+  const table = [...doc.querySelectorAll('#controls table.data')][0];
+  assert(table, 'טבלת הטווחים חסרה');
+
+  const headers = [...table.querySelectorAll('th')].map((th) => th.textContent.trim());
+  ['ימים', 'חלון נוכחי', 'מול'].forEach((h) =>
+    assert(headers.indexOf(h) !== -1, 'חסרה עמודה: ' + h));
+
+  // כל שורה תואמת את מה שהמנוע מחשב לאותו אורך חלון
+  [...table.querySelectorAll('tbody tr')].forEach((tr) => {
+    const days = Number(tr.children[0].textContent.replace(/[^\d]/g, ''));
+    const blocks = window.Metrics.blockWindows(Store.getEntries(),
+      { days: days, count: 1, endDate: '2026-08-21' });
+    const row = blocks.rows[0];
+    if (!row || !row.complete) {
+      assert(tr.textContent.includes('צריך'), days + ': היה צריך לומר שחסרים ימים');
+      return;
+    }
+    assert(tr.children[1].textContent.includes(window.Dates.short(row.from)),
+      days + ': החלון הנוכחי לא תואם');
+    assert(tr.children[2].textContent.includes(window.Dates.short(row.prevFrom)),
+      days + ': החלון הקודם לא תואם');
+  });
+
+  // החלון הפעיל מסומן
+  const marked = [...table.querySelectorAll('tbody tr')].filter((tr) => tr.textContent.includes('✓'));
+  assert(marked.length === 1, 'ציפיתי לשורה מסומנת אחת, יש ' + marked.length);
+  assert(Number(marked[0].children[0].textContent.replace(/[^\d]/g, '')) === 7, 'הסימון על החלון הלא נכון');
+});
+
+test('שורת הסיכום המקופלת כוללת את טווח החלון', () => {
+  App.setState({ view: 'today', date: '2026-08-21', calcWindow: 7 });
+  const summary = doc.querySelector('#controls summary').textContent;
+  const blocks = window.Metrics.blockWindows(Store.getEntries(),
+    { days: 7, count: 1, endDate: '2026-08-21' });
+  if (blocks.rows[0] && blocks.rows[0].complete) {
+    assert(summary.includes(window.Dates.short(blocks.rows[0].from)),
+      'הטווח לא מופיע בשורת הסיכום: ' + summary);
+  }
+  App.setState({ calcWindow: 'adaptive' });
+});
+
+
 runAll().then(function () {
   
 
