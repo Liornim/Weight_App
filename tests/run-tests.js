@@ -1981,6 +1981,57 @@ test('חלון מתגלגל בלי כיסוי מלא לתקופה הקודמת �
   assert(!rows[1].covered, 'חלון 7 דורש 14 ימים ואין');
 });
 
+// ---------- פיצול המאקרו ----------
+
+test('הפיצול מחשב אחוזים מהקלוריות', () => {
+  // 200 חלבון (800), 200 פחמימות (800), 44.4 שומן (400) = 2000
+  const entries = buildSeries('2026-01-01', 10, () => ({
+    kcal: 2000, proteinG: 200, carbG: 200, fatG: 400 / 9
+  }));
+  const r = Metrics.macroSplit(entries, { endDate: '2026-01-10', windowDays: 7 });
+
+  assert(r.ok, 'צריך לרוץ');
+  const byField = {};
+  r.parts.forEach((p) => { byField[p.field] = p; });
+
+  close(byField.proteinG.share, 0.4, 1e-6, 'חלבון 40%');
+  close(byField.carbG.share, 0.4, 1e-6, 'פחמימות 40%');
+  close(byField.fatG.share, 0.2, 1e-6, 'שומן 20%');
+  close(r.unexplained, 0, 1e-6, 'אין הפרש');
+  close(byField.proteinG.gramsPerDay, 200, 1e-9, 'גרמים ליום');
+});
+
+test('הפרש בין הסכום לדיווח מוחזר במפורש', () => {
+  // המאקרו מסביר 1200 בלבד מתוך 2000
+  const entries = buildSeries('2026-01-01', 10, () => ({
+    kcal: 2000, proteinG: 100, carbG: 100, fatG: 44.44
+  }));
+  const r = Metrics.macroSplit(entries, { endDate: '2026-01-10', windowDays: 7 });
+  close(r.unexplained, 2000 * 7 - (100 * 4 + 100 * 4 + 44.44 * 9) * 7, 1, 'ההפרש');
+  assert(r.unexplainedShare > 0.3, 'ההפרש אמור להיות משמעותי');
+});
+
+test('צפיפות החלבון אינה תלויה בגודל היום', () => {
+  const small = buildSeries('2026-01-01', 10, () => ({ kcal: 1000, proteinG: 100 }));
+  const big = buildSeries('2026-01-01', 10, () => ({ kcal: 2000, proteinG: 200 }));
+
+  const a = Metrics.macroSplit(small, { endDate: '2026-01-10', windowDays: 7 });
+  const b = Metrics.macroSplit(big, { endDate: '2026-01-10', windowDays: 7 });
+
+  close(a.proteinDensity, 10, 1e-9, 'עשרה גרם ל-100 קלוריות');
+  close(a.proteinDensity, b.proteinDensity, 1e-9, 'הצפיפות זהה בשני הגדלים');
+
+  // אבל הגרמים המוחלטים שונים — ולכן שניהם נחוצים
+  const gramsA = a.parts.find((p) => p.field === 'proteinG').gramsPerDay;
+  const gramsB = b.parts.find((p) => p.field === 'proteinG').gramsPerDay;
+  assert(gramsB > gramsA, 'הגרמים המוחלטים אמורים להיות שונים');
+});
+
+test('בלי דיווח קלוריות אין פיצול', () => {
+  const entries = buildSeries('2026-01-01', 5, () => ({ weightKg: 88 }));
+  assert(!Metrics.macroSplit(entries, { endDate: '2026-01-05' }).ok, 'צריך להיכשל');
+});
+
 // ---------- דוח ----------
 // הריצה מופעלת בסוף הקובץ בלבד. אם היא תופעל באמצע, בדיקות שנרשמו
 // אחריה לא ייכנסו לתור וייעלמו בשקט — קרה בפועל.

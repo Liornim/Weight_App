@@ -585,8 +585,8 @@ test('טבלת מה קרה בפועל מציגה טווחי תאריכים לש�
   });
 
   const rows = [...table.querySelectorAll('tbody tr')];
-  assert(rows.length === 3, 'ציפיתי לשלושה חלונות, יש ' + rows.length);
-  [7, 10, 14].forEach((n, i) => {
+  assert(rows.length === 5, 'ציפיתי לחמישה חלונות, יש ' + rows.length);
+  [3, 5, 7, 10, 14].forEach((n, i) => {
     assert(rows[i].children[0].textContent.indexOf(n + ' ימים') === 0,
       'שורה ' + i + ' אינה ' + n + ' ימים');
     // טווחי התאריכים בעמודה נפרדת, כדי שהמספרים יישארו מיושרים
@@ -596,7 +596,7 @@ test('טבלת מה קרה בפועל מציגה טווחי תאריכים לש�
   });
 
   const summary = window.Metrics.bodyChangeSummary(Store.getEntries(),
-    { endDate: '2026-08-21', windows: [7, 10, 14] });
+    { endDate: '2026-08-21', windows: [3, 5, 7, 10, 14] });
   summary.rows.forEach((row, i) => {
     if (!row.covered) return;
     const shown = Number(rows[i].children[1].textContent.replace(/[^\d.\-−]/g, '').replace('−', '-'));
@@ -1192,7 +1192,7 @@ test('פס הבקרה זמין בכל מסך, ולא בתוך מסך מסוים'
 test('הטבלאות משתמשות בחלונות מלאים מעוגנים, לא בחלון נע', () => {
   App.setState({ view: 'today', date: '2026-08-21' });
   const summary = window.Metrics.bodyChangeSummary(Store.getEntries(),
-    { endDate: '2026-08-21', windows: [7, 10, 14] });
+    { endDate: '2026-08-21', windows: [3, 5, 7, 10, 14] });
   const first = Store.getEntries()[0].date;
 
   summary.rows.forEach((row) => {
@@ -1817,6 +1817,48 @@ test('כל פריט במקרא נושא סמל מוכר', () => {
   doc.querySelectorAll('#view-trends .legend i').forEach((swatch) => {
     assert(known.some((c) => swatch.classList.contains(c)),
       'סמל לא מוכר: ' + swatch.className);
+  });
+});
+
+
+
+test('כרטיס הפיצול מציג את כל שלושת הרכיבים', () => {
+  App.setState({ view: 'today', date: '2026-08-21', periodDays: 14 });
+  const card = [...doc.querySelectorAll('#view-today .card')]
+    .find((c) => c.textContent.includes('מאיפה מגיעות הקלוריות'));
+  assert(card, 'הכרטיס חסר');
+
+  ['חלבון', 'פחמימות', 'שומן'].forEach((label) => {
+    assert(card.textContent.includes(label), 'חסר רכיב: ' + label);
+  });
+  assert(card.textContent.includes('צפיפות חלבון'), 'חסרה צפיפות החלבון');
+
+  // הפס מחולק לפי האחוזים שהמודל חישב
+  const model = window.Metrics.macroSplit(Store.getEntries(),
+    { endDate: '2026-08-21', windowDays: 14 });
+  const segments = [...card.querySelectorAll('.macro-seg:not(.macro-seg--rest)')];
+  assert(segments.length === 3, 'ציפיתי לשלושה מקטעים, יש ' + segments.length);
+
+  model.parts.forEach((part, i) => {
+    const width = Number(segments[i].style.width.replace('%', ''));
+    assert(Math.abs(width - part.share * 100) < 0.2,
+      part.field + ': רוחב ' + width + '% מול ' + (part.share * 100).toFixed(1) + '%');
+  });
+
+  // סכום המקטעים, כולל הלא־מוסבר, הוא 100%
+  const total = [...card.querySelectorAll('.macro-seg')]
+    .reduce((sum, el) => sum + Number(el.style.width.replace('%', '')), 0);
+  assert(Math.abs(total - 100) < 1.5, 'סכום המקטעים ' + total.toFixed(1) + '%');
+});
+
+test('טבלת מה קרה בפועל כוללת גם 3 ו-5 ימים', () => {
+  App.setState({ view: 'today', date: '2026-08-21' });
+  const table = [...doc.querySelectorAll('#view-today table.data')]
+    .find((t) => t.textContent.includes('שריר'));
+  const labels = [...table.querySelectorAll('tbody tr')]
+    .map((tr) => tr.children[0].textContent.trim());
+  [3, 5, 7, 10, 14].forEach((n) => {
+    assert(labels.some((l) => l.indexOf(n + ' ימים') === 0), 'חסר חלון של ' + n + ' ימים');
   });
 });
 

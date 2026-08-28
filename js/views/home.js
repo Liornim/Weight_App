@@ -422,8 +422,56 @@
    * המטרה: לסגור את התקופה הנוכחית בירוק. מוצג המצב עד כה, וכמה
    * מותר לאכול בכל אחד מהימים שנותרו כדי שהסך הכל יישאר חיובי.
    */
+  var MACRO_LABELS = { proteinG: 'חלבון', carbG: 'פחמימות', fatG: 'שומן' };
+  var MACRO_COLORS = { proteinG: 'var(--measured)', carbG: 'var(--reference)', fatG: 'var(--accent)' };
+
+  /** מאיפה מגיעות הקלוריות — פיצול מלא, לא רק חלבון */
+  function macroCard(entries, settings, date, windowDays) {
+    var r = Metrics.macroSplit(entries, { endDate: date, windowDays: windowDays });
+    if (!r.ok) return '';
+
+    var segments = r.parts.filter(function (p) { return p.share; }).map(function (p) {
+      return '<div class="macro-seg" style="width:' + (p.share * 100).toFixed(1) + '%;' +
+        'background:' + MACRO_COLORS[p.field] + '" ' +
+        'title="' + Fmt.esc(MACRO_LABELS[p.field] + ' ' + Fmt.n(p.share * 100, 0) + '%') + '"></div>';
+    }).join('');
+
+    var rest = r.unexplainedShare;
+    if (Fmt.isNum(rest) && rest > 0.01) {
+      segments += '<div class="macro-seg macro-seg--rest" style="width:' +
+        (rest * 100).toFixed(1) + '%"></div>';
+    }
+
+    var rows = r.parts.map(function (p) {
+      return '<tr><td>' + Fmt.esc(MACRO_LABELS[p.field]) + '</td>' +
+        '<td class="n">' + (Fmt.isNum(p.gramsPerDay) ? Fmt.n(p.gramsPerDay, 0) + ' גר׳' : Fmt.EMPTY) + '</td>' +
+        '<td class="n">' + Fmt.n(p.kcal / r.days, 0) + '</td>' +
+        '<td class="n">' + (Fmt.isNum(p.share) ? Fmt.n(p.share * 100, 0) + '%' : Fmt.EMPTY) + '</td></tr>';
+    }).join('');
+
+    var protein = r.parts.find(function (p) { return p.field === 'proteinG'; });
+
+    return UI.card('מאיפה מגיעות הקלוריות', windowDays + ' הימים האחרונים',
+      '<div class="macro-bar">' + segments + '</div>' +
+      '<div class="table-scroll" style="margin-top:12px"><table class="data"><thead><tr>' +
+        '<th>רכיב</th><th class="n">ליום</th><th class="n">קק״ל</th><th class="n">מהקלוריות</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+
+      '<div class="metric-row" style="margin-top:12px"><span class="label">צפיפות חלבון</span>' +
+        '<span class="value">' + Fmt.n(r.proteinDensity, 1) + ' גר׳ ל-100 קק״ל</span></div>' +
+      (Fmt.isNum(r.unexplainedShare) && Math.abs(r.unexplainedShare) > 0.05
+        ? '<div class="notice">' + Fmt.n(Math.abs(r.unexplainedShare) * 100, 0) +
+          '% מהקלוריות לא מוסברות על ידי המאקרו שדיווחת. פער כזה בדרך כלל אומר ' +
+          'שחלק מהימים נרשמו בלי פירוט מלא.</div>'
+        : '') +
+      UI.basis('אחוז גבוה יותר לחלבון פירושו שאותה כמות קלוריות משביעה יותר ושומרת על שריר. ' +
+        'צפיפות של 10 גר׳ ל-100 קק״ל היא סף גבוה. ' +
+        'שים לב שהצפיפות עולה גם כשפשוט אוכלים פחות, ולכן היא נקראת יחד עם ' +
+        Fmt.n(protein ? protein.gramsPerDay : null, 0) + ' הגרמים ליום.'));
+  }
+
   function bodyChangeCard(entries, date) {
-    var r = Metrics.bodyChangeSummary(entries, { endDate: date, windows: [7, 10, 14] });
+    var r = Metrics.bodyChangeSummary(entries, { endDate: date, windows: [3, 5, 7, 10, 14] });
 
     var partial = false;
     var cell = function (info, goodDirection) {
@@ -489,6 +537,7 @@
 
       dashboardCard(entries, settings, date) +
       bodyChangeCard(entries, date) +
+      macroCard(entries, settings, date, state.periodDays || 14) +
       '<div class="section-label">גירעון</div>' +
       UI.chips(UNITS, unit, 'data-unit') +
       deficitCard(entries, settings, date, unit, state.calcWindow) +

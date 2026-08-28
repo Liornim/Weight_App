@@ -1787,6 +1787,65 @@
     return { endDate: endDate, rows: rows };
   }
 
+  var KCAL_PER_GRAM = { proteinG: 4, carbG: 4, fatG: 9 };
+
+  /**
+   * מאיפה מגיעות הקלוריות: פיצול לחלבון, פחמימות ושומן.
+   *
+   * הסכום כמעט אף פעם לא שווה בדיוק לקלוריות שדווחו — עיגול,
+   * סיבים, אלכוהול. ההפרש מוחזר כ-unexplained במקום להיבלע, כי
+   * פער גדול הוא סימן לדיווח לא עקבי ולא רק לרעש.
+   */
+  function macroSplit(entries, options) {
+    var opts = options || {};
+    var endDate = opts.endDate || Dates.today();
+    var windowDays = opts.windowDays || 7;
+
+    var inWin = inWindow(entries, endDate, windowDays);
+    var kcalValues = series(inWin, 'kcal').map(function (p) { return p.y; });
+    if (!kcalValues.length) return { ok: false, reason: 'no-data' };
+
+    var totals = { proteinG: 0, carbG: 0, fatG: 0 };
+    var counted = { proteinG: 0, carbG: 0, fatG: 0 };
+    Object.keys(totals).forEach(function (field) {
+      series(inWin, field).forEach(function (p) {
+        totals[field] += p.y;
+        counted[field]++;
+      });
+    });
+
+    var days = kcalValues.length;
+    var totalKcal = kcalValues.reduce(function (sum, v) { return sum + v; }, 0);
+
+    var parts = Object.keys(KCAL_PER_GRAM).map(function (field) {
+      var grams = totals[field];
+      var kcal = grams * KCAL_PER_GRAM[field];
+      return {
+        field: field,
+        grams: grams,
+        gramsPerDay: counted[field] ? grams / counted[field] : null,
+        kcal: kcal,
+        share: totalKcal ? kcal / totalKcal : null,
+        loggedDays: counted[field]
+      };
+    });
+
+    var explained = parts.reduce(function (sum, p) { return sum + p.kcal; }, 0);
+
+    return {
+      ok: true,
+      windowDays: windowDays,
+      days: days,
+      totalKcal: totalKcal,
+      kcalPerDay: totalKcal / days,
+      parts: parts,
+      unexplained: totalKcal - explained,
+      unexplainedShare: totalKcal ? (totalKcal - explained) / totalKcal : null,
+      // גרמים לכל 100 קלוריות — מדד צפיפות שלא תלוי בגודל היום
+      proteinDensity: totalKcal ? (totals.proteinG / totalKcal) * 100 : null
+    };
+  }
+
   /** מספרי הפתיחה של מסך הבית */
   function dashboard(entries, settings, options) {
     var opts = options || {};
@@ -1882,6 +1941,8 @@
     windowReport: windowReport,
     deficitSummary: deficitSummary,
     dashboard: dashboard,
+    macroSplit: macroSplit,
+    KCAL_PER_GRAM: KCAL_PER_GRAM,
     bodyChangeSummary: bodyChangeSummary,
     anchoredBlocks: anchoredBlocks,
     rollingWindows: rollingWindows,

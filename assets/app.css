@@ -827,6 +827,22 @@ span.delta-down { background: var(--good-10); }
   border-top: 1px solid var(--rule);
 }
 
+/* פיצול המאקרו */
+
+.macro-bar {
+  display: flex;
+  height: 26px;
+  border-radius: 100px;
+  overflow: hidden;
+  background: var(--paper);
+}
+
+.macro-seg { height: 100%; }
+.macro-seg--rest {
+  background: repeating-linear-gradient(45deg,
+    var(--rule) 0 6px, var(--card) 6px 12px);
+}
+
 /* פרמטרים מתחת לגרף */
 
 .param-grid {
