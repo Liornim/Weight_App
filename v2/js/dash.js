@@ -97,6 +97,20 @@
 
   // ---------------------------------------------------------- כותרת
 
+  /**
+   * ההסבר מאיפה הגיע המספר. כל התקופה מחולקת לשניים, וכל חצי
+   * מסוכם בממוצע — כך כל שקילה נספרת פעם אחת ושני הצדדים סובלים
+   * מאותו רעש.
+   */
+  function lossExplanation(d) {
+    if (!d.halves || d.halves.loss === null) {
+      return 'קילו · מאז ' + Dates.short(d.firstDate);
+    }
+    return 'קילו · ' + d.halves.days + ' הימים הראשונים (' +
+      Fmt.n(d.halves.first.mean, 1) + ') מול ' + d.halves.days + ' האחרונים (' +
+      Fmt.n(d.halves.second.mean, 1) + ')';
+  }
+
   function top(state, entries, settings) {
     var d = Metrics.dashboard(entries, settings, { endDate: state.date });
     var stamp = Dates.long(state.date);
@@ -110,9 +124,12 @@
     var goal = settings.goal.targetWeightKg;
     var progress = '';
 
-    if (Fmt.isNum(goal) && Fmt.isNum(d.startMean) && Fmt.isNum(d.currentWeight)) {
-      var total = d.startMean - goal;
-      var done = d.startMean - d.currentWeight;
+    var openingWeight = d.halves && Fmt.isNum(d.halves.first.mean)
+      ? d.halves.first.mean : d.startMean;
+
+    if (Fmt.isNum(goal) && Fmt.isNum(openingWeight) && Fmt.isNum(d.currentWeight)) {
+      var total = openingWeight - goal;
+      var done = openingWeight - d.currentWeight;
       var pct = total > 0 ? Math.max(Math.min(done / total, 1), 0) : 0;
       var left = Math.max(d.currentWeight - goal, 0);
 
@@ -124,7 +141,7 @@
             (pct * 100).toFixed(1) + '%"></div></div>' +
           '<div class="progress-foot"><span>היעד ' + Fmt.n(goal, 1) + '</span>' +
             '<span>עכשיו ' + Fmt.n(d.currentWeight, 1) + '</span>' +
-            '<span>התחלה ' + Fmt.n(d.startMean, 1) + '</span></div>' +
+            '<span>התחלה ' + Fmt.n(openingWeight, 1) + '</span></div>' +
         '</div>';
     }
 
@@ -133,9 +150,7 @@
       '<div class="headline">' +
         '<span class="k">ירדת עד עכשיו</span>' +
         '<span class="v">' + Fmt.n(d.totalLoss, 1) + '</span>' +
-        '<span class="u">קילו · מהממוצע של ' + d.startDays +
-          ' הימים הראשונים (' + Fmt.n(d.startMean, 1) + ') אל הממוצע היום (' +
-          Fmt.n(d.currentWeight, 1) + ')</span>' +
+        '<span class="u">' + P.esc(lossExplanation(d)) + '</span>' +
       '</div>' +
       '<div class="peaks">' +
         '<span>הכי גבוה <b class="num">' + Fmt.n(d.maxWeight, 1) + '</b></span>' +

@@ -94,7 +94,10 @@ test('הכותרת מציגה את הירידה הכוללת ואת ההתקדמ
   // הירידה נמדדת בין ממוצעים, ולכן היא קטנה מהמרחק בין הקצוות
   assert(d.totalLoss < d.peakDrop, 'ציפיתי למספר צנוע מהמרחק בין הקצוות');
   const sub = doc.querySelector('.headline .u').textContent;
-  assert(sub.includes('הימים הראשונים'), 'לא מוסבר מאיפה נמדדה הירידה: ' + sub);
+  assert(sub.includes('הימים הראשונים') && sub.includes('האחרונים'),
+    'לא מוסבר מאיפה נמדדה הירידה: ' + sub);
+  assert(sub.includes(String(d.halves.days)), 'לא צוין אורך כל חצי');
+  assert(sub.includes(window.Fmt.n(d.halves.first.mean, 1)), 'ממוצע החצי הראשון חסר');
 
   const fill = doc.querySelector('.progress-fill');
   assert(fill, 'מד ההתקדמות חסר');
@@ -257,6 +260,24 @@ test('אין נתון שמוצג פעמיים באותו מסך', () => {
     'כותרת כרטיס מופיעה פעמיים: ' + headings.join(', '));
 });
 
+
+
+test('הירידה בכותרת היא ההפרש בין חצאי התקופה', () => {
+  App.setState({ date: Dates.today() });
+  const d = Metrics.dashboard(Store.getEntries(), Store.getSettings(), { endDate: Dates.today() });
+
+  assert(d.halves, 'חסר פירוק לחצאים');
+  assert(d.halves.first.to < d.halves.second.from, 'החצאים חופפים');
+  assert(d.halves.first.weighIns > 0 && d.halves.second.weighIns > 0, 'חצי בלי שקילות');
+
+  const shown = Number(doc.querySelector('.headline .v').textContent);
+  assert(Math.abs(shown - (d.halves.first.mean - d.halves.second.mean)) < 0.06,
+    'מוצג ' + shown + ' מול ' + (d.halves.first.mean - d.halves.second.mean).toFixed(2));
+
+  // כל שקילה נספרת לכל היותר פעם אחת
+  const total = d.halves.first.weighIns + d.halves.second.weighIns;
+  assert(total <= d.weighIns, 'נספרו ' + total + ' שקילות מתוך ' + d.weighIns);
+});
 
 test('שורת השיאים מציגה את הקצוות ואת השקילה האחרונה', () => {
   App.setState({ date: Dates.today() });

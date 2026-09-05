@@ -1982,6 +1982,47 @@
     var startValues = weights.slice(0, startWindow).map(function (p) { return p.y; });
     var startMean = Stats.mean(startValues);
 
+    /**
+     * חלוקת כל התקופה לשני חצאים שווים והשוואה ביניהם.
+     *
+     * זו המדידה היציבה ביותר של "כמה ירדתי": היא משתמשת בכל הנתונים,
+     * כל שקילה נכנסת בדיוק פעם אחת, ושני החצאים באותו אורך ולכן
+     * הרעש בשניהם דומה. ביום אי־זוגי היום האמצעי נשמט משניהם, כדי
+     * שלא ייספר פעמיים ולא יטה את התוצאה.
+     */
+    var half = Math.floor(spanDays / 2);
+    var halves = null;
+
+    if (half >= 1) {
+      var firstRange = { from: first, to: Dates.addDays(first, half - 1) };
+      var secondRange = { from: Dates.addDays(endDate, -(half - 1)), to: endDate };
+
+      var meanIn = function (range) {
+        var values = weights
+          .filter(function (p) { return p.date >= range.from && p.date <= range.to; })
+          .map(function (p) { return p.y; });
+        return { mean: Stats.mean(values), weighIns: values.length };
+      };
+
+      var firstHalf = meanIn(firstRange);
+      var secondHalf = meanIn(secondRange);
+
+      halves = {
+        days: half,
+        skippedMiddleDay: spanDays % 2 === 1,
+        first: {
+          from: firstRange.from, to: firstRange.to,
+          mean: firstHalf.mean, weighIns: firstHalf.weighIns
+        },
+        second: {
+          from: secondRange.from, to: secondRange.to,
+          mean: secondHalf.mean, weighIns: secondHalf.weighIns
+        },
+        loss: (firstHalf.mean === null || secondHalf.mean === null)
+          ? null : firstHalf.mean - secondHalf.mean
+      };
+    }
+
     return {
       ok: true,
       firstDate: first,
@@ -2001,8 +2042,11 @@
       latestWeightDate: latest ? latest.date : null,
       currentWeight: ma ? ma.y : null,
       currentWeightDays: ma ? ma.n : 0,
-      // הירידה האמיתית: ממוצע הפתיחה פחות ממוצע ההווה
-      totalLoss: (startMean === null || !ma) ? null : startMean - ma.y,
+      // הירידה האמיתית: החצי הראשון של התקופה מול החצי השני
+      halves: halves,
+      totalLoss: halves && halves.loss !== null
+        ? halves.loss
+        : ((startMean === null || !ma) ? null : startMean - ma.y),
       missingWeighIns: missing,
       stepsWeek: Stats.mean(recentSteps),
       stepsAll: Stats.mean(allSteps)

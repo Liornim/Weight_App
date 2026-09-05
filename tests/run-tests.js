@@ -1467,10 +1467,11 @@ test('מספרי לוח המחוונים', () => {
   assert(d.weighIns === 60, 'שישים שקילות');
   assert(d.maxWeight > d.minWeight, 'שיא גבוה משפל');
   close(d.peakDrop, d.maxWeight - d.minWeight, 1e-9, 'הירידה מהשיא לשפל');
-  // הירידה הכוללת נמדדת בין ממוצעים, ולכן היא קטנה מהמרחק בין הקצוות
-  close(d.totalLoss, d.startMean - d.currentWeight, 1e-9, 'הירידה בין הממוצעים');
+  // הירידה נמדדת בין חצי התקופה הראשון לשני
+  close(d.totalLoss, d.halves.loss, 1e-9, 'הירידה בין החצאים');
+  close(d.halves.loss, d.halves.first.mean - d.halves.second.mean, 1e-9, 'עקביות פנימית');
   assert(d.totalLoss < d.peakDrop, 'ממוצעים אמורים לתת מספר צנוע יותר');
-  assert(d.totalLoss > 3, 'ירידה של יותר מ-3 ק"ג לאורך התקופה');
+  assert(d.totalLoss > 2, 'ירידה משמעותית לאורך התקופה');
   close(d.stepsWeek, 10000, 1, 'ממוצע צעדים בשבוע');
   assert(d.currentWeight < d.maxWeight, 'המשקל הנוכחי נמוך מהשיא');
 });
@@ -2133,6 +2134,49 @@ test('פחות משבעה ימים -> ממוצע הפתיחה על מה שיש',
   const d = Metrics.dashboard(entries, WIN_SETTINGS, { endDate: '2026-01-03' });
   assert(d.startDays === 3, 'שלושה ימים, קיבלתי ' + d.startDays);
   close(d.startMean, 89, 1e-9, 'ממוצע הפתיחה');
+});
+
+test('הירידה נמדדת בין חצי התקופה הראשון לשני', () => {
+  // 42 ימים -> 21 מול 21, בלי חפיפה
+  const entries = buildSeries('2026-01-01', 42, (i) => ({ weightKg: 90 - 0.05 * i }));
+  const d = Metrics.dashboard(entries, WIN_SETTINGS, { endDate: '2026-02-11' });
+
+  assert(d.halves.days === 21, 'כל חצי 21 ימים, קיבלתי ' + d.halves.days);
+  assert(d.halves.first.from === '2026-01-01' && d.halves.first.to === '2026-01-21',
+    'החצי הראשון: ' + d.halves.first.from + '–' + d.halves.first.to);
+  assert(d.halves.second.from === '2026-01-22' && d.halves.second.to === '2026-02-11',
+    'החצי השני: ' + d.halves.second.from + '–' + d.halves.second.to);
+  assert(!d.halves.skippedMiddleDay, 'מספר זוגי של ימים, אין יום שנשמט');
+
+  // ירידה קבועה של 50 גרם ליום: המרחק בין מרכזי החצאים הוא 21 ימים
+  close(d.totalLoss, 21 * 0.05, 1e-9, 'ההפרש בין החצאים');
+  assert(d.halves.first.weighIns === 21 && d.halves.second.weighIns === 21,
+    'כל שקילה נספרת בדיוק פעם אחת');
+});
+
+test('במספר ימים אי־זוגי היום האמצעי נשמט משני החצאים', () => {
+  const entries = buildSeries('2026-01-01', 41, (i) => ({ weightKg: 90 - 0.05 * i }));
+  const d = Metrics.dashboard(entries, WIN_SETTINGS, { endDate: '2026-02-10' });
+
+  assert(d.halves.days === 20, 'כל חצי 20 ימים');
+  assert(d.halves.skippedMiddleDay, 'היה צריך לסמן שיום נשמט');
+  assert(d.halves.first.to < d.halves.second.from, 'החצאים לא חופפים');
+  assert(Dates.diffDays(d.halves.first.to, d.halves.second.from) === 2,
+    'בדיוק יום אחד בין החצאים');
+});
+
+test('החצאים משתמשים בכל הנתונים, לא רק בשבעה ימים', () => {
+  // שבוע ראשון רועש במיוחד, שאר התקופה יציבה
+  const entries = buildSeries('2026-01-01', 40, (i) => ({
+    weightKg: (i < 7 ? 95 : 90) - 0.05 * i
+  }));
+  const d = Metrics.dashboard(entries, WIN_SETTINGS, { endDate: '2026-02-09' });
+
+  // ממוצע פתיחה על שבעה ימים היה נותן מספר מנופח בהרבה
+  const naive = d.startMean - d.currentWeight;
+  assert(d.totalLoss < naive, 'החצאים אמורים למתן את השפעת השבוע הראשון: ' +
+    d.totalLoss.toFixed(2) + ' מול ' + naive.toFixed(2));
+  assert(d.halves.first.weighIns === 20, 'החצי הראשון כולל 20 ימים');
 });
 
 // ---------- דוח ----------
