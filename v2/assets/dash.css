@@ -99,6 +99,21 @@ html, body {
 
 .headline .u { font-size: 14px; color: rgba(255,255,255,0.72); }
 
+/* שיאים: המספרים הקיצוניים, לצד הממוצעים */
+
+.peaks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.16);
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.62);
+}
+
+.peaks b { color: #fff; font-weight: 600; margin-inline-start: 5px; }
+
 /* מד התקדמות אל היעד */
 
 .progress { margin-top: 20px; }

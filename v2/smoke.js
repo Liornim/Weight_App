@@ -91,6 +91,11 @@ test('הכותרת מציגה את הירידה הכוללת ואת ההתקדמ
   assert(Math.abs(Number(head) - d.totalLoss) < 0.06,
     'הירידה המוצגת ' + head + ' מול ' + d.totalLoss.toFixed(1));
 
+  // הירידה נמדדת בין ממוצעים, ולכן היא קטנה מהמרחק בין הקצוות
+  assert(d.totalLoss < d.peakDrop, 'ציפיתי למספר צנוע מהמרחק בין הקצוות');
+  const sub = doc.querySelector('.headline .u').textContent;
+  assert(sub.includes('הימים הראשונים'), 'לא מוסבר מאיפה נמדדה הירידה: ' + sub);
+
   const fill = doc.querySelector('.progress-fill');
   assert(fill, 'מד ההתקדמות חסר');
   const pct = Number(fill.style.width.replace('%', ''));
@@ -250,6 +255,45 @@ test('אין נתון שמוצג פעמיים באותו מסך', () => {
   const unique = new Set(headings);
   assert(unique.size === headings.length,
     'כותרת כרטיס מופיעה פעמיים: ' + headings.join(', '));
+});
+
+
+test('שורת השיאים מציגה את הקצוות ואת השקילה האחרונה', () => {
+  App.setState({ date: Dates.today() });
+  const peaks = doc.querySelector('.peaks');
+  assert(peaks, 'שורת השיאים חסרה');
+  ['הכי גבוה', 'הכי נמוך', 'שקילה אחרונה'].forEach((label) =>
+    assert(peaks.textContent.includes(label), 'חסר: ' + label));
+
+  const d = Metrics.dashboard(Store.getEntries(), Store.getSettings(), { endDate: Dates.today() });
+  const numbers = [...peaks.querySelectorAll('b')].map((b) => Number(b.textContent));
+  assert(Math.abs(numbers[0] - d.maxWeight) < 0.06, 'השיא לא תואם');
+  assert(Math.abs(numbers[1] - d.minWeight) < 0.06, 'השפל לא תואם');
+  assert(Math.abs(numbers[2] - d.latestWeight) < 0.06, 'השקילה האחרונה לא תואמת');
+  assert(numbers[0] > numbers[1], 'השיא אמור להיות גבוה מהשפל');
+});
+
+test('טבלת הטווחים מציגה 5 ימים, שבוע, שבועיים ושלושה', () => {
+  App.setState({ date: Dates.today() });
+  const card = [...doc.querySelectorAll('#view .card')]
+    .find((c) => c.textContent.includes('לפי טווחים'));
+  assert(card, 'הכרטיס חסר');
+
+  const model = Metrics.rollingWindows(Store.getEntries(),
+    { endDate: Dates.today(), lengths: [5, 7, 14, 21] });
+  const usable = model.rows.filter((r) => r.ok && r.covered);
+  const rows = [...card.querySelectorAll('tbody tr')];
+  assert(rows.length === usable.length, 'ציפיתי ל-' + usable.length + ' שורות, יש ' + rows.length);
+
+  usable.forEach((row, i) => {
+    const shown = Number(rows[i].children[2].textContent.replace(/[^\d.\-−]/g, '').replace('−', '-'));
+    assert(Math.abs(shown - (-row.deltaKg)) < 0.02,
+      row.days + ' ימים: מוצג ' + shown + ' מול ' + (-row.deltaKg).toFixed(2));
+    // המילה תואמת את הסימן
+    const word = rows[i].children[1].textContent.trim();
+    if (shown < -0.05) assert(word === 'ירדת', 'ציפיתי ל"ירדת", קיבלתי ' + word);
+    if (shown > 0.05) assert(word === 'עלית', 'ציפיתי ל"עלית", קיבלתי ' + word);
+  });
 });
 
 test('בחירת זהירות מזיזה את היעד לשני הכיוונים', () => {

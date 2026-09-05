@@ -110,9 +110,9 @@
     var goal = settings.goal.targetWeightKg;
     var progress = '';
 
-    if (Fmt.isNum(goal) && Fmt.isNum(d.maxWeight) && Fmt.isNum(d.currentWeight)) {
-      var total = d.maxWeight - goal;
-      var done = d.maxWeight - d.currentWeight;
+    if (Fmt.isNum(goal) && Fmt.isNum(d.startMean) && Fmt.isNum(d.currentWeight)) {
+      var total = d.startMean - goal;
+      var done = d.startMean - d.currentWeight;
       var pct = total > 0 ? Math.max(Math.min(done / total, 1), 0) : 0;
       var left = Math.max(d.currentWeight - goal, 0);
 
@@ -124,7 +124,7 @@
             (pct * 100).toFixed(1) + '%"></div></div>' +
           '<div class="progress-foot"><span>היעד ' + Fmt.n(goal, 1) + '</span>' +
             '<span>עכשיו ' + Fmt.n(d.currentWeight, 1) + '</span>' +
-            '<span>התחלה ' + Fmt.n(d.maxWeight, 1) + '</span></div>' +
+            '<span>התחלה ' + Fmt.n(d.startMean, 1) + '</span></div>' +
         '</div>';
     }
 
@@ -133,7 +133,14 @@
       '<div class="headline">' +
         '<span class="k">ירדת עד עכשיו</span>' +
         '<span class="v">' + Fmt.n(d.totalLoss, 1) + '</span>' +
-        '<span class="u">קילו · מאז ' + Dates.short(d.firstDate) + '</span>' +
+        '<span class="u">קילו · מהממוצע של ' + d.startDays +
+          ' הימים הראשונים (' + Fmt.n(d.startMean, 1) + ') אל הממוצע היום (' +
+          Fmt.n(d.currentWeight, 1) + ')</span>' +
+      '</div>' +
+      '<div class="peaks">' +
+        '<span>הכי גבוה <b class="num">' + Fmt.n(d.maxWeight, 1) + '</b></span>' +
+        '<span>הכי נמוך <b class="num">' + Fmt.n(d.minWeight, 1) + '</b></span>' +
+        '<span>שקילה אחרונה <b class="num">' + Fmt.n(d.latestWeight, 1) + '</b></span>' +
       '</div>' + progress +
     '</header>';
   }
@@ -220,13 +227,36 @@
         '<td class="n">' + P.delta(row.change, 2, 'down') + '</td></tr>';
     }).join('');
 
+    var spans = Metrics.rollingWindows(entries, {
+      endDate: state.date, lengths: [5, 7, 14, 21]
+    });
+    var spanNames = { 5: '5 ימים', 7: 'שבוע', 14: 'שבועיים', 21: 'שלושה שבועות' };
+
+    var spanRows = spans.rows.filter(function (row) { return row.ok && row.covered; })
+      .map(function (row) {
+        var change = -row.deltaKg;
+        var word = change < -0.05 ? 'ירדת' : change > 0.05 ? 'עלית' : 'ללא שינוי';
+        return '<tr><td>' + P.esc(spanNames[row.days] || row.days + ' ימים') + '</td>' +
+          '<td>' + P.esc(word) + '</td>' +
+          '<td class="n">' + P.delta(change, 2, 'down') + '</td></tr>';
+      }).join('');
+
+    var spansCard = spanRows
+      ? P.card('לפי טווחים', 'כל טווח מושווה לימים שקדמו לו מיד',
+          P.table([{ label: 'טווח', n: false }, { label: 'מה קרה', n: false }, 'שינוי'],
+            [spanRows],
+            { hint: 'הטווחים חופפים ביניהם, ולכן טבעי שהם לא מספרים בדיוק אותו סיפור. ' +
+              'ככל שהטווח ארוך יותר, המספר אמין יותר.' }))
+      : '';
+
     return P.section('מה קרה למשקל',
       P.card(null, null, P.chart('chart-weight', 200)) +
       P.card(null, null,
         '<p class="lead">' + headline + '</p>' +
         P.table([{ label: 'תקופה', n: false }, 'משקל ממוצע', 'שינוי'], [rows],
           { hint: 'המספר הוא ממוצע של שבוע ולא שקילה אחת, כי שקילה בודדת קופצת ' +
-            'בחצי קילו בגלל מלח, שתייה ושעת השקילה.' })));
+            'בחצי קילו בגלל מלח, שתייה ושעת השקילה.' })) +
+      spansCard);
   }
 
   // ------------------------------------------------ שומן ושריר

@@ -1976,6 +1976,12 @@
 
     var latest = weights.length ? weights[weights.length - 1] : null;
 
+    // נקודת הפתיחה כממוצע ולא כשקילה בודדת: שקילה ראשונה יכולה
+    // להיות גבוהה בחצי קילו במקרה, וזה מנפח את "כמה ירדת".
+    var startWindow = Math.min(opts.startWindowDays || 7, weights.length);
+    var startValues = weights.slice(0, startWindow).map(function (p) { return p.y; });
+    var startMean = Stats.mean(startValues);
+
     return {
       ok: true,
       firstDate: first,
@@ -1985,12 +1991,18 @@
       maxWeight: maxWeight,
       minWeight: minWeight,
       // הירידה מהשיא לשפל, ללא קשר למתי כל אחד מהם נמדד
-      totalLoss: (maxWeight === null || minWeight === null) ? null : maxWeight - minWeight,
+      peakDrop: (maxWeight === null || minWeight === null) ? null : maxWeight - minWeight,
+      startMean: startMean,
+      startDays: startWindow,
+      startFrom: weights.length ? weights[0].date : null,
+      startTo: startWindow ? weights[startWindow - 1].date : null,
       // המשקל האחרון שנרשם בפועל, לצד הממוצע שמנקה רעש
       latestWeight: latest ? latest.y : null,
       latestWeightDate: latest ? latest.date : null,
       currentWeight: ma ? ma.y : null,
       currentWeightDays: ma ? ma.n : 0,
+      // הירידה האמיתית: ממוצע הפתיחה פחות ממוצע ההווה
+      totalLoss: (startMean === null || !ma) ? null : startMean - ma.y,
       missingWeighIns: missing,
       stepsWeek: Stats.mean(recentSteps),
       stepsAll: Stats.mean(allSteps)

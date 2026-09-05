@@ -1466,7 +1466,10 @@ test('מספרי לוח המחוונים', () => {
   assert(d.spanDays === 60, 'שישים ימים במעקב, קיבלתי ' + d.spanDays);
   assert(d.weighIns === 60, 'שישים שקילות');
   assert(d.maxWeight > d.minWeight, 'שיא גבוה משפל');
-  close(d.totalLoss, d.maxWeight - d.minWeight, 1e-9, 'הירידה הכוללת');
+  close(d.peakDrop, d.maxWeight - d.minWeight, 1e-9, 'הירידה מהשיא לשפל');
+  // הירידה הכוללת נמדדת בין ממוצעים, ולכן היא קטנה מהמרחק בין הקצוות
+  close(d.totalLoss, d.startMean - d.currentWeight, 1e-9, 'הירידה בין הממוצעים');
+  assert(d.totalLoss < d.peakDrop, 'ממוצעים אמורים לתת מספר צנוע יותר');
   assert(d.totalLoss > 3, 'ירידה של יותר מ-3 ק"ג לאורך התקופה');
   close(d.stepsWeek, 10000, 1, 'ממוצע צעדים בשבוע');
   assert(d.currentWeight < d.maxWeight, 'המשקל הנוכחי נמוך מהשיא');
@@ -2104,6 +2107,32 @@ test('סבבי משקל לא דורשים דיווח תזונה', () => {
   const r = Metrics.weightBlocks(entries, { days: 5, endDate: '2026-08-12' });
   assert(r.rows.length === 3, 'שלושה סבבים');
   close(r.rows[1].change, -0.5, 1e-9, 'ירידה של חצי קילו בין סבבים');
+});
+
+test('הירידה הכוללת נמדדת בין ממוצעים ולא בין קצוות', () => {
+  // שקילה ראשונה גבוהה במיוחד: קצה בודד שמנפח את התוצאה
+  const entries = [{ date: '2026-01-01', weightKg: 95 }];
+  for (let i = 1; i < 20; i++) {
+    entries.push({ date: Dates.addDays('2026-01-01', i), weightKg: 90 - 0.05 * i });
+  }
+  const d = Metrics.dashboard(entries, WIN_SETTINGS, { endDate: '2026-01-20' });
+
+  assert(d.peakDrop > 5.9, 'המרחק בין הקצוות גדול: ' + d.peakDrop.toFixed(2));
+  assert(d.totalLoss < 2.5,
+    'הירידה בין הממוצעים אמורה להיות צנועה: ' + d.totalLoss.toFixed(2));
+  assert(d.startDays === 7, 'ממוצע הפתיחה על שבעה ימים');
+  assert(d.startFrom === '2026-01-01', 'תחילת חלון הפתיחה');
+});
+
+test('פחות משבעה ימים -> ממוצע הפתיחה על מה שיש', () => {
+  const entries = [
+    { date: '2026-01-01', weightKg: 90 },
+    { date: '2026-01-02', weightKg: 89 },
+    { date: '2026-01-03', weightKg: 88 }
+  ];
+  const d = Metrics.dashboard(entries, WIN_SETTINGS, { endDate: '2026-01-03' });
+  assert(d.startDays === 3, 'שלושה ימים, קיבלתי ' + d.startDays);
+  close(d.startMean, 89, 1e-9, 'ממוצע הפתיחה');
 });
 
 // ---------- דוח ----------
