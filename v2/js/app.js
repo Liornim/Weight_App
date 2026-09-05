@@ -14,6 +14,7 @@
     BUILD: 'd1',
     state: {
       date: Dates.today(),
+      asOf: 0,             // עד מתי למדוד: היום, שבוע שעבר, שבועיים
       basis: 'adaptive',   // על סמך כמה זמן לחשב
       caution: 'mid',      // זהיר / אמצע / נדיב
       settingsOpen: false
@@ -49,6 +50,12 @@
     if (fold) {
       fold.addEventListener('toggle', function () { App.state.settingsOpen = fold.open; });
     }
+
+    view.querySelectorAll('[data-asof]').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        App.setState({ asOf: Number(chip.dataset.asof) });
+      });
+    });
 
     view.querySelectorAll('[data-basis]').forEach(function (chip) {
       chip.addEventListener('click', function () {

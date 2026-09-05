@@ -99,6 +99,38 @@ html, body {
 
 .headline .u { font-size: 14px; color: rgba(255,255,255,0.72); }
 
+/* הערה על שבוע חריג, בתוך הכותרת */
+
+.flag {
+  margin-top: 14px;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.10);
+  border-inline-start: 3px solid var(--warn);
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: rgba(255,255,255,0.88);
+}
+
+.flag b { color: #fff; font-weight: 700; }
+
+/* בורר נקודת העצירה של המדידה */
+
+.as-of { margin-top: 14px; }
+.as-of .chips { margin-bottom: 0; }
+
+.as-of .chip {
+  background: rgba(255,255,255,0.10);
+  border-color: rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.78);
+}
+
+.as-of .chip[aria-pressed='true'] {
+  background: #fff;
+  border-color: #fff;
+  color: var(--deep);
+}
+
 /* שיאים: המספרים הקיצוניים, לצד הממוצעים */
 
 .peaks {

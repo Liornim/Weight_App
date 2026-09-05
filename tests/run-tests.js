@@ -2179,6 +2179,53 @@ test('החצאים משתמשים בכל הנתונים, לא רק בשבעה י
   assert(d.halves.first.weighIns === 20, 'החצי הראשון כולל 20 ימים');
 });
 
+test('שבוע אחרון חריג מזוהה ומדווח בנפרד', () => {
+  // ירידה יפה של חודש, ואז שבוע של עלייה חדה
+  const entries = [];
+  for (let i = 0; i < 35; i++) {
+    entries.push({ date: Dates.addDays('2026-01-01', i), weightKg: 90 - 0.06 * i });
+  }
+  for (let i = 35; i < 42; i++) {
+    entries.push({ date: Dates.addDays('2026-01-01', i), weightKg: 88 + 0.35 * (i - 35) });
+  }
+  const d = Metrics.dashboard(entries, WIN_SETTINGS, { endDate: '2026-02-11' });
+
+  assert(d.halvesBeforeLastWeek, 'חסרה המדידה נכון לשבוע שעבר');
+  assert(d.halvesBeforeLastWeek.loss > d.halves.loss,
+    'עד שבוע שעבר הירידה הייתה גדולה יותר: ' +
+    d.halvesBeforeLastWeek.loss.toFixed(2) + ' מול ' + d.halves.loss.toFixed(2));
+  assert(d.lastWeekEffect < 0, 'השבוע האחרון אמור להקטין את הירידה');
+  close(d.lastWeekEffect, d.halves.loss - d.halvesBeforeLastWeek.loss, 1e-9, 'עקביות');
+});
+
+test('בלי שבוע חריג שתי המדידות קרובות', () => {
+  const entries = buildSeries('2026-01-01', 42, (i) => ({ weightKg: 90 - 0.05 * i }));
+  const d = Metrics.dashboard(entries, WIN_SETTINGS, { endDate: '2026-02-11' });
+  assert(Math.abs(d.lastWeekEffect) < 0.4,
+    'בירידה קבועה אין סיבה לפער גדול: ' + d.lastWeekEffect.toFixed(2));
+});
+
+test('תקופה קצרה מדי -> אין מדידה נכון לשבוע שעבר', () => {
+  const entries = buildSeries('2026-01-01', 12, (i) => ({ weightKg: 90 - 0.05 * i }));
+  const d = Metrics.dashboard(entries, WIN_SETTINGS, { endDate: '2026-01-12' });
+  assert(d.halvesBeforeLastWeek === null, 'לא אמורה להיות מדידה כזו');
+  assert(d.lastWeekEffect === null, 'ולכן גם אין השפעה מחושבת');
+});
+
+test('המדידה עד שבוע שעבר נקייה מחפיפה', () => {
+  const entries = buildSeries('2026-01-01', 42, (i) => ({ weightKg: 90 - 0.05 * i }));
+  const d = Metrics.dashboard(entries, WIN_SETTINGS, { endDate: '2026-02-11' });
+  const before = d.halvesBeforeLastWeek;
+
+  assert(before, 'חסרה המדידה');
+  assert(before.second.to === '2026-02-04', 'היא אמורה להסתיים שבוע קודם: ' + before.second.to);
+  assert(before.first.to < before.second.from, 'החצאים חופפים');
+  assert(before.days < d.halves.days, 'תקופה קצרה יותר -> חצאים קצרים יותר');
+
+  // כל שקילה נספרת לכל היותר פעם אחת
+  assert(before.first.weighIns + before.second.weighIns <= 35, 'ספירה כפולה');
+});
+
 // ---------- דוח ----------
 // הריצה מופעלת בסוף הקובץ בלבד. אם היא תופעל באמצע, בדיקות שנרשמו
 // אחריה לא ייכנסו לתור וייעלמו בשקט — קרה בפועל.

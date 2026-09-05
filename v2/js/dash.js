@@ -111,8 +111,19 @@
       Fmt.n(d.halves.second.mean, 1) + ')';
   }
 
+  var AS_OF = [
+    { value: 0, label: 'עד היום' },
+    { value: 7, label: 'עד שבוע שעבר' },
+    { value: 14, label: 'עד לפני שבועיים' }
+  ];
+
   function top(state, entries, settings) {
-    var d = Metrics.dashboard(entries, settings, { endDate: state.date });
+    // המדידה יכולה לעצור מוקדם יותר, כדי לראות מה היא אמרה אז.
+    // שבוע חריג בסוף משנה את התמונה, ועדיף להראות את זה מאשר לטעון
+    // שהמספר האחד נכון.
+    var asOf = state.asOf || 0;
+    var measureDate = asOf ? Dates.addDays(state.date, -asOf) : state.date;
+    var d = Metrics.dashboard(entries, settings, { endDate: measureDate });
     var stamp = Dates.long(state.date);
 
     if (!d.ok) {
@@ -145,13 +156,29 @@
         '</div>';
     }
 
+    var lastWeekNote = '';
+    if (!asOf && Fmt.isNum(d.lastWeekEffect) && d.halvesBeforeLastWeek &&
+        Math.abs(d.lastWeekEffect) >= 0.15) {
+      lastWeekNote = '<div class="flag">' +
+        (d.lastWeekEffect < 0
+          ? 'השבוע האחרון מושך את המספר למטה. עד סוף השבוע שעבר הירידה עמדה על '
+          : 'השבוע האחרון היה טוב במיוחד. עד סוף השבוע שעבר הירידה עמדה על ') +
+        '<b class="num">' + Fmt.n(d.halvesBeforeLastWeek.loss, 1) + '</b> קילו.</div>';
+    }
+
+    var asOfNote = asOf
+      ? '<div class="flag">המספר נכון ל' + Dates.short(measureDate) +
+        ', כאילו עצרנו את המדידה שם.</div>'
+      : '';
+
     return '<header class="top">' +
       '<div class="top-row"><h1>המשקל שלי</h1><span class="stamp">' + P.esc(stamp) + '</span></div>' +
       '<div class="headline">' +
         '<span class="k">ירדת עד עכשיו</span>' +
         '<span class="v">' + Fmt.n(d.totalLoss, 1) + '</span>' +
         '<span class="u">' + P.esc(lossExplanation(d)) + '</span>' +
-      '</div>' +
+      '</div>' + lastWeekNote + asOfNote +
+      '<div class="as-of">' + P.chips(AS_OF, asOf, 'data-asof') + '</div>' +
       '<div class="peaks">' +
         '<span>הכי גבוה <b class="num">' + Fmt.n(d.maxWeight, 1) + '</b></span>' +
         '<span>הכי נמוך <b class="num">' + Fmt.n(d.minWeight, 1) + '</b></span>' +

@@ -1948,6 +1948,41 @@
     return { days: days, first: first, rows: rows };
   }
 
+  /**
+   * חלוקת התקופה לשני חצאים והשוואה ביניהם.
+   * מוחזר גם המצב נכון לשבוע שעבר, כדי שאפשר יהיה לראות אם השבוע
+   * האחרון לבדו מושך את התוצאה.
+   */
+  function halfSplit(entries, endDate) {
+    var all = sorted(entries).filter(function (e) { return e.date <= endDate; });
+    var weights = series(all, 'weightKg');
+    if (weights.length < 2) return null;
+
+    var first = weights[0].date;
+    var spanDays = (Dates.diffDays(first, endDate) || 0) + 1;
+    var half = Math.floor(spanDays / 2);
+    if (half < 1) return null;
+
+    var meanIn = function (from, to) {
+      var values = weights
+        .filter(function (p) { return p.date >= from && p.date <= to; })
+        .map(function (p) { return p.y; });
+      return { mean: Stats.mean(values), weighIns: values.length, from: from, to: to };
+    };
+
+    var firstHalf = meanIn(first, Dates.addDays(first, half - 1));
+    var secondHalf = meanIn(Dates.addDays(endDate, -(half - 1)), endDate);
+
+    return {
+      days: half,
+      skippedMiddleDay: spanDays % 2 === 1,
+      first: firstHalf,
+      second: secondHalf,
+      loss: (firstHalf.mean === null || secondHalf.mean === null)
+        ? null : firstHalf.mean - secondHalf.mean
+    };
+  }
+
   /** מספרי הפתיחה של מסך הבית */
   function dashboard(entries, settings, options) {
     var opts = options || {};
@@ -1990,38 +2025,38 @@
      * הרעש בשניהם דומה. ביום אי־זוגי היום האמצעי נשמט משניהם, כדי
      * שלא ייספר פעמיים ולא יטה את התוצאה.
      */
-    var half = Math.floor(spanDays / 2);
-    var halves = null;
+    var halves = halfSplit(entries, endDate);
 
-    if (half >= 1) {
-      var firstRange = { from: first, to: Dates.addDays(first, half - 1) };
-      var secondRange = { from: Dates.addDays(endDate, -(half - 1)), to: endDate };
+    /**
+     * מה המדידה אומרת אם עוצרים אותה לפני שבוע.
+     *
+     * החישוב רץ מחדש על התקופה הקצרה יותר, ולכן החצאים קצרים יותר
+     * אבל עדיין שווים באורכם ולא חופפים. הסטת החלון השני בלבד הייתה
+     * גורמת לו לבלוע ימים מהחצי הראשון, וכל יום כזה היה נספר פעמיים.
+     */
+    var halvesBefore = spanDays >= 16 ? halfSplit(entries, Dates.addDays(endDate, -7)) : null;
 
-      var meanIn = function (range) {
-        var values = weights
-          .filter(function (p) { return p.date >= range.from && p.date <= range.to; })
-          .map(function (p) { return p.y; });
-        return { mean: Stats.mean(values), weighIns: values.length };
-      };
+    var weighedOn = {};
+    weights.forEach(function (p) { weighedOn[p.date] = true; });
+    var missing = Dates.range(first, endDate).filter(function (d) { return !weighedOn[d]; });
 
-      var firstHalf = meanIn(firstRange);
-      var secondHalf = meanIn(secondRange);
+    var latest = weights.length ? weights[weights.length - 1] : null;
 
-      halves = {
-        days: half,
-        skippedMiddleDay: spanDays % 2 === 1,
-        first: {
-          from: firstRange.from, to: firstRange.to,
-          mean: firstHalf.mean, weighIns: firstHalf.weighIns
-        },
-        second: {
-          from: secondRange.from, to: secondRange.to,
-          mean: secondHalf.mean, weighIns: secondHalf.weighIns
-        },
-        loss: (firstHalf.mean === null || secondHalf.mean === null)
-          ? null : firstHalf.mean - secondHalf.mean
-      };
-    }
+    // נקודת הפתיחה כממוצע ולא כשקילה בודדת: שקילה ראשונה יכולה
+    // להיות גבוהה בחצי קילו במקרה, וזה מנפח את "כמה ירדת".
+    var startWindow = Math.min(opts.startWindowDays || 7, weights.length);
+    var startValues = weights.slice(0, startWindow).map(function (p) { return p.y; });
+    var startMean = Stats.mean(startValues);
+
+    /**
+     * חלוקת כל התקופה לשני חצאים שווים והשוואה ביניהם.
+     *
+     * זו המדידה היציבה ביותר של "כמה ירדתי": היא משתמשת בכל הנתונים,
+     * כל שקילה נכנסת בדיוק פעם אחת, ושני החצאים באותו אורך ולכן
+     * הרעש בשניהם דומה. ביום אי־זוגי היום האמצעי נשמט משניהם, כדי
+     * שלא ייספר פעמיים ולא יטה את התוצאה.
+     */
+    var halves = halfSplit(entries, endDate);
 
     return {
       ok: true,
@@ -2044,6 +2079,10 @@
       currentWeightDays: ma ? ma.n : 0,
       // הירידה האמיתית: החצי הראשון של התקופה מול החצי השני
       halves: halves,
+      halvesBeforeLastWeek: halvesBefore,
+      lastWeekEffect: (halves && halvesBefore &&
+        halves.loss !== null && halvesBefore.loss !== null)
+        ? halves.loss - halvesBefore.loss : null,
       totalLoss: halves && halves.loss !== null
         ? halves.loss
         : ((startMean === null || !ma) ? null : startMean - ma.y),
@@ -2099,6 +2138,7 @@
     windowReport: windowReport,
     deficitSummary: deficitSummary,
     dashboard: dashboard,
+    halfSplit: halfSplit,
     macroSplit: macroSplit,
     dayComparison: dayComparison,
     weightBlocks: weightBlocks,

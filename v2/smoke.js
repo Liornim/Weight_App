@@ -279,6 +279,59 @@ test('הירידה בכותרת היא ההפרש בין חצאי התקופה',
   assert(total <= d.weighIns, 'נספרו ' + total + ' שקילות מתוך ' + d.weighIns);
 });
 
+
+test('שבוע אחרון חריג מסומן בכותרת', () => {
+  // מוסיפים שבוע של עלייה חדה בסוף
+  const base = Store.getEntries();
+  const last = base[base.length - 1].weightKg;
+  for (let i = 6; i >= 0; i--) {
+    Store.upsert({ date: Dates.addDays(Dates.today(), -i), weightKg: last + 1.2 + 0.2 * (7 - i) });
+  }
+  App.setState({ date: Dates.today() });
+
+  const d = Metrics.dashboard(Store.getEntries(), Store.getSettings(), { endDate: Dates.today() });
+  assert(d.lastWeekEffect < -0.25, 'התרחיש לא יצר שבוע חריג: ' + d.lastWeekEffect);
+
+  const flag = doc.querySelector('.flag');
+  assert(flag, 'לא הופיעה הערה על השבוע החריג');
+  assert(flag.textContent.includes('עד סוף השבוע שעבר'), 'נוסח לא צפוי: ' + flag.textContent);
+  const shown = Number(flag.querySelector('b').textContent);
+  assert(Math.abs(shown - d.halvesBeforeLastWeek.loss) < 0.06,
+    'מוצג ' + shown + ' מול ' + d.halvesBeforeLastWeek.loss.toFixed(1));
+});
+
+
+test('אפשר לעצור את המדידה בשבוע שעבר ולראות מה היא אמרה אז', () => {
+  App.setState({ date: Dates.today(), asOf: 0 });
+  const now = Number(doc.querySelector('.headline .v').textContent);
+
+  const chip = doc.querySelector('[data-asof="7"]');
+  assert(chip, 'חסר הכפתור');
+  chip.dispatchEvent(new window.Event('click', { bubbles: true }));
+  assert(App.state.asOf === 7, 'הבחירה לא נשמרה');
+
+  const before = Number(doc.querySelector('.headline .v').textContent);
+  const model = Metrics.dashboard(Store.getEntries(), Store.getSettings(),
+    { endDate: Dates.addDays(Dates.today(), -7) });
+  assert(Math.abs(before - model.halves.loss) < 0.06,
+    'מוצג ' + before + ' מול ' + model.halves.loss.toFixed(2));
+  assert(before !== now, 'המספר לא השתנה');
+
+  // מצוין במפורש שהמדידה נעצרה מוקדם
+  const flags = [...doc.querySelectorAll('.flag')].map((f) => f.textContent).join(' ');
+  assert(flags.includes('נכון ל'), 'לא צוין שהמדידה נעצרה: ' + flags);
+
+  App.setState({ asOf: 0 });
+});
+
+test('הערת השבוע החריג מופיעה רק במדידה עד היום', () => {
+  App.setState({ date: Dates.today(), asOf: 7 });
+  const flags = [...doc.querySelectorAll('.flag')].map((f) => f.textContent).join(' ');
+  assert(!flags.includes('השבוע האחרון'),
+    'ההערה לא רלוונטית כשהמדידה נעצרה מוקדם: ' + flags);
+  App.setState({ asOf: 0 });
+});
+
 test('שורת השיאים מציגה את הקצוות ואת השקילה האחרונה', () => {
   App.setState({ date: Dates.today() });
   const peaks = doc.querySelector('.peaks');
