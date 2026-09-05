@@ -1846,6 +1846,108 @@
     };
   }
 
+  var BODY_FIELDS = ['weightKg', 'muscleKg', 'bodyFatKg', 'waterKg'];
+
+  /**
+   * השוואת יום בודד לממוצעים סביבו.
+   *
+   * שלוש נקודות ייחוס: המדידה של אותו יום, ממוצע n הימים שלפניו
+   * (בלי היום עצמו), וממוצע n הימים שמסתיימים בו (כולל). ההפרש בין
+   * השניים האחרונים מראה אם היום הזה הזיז את הממוצע ולאן.
+   */
+  function dayComparison(entries, options) {
+    var opts = options || {};
+    var date = opts.date || Dates.today();
+    var days = opts.days || 3;
+    var fields = opts.fields || BODY_FIELDS;
+
+    var byDate = {};
+    (entries || []).forEach(function (e) { byDate[e.date] = e; });
+
+    function meanOver(from, to, field) {
+      var values = [];
+      Dates.range(from, to).forEach(function (d) {
+        var value = byDate[d] ? num(byDate[d][field]) : null;
+        if (value !== null) values.push(value);
+      });
+      return { mean: Stats.mean(values), n: values.length };
+    }
+
+    var beforeRange = { from: Dates.addDays(date, -days), to: Dates.addDays(date, -1) };
+    var includingRange = { from: Dates.addDays(date, -(days - 1)), to: date };
+
+    var result = {
+      date: date, days: days,
+      before: beforeRange, including: includingRange,
+      fields: {}
+    };
+
+    fields.forEach(function (field) {
+      var onDay = byDate[date] ? num(byDate[date][field]) : null;
+      var before = meanOver(beforeRange.from, beforeRange.to, field);
+      var including = meanOver(includingRange.from, includingRange.to, field);
+
+      result.fields[field] = {
+        value: onDay,
+        beforeMean: before.mean,
+        beforeDays: before.n,
+        includingMean: including.mean,
+        includingDays: including.n,
+        vsBefore: (onDay === null || before.mean === null) ? null : onDay - before.mean,
+        shift: (before.mean === null || including.mean === null)
+          ? null : including.mean - before.mean
+      };
+    });
+
+    return result;
+  }
+
+  /**
+   * רשימת כל הסבבים של משקל בלבד, כולל הסבב החלקי בסוף.
+   * בניגוד ל-blockWindows כאן לא נדרש דיווח תזונה — זו טבלת משקלים,
+   * והסבב האחרון מוצג גם אם עוד לא הושלם, עם ציון מספר ימיו.
+   */
+  function weightBlocks(entries, options) {
+    var opts = options || {};
+    var days = opts.days || 5;
+    var endDate = opts.endDate || Dates.today();
+    var field = opts.field || 'weightKg';
+
+    var measured = series(sorted(entries).filter(function (e) { return e.date <= endDate; }), field);
+    if (!measured.length) return { days: days, rows: [] };
+
+    var first = measured[0].date;
+    var span = (Dates.diffDays(first, endDate) || 0) + 1;
+    var count = Math.ceil(span / days);
+
+    var rows = [];
+    for (var i = 0; i < count; i++) {
+      var from = Dates.addDays(first, i * days);
+      var fullTo = Dates.addDays(from, days - 1);
+      var to = fullTo <= endDate ? fullTo : endDate;
+
+      var values = measured
+        .filter(function (p) { return p.date >= from && p.date <= to; })
+        .map(function (p) { return p.y; });
+      if (!values.length) continue;
+
+      var mean = Stats.mean(values);
+      var previous = rows.length ? rows[rows.length - 1].mean : null;
+
+      rows.push({
+        index: i + 1,
+        from: from, to: to,
+        days: (Dates.diffDays(from, to) || 0) + 1,
+        partial: fullTo > endDate,
+        measurements: values.length,
+        mean: mean,
+        change: previous === null ? null : mean - previous
+      });
+    }
+
+    return { days: days, first: first, rows: rows };
+  }
+
   /** מספרי הפתיחה של מסך הבית */
   function dashboard(entries, settings, options) {
     var opts = options || {};
@@ -1942,6 +2044,8 @@
     deficitSummary: deficitSummary,
     dashboard: dashboard,
     macroSplit: macroSplit,
+    dayComparison: dayComparison,
+    weightBlocks: weightBlocks,
     KCAL_PER_GRAM: KCAL_PER_GRAM,
     bodyChangeSummary: bodyChangeSummary,
     anchoredBlocks: anchoredBlocks,

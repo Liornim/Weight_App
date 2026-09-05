@@ -1863,6 +1863,74 @@ test('טבלת מה קרה בפועל כוללת גם 3 ו-5 ימים', () => {
 });
 
 
+
+test('טבלת ההשוואה במסך הרישום מציגה את כל המדדים', () => {
+  App.setState({ view: 'entry', date: '2026-08-21', compareDays: 3 });
+  const card = [...doc.querySelectorAll('#view-entry .card')]
+    .find((c) => c.textContent.includes('היום מול הממוצע'));
+  assert(card, 'הכרטיס חסר');
+
+  const headers = [...card.querySelectorAll('th')].map((th) => th.textContent.trim());
+  ['משקל', 'שריר', 'שומן', 'נוזלים'].forEach((h) =>
+    assert(headers.indexOf(h) !== -1, 'חסרה עמודה: ' + h));
+
+  const labels = [...card.querySelectorAll('tbody tr')]
+    .map((tr) => tr.children[0].textContent);
+  ['המדידה של היום', 'ממוצע 3 ימים לפני', 'הפרש', 'ממוצע 3 ימים כולל היום', 'כמה היום הזיז']
+    .forEach((l) => assert(labels.some((x) => x.indexOf(l) === 0), 'חסרה שורה: ' + l));
+
+  // הערכים תואמים את המודל
+  const model = window.Metrics.dayComparison(Store.getEntries(),
+    { date: '2026-08-21', days: 3 });
+  const num = (tr, i) => Number(tr.children[i].textContent.replace(/[^\d.\-−]/g, '').replace('−', '-'));
+  const rows = [...card.querySelectorAll('tbody tr')];
+  if (window.Fmt.isNum(model.fields.weightKg.beforeMean)) {
+    assert(Math.abs(num(rows[1], 1) - model.fields.weightKg.beforeMean) < 0.01,
+      'ממוצע הימים שלפני לא תואם');
+  }
+});
+
+test('חלון ההשוואה נבחר ומשנה את הטווחים', () => {
+  App.setState({ view: 'entry', date: '2026-08-21', compareDays: 3 });
+  const noteOf = () => [...doc.querySelectorAll('#view-entry .card')]
+    .find((c) => c.textContent.includes('היום מול הממוצע'))
+    .querySelectorAll('tbody tr')[1].textContent;
+  const three = noteOf();
+
+  doc.querySelector('[data-compare="7"]').dispatchEvent(new window.Event('click', { bubbles: true }));
+  assert(App.state.compareDays === 7, 'החלון לא התעדכן');
+  assert(noteOf() !== three, 'הטווח לא השתנה');
+  App.setState({ compareDays: 3 });
+});
+
+test('טבלת סבבי המשקל כוללת את הסבב החלקי', () => {
+  App.setState({ view: 'today' });
+  doc.querySelector('#controls [data-calc="5"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+  App.setState({ view: 'calc', date: '2026-08-21' });
+
+  const card = [...doc.querySelectorAll('#view-calc .card')]
+    .find((c) => c.textContent.includes('סבבי משקל'));
+  assert(card, 'הכרטיס חסר');
+
+  const model = window.Metrics.weightBlocks(Store.getEntries(),
+    { days: 5, endDate: '2026-08-21' });
+  const rows = [...card.querySelectorAll('tbody tr')];
+  assert(rows.length === model.rows.length, 'מספר סבבים לא תואם');
+
+  // הסבב החלקי מסומן
+  const partial = model.rows.filter((r) => r.partial);
+  if (partial.length) {
+    assert(card.textContent.includes('*'), 'הסבב החלקי לא סומן');
+    assert(card.textContent.includes('לא הושלם'), 'חסר הסבר על הסבב החלקי');
+  }
+
+  App.setState({ view: 'today' });
+  doc.querySelector('#controls [data-calc="adaptive"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+});
+
+
 runAll().then(function () {
   
 

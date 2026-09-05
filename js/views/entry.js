@@ -25,6 +25,52 @@
       '</div>';
   }
 
+  var COMPARE_DAYS = [
+    { value: 3, label: '3 ימים' },
+    { value: 5, label: '5 ימים' },
+    { value: 7, label: '7 ימים' }
+  ];
+
+  var FIELD_LABELS = {
+    weightKg: 'משקל', muscleKg: 'שריר', bodyFatKg: 'שומן', waterKg: 'נוזלים'
+  };
+
+  /** היום הנבחר מול הממוצעים סביבו, לכל ארבעת המדדים */
+  function comparisonCard(entries, date, days) {
+    var r = Metrics.dayComparison(entries, { date: date, days: days });
+    var fields = ['weightKg', 'muscleKg', 'bodyFatKg', 'waterKg'];
+
+    var cell = function (value, digits, signed) {
+      if (!Fmt.isNum(value)) return '<td class="n"><span class="missing">—</span></td>';
+      return '<td class="n">' + (signed ? Fmt.signed(value, digits) : Fmt.n(value, digits)) + '</td>';
+    };
+
+    var row = function (label, note, pick, signed) {
+      return '<tr><td>' + Fmt.esc(label) +
+        (note ? '<br><span class="basis">' + Fmt.esc(note) + '</span>' : '') + '</td>' +
+        fields.map(function (f) { return cell(pick(r.fields[f]), 2, signed); }).join('') + '</tr>';
+    };
+
+    return UI.card('היום מול הממוצע', 'כל המדדים, בקילוגרמים',
+      '<div class="table-scroll"><table class="data"><thead><tr>' +
+        '<th></th>' + fields.map(function (f) {
+          return '<th class="n">' + Fmt.esc(FIELD_LABELS[f]) + '</th>';
+        }).join('') +
+      '</tr></thead><tbody>' +
+        row('המדידה של היום', Dates.short(date), function (f) { return f.value; }) +
+        row('ממוצע ' + days + ' ימים לפני',
+          Dates.short(r.before.from) + '–' + Dates.short(r.before.to),
+          function (f) { return f.beforeMean; }) +
+        row('הפרש', 'היום פחות הממוצע שלפניו', function (f) { return f.vsBefore; }, true) +
+        row('ממוצע ' + days + ' ימים כולל היום',
+          Dates.short(r.including.from) + '–' + Dates.short(r.including.to),
+          function (f) { return f.includingMean; }) +
+        row('כמה היום הזיז', 'ההפרש בין שני הממוצעים', function (f) { return f.shift; }, true) +
+      '</tbody></table></div>' +
+      UI.basis('השורה האחרונה היא המדד השימושי: היא אומרת כמה השקילה של היום ' +
+        'הזיזה את הממוצע, ולכן היא רועשת פחות מההפרש הישיר.'));
+  }
+
   /** מה כבר נרשם בשבוע האחרון — כדי לראות מיד איזה יום חסר */
   function coverageCard(entries, date) {
     return UI.card('השבוע האחרון', null,
@@ -72,6 +118,10 @@
         '</div>' +
       '</form>' +
 
+      '<div class="section-label">השוואה</div>' +
+      UI.chips(COMPARE_DAYS, root.App.state.compareDays || 3, 'data-compare') +
+      comparisonCard(entries, date, root.App.state.compareDays || 3) +
+
       '<div class="section-label">מעקב</div>' +
       coverageCard(entries, date);
 
@@ -79,6 +129,12 @@
   }
 
   function wire(container, date) {
+    container.querySelectorAll('[data-compare]').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        root.App.setState({ compareDays: Number(chip.dataset.compare) });
+      });
+    });
+
     container.querySelectorAll('.step').forEach(function (btn) {
       btn.addEventListener('click', function () {
         root.App.setState({ date: Dates.addDays(date, Number(btn.dataset.step)) });

@@ -2032,6 +2032,80 @@ test('בלי דיווח קלוריות אין פיצול', () => {
   assert(!Metrics.macroSplit(entries, { endDate: '2026-01-05' }).ok, 'צריך להיכשל');
 });
 
+// ---------- טבלאות משקל ----------
+
+test('השוואת יום לממוצעים שלפניו ושכוללים אותו', () => {
+  // שלושה ימים לפני: 90, 89, 88 -> ממוצע 89. היום: 86
+  const entries = [
+    { date: '2026-09-02', weightKg: 90, muscleKg: 36, bodyFatKg: 24, waterKg: 49 },
+    { date: '2026-09-03', weightKg: 89, muscleKg: 36, bodyFatKg: 23, waterKg: 49 },
+    { date: '2026-09-04', weightKg: 88, muscleKg: 36, bodyFatKg: 22, waterKg: 49 },
+    { date: '2026-09-05', weightKg: 86, muscleKg: 37, bodyFatKg: 21, waterKg: 50 }
+  ];
+  const r = Metrics.dayComparison(entries, { date: '2026-09-05', days: 3 });
+
+  assert(r.before.from === '2026-09-02' && r.before.to === '2026-09-04',
+    'טווח "לפני": ' + r.before.from + '–' + r.before.to);
+  assert(r.including.from === '2026-09-03' && r.including.to === '2026-09-05',
+    'טווח "כולל": ' + r.including.from + '–' + r.including.to);
+
+  const w = r.fields.weightKg;
+  close(w.value, 86, 1e-9, 'המדידה של היום');
+  close(w.beforeMean, 89, 1e-9, 'ממוצע שלושת הימים שלפני');
+  close(w.includingMean, (89 + 88 + 86) / 3, 1e-9, 'ממוצע כולל היום');
+  close(w.vsBefore, -3, 1e-9, 'ההפרש מהתקופה שלפני');
+  close(w.shift, (89 + 88 + 86) / 3 - 89, 1e-9, 'כמה היום הזיז את הממוצע');
+
+  // כל ארבעת שדות הגוף מטופלים
+  ['weightKg', 'muscleKg', 'bodyFatKg', 'waterKg'].forEach((f) => {
+    assert(r.fields[f], 'חסר שדה ' + f);
+  });
+});
+
+test('יום בלי מדידה מוחזר כריק ולא כאפס', () => {
+  const entries = [
+    { date: '2026-09-03', weightKg: 89 },
+    { date: '2026-09-04', weightKg: 88 }
+  ];
+  const r = Metrics.dayComparison(entries, { date: '2026-09-05', days: 3 });
+  assert(r.fields.weightKg.value === null, 'אין מדידה ליום הנבחר');
+  assert(r.fields.weightKg.vsBefore === null, 'אין הפרש בלי מדידה');
+  close(r.fields.weightKg.beforeMean, 88.5, 1e-9, 'הממוצע שלפני עדיין מחושב');
+});
+
+test('סבבי משקל כוללים גם את הסבב החלקי בסוף', () => {
+  // 26/07 עד 05/09 = 42 ימים, סבבים של 5 -> שמונה מלאים ועוד שניים
+  const entries = [];
+  for (let i = 0; i < 42; i++) {
+    entries.push({ date: Dates.addDays('2026-07-26', i), weightKg: 89 + noise(i, 0.3) });
+  }
+  const r = Metrics.weightBlocks(entries, { days: 5, endDate: '2026-09-05' });
+
+  assert(r.rows.length === 9, 'תשעה סבבים, קיבלתי ' + r.rows.length);
+  const last = r.rows[r.rows.length - 1];
+  assert(last.partial, 'הסבב האחרון אמור להיות חלקי');
+  assert(last.days === 2, 'שני ימים בסבב האחרון, קיבלתי ' + last.days);
+  assert(last.from === '2026-09-04' && last.to === '2026-09-05',
+    'הסבב האחרון: ' + last.from + '–' + last.to);
+
+  // כל סבב מלא הוא בדיוק חמישה ימים והשינוי מחושב מול הקודם
+  r.rows.slice(0, -1).forEach((row) => {
+    assert(!row.partial && row.days === 5, 'סבב ' + row.index + ' אינו מלא');
+  });
+  assert(r.rows[0].change === null, 'לסבב הראשון אין קודם');
+  close(r.rows[1].change, r.rows[1].mean - r.rows[0].mean, 1e-9, 'השינוי מול הסבב הקודם');
+});
+
+test('סבבי משקל לא דורשים דיווח תזונה', () => {
+  const entries = [];
+  for (let i = 0; i < 12; i++) {
+    entries.push({ date: Dates.addDays('2026-08-01', i), weightKg: 88 - 0.1 * i });
+  }
+  const r = Metrics.weightBlocks(entries, { days: 5, endDate: '2026-08-12' });
+  assert(r.rows.length === 3, 'שלושה סבבים');
+  close(r.rows[1].change, -0.5, 1e-9, 'ירידה של חצי קילו בין סבבים');
+});
+
 // ---------- דוח ----------
 // הריצה מופעלת בסוף הקובץ בלבד. אם היא תופעל באמצע, בדיקות שנרשמו
 // אחריה לא ייכנסו לתור וייעלמו בשקט — קרה בפועל.

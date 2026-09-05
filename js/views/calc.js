@@ -169,6 +169,36 @@
         'הסבב עונה על "מה קרה בתקופה שנסגרה", המתגלגל על "מה קורה עכשיו".'));
   }
 
+  /** סבבי משקל, כולל הסבב שעוד לא הושלם */
+  function weightBlocksTable(entries, date) {
+    var days = root.App.state.calcWindow;
+    if (days === 'adaptive') days = 5;
+
+    var r = Metrics.weightBlocks(entries, { days: days, endDate: date });
+    if (!r.rows.length) return '';
+
+    var rows = r.rows.slice().reverse().map(function (row) {
+      return '<tr' + (row.partial ? ' class="summary"' : '') + '>' +
+        '<td class="n">' + row.index + '</td>' +
+        '<td class="date-cell">' + Fmt.esc(Dates.short(row.from) + '–' + Dates.short(row.to)) + '</td>' +
+        '<td class="n">' + row.days + (row.partial ? ' *' : '') + '</td>' +
+        '<td class="n">' + Fmt.n(row.mean, 2) + '</td>' +
+        '<td class="n">' + (row.change === null ? '—' :
+          '<span class="' + Fmt.deltaClass(row.change, 'down') + '">' +
+          Fmt.signed(row.change, 2) + '</span>') + '</td></tr>';
+    }).join('');
+
+    var partial = r.rows.some(function (row) { return row.partial; });
+
+    return UI.card('סבבי משקל של ' + days + ' ימים', 'ממוצע המשקל בכל סבב, מול הסבב שלפניו',
+      '<div class="table-scroll"><table class="data"><thead><tr>' +
+        '<th class="n">סבב</th><th class="date-cell">תקופה</th><th class="n">ימים</th>' +
+        '<th class="n">ממוצע</th><th class="n">שינוי</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      UI.basis('טבלת משקלים בלבד, ולכן היא לא דורשת דיווח תזונה. ' +
+        (partial ? 'הסבב המסומן בכוכבית עוד לא הושלם, ולכן הממוצע שלו עשוי לזוז.' : '')));
+  }
+
   function render(container) {
     var entries = Store.getEntries();
     var settings = Store.getSettings();
@@ -219,6 +249,9 @@
       hero +
 
       UI.basis('את קצב הירידה ואת חלון החישוב אפשר לשנות בפס שבראש המסך, בכל דף.') +
+
+      '<div class="section-label">משקל לפי סבבים</div>' +
+      weightBlocksTable(entries, date) +
 
       '<div class="section-label">ממוצע מתגלגל</div>' +
       rollingTable(entries, settings, date) +
