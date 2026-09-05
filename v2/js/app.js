@@ -14,9 +14,6 @@
     BUILD: 'd1',
     state: {
       date: Dates.today(),
-      window: 'adaptive',   // בסיס החישוב
-      period: 14,           // אורך התקופה
-      weightMode: 'rolling',
       settingsOpen: false
     }
   };
@@ -46,25 +43,6 @@
   function wire() {
     var view = elements.view;
 
-    view.querySelectorAll('[data-wmode]').forEach(function (chip) {
-      chip.addEventListener('click', function () {
-        App.setState({ weightMode: chip.dataset.wmode });
-      });
-    });
-
-    view.querySelectorAll('[data-window]').forEach(function (chip) {
-      chip.addEventListener('click', function () {
-        var raw = chip.dataset.window;
-        App.setState({ window: raw === 'adaptive' ? 'adaptive' : Number(raw), settingsOpen: true });
-      });
-    });
-
-    view.querySelectorAll('[data-period]').forEach(function (chip) {
-      chip.addEventListener('click', function () {
-        App.setState({ period: Number(chip.dataset.period), settingsOpen: true });
-      });
-    });
-
     var fold = view.querySelector('details.fold');
     if (fold) {
       fold.addEventListener('toggle', function () { App.state.settingsOpen = fold.open; });
@@ -86,6 +64,14 @@
       });
       rate.addEventListener('change', function () {
         Store.updateSettings({ goal: { ratePerWeekKg: -Number(rate.value) } });
+      });
+    }
+
+    var protein = view.querySelector('#protein-target');
+    if (protein) {
+      protein.addEventListener('change', function () {
+        Store.updateSettings({ targets: { proteinG: Store.toNumber(protein.value) } });
+        App.toast('יעד החלבון עודכן');
       });
     }
 
