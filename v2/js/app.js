@@ -14,6 +14,8 @@
     BUILD: 'd1',
     state: {
       date: Dates.today(),
+      basis: 'adaptive',   // על סמך כמה זמן לחשב
+      caution: 'mid',      // זהיר / אמצע / נדיב
       settingsOpen: false
     }
   };
@@ -47,6 +49,19 @@
     if (fold) {
       fold.addEventListener('toggle', function () { App.state.settingsOpen = fold.open; });
     }
+
+    view.querySelectorAll('[data-basis]').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        var raw = chip.dataset.basis;
+        App.setState({ basis: raw === 'adaptive' ? 'adaptive' : Number(raw) });
+      });
+    });
+
+    view.querySelectorAll('[data-caution]').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        App.setState({ caution: chip.dataset.caution });
+      });
+    });
 
     var goal = view.querySelector('#goal-weight');
     if (goal) {

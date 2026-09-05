@@ -165,7 +165,8 @@ test('טבלת השבועות מדברת בשמות ולא במספרים טכנ
 test('אין מונחים טכניים בשום מקום במסך', () => {
   App.setState({ date: Dates.today() });
   const text = doc.getElementById('view').textContent;
-  ['חלון', 'תרחיש', 'זהיר', 'נדיב', 'מסתגל', 'קלמן', 'רגרסיה', 'סטיית תקן',
+  // "זהיר" ו"נדיב" הם שמות בחירה שהמשתמש ביקש, ולכן מותרים
+  ['חלון', 'תרחיש', 'מסתגל', 'קלמן', 'רגרסיה', 'סטיית תקן',
    'רווח סמך', 'מעריכי', 'TDEE', '±'].forEach((term) => {
     assert(!text.includes(term), 'מונח טכני על המסך: ' + term);
   });
@@ -194,10 +195,10 @@ test('שינוי משקל היעד מזיז את מד ההתקדמות', () => {
 test('שינוי קצב הירידה מזיז את היעד היומי', () => {
   // נקרא מהיעד שבפס האכילה ולא מהמספר הגדול, כי זה נחתך באפס
   const value = () => {
-    const hint = doc.querySelector('#view .hint').textContent;
-    const match = hint.match(/היעד היומי שלך הוא ([\d,]+)/);
-    assert(match, 'לא נמצא היעד: ' + hint);
-    return Number(match[1].replace(/,/g, ''));
+    const hints = [...doc.querySelectorAll('#view .hint')].map((el) => el.textContent);
+    const hint = hints.find((t) => t.indexOf('היעד היומי שלך') !== -1);
+    assert(hint, 'לא נמצא היעד');
+    return Number(hint.match(/היעד היומי שלך הוא ([\d,]+)/)[1].replace(/,/g, ''));
   };
   const slider = doc.querySelector('#rate');
 
@@ -251,6 +252,70 @@ test('אין נתון שמוצג פעמיים באותו מסך', () => {
     'כותרת כרטיס מופיעה פעמיים: ' + headings.join(', '));
 });
 
+test('בחירת זהירות מזיזה את היעד לשני הכיוונים', () => {
+  App.setState({ date: Dates.today(), basis: 'adaptive', caution: 'mid' });
+  const target = () => {
+    const hint = [...doc.querySelectorAll('#view .hint')]
+      .map((el) => el.textContent)
+      .find((t) => t.indexOf('היעד היומי שלך') !== -1);
+    return Number(hint.match(/היעד היומי שלך הוא ([\d,]+)/)[1].replace(/,/g, ''));
+  };
+
+  const middle = target();
+
+  doc.querySelector('[data-caution="low"]').dispatchEvent(new window.Event('click', { bubbles: true }));
+  assert(App.state.caution === 'low', 'הבחירה לא נשמרה');
+  const careful = target();
+
+  doc.querySelector('[data-caution="high"]').dispatchEvent(new window.Event('click', { bubbles: true }));
+  const generous = target();
+
+  assert(careful < middle && middle < generous,
+    'הסדר שגוי: ' + careful + ' / ' + middle + ' / ' + generous);
+
+  // ההפרש בין הקצוות הוא טווח אי־הוודאות של ההערכה
+  const r = Metrics.windowReport(Store.getEntries(), Store.getSettings(),
+    { windowDays: 'adaptive', endDate: Dates.today() });
+  assert(Math.abs((generous - careful) - 2 * r.ci95) <= 2,
+    'ההפרש ' + (generous - careful) + ' מול ' + Math.round(2 * r.ci95));
+
+  App.setState({ caution: 'mid' });
+});
+
+test('בחירת בסיס החישוב משנה את היעד', () => {
+  App.setState({ date: Dates.today(), basis: 'adaptive', caution: 'mid' });
+  const target = () => {
+    const hint = [...doc.querySelectorAll('#view .hint')]
+      .map((el) => el.textContent)
+      .find((t) => t.indexOf('היעד היומי שלך') !== -1);
+    return Number(hint.match(/היעד היומי שלך הוא ([\d,]+)/)[1].replace(/,/g, ''));
+  };
+
+  const all = target();
+  const chip = doc.querySelector('[data-basis="7"]');
+  assert(chip, 'חסר כפתור לשבוע');
+  assert(!chip.hasAttribute('disabled'), 'הכפתור אמור להיות זמין');
+
+  chip.dispatchEvent(new window.Event('click', { bubbles: true }));
+  assert(App.state.basis === 7, 'הבחירה לא נשמרה');
+  assert(target() !== all, 'היעד לא השתנה');
+
+  App.setState({ basis: 'adaptive' });
+});
+
+test('בסיס בלי מספיק ימים מנוטרל ולא נבחר', () => {
+  App.setState({ date: Dates.today() });
+  const available = Metrics.availableWindows(Store.getEntries(),
+    { endDate: Dates.today(), candidates: [3, 5, 7, 10, 14, 21, 28] });
+
+  available.forEach((w) => {
+    const chip = doc.querySelector('[data-basis="' + w.days + '"]');
+    assert(chip, 'חסר כפתור ל-' + w.days);
+    assert(chip.hasAttribute('disabled') === !w.available,
+      w.days + ': מצב הכפתור לא תואם את הזמינות');
+  });
+});
+
 test('הלוח עומד גם בלי נתונים', () => {
   errors.length = 0;
   Store.clearAll();
@@ -260,6 +325,7 @@ test('הלוח עומד גם בלי נתונים', () => {
   assert(doc.querySelector('#goal-weight'), 'ההגדרות אמורות להישאר זמינות');
   assert(errors.length === 0, 'שגיאות: ' + errors.join(' | '));
 });
+
 
 // ---------------------------------------------------------------
 

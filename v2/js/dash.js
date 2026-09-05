@@ -22,9 +22,77 @@
     faint: 'rgba(18,133,124,0.28)'
   };
 
-  /** ההוצאה נלקחת תמיד מהחישוב המסתגל. אין כאן בורר שיטות. */
-  function report(entries, settings, date) {
-    return Metrics.windowReport(entries, settings, { windowDays: 'adaptive', endDate: date });
+  var BASIS = [
+    { value: 'adaptive', days: null, label: 'הכל' },
+    { value: 3, days: 3, label: '3 ימים' },
+    { value: 5, days: 5, label: '5 ימים' },
+    { value: 7, days: 7, label: 'שבוע' },
+    { value: 10, days: 10, label: '10 ימים' },
+    { value: 14, days: 14, label: 'שבועיים' },
+    { value: 21, days: 21, label: '3 שבועות' },
+    { value: 28, days: 28, label: 'חודש' }
+  ];
+
+  var CAUTION = [
+    { value: 'low', label: 'זהיר' },
+    { value: 'mid', label: 'אמצע' },
+    { value: 'high', label: 'נדיב' }
+  ];
+
+  function report(entries, settings, date, state) {
+    return Metrics.windowReport(entries, settings, {
+      windowDays: (state && state.basis) || 'adaptive', endDate: date
+    });
+  }
+
+  /**
+   * ההערכה כמה הגוף שורף היא טווח ולא מספר יחיד.
+   * "זהיר" מניח את הקצה הנמוך שלו, "נדיב" את הגבוה. ההפרש בין
+   * השניים הוא בדיוק אי־הוודאות שבמדידה, רק בלי לקרוא לה בשם.
+   */
+  function adjust(r, caution) {
+    if (!r.ok) return r;
+    var shift = caution === 'low' ? -r.ci95 : caution === 'high' ? r.ci95 : 0;
+    return {
+      ok: true,
+      base: r.base + shift,
+      tdee: r.tdee + shift,
+      target: r.target + shift,
+      ci95: r.ci95,
+      deficitPerDay: r.deficitPerDay,
+      ratePerWeekKg: r.ratePerWeekKg,
+      statsDays: r.statsDays,
+      windowDays: r.windowDays
+    };
+  }
+
+  /** שורות הבחירה שבראש המסך */
+  function controls(state, entries, date) {
+    var available = Metrics.availableWindows(entries, {
+      endDate: date, candidates: [3, 5, 7, 10, 14, 21, 28]
+    });
+    var byDays = {};
+    available.forEach(function (w) { byDays[w.days] = w; });
+
+    var options = BASIS.map(function (option) {
+      if (option.days === null) return { value: option.value, label: option.label };
+      var info = byDays[option.days];
+      return {
+        value: option.value,
+        label: option.label,
+        disabled: !info || !info.available,
+        title: info && info.available ? '' : 'צריך יותר ימים של מעקב'
+      };
+    });
+
+    return P.card(null, null,
+      '<label class="pick-label">על סמך כמה זמן לחשב</label>' +
+      P.chips(options, state.basis, 'data-basis') +
+      '<label class="pick-label">כמה להיזהר בהערכה</label>' +
+      P.chips(CAUTION, state.caution, 'data-caution') +
+      P.hint('אי אפשר לדעת במדויק כמה הגוף שורף, אז יש טווח. ' +
+        '"זהיר" מניח שאתה שורף פחות ממה שנראה, ולכן הוא נותן יעד נמוך יותר ' +
+        'ומבטיח שתרד גם אם ההערכה אופטימית. "נדיב" מניח את ההפך.'));
   }
 
   // ---------------------------------------------------------- כותרת
@@ -73,11 +141,13 @@
   // ------------------------------------------------------- כמה לאכול
 
   function todaySection(state, entries, settings) {
-    var r = report(entries, settings, state.date);
+    var raw = report(entries, settings, state.date, state);
+    var r = adjust(raw, state.caution);
 
     if (!r.ok) {
-      return P.section('כמה לאכול היום', P.card(null, null,
-        P.empty('צריך עוד כמה ימים של שקילה ורישום אוכל כדי לחשב.')));
+      return P.section('כמה לאכול היום',
+        controls(state, entries, state.date) +
+        P.card(null, null, P.empty('צריך עוד כמה ימים של שקילה ורישום אוכל כדי לחשב.')));
     }
 
     var entry = Store.getEntry(state.date) || {};
@@ -101,6 +171,7 @@
       '<div class="meter-legend"><span>' + P.esc(sentence) + '</span></div></div>';
 
     return P.section('כמה לאכול היום',
+      controls(state, entries, state.date) +
       P.card(null, null,
         '<div class="big big--' + (over ? 'bad' : 'brand') + '">' +
           (over ? Fmt.n(eaten - target, 0) : Fmt.n(Math.max(left, 0), 0)) +
@@ -202,7 +273,7 @@
     var macro = Metrics.macroSplit(entries, { endDate: state.date, windowDays: 14 });
     if (!macro.ok) return '';
 
-    var r = report(entries, settings, state.date);
+    var r = adjust(report(entries, settings, state.date, state), state.caution);
     var target = r.ok ? r.target : null;
     var labels = { proteinG: 'חלבון', carbG: 'פחמימות', fatG: 'שומן' };
     var colors = { proteinG: COLORS.brand, carbG: COLORS.violet, fatG: COLORS.warn };
@@ -336,7 +407,7 @@
 
     var kcal = Metrics.series(entries, 'kcal');
     if (kcal.length >= 2 && host('chart-kcal')) {
-      var r = report(entries, settings, state.date);
+      var r = adjust(report(entries, settings, state.date, state), state.caution);
       var target = r.ok ? r.target : null;
 
       var bars = toPoints(kcal).map(function (p) {

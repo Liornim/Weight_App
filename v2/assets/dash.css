@@ -311,7 +311,14 @@ table.t tr.now { background: rgba(18,133,124,0.07); font-weight: 500; }
 
 /* צ׳יפים */
 
-.chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
+.pick-label {
+  display: block;
+  font-size: 12.5px;
+  color: var(--ink-soft);
+  margin-bottom: 7px;
+}
+
+.chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
 
 .chip {
   font: inherit;
