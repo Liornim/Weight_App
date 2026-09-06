@@ -477,11 +477,12 @@ test('מפתח מזוהה לא מציג בורר מיותר', () => {
 test('שדה המודל מופיע רק כשהמפתח השני הוא OpenRouter', () => {
   Store.updateSettings({ aiKeyA: 'AIzaTEST', aiKeyB: '' });
   App.setState({ date: Dates.today() });
-  assert(!doc.querySelector('[data-model="aiModelB"]'), 'שדה המודל לא אמור להופיע');
+  assert(!doc.querySelector('[data-model="aiModelOpenrouter"]'),
+    'שדה המודל לא אמור להופיע');
 
   Store.updateSettings({ aiKeyB: 'sk-or-TEST' });
   App.setState({ date: Dates.today() });
-  assert(doc.querySelector('[data-model="aiModelB"]'), 'שדה המודל חסר');
+  assert(doc.querySelector('[data-model="aiModelOpenrouter"]'), 'שדה המודל חסר');
 
   Store.updateSettings({ aiKeyA: '', aiKeyB: '' });
 });
