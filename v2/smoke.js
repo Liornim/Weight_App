@@ -174,8 +174,10 @@ test('אין מונחים טכניים בשום מקום במסך', () => {
   App.setState({ date: Dates.today() });
   const text = doc.getElementById('view').textContent;
   // "זהיר" ו"נדיב" הם שמות בחירה שהמשתמש ביקש, ולכן מותרים
+  // "מעריכים" הם שני ה-AI שמתווכחים, ולכן מותר. הבדיקה מחפשת
+  // "ממוצע מעריכי", שהוא מונח סטטיסטי.
   ['חלון', 'תרחיש', 'מסתגל', 'קלמן', 'רגרסיה', 'סטיית תקן',
-   'רווח סמך', 'מעריכי', 'TDEE', '±'].forEach((term) => {
+   'רווח סמך', 'ממוצע מעריכי', 'TDEE', '±'].forEach((term) => {
     assert(!text.includes(term), 'מונח טכני על המסך: ' + term);
   });
 });
@@ -279,6 +281,77 @@ test('הירידה בכותרת היא ההפרש בין חצאי התקופה',
   assert(total <= d.weighIns, 'נספרו ' + total + ' שקילות מתוך ' + d.weighIns);
 });
 
+
+
+test('טופס ההזנה כולל את כל השדות ושומר', () => {
+  App.setState({ date: Dates.today() });
+  ['weightKg', 'bodyFatKg', 'muscleKg', 'kcal', 'proteinG', 'carbG', 'fatG', 'fiberG', 'steps']
+    .forEach((field) => {
+      assert(doc.querySelector('[data-field="' + field + '"]'), 'חסר שדה: ' + field);
+    });
+
+  doc.querySelector('[data-field="fiberG"]').value = '31';
+  doc.querySelector('[data-field="steps"]').value = '11500';
+  doc.querySelector('#save-entry').dispatchEvent(new window.Event('click', { bubbles: true }));
+
+  const saved = Store.getEntry(Dates.today());
+  assert(saved.fiberG === 31, 'הסיבים לא נשמרו: ' + saved.fiberG);
+  assert(saved.steps === 11500, 'הצעדים לא נשמרו: ' + saved.steps);
+});
+
+test('ניווט בין ימים מזיז את הטופס', () => {
+  App.setState({ date: Dates.today() });
+  doc.querySelector('#day-back').dispatchEvent(new window.Event('click', { bubbles: true }));
+  assert(App.state.date === Dates.addDays(Dates.today(), -1), 'לא חזר יום אחורה');
+
+  doc.querySelector('#day-fwd').dispatchEvent(new window.Event('click', { bubbles: true }));
+  assert(App.state.date === Dates.today(), 'לא חזר קדימה');
+
+  // אי אפשר לעבור אל מעבר להיום
+  doc.querySelector('#day-fwd').dispatchEvent(new window.Event('click', { bubbles: true }));
+  assert(App.state.date === Dates.today(), 'עבר לתאריך עתידי');
+});
+
+test('הערכה מתמונה דורשת מפתח ואומרת זאת', () => {
+  Store.updateSettings({ aiKey: '' });
+  App.setState({ date: Dates.today() });
+  const card = [...doc.querySelectorAll('#view .card')]
+    .find((c) => c.textContent.includes('הערכה מתמונה'));
+  assert(card, 'הכרטיס חסר');
+  assert(!doc.querySelector('#photo'), 'שדה התמונה לא אמור להופיע בלי מפתח');
+  assert(card.textContent.includes('מפתח API'), 'לא הוסבר מה חסר');
+
+  Store.updateSettings({ aiKey: 'sk-ant-test' });
+  App.setState({ date: Dates.today() });
+  assert(doc.querySelector('#photo'), 'שדה התמונה חסר למרות שיש מפתח');
+  Store.updateSettings({ aiKey: '' });
+});
+
+test('פענוח תשובת המודל עמיד לעטיפות', () => {
+  const E = window.Estimate;
+  const payload = { kcal: 700, protein: 40, carbs: 60, fat: 25, items: [] };
+
+  assert(E.parseAnswer(JSON.stringify(payload)).kcal === 700, 'JSON נקי');
+  assert(E.parseAnswer('```json\n' + JSON.stringify(payload) + '\n```').kcal === 700,
+    'עטוף בסימני קוד');
+  assert(E.parseAnswer('הנה ההערכה:\n' + JSON.stringify(payload) + '\nבהצלחה').kcal === 700,
+    'עם טקסט מסביב');
+  assert(E.parseAnswer('בלי JSON בכלל') === null, 'טקסט בלי JSON');
+  assert(E.parseAnswer('') === null, 'מחרוזת ריקה');
+  assert(E.parseAnswer('{"broken": ') === null, 'JSON שבור');
+});
+
+test('חילוץ הטקסט מתשובת ה-API מדלג על בלוקים אחרים', () => {
+  const E = window.Estimate;
+  const text = E.textOf({ content: [
+    { type: 'text', text: 'שורה' },
+    { type: 'tool_use', name: 'x' },
+    { type: 'text', text: 'שנייה' }
+  ] });
+  assert(text === 'שורה\nשנייה', 'קיבלתי: ' + text);
+  assert(E.textOf(null) === '', 'null');
+  assert(E.textOf({}) === '', 'בלי content');
+});
 
 test('שבוע אחרון חריג מסומן בכותרת', () => {
   // מוסיפים שבוע של עלייה חדה בסוף

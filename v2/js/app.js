@@ -97,6 +97,48 @@
       });
     }
 
+    var aiKey = view.querySelector('#ai-key');
+    if (aiKey) {
+      aiKey.addEventListener('change', function () {
+        Store.updateSettings({ aiKey: aiKey.value.trim() });
+        App.toast(aiKey.value.trim() ? 'המפתח נשמר במכשיר' : 'המפתח הוסר');
+      });
+    }
+
+    var save = view.querySelector('#save-entry');
+    if (save) {
+      save.addEventListener('click', function () {
+        var payload = { date: App.state.date };
+        view.querySelectorAll('[data-field]').forEach(function (input) {
+          payload[input.dataset.field] = input.value;
+        });
+        try {
+          Store.upsert(payload);
+          App.toast('נשמר');
+        } catch (error) {
+          App.toast('השמירה נכשלה: ' + error.message);
+        }
+      });
+    }
+
+    var back = view.querySelector('#day-back');
+    if (back) {
+      back.addEventListener('click', function () {
+        App.setState({ date: Dates.addDays(App.state.date, -1) });
+      });
+    }
+
+    var forward = view.querySelector('#day-fwd');
+    if (forward) {
+      forward.addEventListener('click', function () {
+        var next = Dates.addDays(App.state.date, 1);
+        App.setState({ date: next > Dates.today() ? Dates.today() : next });
+      });
+    }
+
+    var photo = view.querySelector('#photo');
+    if (photo) photo.addEventListener('change', function () { runDebate(photo, view); });
+
     var pull = view.querySelector('#pull');
     if (pull) {
       pull.addEventListener('click', function () {
@@ -120,6 +162,86 @@
     if (old) {
       old.addEventListener('click', function () { root.location.href = '../'; });
     }
+  }
+
+  /** מריץ את הוויכוח ומציג כל שלב בדרך */
+  function runDebate(input, view) {
+    var file = input.files && input.files[0];
+    if (!file) return;
+
+    var box = view.querySelector('#debate');
+    var key = Store.getSettings().aiKey;
+    var show = function (html) { if (box) box.innerHTML = html; };
+
+    show('<p class="stage">קורא את התמונה…</p>');
+
+    root.Estimate.readImage(file).then(function (image) {
+      return root.Estimate.debate(key, image.base64, image.mediaType, function (message) {
+        show('<p class="stage">' + root.Fmt.esc(message) + '…</p>');
+      });
+    }).then(function (result) {
+      show(renderDebate(result));
+      var apply = view.querySelector('#apply-estimate');
+      if (apply) {
+        apply.addEventListener('click', function () {
+          var f = result.final;
+          var setField = function (name, value) {
+            var el = view.querySelector('[data-field="' + name + '"]');
+            if (el && root.Fmt.isNum(value)) el.value = Math.round(value);
+          };
+          setField('kcal', f.kcal);
+          setField('proteinG', f.protein);
+          setField('carbG', f.carbs);
+          setField('fatG', f.fat);
+          setField('fiberG', f.fiber);
+          App.toast('המספרים הוזנו בטופס. בדוק ולחץ שמירה.');
+        });
+      }
+    }).catch(function (error) {
+      show('<p class="stage stage--bad">' + root.Fmt.esc(error.message) + '</p>');
+    });
+  }
+
+  function renderDebate(result) {
+    var Fmt = root.Fmt;
+    var f = result.final;
+
+    var rounds = result.rounds.map(function (round) {
+      var d = round.data;
+      var items = (d.items || []).map(function (item) {
+        return '<li>' + Fmt.esc(item.name) + ' — ' + Fmt.n(item.grams, 0) + ' גר׳, ' +
+          Fmt.n(item.kcal, 0) + ' קק״ל' +
+          (item.confidence === 'low' ? ' <span class="low">לא בטוח</span>' : '') + '</li>';
+      }).join('');
+
+      return '<details class="round"><summary>' + Fmt.esc(round.name) + ' — ' +
+        Fmt.n(d.kcal, 0) + ' קק״ל</summary>' +
+        '<ul>' + items + '</ul>' +
+        (d.reasoning ? '<p class="why">' + Fmt.esc(d.reasoning) + '</p>' : '') +
+        '</details>';
+    }).join('');
+
+    var range = f.range && Fmt.isNum(f.range.low)
+      ? '<p class="range">טווח סביר: ' + Fmt.n(f.range.low, 0) + '–' +
+        Fmt.n(f.range.high, 0) + ' קלוריות</p>'
+      : '';
+
+    var gap = Fmt.isNum(result.initialGap)
+      ? '<p class="why">הפער בין שני המעריכים בהתחלה: ' + Fmt.n(result.initialGap, 0) +
+        ' קלוריות (' + Fmt.n(result.initialGapShare * 100, 0) + '%).</p>'
+      : '';
+
+    return '<div class="verdict">' +
+        '<div class="verdict-num num">' + Fmt.n(f.kcal, 0) + '</div>' +
+        '<div class="verdict-macros num">' +
+          'חלבון ' + Fmt.n(f.protein, 0) + ' · פחמימות ' + Fmt.n(f.carbs, 0) +
+          ' · שומן ' + Fmt.n(f.fat, 0) + '</div>' +
+        (f.verdict ? '<p class="why">' + Fmt.esc(f.verdict) + '</p>' : '') +
+        range + gap +
+        '<button type="button" class="btn btn--primary" id="apply-estimate">' +
+          'הזן לטופס</button>' +
+      '</div>' +
+      '<div class="rounds">' + rounds + '</div>';
   }
 
   function init() {

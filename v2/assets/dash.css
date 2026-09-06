@@ -314,6 +314,70 @@ html, body {
 .split-key { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-soft); }
 .split-key i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 
+/* הזנה */
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.field .unit { color: var(--ink-faint); }
+
+input[type='file'] {
+  font: inherit;
+  font-size: 13.5px;
+  width: 100%;
+  padding: 14px;
+  border: 1px dashed var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+}
+
+/* ויכוח המעריכים */
+
+.stage { font-size: 13.5px; color: var(--ink-soft); margin: 14px 0 0; }
+.stage--bad { color: var(--bad); }
+
+.verdict {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: var(--radius-sm);
+  background: var(--good-bg);
+}
+
+.verdict-num {
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--good);
+}
+
+.verdict-macros { font-size: 13px; color: var(--ink-soft); margin-top: 6px; }
+.verdict .range { font-size: 13px; color: var(--ink); margin: 10px 0 0; }
+.why { font-size: 13px; line-height: 1.6; color: var(--ink-soft); margin: 10px 0 0; }
+
+.rounds { margin-top: 12px; }
+
+.round {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+}
+
+.round > summary {
+  padding: 11px 14px;
+  cursor: pointer;
+  font-size: 13.5px;
+  list-style: none;
+}
+
+.round > summary::-webkit-details-marker { display: none; }
+.round ul { margin: 0; padding: 0 30px 10px; font-size: 13px; color: var(--ink-soft); }
+.round .why { padding: 0 14px 12px; margin: 0; }
+.round .low { color: var(--warn); font-size: 11.5px; }
+
 /* טבלה */
 
 .table-wrap { overflow-x: auto; margin: 0 -4px; }

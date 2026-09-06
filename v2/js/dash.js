@@ -394,6 +394,60 @@
         P.hint('חלבון שומר על השריר בזמן ירידה במשקל ומשאיר תחושת שובע לאורך זמן.')));
   }
 
+  // ------------------------------------------------- הזנה וצילום
+
+  var ENTRY_FIELDS = [
+    { key: 'weightKg', label: 'משקל', unit: 'ק״ג', step: '0.1' },
+    { key: 'bodyFatKg', label: 'שומן', unit: 'ק״ג', step: '0.1' },
+    { key: 'muscleKg', label: 'שריר', unit: 'ק״ג', step: '0.1' },
+    { key: 'kcal', label: 'קלוריות', unit: '', step: '10' },
+    { key: 'proteinG', label: 'חלבון', unit: 'גר׳', step: '1' },
+    { key: 'carbG', label: 'פחמימות', unit: 'גר׳', step: '1' },
+    { key: 'fatG', label: 'שומן באוכל', unit: 'גר׳', step: '1' },
+    { key: 'fiberG', label: 'סיבים', unit: 'גר׳', step: '1' },
+    { key: 'steps', label: 'צעדים', unit: '', step: '100' }
+  ];
+
+  function entrySection(state, entries) {
+    var entry = Store.getEntry(state.date) || {};
+
+    var fields = ENTRY_FIELDS.map(function (f) {
+      return '<div class="field"><label for="in-' + f.key + '">' + P.esc(f.label) +
+        (f.unit ? ' <span class="unit">' + P.esc(f.unit) + '</span>' : '') + '</label>' +
+        '<input id="in-' + f.key + '" data-field="' + f.key + '" type="number" ' +
+        'inputmode="decimal" step="' + f.step + '" value="' +
+        (Fmt.isNum(entry[f.key]) ? entry[f.key] : '') + '"></div>';
+    }).join('');
+
+    return P.section('הזנה',
+      P.card(null, Dates.long(state.date),
+        '<div class="field-grid">' + fields + '</div>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">' +
+          '<button type="button" class="btn btn--primary" id="save-entry">שמירה</button>' +
+          '<button type="button" class="btn" id="day-back">יום אחורה</button>' +
+          '<button type="button" class="btn" id="day-fwd">יום קדימה</button>' +
+        '</div>') +
+      photoCard(state));
+  }
+
+  /**
+   * הערכת ארוחה מתמונה. שני מעריכים עם הטיות מנוגדות מגיעים למספרים
+   * שונים, מגיבים זה לזה, וסיבוב שלישי מכריע. כל השלבים מוצגים —
+   * המחלוקת עצמה היא המידע השימושי, לא רק המספר הסופי.
+   */
+  function photoCard(state) {
+    var key = Store.getSettings().aiKey;
+    var body = key
+      ? '<input type="file" id="photo" accept="image/*" capture="environment">' +
+        '<div id="debate"></div>'
+      : P.empty('כדי להפעיל את ההערכה מתמונה צריך מפתח API, בהגדרות למטה.');
+
+    return P.card('הערכה מתמונה', 'שני מעריכים מתווכחים ומגיעים להכרעה', body +
+      P.hint('הערכת כמות מתמונה שוגה בדרך כלל ב-20 עד 30 אחוז, כי אי אפשר לראות ' +
+        'כמה שמן היה במחבת ומה מתחת לפני השטח. השתמש בזה כשאין ברירה, ושקול ' +
+        'במטבח את מה שקל לשקול.'));
+  }
+
   // ------------------------------------------------------ הגדרות
 
   function settingsSection(state, entries, settings) {
@@ -411,6 +465,12 @@
       '<div class="field"><label for="protein-target">יעד חלבון ליום (גרם)</label>' +
         '<input id="protein-target" type="number" step="5" value="' +
         (Fmt.isNum(settings.targets.proteinG) ? settings.targets.proteinG : '') + '"></div>' +
+
+      '<div class="field"><label for="ai-key">מפתח API להערכה מתמונה</label>' +
+        '<input id="ai-key" type="password" autocomplete="off" placeholder="sk-ant-..." value="' +
+        P.esc(settings.aiKey || '') + '"></div>' +
+      P.hint('המפתח נשמר במכשיר הזה בלבד ונשלח רק ל-API של Anthropic. ' +
+        'אפשר לבטל אותו בכל רגע מהחשבון שלך.') +
 
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">' +
         '<button type="button" class="btn btn--primary" id="pull">עדכון נתונים מהגיליון</button>' +
@@ -540,6 +600,7 @@
     container.innerHTML =
       top(state, entries, settings) +
       todaySection(state, entries, settings) +
+      entrySection(state, entries) +
       weightSection(state, entries) +
       bodySection(state, entries) +
       foodSection(state, entries, settings) +
