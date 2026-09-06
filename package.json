@@ -5,8 +5,8 @@
   "private": true,
   "scripts": {
     "test": "node tests/run-tests.js && node tests/smoke.js && node v2/smoke.js && node v2/paste.test.js && node v2/estimate.test.js",
-    "stamp": "node build/stamp.js",
-    "build": "node build/stamp.js && node build/inline.js"
+    "stamp": "node build/stamp.js && node v2/stamp.js",
+    "build": "node build/stamp.js && node v2/stamp.js && node build/inline.js"
   },
   "devDependencies": {
     "jsdom": "^24.1.3"

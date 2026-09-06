@@ -124,7 +124,9 @@
     var asOf = state.asOf || 0;
     var measureDate = asOf ? Dates.addDays(state.date, -asOf) : state.date;
     var d = Metrics.dashboard(entries, settings, { endDate: measureDate });
-    var stamp = Dates.long(state.date);
+    // הגרסה מוצגת כדי שיהיה אפשר לדעת במבט אם הדפדפן מגיש
+    // קבצים ישנים מהמטמון
+    var stamp = Dates.long(state.date) + '  ·  ' + root.App.BUILD;
 
     if (!d.ok) {
       return '<header class="top"><div class="top-row"><h1>המשקל שלי</h1>' +

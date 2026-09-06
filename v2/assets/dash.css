@@ -77,7 +77,12 @@ html, body {
 }
 
 .top h1 { font-size: 19px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
-.top .stamp { font-family: var(--mono); font-size: 11px; color: rgba(255,255,255,0.45); }
+.top .stamp {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  white-space: nowrap;
+}
 
 .headline .k {
   font-size: 12px;

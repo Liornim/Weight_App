@@ -85,6 +85,33 @@ test('כל המקטעים מוצגים בלי שגיאות', () => {
   assert(errors.length === 0, 'שגיאות: ' + errors.join(' | '));
 });
 
+
+
+test('כל קובץ מקומי נושא חותמת גרסה בכתובת', () => {
+  const html = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
+  const local = [...html.matchAll(/(?:src|href)="((?:\.\.\/)?(?:js|assets)\/[^"]+)"/g)]
+    .map((m) => m[1]);
+
+  assert(local.length > 5, 'ציפיתי לכמה קבצים מקומיים, נמצאו ' + local.length);
+  local.forEach((url) => {
+    assert(url.indexOf('?v=') !== -1, 'בלי חותמת: ' + url);
+  });
+
+  // החותמת תואמת את הגרסה שמוצגת במסך
+  assert(local[0].indexOf('?v=' + App.BUILD) !== -1,
+    'החותמת בכתובת אינה ' + App.BUILD + ': ' + local[0]);
+});
+
+test('מספר הגרסה מוצג בכותרת', () => {
+  App.setState({ date: Dates.today() });
+  const stamp = doc.querySelector('.top .stamp');
+  assert(stamp, 'חותמת הכותרת חסרה');
+  assert(stamp.textContent.includes(App.BUILD),
+    'הגרסה ' + App.BUILD + ' לא מופיעה: ' + stamp.textContent);
+  assert(stamp.textContent.includes(window.Dates.long(Dates.today())),
+    'התאריך נעלם מהחותמת');
+});
+
 test('הכותרת מציגה את הירידה הכוללת ואת ההתקדמות ליעד', () => {
   const d = Metrics.dashboard(Store.getEntries(), Store.getSettings(), { endDate: Dates.today() });
   const head = doc.querySelector('.headline .v').textContent;
