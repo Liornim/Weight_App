@@ -193,7 +193,8 @@ test('שני ספקים -> ויכוח בין משפחות שונות', () => {
     return w.Estimate.run(
       [{ key: 'AIzaA' }, { key: 'sk-or-B', model: 'm:free' }], IMAGE
     ).then((result) => {
-      assert(calls.length === 2, 'ציפיתי לשתי קריאות, היו ' + calls.length);
+      // פער של 50% מפעיל גם סיבוב תגובה, ולכן ארבע קריאות
+      assert(calls.length === 4, 'ציפיתי לארבע קריאות, היו ' + calls.length);
       assert(!result.sameProvider, 'אמורים להיות שני ספקים');
       assert(result.leanProvider === 'Gemini' && result.richProvider === 'OpenRouter',
         'הספקים: ' + result.leanProvider + ' / ' + result.richProvider);
@@ -726,6 +727,95 @@ test('מודל שהוצא משימוש מוחלף בשם שהשרת הציע', (
     assert(tried[0] === 'gemini-old', 'לא ניסה קודם את המקורי');
     assert(tried.indexOf('gemini-3.6-flash') !== -1, 'לא עבר לשם החליפי');
     assert(picked === 'gemini-3.6-flash', 'השם החדש לא דווח לשמירה');
+  });
+});
+
+test('שמות שונים לאותו מאכל מזוהים כאותו פריט', () => {
+  const same = w.Estimate.sameFood;
+  assert(same('תירס מבושל (שני קלחים)', 'תירס בקלח'), 'תירס');
+  assert(same('חזה עוף בגריל', 'עוף'), 'עוף');
+  assert(same('אורז לבן', 'אורז'), 'אורז');
+  assert(!same('תירס', 'עוף'), 'מאכלים שונים');
+  assert(!same('', 'תירס'), 'שם ריק');
+  // מילות תיאור לבדן אינן מספיקות
+  assert(!same('שני קלחים', 'שתי פרוסות'), 'רק מילות כמות');
+});
+
+test('פער בכמות על אותו פריט מזוהה', () => {
+  const shared = w.Estimate.sharedItems(
+    { items: [{ name: 'תירס מבושל (שני קלחים)', grams: 160, kcal: 140 }] },
+    { items: [{ name: 'תירס בקלח', grams: 260, kcal: 230 }] }
+  );
+  assert(shared.length === 1, 'לא זוהה פריט משותף');
+  assert(shared[0].leanGrams === 160 && shared[0].richGrams === 260,
+    'הכמויות: ' + JSON.stringify(shared[0]));
+
+  // ולכן הוא כבר לא מופיע כ"רק אחד ראה"
+  const diff = w.Estimate.itemDifferences(
+    { items: [{ name: 'תירס מבושל (שני קלחים)' }] },
+    { items: [{ name: 'תירס בקלח' }] }
+  );
+  assert(diff.onlyLean.length === 0 && diff.onlyRich.length === 0,
+    'הפריט סומן בטעות כייחודי');
+});
+
+test('פער גדול מפעיל סיבוב תגובה', () => {
+  const prompts = [];
+  let round = 0;
+
+  w.fetch = (url, opts) => {
+    const body = JSON.parse(opts.body);
+    const text = JSON.stringify(body.messages || body.contents);
+    prompts.push(text);
+    round++;
+
+    // שתי ההערכות הראשונות רחוקות; בתגובה שניהם מתכנסים
+    const kcal = round <= 2 ? (round === 1 ? 200 : 400) : 300;
+    return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
+      JSON.stringify({ choices: [{ message: { content: answer(kcal) } }] })) });
+  };
+
+  return w.Estimate.run([{ key: 'sk-or-X', model: 'm:free' }], IMAGE).then((result) => {
+    assert(prompts.length === 4, 'ציפיתי לארבע קריאות, היו ' + prompts.length);
+    assert(prompts[2].indexOf('מעריך אחר') !== -1, 'התגובה לא כללה את הערכת השני');
+    assert(result.firstRound, 'הסיבוב הראשון לא נשמר');
+    assert(result.firstRound.lean.kcal === 200, 'ההערכה הראשונה של השמרן');
+    assert(result.lean.kcal === 300, 'ההערכה אחרי התגובה');
+    assert(result.movement.lean === 100, 'התזוזה: ' + result.movement.lean);
+    assert(result.verdict.confidence === 'high', 'אחרי ההתכנסות הביטחון אמור לעלות');
+  });
+});
+
+test('פער קטן חוסך את סיבוב התגובה', () => {
+  let calls = 0;
+  w.fetch = () => {
+    calls++;
+    return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
+      JSON.stringify({ choices: [{ message: { content: answer(800) } }] })) });
+  };
+
+  return w.Estimate.run([{ key: 'sk-or-X', model: 'm:free' }], IMAGE).then((result) => {
+    assert(calls === 2, 'ציפיתי לשתי קריאות בלבד, היו ' + calls);
+    assert(result.firstRound === null, 'לא אמור להיות סיבוב ראשון נפרד');
+    assert(result.movement === null, 'אין תזוזה למדוד');
+  });
+});
+
+test('כישלון בסיבוב התגובה לא מפיל את ההערכה', () => {
+  let calls = 0;
+  w.fetch = () => {
+    calls++;
+    if (calls > 2) {
+      return Promise.resolve({ ok: false, status: 500, text: () => Promise.resolve('boom') });
+    }
+    return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
+      JSON.stringify({ choices: [{ message: { content: answer(calls === 1 ? 200 : 400) } }] })) });
+  };
+
+  return w.Estimate.run([{ key: 'sk-or-X', model: 'm:free' }], IMAGE).then((result) => {
+    // התגובה נכשלה, ולכן נשמרות ההערכות המקוריות
+    assert(result.lean.kcal === 200 && result.rich.kcal === 400, 'ההערכות המקוריות אבדו');
+    assert(result.verdict.fields.kcal === 300, 'ההכרעה: ' + result.verdict.fields.kcal);
   });
 });
 

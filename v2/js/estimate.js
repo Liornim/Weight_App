@@ -190,6 +190,39 @@
     return result;
   }
 
+  // מילים שמופיעות בשמות פריטים ואינן מזהות אותם
+  var NOISE = ['מבושל', 'מבושלת', 'קלוי', 'צלוי', 'טרי', 'טרייה', 'עם', 'ללא',
+    'גדול', 'קטן', 'בינוני', 'שני', 'שתי', 'קלחים', 'קלח', 'יחידות', 'פרוסות'];
+
+  function nameTokens(name) {
+    return String(name || '')
+      .replace(/\([^)]*\)/g, ' ')       // הערות בסוגריים אינן חלק מהשם
+      .replace(/[^\u0590-\u05FFa-zA-Z ]/g, ' ')
+      .split(/\s+/)
+      .map(function (word) { return word.trim(); })
+      .filter(function (word) {
+        return word.length > 1 && NOISE.indexOf(word) === -1;
+      });
+  }
+
+  /**
+   * האם שני שמות מתארים את אותו מאכל.
+   *
+   * השוואת מחרוזות שלמות נכשלה: "תירס מבושל (שני קלחים)" ו"תירס בקלח"
+   * הם אותו דבר, ואף אחד מהם אינו מוכל בשני. לכן ההשוואה היא על
+   * מילות התוכן — די במילה משמעותית משותפת אחת.
+   */
+  function sameFood(a, b) {
+    var first = nameTokens(a);
+    var second = nameTokens(b);
+    if (!first.length || !second.length) return false;
+    return first.some(function (word) {
+      return second.some(function (other) {
+        return word === other || word.indexOf(other) === 0 || other.indexOf(word) === 0;
+      });
+    });
+  }
+
   /** מוצא פריטים שרק אחד מהמעריכים ראה — שם בדרך כלל מקור הפער */
   function itemDifferences(a, b) {
     var namesOf = function (data) {
@@ -199,16 +232,37 @@
     };
     var first = namesOf(a);
     var second = namesOf(b);
-    var has = function (list, name) {
-      return list.some(function (other) {
-        return other === name || other.indexOf(name) !== -1 || name.indexOf(other) !== -1;
-      });
-    };
 
     return {
-      onlyLean: first.filter(function (name) { return !has(second, name); }),
-      onlyRich: second.filter(function (name) { return !has(first, name); })
+      onlyLean: first.filter(function (name) {
+        return !second.some(function (other) { return sameFood(name, other); });
+      }),
+      onlyRich: second.filter(function (name) {
+        return !first.some(function (other) { return sameFood(name, other); });
+      })
     };
+  }
+
+  /** פריטים ששניהם ראו, עם הפער בכמות — שם נמצא רוב ההבדל */
+  function sharedItems(a, b) {
+    var itemsOf = function (data) { return (data && data.items) || []; };
+    var pairs = [];
+
+    itemsOf(a).forEach(function (mine) {
+      var match = itemsOf(b).find(function (theirs) {
+        return sameFood(mine.name, theirs.name);
+      });
+      if (!match) return;
+      pairs.push({
+        name: mine.name,
+        leanGrams: num(mine.grams),
+        richGrams: num(match.grams),
+        leanKcal: num(mine.kcal),
+        richKcal: num(match.kcal)
+      });
+    });
+
+    return pairs;
   }
 
   /**
@@ -293,14 +347,74 @@
         })
       : Promise.all([ask(leanAccount, LEAN), ask(richAccount, RICH)]);
 
+    /**
+     * סיבוב תגובה: כל צד רואה את הערכת השני ומגיב.
+     *
+     * זה הלב של הרעיון. הערכה ראשונה היא ניחוש; אחרי שרואים מספר
+     * אחר צריך להצדיק את הפער או להודות בו, וזה מוציא החוצה את
+     * ההנחה שגרמה לו — בדרך כלל הכמות או השמן.
+     */
+    var rebut = function (account, system, mine, theirs) {
+      var text = 'זו ההערכה שלך על התמונה:\n' + JSON.stringify(mine) +
+        '\n\nמעריך אחר בחן את אותה תמונה והגיע למספרים אחרים:\n' +
+        JSON.stringify(theirs) +
+        '\n\nהפער ביניכם הוא בעיקר בכמות. בדוק שוב את התמונה: ' +
+        'היכן הוא מדויק ממך, והיכן אתה ממנו? ' +
+        'אם השתכנעת — עדכן את המספרים. אם לא — השאר אותם. ' +
+        'ב-reasoning כתוב בעברית משפט אחד: מה שינית ולמה, או למה לא שינית. ' +
+        'ענה באותו מבנה JSON בדיוק.';
+
+      return request(account, system, text).then(function (answer) {
+        var parsed = parseAnswer(answer);
+        return plausible(parsed) ? parsed : mine;
+      }).catch(function () { return mine; });
+    };
+
     return both.then(function (answers) {
-      stage('משווה בין ההערכות');
       var lean = answers[0];
       var rich = answers[1];
+
+      var gap = Math.abs(num(lean.kcal) - num(rich.kcal));
+      var mean = (num(lean.kcal) + num(rich.kcal)) / 2;
+      var share = mean ? gap / mean : 0;
+
+      // כששניהם כבר מסכימים אין על מה להתווכח
+      if (share < 0.12) {
+        stage('שני המעריכים קרובים; אין צורך בוויכוח');
+        return { lean: lean, rich: rich, first: null };
+      }
+
+      stage('הפער ' + Math.round(share * 100) + '% — כל מעריך רואה את השני ומגיב');
+
+      var rebuttals = shared
+        ? rebut(leanAccount, LEAN, lean, rich).then(function (l) {
+            return rebut(richAccount, RICH, rich, lean).then(function (r) { return [l, r]; });
+          })
+        : Promise.all([
+            rebut(leanAccount, LEAN, lean, rich),
+            rebut(richAccount, RICH, rich, lean)
+          ]);
+
+      return rebuttals.then(function (revised) {
+        return { lean: revised[0], rich: revised[1], first: { lean: lean, rich: rich } };
+      });
+    }).then(function (state) {
+      stage('משווה בין ההערכות');
+      var lean = state.lean;
+      var rich = state.rich;
+
+      // כמה כל צד זז אחרי ששמע את השני
+      var movement = state.first ? {
+        lean: num(lean.kcal) - num(state.first.lean.kcal),
+        rich: num(rich.kcal) - num(state.first.rich.kcal)
+      } : null;
 
       return {
         lean: lean,
         rich: rich,
+        firstRound: state.first,
+        movement: movement,
+        shared: sharedItems(lean, rich),
         // מודל שנבחר אוטומטית אחרי שהמקורי לא היה זמין
         pickedModel: picked[richAccount.key] || picked[leanAccount.key] || null,
         leanProvider: root.Providers.label(leanAccount.key, leanAccount.provider),
@@ -330,6 +444,8 @@
   root.Estimate = {
     run: run,
     plausible: plausible,
+    sameFood: sameFood,
+    sharedItems: sharedItems,
     readImage: readImage,
     parseAnswer: parseAnswer,
     reconcile: reconcile,

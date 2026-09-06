@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd19',
+    BUILD: 'd20',
     state: {
       date: Dates.today(),
       asOf: 0,             // עד מתי למדוד: היום, שבוע שעבר, שבועיים
@@ -458,17 +458,36 @@
         '</details>';
     };
 
-    var missed = '';
+    // איפה בדיוק הם נחלקו: אותו מאכל בכמויות שונות, ופריטים שרק
+    // אחד מהם ראה
+    var lines = [];
+
+    (result.shared || []).forEach(function (item) {
+      if (!Fmt.isNum(item.leanGrams) || !Fmt.isNum(item.richGrams)) return;
+      if (Math.abs(item.leanGrams - item.richGrams) < 5) return;
+      lines.push(item.name + ': ' + Fmt.n(item.leanGrams, 0) + ' מול ' +
+        Fmt.n(item.richGrams, 0) + ' גרם');
+    });
+
     var diff = result.differences;
-    if (diff.onlyLean.length || diff.onlyRich.length) {
-      var lines = [];
-      if (diff.onlyRich.length) {
-        lines.push('רק המחמיר ראה: ' + diff.onlyRich.join(', '));
-      }
-      if (diff.onlyLean.length) {
-        lines.push('רק השמרן ראה: ' + diff.onlyLean.join(', '));
-      }
-      missed = '<p class="why">' + Fmt.esc(lines.join(' · ')) + '</p>';
+    if (diff.onlyRich.length) lines.push('רק המחמיר ספר: ' + diff.onlyRich.join(', '));
+    if (diff.onlyLean.length) lines.push('רק השמרן ספר: ' + diff.onlyLean.join(', '));
+
+    var missed = lines.length
+      ? '<p class="why"><b>במה נחלקו:</b> ' + Fmt.esc(lines.join(' · ')) + '</p>'
+      : '';
+
+    // כמה כל צד זז אחרי ששמע את השני
+    var moved = '';
+    if (result.movement) {
+      var describe = function (name, delta) {
+        if (!Fmt.isNum(delta) || Math.abs(delta) < 10) return name + ' לא זז';
+        return name + ' ' + (delta > 0 ? 'העלה' : 'הוריד') + ' ב-' +
+          Fmt.n(Math.abs(delta), 0);
+      };
+      moved = '<p class="why"><b>אחרי הוויכוח:</b> ' +
+        Fmt.esc(describe('השמרן', result.movement.lean) + ' · ' +
+          describe('המחמיר', result.movement.rich)) + '</p>';
     }
 
     var range = v.range
@@ -491,13 +510,19 @@
               : '') + '</div>'
           : '') +
         (v.agreement ? '<p class="why">' + Fmt.esc(v.agreement) + '</p>' : '') +
-        range + missed +
+        range + missed + moved +
         (v.notes.length ? '<p class="why">' + Fmt.esc(v.notes.join(' ')) + '</p>' : '') +
         '<button type="button" class="btn btn--primary" id="apply-estimate">הזן לטופס</button>' +
       '</div>' +
       '<div class="rounds">' +
-        side('שמרן', result.leanProvider, result.lean) +
-        side('מחמיר', result.richProvider, result.rich) +
+        side(result.firstRound ? 'שמרן — אחרי הוויכוח' : 'שמרן',
+          result.leanProvider, result.lean) +
+        side(result.firstRound ? 'מחמיר — אחרי הוויכוח' : 'מחמיר',
+          result.richProvider, result.rich) +
+        (result.firstRound
+          ? side('שמרן — הערכה ראשונה', result.leanProvider, result.firstRound.lean) +
+            side('מחמיר — הערכה ראשונה', result.richProvider, result.firstRound.rich)
+          : '') +
       '</div>' +
       (result.sameProvider
         ? '<p class="why">שתי ההערכות מאותו מודל. מפתח שני, ממשפחה אחרת, ' +
