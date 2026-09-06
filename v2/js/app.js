@@ -212,8 +212,9 @@
       });
     }
 
-    var photo = view.querySelector('#photo');
-    if (photo) photo.addEventListener('change', function () { runDebate(photo, view); });
+    view.querySelectorAll('.photo-input').forEach(function (input) {
+      input.addEventListener('change', function () { runDebate(input, view); });
+    });
 
     var pull = view.querySelector('#pull');
     if (pull) {
@@ -256,6 +257,13 @@
 
     var show = function (html) { if (box) box.innerHTML = html; };
     show('<p class="stage">קורא את התמונה…</p>');
+
+    // תצוגה מקדימה, כדי שיהיה ברור איזו תמונה נשלחה
+    var preview = view.querySelector('#preview');
+    if (preview && root.URL && root.URL.createObjectURL) {
+      preview.innerHTML = '<img class="shot" alt="התמונה שנבחרה" src="' +
+        root.URL.createObjectURL(file) + '">';
+    }
 
     root.Estimate.readImage(file).then(function (image) {
       return root.Estimate.run(accounts, image, function (message) {

@@ -55,7 +55,8 @@ const IMAGE = { base64: 'BASE64DATA', mediaType: 'image/jpeg' };
 const tests = [
   test('זיהוי הספק לפי צורת המפתח', () => {
     const P = w.Providers;
-    assert(P.detect('AIzaSyABC') === 'gemini', 'Gemini');
+    assert(P.detect('AIzaSyABC') === 'gemini', 'Gemini בפורמט הישן');
+    assert(P.detect('AQ.Ab8RN6Ky_hPxp0') === 'gemini', 'Gemini בפורמט החדש');
     assert(P.detect('sk-or-v1-abc') === 'openrouter', 'OpenRouter');
     assert(P.detect('sk-ant-abc') === 'anthropic', 'Anthropic');
     assert(P.detect('משהו אחר') === null, 'לא מזוהה');
@@ -184,9 +185,9 @@ const tests = [
 
   test('אפשר לבחור ספק ידנית כשהמפתח לא מזוהה', () => {
     const P = w.Providers;
-    assert(P.detect('AQ.Ab8RN6xyz') === null, 'מפתח בצורה לא מוכרת');
-    assert(P.detect('AQ.Ab8RN6xyz', 'gemini') === 'gemini', 'העקיפה לא נלקחה');
-    assert(P.label('AQ.Ab8RN6xyz', 'gemini') === 'Gemini', 'התווית');
+    assert(P.detect('xyz-unknown-format') === null, 'מפתח בצורה לא מוכרת');
+    assert(P.detect('xyz-unknown-format', 'gemini') === 'gemini', 'העקיפה לא נלקחה');
+    assert(P.label('xyz-unknown-format', 'gemini') === 'Gemini', 'התווית');
     assert(P.detect('AIzaX', 'openrouter') === 'openrouter', 'העקיפה גוברת על הזיהוי');
 
     const list = P.options();
@@ -200,7 +201,7 @@ const tests = [
     }));
 
     return w.Providers.ask({
-      key: 'AQ.Ab8RN6xyz', provider: 'gemini', system: 's', image: IMAGE, text: 't'
+      key: 'unknown-format-key', provider: 'gemini', system: 's', image: IMAGE, text: 't'
     }).then(() => {
       assert(calls[0].url.indexOf('generativelanguage') !== -1,
         'לא פנה ל-Gemini: ' + calls[0].url);
@@ -208,7 +209,7 @@ const tests = [
   }),
 
   test('מפתח לא מזוהה ובלי בחירה -> שגיאה מנחה', () => {
-    return w.Providers.ask({ key: 'AQ.xyz', system: 's', image: IMAGE, text: 't' })
+    return w.Providers.ask({ key: 'totally-unknown', system: 's', image: IMAGE, text: 't' })
       .then(() => { throw new Error('היה צריך להיכשל'); },
         (error) => assert(error.message.indexOf('ידנית') !== -1,
           'השגיאה לא מנחה מה לעשות: ' + error.message));

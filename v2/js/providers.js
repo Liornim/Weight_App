@@ -13,7 +13,9 @@
   var PROVIDERS = {
     gemini: {
       label: 'Gemini',
-      test: function (key) { return /^AIza/.test(key); },
+      // גוגל מנפיקה שני פורמטים: AIza הישן ו-AQ. החדש מ-AI Studio.
+      // שניהם תקפים, ושניהם נשלחים באותה דרך.
+      test: function (key) { return /^AIza/.test(key) || /^AQ\./.test(key); },
       defaultModel: 'gemini-2.0-flash',
       free: true,
       keyHint: 'aistudio.google.com/apikey'

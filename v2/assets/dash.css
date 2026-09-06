@@ -325,14 +325,32 @@ html, body {
 
 .field .unit { color: var(--ink-faint); }
 
-input[type='file'] {
-  font: inherit;
-  font-size: 13.5px;
-  width: 100%;
-  padding: 14px;
+/* שתי דרכים להביא תמונה: מצלמה או גלריה. שדה הקובץ עצמו מוסתר,
+   והתווית היא הכפתור — כך אפשר לעצב אותו כמו שאר הכפתורים. */
+.pick-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.pick-btn {
+  flex: 1 1 140px;
+  text-align: center;
+  font-size: 14px;
+  padding: 14px 16px;
   border: 1px dashed var(--rule);
   border-radius: var(--radius-sm);
   background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.pick-btn:active { background: var(--measured-10, rgba(18,133,124,0.08)); }
+.photo-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+.shot {
+  display: block;
+  width: 100%;
+  max-height: 260px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  margin-top: 12px;
 }
 
 textarea {

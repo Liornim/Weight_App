@@ -382,8 +382,42 @@ test('העלאת תמונה מופיעה רק עם מפתח, הדבקה תמיד
 });
 
 
+
+test('אפשר להעלות מהגלריה וגם לצלם', () => {
+  Store.updateSettings({ aiKeyA: 'AQ.Ab8RN6Ky_test' });
+  App.setState({ date: Dates.today() });
+
+  const camera = doc.querySelector('#photo-camera');
+  const gallery = doc.querySelector('#photo');
+  assert(camera, 'כפתור הצילום חסר');
+  assert(gallery, 'כפתור הגלריה חסר');
+
+  // הצילום מבקש את המצלמה, הגלריה לא
+  assert(camera.getAttribute('capture') === 'environment', 'הצילום לא פותח מצלמה');
+  assert(!gallery.hasAttribute('capture'), 'הגלריה לא אמורה לפתוח מצלמה');
+  assert(gallery.getAttribute('accept') === 'image/*', 'הגלריה מוגבלת לתמונות');
+
+  // שניהם מחוברים לאותו מנגנון
+  assert(doc.querySelectorAll('.photo-input').length === 2, 'ציפיתי לשני שדות');
+
+  Store.updateSettings({ aiKeyA: '' });
+});
+
+test('מפתח Gemini בפורמט החדש מזוהה בלי בורר', () => {
+  Store.updateSettings({ aiKeyA: 'AQ.Ab8RN6Ky_hPxp0JeCEien', aiProviderA: '', aiKeyB: '' });
+  App.setState({ date: Dates.today() });
+
+  assert(!doc.querySelector('[data-provider="aiProviderA"]'),
+    'לא אמור להידרש בורר ספק');
+  const card = [...doc.querySelectorAll('#view .card')]
+    .find((c) => c.textContent.includes('העלאת תמונה'));
+  assert(card && card.textContent.includes('Gemini'), 'הספק לא זוהה');
+
+  Store.updateSettings({ aiKeyA: '' });
+});
+
 test('מפתח לא מזוהה מציג בורר ספק', () => {
-  Store.updateSettings({ aiKeyA: 'AQ.Ab8RN6xyz', aiProviderA: '', aiKeyB: '' });
+  Store.updateSettings({ aiKeyA: 'unknown-format-key', aiProviderA: '', aiKeyB: '' });
   App.setState({ date: Dates.today() });
 
   const picker = doc.querySelector('[data-provider="aiProviderA"]');

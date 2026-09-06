@@ -466,7 +466,14 @@
         : who[0] + ' מעריך פעמיים, פעם בזהירות ופעם בהחמרה';
 
       auto = P.card('העלאת תמונה', note,
-        '<input type="file" id="photo" accept="image/*" capture="environment">' +
+        '<div class="pick-row">' +
+          '<label class="pick-btn" for="photo-camera">צילום עכשיו' +
+            '<input type="file" id="photo-camera" class="photo-input" ' +
+            'accept="image/*" capture="environment"></label>' +
+          '<label class="pick-btn" for="photo">בחירה מהגלריה' +
+            '<input type="file" id="photo" class="photo-input" accept="image/*"></label>' +
+        '</div>' +
+        '<div id="preview"></div>' +
         '<div id="debate"></div>' +
         P.hint('הערכת כמות מתמונה שוגה בדרך כלל ב-20 עד 30 אחוז, כי אי אפשר לראות ' +
           'כמה שמן היה במחבת ומה מתחת לפני השטח. ' +
@@ -548,9 +555,8 @@
           P.esc(settings.aiModelB || '') + '"></div>'
         : '') +
 
-      P.hint('שני מפתחות חינמיים: Gemini ב-aistudio.google.com/apikey — ' +
-        'המפתח משם מתחיל ב-AIza; ו-OpenRouter ב-openrouter.ai/keys, ' +
-        'שם בוחרים מודל שהשם שלו מסתיים ב-free. ' +
+      P.hint('שני מפתחות חינמיים: Gemini ב-aistudio.google.com/apikey, ' +
+        'ו-OpenRouter ב-openrouter.ai/keys — שם בוחרים מודל שהשם שלו מסתיים ב-free. ' +
         'עם שניהם הוויכוח הוא בין מודלים ממשפחות שונות; עם אחד בלבד הוא ' +
         'בין שתי עמדות של אותו מודל. המפתחות נשמרים במכשיר הזה בלבד.') +
 
