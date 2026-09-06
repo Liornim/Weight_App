@@ -94,6 +94,69 @@ test('הבקשה ל-Gemini נבנית בפורמט שלה', () => {
     });
   });
 
+test('מפתח AQ נשלח כ-Bearer, ומפתח AIza בכתובת', () => {
+  const seen = [];
+  w.fetch = (url, opts) => {
+    seen.push({ url, headers: opts.headers });
+    return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
+      JSON.stringify({ candidates: [{ content: { parts: [{ text: answer(700) }] } }] })) });
+  };
+
+  return w.Providers.ask({ key: 'AQ.NEWKEY', system: 's', image: IMAGE, text: 't' })
+    .then(() => {
+      assert(seen[0].headers.Authorization === 'Bearer AQ.NEWKEY',
+        'מפתח AQ אמור להישלח ככותרת Bearer');
+      assert(seen[0].url.indexOf('?key=') === -1, 'ולא בכתובת');
+
+      seen.length = 0;
+      return w.Providers.ask({ key: 'AIzaOLD', system: 's', image: IMAGE, text: 't' });
+    })
+    .then(() => {
+      assert(seen[0].url.indexOf('?key=AIzaOLD') !== -1, 'מפתח AIza אמור להישלח בכתובת');
+      assert(!seen[0].headers.Authorization, 'ובלי כותרת Bearer');
+    });
+});
+
+test('כשדרך ההזדהות נדחית, מנוסה הדרך הבאה', () => {
+  const tried = [];
+  w.fetch = (url, opts) => {
+    const how = opts.headers.Authorization ? 'bearer'
+      : opts.headers['x-goog-api-key'] ? 'header'
+      : 'query';
+    tried.push(how);
+
+    // רק הדרך השלישית מצליחה
+    if (tried.length < 3) {
+      return Promise.resolve({ ok: false, status: 401, text: () => Promise.resolve(
+        '{"error":{"code":401,"message":"Expected OAuth 2 access token"}}') });
+    }
+    return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
+      JSON.stringify({ candidates: [{ content: { parts: [{ text: answer(700) }] } }] })) });
+  };
+
+  return w.Providers.ask({ key: 'AQ.KEY', system: 's', image: IMAGE, text: 't' })
+    .then((text) => {
+      assert(text.indexOf('700') !== -1, 'לא חזרה תשובה');
+      assert(tried.length === 3, 'ציפיתי לשלושה ניסיונות, היו ' + tried.length);
+      assert(tried[0] === 'bearer', 'הניסיון הראשון למפתח AQ צריך להיות Bearer');
+    });
+});
+
+test('שגיאה שאינה הזדהות לא גוררת ניסיונות נוספים', () => {
+  let calls = 0;
+  w.fetch = () => {
+    calls++;
+    return Promise.resolve({ ok: false, status: 500, text: () => Promise.resolve('boom') });
+  };
+
+  return w.Providers.ask({ key: 'AQ.KEY', system: 's', image: IMAGE, text: 't' })
+    .then(() => { throw new Error('היה צריך להיכשל'); },
+      (error) => {
+        assert(calls === 1, 'ניסה ' + calls + ' פעמים במקום אחת');
+        assert(error.message.indexOf('500') !== -1, 'קוד השגיאה חסר');
+      });
+});
+
 test('הבקשה ל-OpenRouter נבנית בפורמט שלה', () => {
     const calls = stub(() => JSON.stringify({
       choices: [{ message: { content: answer(900) } }]

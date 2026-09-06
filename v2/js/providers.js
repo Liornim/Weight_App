@@ -74,33 +74,76 @@
 
   // --- Gemini ---
 
+  /**
+   * ל-Gemini יש שלוש דרכים מתועדות להעביר מפתח, וההודעה
+   * "Expected OAuth 2 access token" חוזרת כשהדרך שנבחרה לא מתאימה
+   * לסוג המפתח. המפתחות הישנים (AIza) עובדים עם פרמטר בכתובת;
+   * החדשים (AQ.) הם auth keys ונשלחים ככותרת Bearer.
+   *
+   * במקום להמר, כל דרך מנוסה בתורה עד שאחת מצליחה. הסדר נקבע לפי
+   * צורת המפתח, כדי שהמקרה הנפוץ יעבוד בניסיון הראשון.
+   */
+  function geminiAttempts(key) {
+    var viaQuery = { name: 'query', url: '?key=' + encodeURIComponent(key), headers: {} };
+    var viaHeader = { name: 'x-goog-api-key', url: '', headers: { 'x-goog-api-key': key } };
+    var viaBearer = { name: 'bearer', url: '', headers: { Authorization: 'Bearer ' + key } };
+
+    return /^AQ\./.test(key)
+      ? [viaBearer, viaHeader, viaQuery]
+      : [viaQuery, viaHeader, viaBearer];
+  }
+
+  function isAuthProblem(error) {
+    var text = String(error && error.message || '');
+    return text.indexOf('401') !== -1 || text.indexOf('403') !== -1;
+  }
+
   function callGemini(key, model, system, image, text) {
-    var url = 'https://generativelanguage.googleapis.com/v1beta/models/' +
-      encodeURIComponent(model) + ':generateContent?key=' + encodeURIComponent(key);
+    var base = 'https://generativelanguage.googleapis.com/v1beta/models/' +
+      encodeURIComponent(model) + ':generateContent';
 
     var parts = [];
     if (image) parts.push({ inline_data: { mime_type: image.mediaType, data: image.base64 } });
     parts.push({ text: text });
 
-    return root.fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: system }] },
-        contents: [{ role: 'user', parts: parts }],
-        generationConfig: { temperature: 0.2, maxOutputTokens: 1400 }
-      })
-    }).then(function (response) {
-      return response.text().then(function (body) {
-        if (!response.ok) throw fail(response, body);
-        var data = JSON.parse(body);
-        var candidate = data.candidates && data.candidates[0];
-        if (!candidate) throw new Error('לא חזרה תשובה מ-Gemini');
-        return (candidate.content.parts || [])
-          .map(function (part) { return part.text || ''; })
-          .join('\n');
-      });
+    var body = JSON.stringify({
+      systemInstruction: { parts: [{ text: system }] },
+      contents: [{ role: 'user', parts: parts }],
+      generationConfig: { temperature: 0.2, maxOutputTokens: 1400 }
     });
+
+    var attempts = geminiAttempts(key);
+
+    var tryAt = function (index, lastError) {
+      if (index >= attempts.length) {
+        throw lastError || new Error('כל דרכי ההזדהות מול Gemini נכשלו');
+      }
+      var attempt = attempts[index];
+      var headers = { 'Content-Type': 'application/json' };
+      Object.keys(attempt.headers).forEach(function (name) {
+        headers[name] = attempt.headers[name];
+      });
+
+      return root.fetch(base + attempt.url, { method: 'POST', headers: headers, body: body })
+        .then(function (response) {
+          return response.text().then(function (raw) {
+            if (!response.ok) throw fail(response, raw);
+            var data = JSON.parse(raw);
+            var candidate = data.candidates && data.candidates[0];
+            if (!candidate) throw new Error('לא חזרה תשובה מ-Gemini');
+            return (candidate.content.parts || [])
+              .map(function (part) { return part.text || ''; })
+              .join('\n');
+          });
+        })
+        .catch(function (error) {
+          // רק בעיית הזדהות מצדיקה ניסיון בדרך אחרת
+          if (!isAuthProblem(error)) throw error;
+          return tryAt(index + 1, error);
+        });
+    };
+
+    return tryAt(0, null);
   }
 
   // --- OpenRouter ---

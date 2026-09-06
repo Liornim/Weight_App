@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd8',
+    BUILD: 'd9',
     state: {
       date: Dates.today(),
       asOf: 0,             // עד מתי למדוד: היום, שבוע שעבר, שבועיים
@@ -328,8 +328,31 @@
         });
       }
     }).catch(function (error) {
-      show('<p class="stage stage--bad">' + root.Fmt.esc(error.message) + '</p>');
+      show('<p class="stage stage--bad">' + root.Fmt.esc(error.message) + '</p>' +
+        diagnose(error.message));
     });
+  }
+
+  /** הופך שגיאת שרת להנחיה מה לעשות */
+  function diagnose(message) {
+    var text = String(message || '');
+    var advice = null;
+
+    if (text.indexOf('401') !== -1 || text.indexOf('invalid authentication') !== -1) {
+      advice = 'המפתח נדחה. ודא שהעתקת אותו במלואו — בדף של גוגל הוא מוצג מקוצר ' +
+        'עם שלוש נקודות, וצריך ללחוץ על סמל ההעתקה ולא לסמן את הטקסט. ' +
+        'אם הוא הועתק במלואו, ייתכן שצריך להפעיל את Generative Language API בפרויקט.';
+    } else if (text.indexOf('403') !== -1) {
+      advice = 'המפתח תקין אבל אין לו הרשאה. בדרך כלל זה אומר שה-API לא מופעל ' +
+        'בפרויקט, או שהמפתח מוגבל לכתובות מסוימות.';
+    } else if (text.indexOf('429') !== -1) {
+      advice = 'חרגת מהמכסה החינמית. שווה לנסות שוב מאוחר יותר.';
+    } else if (text.indexOf('404') !== -1) {
+      advice = 'המודל שנבחר אינו זמין. המערכת מנסה למצוא חלופה לבד; ' +
+        'אם זה חוזר, אפשר למחוק את המפתח השני ולהמשיך עם אחד בלבד.';
+    }
+
+    return advice ? '<p class="why">' + root.Fmt.esc(advice) + '</p>' : '';
   }
 
   function renderDebate(result) {
