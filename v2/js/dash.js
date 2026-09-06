@@ -484,7 +484,7 @@
   function providerLabel(key) {
     if (!key) return 'ריק';
     var name = root.Providers.detect(key);
-    return name ? root.Providers.PROVIDERS[name].label : 'לא מזוהה';
+    return name ? root.Providers.PROVIDERS[name].label : 'לא מזוהה — בדוק את הפורמט';
   }
 
   function settingsSection(state, entries, settings) {

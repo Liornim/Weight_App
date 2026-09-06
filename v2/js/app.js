@@ -107,7 +107,9 @@
         var provider = root.Providers.detect(value);
         App.toast(!value ? 'המפתח הוסר'
           : provider ? 'מפתח ' + root.Providers.PROVIDERS[provider].label + ' נשמר במכשיר'
-          : 'המפתח לא מזוהה כשייך לספק מוכר');
+          // הודעה מכוונת: מפתח בפורמט אחר הוא בדרך כלל אסימון התחברות
+          // ולא מפתח API, וכדאי לומר במה בדיוק צריך להתחיל
+          : 'המפתח לא מזוהה. מפתח Gemini מתחיל ב-AIza, של OpenRouter ב-sk-or');
       });
     });
 
