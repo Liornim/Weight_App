@@ -37,8 +37,9 @@ const answer = (kcal) => JSON.stringify({
 function stub(handler) {
   const calls = [];
   w.fetch = (url, opts) => {
-    const body = JSON.parse(opts.body);
-    calls.push({ url, headers: opts.headers, body });
+    // משיכת רשימת המודלים היא GET ואין לה גוף
+    const body = opts && opts.body ? JSON.parse(opts.body) : null;
+    calls.push({ url, headers: opts && opts.headers, body });
     return Promise.resolve({
       ok: true,
       status: 200,
@@ -213,6 +214,49 @@ const tests = [
       .then(() => { throw new Error('היה צריך להיכשל'); },
         (error) => assert(error.message.indexOf('ידנית') !== -1,
           'השגיאה לא מנחה מה לעשות: ' + error.message));
+  }),
+
+  test('רשימת המודלים מסננת לחינמיים שקוראים תמונות', () => {
+    stub(() => JSON.stringify({ data: [
+      { id: 'a/vision:free', name: 'Vision Free',
+        pricing: { prompt: '0', completion: '0' },
+        architecture: { input_modalities: ['text', 'image'] } },
+      { id: 'b/text:free', name: 'Text Free',
+        pricing: { prompt: '0', completion: '0' },
+        architecture: { input_modalities: ['text'] } },
+      { id: 'c/vision-paid', name: 'Vision Paid',
+        pricing: { prompt: '0.0001', completion: '0.0002' },
+        architecture: { input_modalities: ['text', 'image'] } },
+      { id: 'd/another:free', name: 'Another Free',
+        pricing: { prompt: '0', completion: '0' },
+        architecture: { input_modalities: ['image', 'text'] } }
+    ] }));
+
+    return w.Providers.freeVisionModels().then((models) => {
+      assert(models.length === 2, 'ציפיתי לשניים, קיבלתי ' + models.length);
+      const ids = models.map((m) => m.id);
+      assert(ids.indexOf('a/vision:free') !== -1, 'חסר המודל החינמי עם תמונות');
+      assert(ids.indexOf('d/another:free') !== -1, 'חסר המודל השני');
+      assert(ids.indexOf('b/text:free') === -1, 'מודל בלי תמונות נכנס');
+      assert(ids.indexOf('c/vision-paid') === -1, 'מודל בתשלום נכנס');
+      // ממוין לפי שם, כדי שהרשימה תהיה יציבה
+      assert(models[0].name === 'Another Free', 'לא ממוין: ' + models[0].name);
+    });
+  }),
+
+  test('רשימה ריקה או שגיאה מדווחות ולא קורסות', () => {
+    stub(() => JSON.stringify({ data: [] }));
+    return w.Providers.freeVisionModels().then((models) => {
+      assert(models.length === 0, 'רשימה ריקה');
+
+      w.fetch = () => Promise.resolve({
+        ok: false, status: 500, text: () => Promise.resolve('boom')
+      });
+      return w.Providers.freeVisionModels().then(
+        () => { throw new Error('היה צריך להיכשל'); },
+        (error) => assert(error.message.indexOf('500') !== -1, error.message)
+      );
+    });
   }),
 
   test('פענוח תשובה עמיד לעטיפות', () => {

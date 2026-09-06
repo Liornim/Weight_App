@@ -216,6 +216,43 @@
       input.addEventListener('change', function () { runDebate(input, view); });
     });
 
+    var loadModels = view.querySelector('#load-models');
+    if (loadModels) {
+      loadModels.addEventListener('click', function () {
+        var box = view.querySelector('#model-list');
+        box.innerHTML = '<p class="stage">מושך את הרשימה…</p>';
+
+        root.Providers.freeVisionModels().then(function (models) {
+          if (!models.length) {
+            box.innerHTML = '<p class="stage stage--bad">' +
+              'לא נמצאו מודלים חינמיים שקוראים תמונות כרגע.</p>';
+            return;
+          }
+
+          box.innerHTML = '<div class="field">' +
+            '<label for="model-pick">' + models.length + ' מודלים זמינים</label>' +
+            '<select id="model-pick">' + models.map(function (model) {
+              return '<option value="' + root.Fmt.esc(model.id) + '">' +
+                root.Fmt.esc(model.name) + '</option>';
+            }).join('') + '</select></div>';
+
+          var picker = box.querySelector('#model-pick');
+          var field = view.querySelector('[data-model="aiModelB"]');
+          if (field) field.value = picker.value;
+          Store.updateSettings({ aiModelB: picker.value });
+
+          picker.addEventListener('change', function () {
+            if (field) field.value = picker.value;
+            Store.updateSettings({ aiModelB: picker.value });
+            App.toast('המודל נבחר');
+          });
+        }).catch(function (error) {
+          box.innerHTML = '<p class="stage stage--bad">' +
+            root.Fmt.esc(error.message) + '</p>';
+        });
+      });
+    }
+
     var pull = view.querySelector('#pull');
     if (pull) {
       pull.addEventListener('click', function () {

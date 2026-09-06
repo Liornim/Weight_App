@@ -552,7 +552,10 @@
         ? '<div class="field"><label for="ai-model-b">מודל ב-OpenRouter</label>' +
           '<input id="ai-model-b" data-model="aiModelB" type="text" ' +
           'placeholder="' + P.esc(Providers.PROVIDERS.openrouter.defaultModel) + '" value="' +
-          P.esc(settings.aiModelB || '') + '"></div>'
+          P.esc(settings.aiModelB || '') + '"></div>' +
+          '<button type="button" class="btn" id="load-models">' +
+            'טעינת המודלים החינמיים שקוראים תמונות</button>' +
+          '<div id="model-list"></div>'
         : '') +
 
       P.hint('שני מפתחות חינמיים: Gemini ב-aistudio.google.com/apikey, ' +

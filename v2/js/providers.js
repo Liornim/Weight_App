@@ -23,7 +23,9 @@
     openrouter: {
       label: 'OpenRouter',
       test: function (key) { return /^sk-or-/.test(key); },
-      defaultModel: 'meta-llama/llama-3.2-90b-vision-instruct:free',
+      // שמות המודלים ב-OpenRouter משתנים תדיר, ולכן הרשימה נמשכת
+      // בזמן אמת במקום להיקבע כאן. זו רק נקודת התחלה.
+      defaultModel: 'google/gemini-2.0-flash-exp:free',
       free: true,
       keyHint: 'openrouter.ai/keys'
     },
@@ -198,8 +200,36 @@
     return CALLS[name](request.key, model, request.system, request.image, request.text);
   }
 
+  /**
+   * רשימת המודלים החינמיים שקוראים תמונות, ישירות מ-OpenRouter.
+   *
+   * שמות המודלים שם משתנים ונעלמים, וברירת מחדל קבועה בקוד מתיישנת
+   * ונותנת 404. עדיף למשוך את הרשימה ולתת לבחור ממנה.
+   */
+  function freeVisionModels() {
+    return root.fetch('https://openrouter.ai/api/v1/models')
+      .then(function (response) {
+        return response.text().then(function (body) {
+          if (!response.ok) throw fail(response, body);
+          var data = JSON.parse(body);
+          var models = (data && data.data) || [];
+
+          return models.filter(function (model) {
+            var pricing = model.pricing || {};
+            var isFree = Number(pricing.prompt) === 0 && Number(pricing.completion) === 0;
+            var input = (model.architecture && model.architecture.input_modalities) || [];
+            var readsImages = input.indexOf('image') !== -1;
+            return isFree && readsImages;
+          }).map(function (model) {
+            return { id: model.id, name: model.name || model.id };
+          }).sort(function (a, b) { return a.name.localeCompare(b.name); });
+        });
+      });
+  }
+
   root.Providers = {
     ask: ask,
+    freeVisionModels: freeVisionModels,
     detect: detect,
     label: label,
     options: options,
