@@ -422,6 +422,24 @@ textarea:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
 
 .round > summary::-webkit-details-marker { display: none; }
 .round ul { margin: 0; padding: 0 30px 10px; font-size: 13px; color: var(--ink-soft); }
+
+.round .items li {
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+
+.round .items b { color: var(--ink); font-weight: 600; }
+
+.round .items .macros,
+.round .items .basis-note,
+.round .items .per100 {
+  display: block;
+  font-size: 12px;
+}
+
+.round .items .macros { color: var(--ink-soft); }
+.round .items .basis-note { color: var(--ink-faint); font-style: italic; }
+.round .items .per100 { color: var(--ink-faint); }
 .round .why { padding: 0 14px 12px; margin: 0; }
 .round .low { color: var(--warn); font-size: 11.5px; }
 

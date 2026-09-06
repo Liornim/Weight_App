@@ -13,10 +13,18 @@
   'use strict';
 
   var BASE = 'אתה מעריך תזונה. מולך תמונה של ארוחה. ' +
-    'ענה ב-JSON בלבד, בלי טקסט לפני או אחרי ובלי סימני קוד. ' +
-    'המבנה: {"items":[{"name":"","grams":0,"kcal":0,"confidence":"high|medium|low"}],' +
-    '"kcal":0,"protein":0,"carbs":0,"fat":0,"fiber":0,"reasoning":""}. ' +
-    'שדות הסיכום הם הסכום על כל הפריטים. ' +
+    'ענה ב-JSON בלבד, בלי טקסט לפני או אחרי ובלי סימני קוד.\n' +
+    'המבנה:\n' +
+    '{"items":[{"name":"","grams":0,"basis":"","kcal":0,"protein":0,"carbs":0,' +
+    '"fat":0,"saturated":0,"fiber":0,"per100":{"kcal":0,"protein":0,"carbs":0,' +
+    '"fat":0,"saturated":0,"fiber":0},"confidence":"high|medium|low"}],' +
+    '"grams":0,"kcal":0,"protein":0,"carbs":0,"fat":0,"saturated":0,"fiber":0,' +
+    '"reasoning":""}\n' +
+    'לכל פריט: grams הוא המשקל שאתה מעריך בגרמים, per100 הם הערכים ל-100 גרם ' +
+    'של אותו מאכל, ו-basis הוא משפט קצר שמסביר על סמך מה הערכת את המשקל — ' +
+    'למשל השוואה לצלחת, לכף או ליד. ' +
+    'saturated הוא שומן רווי מתוך השומן הכולל.\n' +
+    'שדות הסיכום הם הסכום על כל הפריטים, כולל grams שהוא המשקל הכולל של המנה. ' +
     'ב-reasoning כתוב בעברית שתי שורות: על מה התבססת בהערכת הכמות, ומה לא ברור בתמונה.';
 
   var LEAN = BASE + '\n\nהעמדה שלך: מנות נראות גדולות יותר משהן במציאות. ' +
@@ -27,7 +35,7 @@
     'שמן בישול, רטבים, חמאה וסוכר מוסף כמעט תמיד נשכחים, וכף שמן אחת היא 120 קלוריות. ' +
     'בהתלבטות בין שתי כמויות — בחר בגבוהה.';
 
-  var SUM_FIELDS = ['kcal', 'protein', 'carbs', 'fat', 'fiber'];
+  var SUM_FIELDS = ['kcal', 'protein', 'carbs', 'fat', 'saturated', 'fiber', 'grams'];
 
   // גבולות שפויים לארוחה בודדת. מודל שמחזיר אפס או מספר אבסורדי
   // כנראה לא באמת ניתח את התמונה — למשל מודל לקריאת מסמכים
@@ -50,13 +58,47 @@
    * תוויות מהטקסט עצמו. עדיף לקלוט מספרים נכונים מטקסט חופשי מאשר
    * להיכשל על הפורמט.
    */
+  // הסדר קובע: "שומן רווי" חייב להיבדק לפני "שומן", אחרת הוא
+  // ייבלע לתוכו וערך אחד יגיע לשני השדות
   var LABELS = {
     kcal: ['קלוריות', 'קלוריה', 'קק"ל', 'קק״ל', 'calories', 'kcal', 'energy'],
     protein: ['חלבון', 'חלבונים', 'protein'],
     carbs: ['פחמימות', 'פחמימה', 'carbohydrates', 'carbs', 'carb'],
-    fat: ['שומן', 'שומנים', 'fat'],
-    fiber: ['סיבים', 'סיב', 'fiber', 'fibre']
+    saturated: ['שומן רווי', 'רווי', 'saturated fat', 'saturated'],
+    fat: ['שומן כולל', 'שומנים', 'שומן', 'total fat', 'fat'],
+    fiber: ['סיבים תזונתיים', 'סיבים', 'סיב', 'dietary fiber', 'fiber', 'fibre'],
+    grams: ['משקל כולל', 'משקל', 'weight']
   };
+
+  function fromTextField(clean, field, taken) {
+    var hit = null;
+
+    LABELS[field].some(function (word) {
+      // כל המופעים ולא רק הראשון: ב"שומן רווי 4, שומן 22" המופע
+      // הראשון של "שומן" נמצא בתוך "שומן רווי" וכבר נתפס, והערך
+      // הנכון נמצא רק במופע הבא
+      var at = clean.indexOf(word);
+
+      while (at !== -1) {
+        if (!taken[at]) {
+          var after = clean.slice(at + word.length, at + word.length + 40);
+          var match = after.match(/[\s:=־|-]*(-?[\d,]+(?:\.\d+)?)/);
+          if (match) {
+            var value = num(match[1].replace(/,/g, ''));
+            if (value !== null) {
+              for (var i = at; i < at + word.length; i++) taken[i] = true;
+              hit = value;
+              return true;
+            }
+          }
+        }
+        at = clean.indexOf(word, at + 1);
+      }
+      return false;
+    });
+
+    return hit;
+  }
 
   function fromJson(text) {
     var clean = String(text).replace(/```json/gi, '').replace(/```/g, '').trim();
@@ -74,20 +116,11 @@
   function fromText(text) {
     var clean = String(text);
     var found = {};
+    var taken = {};
 
     Object.keys(LABELS).forEach(function (field) {
-      LABELS[field].some(function (word) {
-        var at = clean.indexOf(word);
-        if (at === -1) return false;
-        // המספר הקרוב אחרי המילה, גם אם ביניהם נקודתיים או מקף
-        var after = clean.slice(at + word.length, at + word.length + 40);
-        var match = after.match(/[\s:=־|-]*(-?[\d,]+(?:\.\d+)?)/);
-        if (!match) return false;
-        var value = num(match[1].replace(/,/g, ''));
-        if (value === null) return false;
-        found[field] = value;
-        return true;
-      });
+      var value = fromTextField(clean, field, taken);
+      if (value !== null) found[field] = value;
     });
 
     if (num(found.kcal) === null) return null;

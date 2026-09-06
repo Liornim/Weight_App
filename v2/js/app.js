@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd15',
+    BUILD: 'd16',
     state: {
       date: Dates.today(),
       asOf: 0,             // עד מתי למדוד: היום, שבוע שעבר, שבועיים
@@ -398,16 +398,42 @@
     var v = result.verdict;
     var tone = v.confidence === 'high' ? 'good' : v.confidence === 'low' ? 'bad' : 'warn';
 
+    /** פירוט פריט: משקל, על סמך מה הוערך, וערכים ל-100 גרם */
+    var itemRow = function (item) {
+      var per = item.per100 || {};
+      var per100 = Fmt.isNum(per.kcal)
+        ? '<span class="per100">ל-100 גרם: ' + Fmt.n(per.kcal, 0) + ' קק״ל' +
+          (Fmt.isNum(per.protein) ? ' · חלבון ' + Fmt.n(per.protein, 1) : '') +
+          (Fmt.isNum(per.carbs) ? ' · פחמימות ' + Fmt.n(per.carbs, 1) : '') +
+          (Fmt.isNum(per.fat) ? ' · שומן ' + Fmt.n(per.fat, 1) : '') +
+          (Fmt.isNum(per.fiber) ? ' · סיבים ' + Fmt.n(per.fiber, 1) : '') +
+          '</span>'
+        : '';
+
+      var macros = [];
+      if (Fmt.isNum(item.protein)) macros.push('חלבון ' + Fmt.n(item.protein, 0));
+      if (Fmt.isNum(item.carbs)) macros.push('פחמימות ' + Fmt.n(item.carbs, 0));
+      if (Fmt.isNum(item.fat)) macros.push('שומן ' + Fmt.n(item.fat, 0));
+      if (Fmt.isNum(item.saturated)) macros.push('רווי ' + Fmt.n(item.saturated, 1));
+      if (Fmt.isNum(item.fiber)) macros.push('סיבים ' + Fmt.n(item.fiber, 1));
+
+      return '<li><b>' + Fmt.esc(item.name) + '</b> — ' +
+        (Fmt.isNum(item.grams) ? '<span class="num">' + Fmt.n(item.grams, 0) + ' גר׳</span>, ' : '') +
+        '<span class="num">' + Fmt.n(item.kcal, 0) + ' קק״ל</span>' +
+        (item.confidence === 'low' ? ' <span class="low">הערכה לא בטוחה</span>' : '') +
+        (macros.length ? '<span class="macros num">' + Fmt.esc(macros.join(' · ')) + '</span>' : '') +
+        (item.basis ? '<span class="basis-note">' + Fmt.esc(item.basis) + '</span>' : '') +
+        per100 +
+      '</li>';
+    };
+
     var side = function (name, provider, data) {
-      var items = ((data && data.items) || []).map(function (item) {
-        return '<li>' + Fmt.esc(item.name) + ' — ' + Fmt.n(item.grams, 0) + ' גר׳, ' +
-          Fmt.n(item.kcal, 0) + ' קק״ל' +
-          (item.confidence === 'low' ? ' <span class="low">לא בטוח</span>' : '') + '</li>';
-      }).join('');
+      var items = ((data && data.items) || []).map(itemRow).join('');
 
       return '<details class="round"><summary>' + Fmt.esc(name) + ' · ' +
-        Fmt.esc(provider) + ' — ' + Fmt.n(data.kcal, 0) + ' קק״ל</summary>' +
-        '<ul>' + items + '</ul>' +
+        Fmt.esc(provider) + ' — ' + Fmt.n(data.kcal, 0) + ' קק״ל' +
+        (Fmt.isNum(data.grams) ? ' · ' + Fmt.n(data.grams, 0) + ' גר׳' : '') + '</summary>' +
+        '<ul class="items">' + items + '</ul>' +
         (data.reasoning ? '<p class="why">' + Fmt.esc(data.reasoning) + '</p>' : '') +
         '</details>';
     };
@@ -436,7 +462,14 @@
         '<div class="verdict-num num">' + Fmt.n(f.kcal, 0) + '</div>' +
         '<div class="verdict-macros num">חלבון ' + Fmt.n(f.protein, 0) +
           ' · פחמימות ' + Fmt.n(f.carbs, 0) + ' · שומן ' + Fmt.n(f.fat, 0) +
-          (root.Fmt.isNum(f.fiber) ? ' · סיבים ' + Fmt.n(f.fiber, 0) : '') + '</div>' +
+          (Fmt.isNum(f.saturated) ? ' (רווי ' + Fmt.n(f.saturated, 1) + ')' : '') +
+          (Fmt.isNum(f.fiber) ? ' · סיבים ' + Fmt.n(f.fiber, 1) : '') + '</div>' +
+        (Fmt.isNum(f.grams)
+          ? '<div class="verdict-macros num">משקל מוערך: ' + Fmt.n(f.grams, 0) + ' גרם' +
+            (Fmt.isNum(f.kcal) && f.grams > 0
+              ? ' · ' + Fmt.n((f.kcal / f.grams) * 100, 0) + ' קק״ל ל-100 גרם'
+              : '') + '</div>'
+          : '') +
         (v.agreement ? '<p class="why">' + Fmt.esc(v.agreement) + '</p>' : '') +
         range + missed +
         (v.notes.length ? '<p class="why">' + Fmt.esc(v.notes.join(' ')) + '</p>' : '') +

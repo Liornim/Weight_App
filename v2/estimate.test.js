@@ -587,6 +587,44 @@ test('שני מפתחות שונים -> הקריאות במקביל', () => {
   });
 });
 
+test('שומן רווי לא נבלע לתוך שומן כולל', () => {
+  const E = w.Estimate;
+  const parsed = E.parseAnswer(
+    'קלוריות: 800\nשומן רווי: 4\nשומן: 22\nסיבים: 6\nמשקל: 350');
+
+  assert(parsed.saturated === 4, 'רווי: ' + parsed.saturated);
+  assert(parsed.fat === 22, 'שומן כולל: ' + parsed.fat);
+  assert(parsed.fiber === 6, 'סיבים: ' + parsed.fiber);
+  assert(parsed.grams === 350, 'משקל: ' + parsed.grams);
+});
+
+test('סדר הפוך בטקסט לא משבש את ההפרדה', () => {
+  const E = w.Estimate;
+  const parsed = E.parseAnswer('קלוריות 500, שומן 20, שומן רווי 5');
+  assert(parsed.fat === 20, 'שומן כולל: ' + parsed.fat);
+  assert(parsed.saturated === 5, 'רווי: ' + parsed.saturated);
+});
+
+test('המשקל והרווי מתמזגים כמו שאר השדות', () => {
+  const merged = w.Estimate.reconcile(
+    { kcal: 700, grams: 300, saturated: 4, fiber: 5 },
+    { kcal: 900, grams: 400, saturated: 6, fiber: 7 }
+  );
+  assert(merged.fields.grams === 350, 'משקל: ' + merged.fields.grams);
+  assert(merged.fields.saturated === 5, 'רווי: ' + merged.fields.saturated);
+  assert(merged.fields.fiber === 6, 'סיבים: ' + merged.fields.fiber);
+});
+
+test('ההוראה מבקשת משקל, ערכים ל-100 גרם ושומן רווי', () => {
+  // הפרומפט הוא חוזה מול המודל, ולכן שווה לוודא שהוא לא נשחק
+  const src = fs.readFileSync(path.join(__dirname, 'js/estimate.js'), 'utf8');
+  ['per100', 'saturated', 'grams', 'basis'].forEach((field) => {
+    assert(src.indexOf('"' + field + '"') !== -1, 'ההוראה לא מבקשת ' + field);
+  });
+  assert(src.indexOf('ל-100 גרם') !== -1, 'לא מוסבר מה זה per100');
+  assert(src.indexOf('שומן רווי') !== -1, 'לא מוסבר מה זה saturated');
+});
+
 test('פענוח תשובה עמיד לעטיפות', () => {
     const E = w.Estimate;
     assert(E.parseAnswer('```json\n{"kcal":700}\n```').kcal === 700, 'סימני קוד');
