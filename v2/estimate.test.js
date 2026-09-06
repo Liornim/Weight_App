@@ -403,6 +403,52 @@ test('שגיאה שאינה מודל חסר לא גוררת חיפוש חלופ�
       });
   });
 
+test('תוכן שמגיע כמערך בלוקים מחובר לטקסט אחד', () => {
+  w.fetch = () => Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
+    JSON.stringify({ choices: [{ message: { content: [
+      { type: 'text', text: '{"kcal":900,' },
+      { type: 'text', text: '"protein":50}' }
+    ] } }] })) });
+
+  return w.Providers.ask({ key: 'sk-or-X', model: 'm', system: 's', image: IMAGE, text: 't' })
+    .then((text) => {
+      assert(text.indexOf('900') !== -1, 'הבלוקים לא חוברו: ' + text);
+    });
+});
+
+test('תשובה ריקה מדווחת עם סיבה ולא כפורמט שגוי', () => {
+  w.fetch = () => Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
+    JSON.stringify({ choices: [{ message: { content: '' }, finish_reason: 'length' }] })) });
+
+  return w.Providers.ask({ key: 'sk-or-X', model: 'm', system: 's', image: IMAGE, text: 't' })
+    .then(() => { throw new Error('היה צריך להיכשל'); },
+      (error) => {
+        assert(error.message.indexOf('ריקה') !== -1, 'לא דווח שהתשובה ריקה');
+        assert(error.message.indexOf('length') !== -1, 'סיבת הסיום לא צורפה');
+      });
+});
+
+test('תשובה בשדה reasoning נקלטת גם היא', () => {
+  w.fetch = () => Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
+    JSON.stringify({ choices: [{ message: { content: '', reasoning: '{"kcal":650}' } }] })) });
+
+  return w.Providers.ask({ key: 'sk-or-X', model: 'm', system: 's', image: IMAGE, text: 't' })
+    .then((text) => assert(text.indexOf('650') !== -1, 'לא נקלט: ' + text));
+});
+
+test('שגיאת פורמט כוללת את הספק ואת המודל', () => {
+  w.fetch = () => Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
+    JSON.stringify({ choices: [{ message: { content: 'סתם טקסט' } }] })) });
+
+  return w.Estimate.run([{ key: 'sk-or-X', model: 'tiny:free' }], IMAGE).then(
+    () => { throw new Error('היה צריך להיכשל'); },
+    (error) => {
+      assert(error.provider === 'OpenRouter', 'הספק חסר: ' + error.provider);
+      assert(error.model === 'tiny:free', 'המודל חסר: ' + error.model);
+      assert(error.raw.indexOf('סתם טקסט') !== -1, 'הטקסט הגולמי חסר');
+    });
+});
+
 test('פענוח תשובה עמיד לעטיפות', () => {
     const E = w.Estimate;
     assert(E.parseAnswer('```json\n{"kcal":700}\n```').kcal === 700, 'סימני קוד');

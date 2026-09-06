@@ -131,9 +131,14 @@
             var data = JSON.parse(raw);
             var candidate = data.candidates && data.candidates[0];
             if (!candidate) throw new Error('לא חזרה תשובה מ-Gemini');
-            return (candidate.content.parts || [])
+            var answer = ((candidate.content && candidate.content.parts) || [])
               .map(function (part) { return part.text || ''; })
-              .join('\n');
+              .join('\n').trim();
+            if (!answer) {
+              throw new Error('Gemini החזיר תשובה ריקה' +
+                (candidate.finishReason ? ' (סיבה: ' + candidate.finishReason + ')' : ''));
+            }
+            return answer;
           });
         })
         .catch(function (error) {
@@ -187,7 +192,26 @@
         var data = JSON.parse(body);
         var choice = data.choices && data.choices[0];
         if (!choice) throw new Error('לא חזרה תשובה מ-OpenRouter');
-        return choice.message.content || '';
+
+        // התוכן מגיע לפעמים כמחרוזת, לפעמים כמערך בלוקים, ולפעמים
+        // המודל שם את התשובה בשדה reasoning במקום ב-content
+        var message = choice.message || {};
+        var content = message.content;
+
+        if (Array.isArray(content)) {
+          content = content.map(function (block) {
+            return typeof block === 'string' ? block : (block.text || '');
+          }).join('\n');
+        }
+
+        var answer = String(content || '').trim() || String(message.reasoning || '').trim();
+
+        if (!answer) {
+          throw new Error('המודל החזיר תשובה ריקה' +
+            (choice.finish_reason ? ' (סיבה: ' + choice.finish_reason + ')' : '') +
+            '. מודל חינמי עמוס או שאינו קורא תמונות מחזיר לרוב תשובה ריקה.');
+        }
+        return answer;
       });
     });
   }

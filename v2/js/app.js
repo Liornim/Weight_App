@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd10',
+    BUILD: 'd11',
     state: {
       date: Dates.today(),
       asOf: 0,             // עד מתי למדוד: היום, שבוע שעבר, שבועיים
@@ -333,8 +333,10 @@
     }).catch(function (error) {
       // התשובה הגולמית מוצגת, אחרת אין דרך לדעת מה המודל בעצם החזיר
       var raw = error.raw
-        ? '<details class="round"><summary>מה המודל החזיר בפועל</summary>' +
-          '<p class="why">' + root.Fmt.esc(error.raw) + '</p></details>'
+        ? '<details class="round" open><summary>מה המודל החזיר בפועל' +
+          (error.provider ? ' · ' + root.Fmt.esc(error.provider) : '') +
+          (error.model ? ' · ' + root.Fmt.esc(error.model) : '') +
+          '</summary><p class="why">' + root.Fmt.esc(error.raw) + '</p></details>'
         : '';
       show('<p class="stage stage--bad">' + root.Fmt.esc(error.message) + '</p>' +
         diagnose(error.message) + raw);
@@ -355,6 +357,13 @@
         'בפרויקט, או שהמפתח מוגבל לכתובות מסוימות.';
     } else if (text.indexOf('429') !== -1) {
       advice = 'חרגת מהמכסה החינמית. שווה לנסות שוב מאוחר יותר.';
+    } else if (text.indexOf('ריקה') !== -1) {
+      advice = 'תשובה ריקה מגיעה בדרך כלל ממודל חינמי שעמוס כרגע, או שאינו ' +
+        'קורא תמונות למרות שהוא מסומן כך. שווה לבחור מודל אחר ברשימה, ' +
+        'או למחוק את המפתח הזה ולהמשיך עם אחד בלבד.';
+    } else if (text.indexOf('פורמט') !== -1) {
+      advice = 'המודל ענה, אבל לא במבנה שביקשנו ובלי מספרים שאפשר לחלץ. ' +
+        'זה קורה במודלים חינמיים קטנים. כדאי לבחור מודל אחר ברשימה.';
     } else if (text.indexOf('404') !== -1) {
       advice = 'המודל שנבחר אינו זמין. המערכת מנסה למצוא חלופה לבד; ' +
         'אם זה חוזר, אפשר למחוק את המפתח השני ולהמשיך עם אחד בלבד.';

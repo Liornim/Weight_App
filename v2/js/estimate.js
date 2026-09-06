@@ -212,8 +212,12 @@
             retry.neededRetry = true;
             return retry;
           }
-          var error = new Error('התשובה חזרה בפורמט שלא ניתן לקרוא');
-          error.raw = String(second || text || '').slice(0, 400);
+          var raw = String(second || text || '').trim();
+          var error = new Error('התשובה חזרה בפורמט שלא ניתן לקרוא' +
+            (raw ? '' : ' (והיא ריקה)'));
+          error.raw = raw ? raw.slice(0, 500) : '(המודל לא החזיר טקסט בכלל)';
+          error.provider = root.Providers.label(account.key, account.provider);
+          error.model = account.model || '(ברירת מחדל)';
           throw error;
         });
       });
