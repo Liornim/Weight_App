@@ -335,6 +335,22 @@ input[type='file'] {
   background: var(--paper);
 }
 
+textarea {
+  font: inherit;
+  font-family: var(--mono);
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  color: var(--ink);
+  direction: ltr;
+  text-align: start;
+  resize: vertical;
+}
+
+textarea:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
+
 /* ויכוח המעריכים */
 
 .stage { font-size: 13.5px; color: var(--ink-soft); margin: 14px 0 0; }

@@ -312,18 +312,62 @@ test('ניווט בין ימים מזיז את הטופס', () => {
   assert(App.state.date === Dates.today(), 'עבר לתאריך עתידי');
 });
 
-test('הערכה מתמונה דורשת מפתח ואומרת זאת', () => {
+
+test('הדבקת שורה ממלאת את הטופס', () => {
+  App.setState({ date: Dates.today() });
+  const input = doc.querySelector('#paste-line');
+  assert(input, 'שדה ההדבקה חסר');
+
+  input.value = '1671 118 126 24 12';
+  doc.querySelector('#paste-apply').dispatchEvent(new window.Event('click', { bubbles: true }));
+
+  const value = (field) => Number(doc.querySelector('[data-field="' + field + '"]').value);
+  assert(value('kcal') === 1671, 'קלוריות: ' + value('kcal'));
+  assert(value('proteinG') === 118, 'חלבון');
+  assert(value('carbG') === 126, 'פחמימות');
+  assert(value('fatG') === 24, 'שומן');
+  assert(value('fiberG') === 12, 'סיבים');
+
+  const note = doc.querySelector('#paste-result').textContent;
+  assert(note.includes('נקלט'), 'לא דווח מה נקלט');
+  assert(note.includes('לא נמצא'), 'לא דווח שהצעדים חסרים');
+});
+
+test('הדבקה במילים ממלאת רק את מה שנכתב', () => {
+  App.setState({ date: Dates.today() });
+  const input = doc.querySelector('#paste-line');
+  input.value = 'קלוריות 2000, חלבון 150';
+  doc.querySelector('#paste-apply').dispatchEvent(new window.Event('click', { bubbles: true }));
+
+  assert(Number(doc.querySelector('[data-field="kcal"]').value) === 2000, 'קלוריות');
+  assert(Number(doc.querySelector('[data-field="proteinG"]').value) === 150, 'חלבון');
+});
+
+test('הדבקה ריקה מדווחת ולא מוחקת', () => {
+  App.setState({ date: Dates.today() });
+  doc.querySelector('[data-field="kcal"]').value = '1900';
+  doc.querySelector('#paste-line').value = '';
+  doc.querySelector('#paste-apply').dispatchEvent(new window.Event('click', { bubbles: true }));
+
+  assert(doc.querySelector('#paste-result').textContent.includes('ריק'), 'לא דווח');
+  assert(doc.querySelector('[data-field="kcal"]').value === '1900', 'הערך נמחק');
+});
+
+test('הדבקה זמינה תמיד, הערכה אוטומטית רק עם מפתח', () => {
   Store.updateSettings({ aiKey: '' });
   App.setState({ date: Dates.today() });
-  const card = [...doc.querySelectorAll('#view .card')]
-    .find((c) => c.textContent.includes('הערכה מתמונה'));
-  assert(card, 'הכרטיס חסר');
+
+  assert(doc.querySelector('#paste-line'), 'שדה ההדבקה אמור להיות זמין תמיד');
+  assert(doc.querySelector('#copy-prompt'), 'כפתור העתקת ההוראה חסר');
   assert(!doc.querySelector('#photo'), 'שדה התמונה לא אמור להופיע בלי מפתח');
-  assert(card.textContent.includes('מפתח API'), 'לא הוסבר מה חסר');
+  assert(![...doc.querySelectorAll('#view .card')]
+    .some((c) => c.textContent.includes('הערכה אוטומטית')),
+    'הכרטיס האוטומטי לא אמור להופיע בלי מפתח');
 
   Store.updateSettings({ aiKey: 'sk-ant-test' });
   App.setState({ date: Dates.today() });
   assert(doc.querySelector('#photo'), 'שדה התמונה חסר למרות שיש מפתח');
+  assert(doc.querySelector('#paste-line'), 'ההדבקה אמורה להישאר גם עם מפתח');
   Store.updateSettings({ aiKey: '' });
 });
 

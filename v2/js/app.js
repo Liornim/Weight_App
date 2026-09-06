@@ -136,6 +136,57 @@
       });
     }
 
+    var applyPaste = view.querySelector('#paste-apply');
+    if (applyPaste) {
+      applyPaste.addEventListener('click', function () {
+        var input = view.querySelector('#paste-line');
+        var box = view.querySelector('#paste-result');
+        var result = root.Paste.parse(input.value);
+
+        if (!result.ok) {
+          box.innerHTML = '<p class="stage stage--bad">' +
+            (result.reason === 'empty' ? 'השדה ריק.' : 'לא מצאתי מספרים בשורה.') + '</p>';
+          return;
+        }
+
+        var labels = {
+          kcal: 'קלוריות', proteinG: 'חלבון', carbG: 'פחמימות', fatG: 'שומן',
+          fiberG: 'סיבים', steps: 'צעדים', weightKg: 'משקל',
+          muscleKg: 'שריר', bodyFatKg: 'שומן בגוף', waterKg: 'נוזלים'
+        };
+
+        var filled = [];
+        Object.keys(result.fields).forEach(function (key) {
+          var field = view.querySelector('[data-field="' + key + '"]');
+          if (!field) return;
+          field.value = result.fields[key];
+          filled.push(labels[key] + ' ' + result.fields[key]);
+        });
+
+        box.innerHTML = '<p class="stage">נקלט: ' + root.Fmt.esc(filled.join(' · ')) + '.' +
+          (result.missing.length
+            ? ' לא נמצא: ' + root.Fmt.esc(result.missing.map(function (k) {
+                return labels[k];
+              }).join(', ')) + '.'
+            : '') +
+          ' בדוק ולחץ שמירה.</p>';
+      });
+    }
+
+    var copyPrompt = view.querySelector('#copy-prompt');
+    if (copyPrompt) {
+      copyPrompt.addEventListener('click', function () {
+        var text = root.Paste.promptText();
+        if (root.navigator && root.navigator.clipboard) {
+          root.navigator.clipboard.writeText(text).then(function () {
+            App.toast('ההוראה הועתקה');
+          }).catch(function () { App.toast('ההעתקה נכשלה'); });
+        } else {
+          App.toast('הדפדפן לא מאפשר העתקה');
+        }
+      });
+    }
+
     var photo = view.querySelector('#photo');
     if (photo) photo.addEventListener('change', function () { runDebate(photo, view); });
 
