@@ -625,6 +625,41 @@ test('ההוראה מבקשת משקל, ערכים ל-100 גרם ושומן רו
   assert(src.indexOf('שומן רווי') !== -1, 'לא מוסבר מה זה saturated');
 });
 
+test('מספר פרויקט נשלח ככותרת נוספת אחרי כישלון הזדהות', () => {
+  const tried = [];
+  w.fetch = (url, opts) => {
+    tried.push(opts.headers);
+    // רק הניסיון שכולל את הפרויקט מצליח
+    if (!opts.headers['x-goog-user-project']) {
+      return Promise.resolve({ ok: false, status: 401, text: () => Promise.resolve(
+        '{"error":{"code":401,"message":"Expected OAuth 2 access token"}}') });
+    }
+    return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
+      JSON.stringify({ candidates: [{ content: { parts: [{ text: answer(700) }] } }] })) });
+  };
+
+  return w.Providers.ask({
+    key: 'AQ.KEY', project: '155074336268', system: 's', image: IMAGE, text: 't'
+  }).then((text) => {
+    assert(text.indexOf('700') !== -1, 'לא חזרה תשובה');
+    assert(!tried[0]['x-goog-user-project'], 'הניסיון הראשון אמור להיות בלי הפרויקט');
+    assert(tried.some((h) => h['x-goog-user-project'] === '155074336268'),
+      'הפרויקט לא נשלח באף ניסיון');
+  });
+});
+
+test('בלי מספר פרויקט אין ניסיונות מיותרים', () => {
+  let calls = 0;
+  w.fetch = () => {
+    calls++;
+    return Promise.resolve({ ok: false, status: 401, text: () => Promise.resolve('no') });
+  };
+
+  return w.Providers.ask({ key: 'AQ.KEY', system: 's', image: IMAGE, text: 't' })
+    .then(() => { throw new Error('היה צריך להיכשל'); },
+      () => assert(calls === 3, 'ציפיתי לשלוש דרכים בלבד, היו ' + calls));
+});
+
 test('פענוח תשובה עמיד לעטיפות', () => {
     const E = w.Estimate;
     assert(E.parseAnswer('```json\n{"kcal":700}\n```').kcal === 700, 'סימני קוד');

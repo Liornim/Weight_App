@@ -83,14 +83,27 @@
    * במקום להמר, כל דרך מנוסה בתורה עד שאחת מצליחה. הסדר נקבע לפי
    * צורת המפתח, כדי שהמקרה הנפוץ יעבוד בניסיון הראשון.
    */
-  function geminiAttempts(key) {
+  function geminiAttempts(key, project) {
     var viaQuery = { name: 'query', url: '?key=' + encodeURIComponent(key), headers: {} };
     var viaHeader = { name: 'x-goog-api-key', url: '', headers: { 'x-goog-api-key': key } };
     var viaBearer = { name: 'bearer', url: '', headers: { Authorization: 'Bearer ' + key } };
 
-    return /^AQ\./.test(key)
-      ? [viaBearer, viaHeader, viaQuery]
-      : [viaQuery, viaHeader, viaBearer];
+    // מפתחות מסוג AQ קשורים לפרויקט, ויש מקרים שבהם השרת דורש
+    // לציין אותו במפורש בכותרת נפרדת
+    var withProject = function (attempt) {
+      if (!project) return null;
+      var headers = { 'x-goog-user-project': String(project) };
+      Object.keys(attempt.headers).forEach(function (name) {
+        headers[name] = attempt.headers[name];
+      });
+      return { name: attempt.name + '+project', url: attempt.url, headers: headers };
+    };
+
+    var order = /^AQ\./.test(key)
+      ? [viaBearer, withProject(viaBearer), viaHeader, withProject(viaHeader), viaQuery]
+      : [viaQuery, viaHeader, viaBearer, withProject(viaBearer)];
+
+    return order.filter(Boolean);
   }
 
   function isAuthProblem(error) {
@@ -98,7 +111,7 @@
     return text.indexOf('401') !== -1 || text.indexOf('403') !== -1;
   }
 
-  function callGemini(key, model, system, image, text) {
+  function callGemini(key, model, system, image, text, onModelPicked, validate, project) {
     var base = 'https://generativelanguage.googleapis.com/v1beta/models/' +
       encodeURIComponent(model) + ':generateContent';
 
@@ -112,7 +125,7 @@
       generationConfig: { temperature: 0.2, maxOutputTokens: 1400 }
     });
 
-    var attempts = geminiAttempts(key);
+    var attempts = geminiAttempts(key, project);
 
     var tryAt = function (index, lastError) {
       if (index >= attempts.length) {
@@ -335,7 +348,7 @@
 
     var model = request.model || PROVIDERS[name].defaultModel;
     return CALLS[name](request.key, model, request.system, request.image,
-      request.text, request.onModelPicked, request.validate);
+      request.text, request.onModelPicked, request.validate, request.project);
   }
 
   /**

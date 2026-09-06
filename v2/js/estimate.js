@@ -233,6 +233,7 @@
         key: account.key,
         model: account.model,
         provider: account.provider,
+        project: account.project,
         system: system,
         image: image,
         text: extra || 'הערך את הארוחה בתמונה.',

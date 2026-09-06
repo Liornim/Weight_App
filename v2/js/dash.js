@@ -452,7 +452,8 @@
 
     var settings = Store.getSettings();
     var accounts = [
-      { key: settings.aiKeyA, model: settings.aiModelA, provider: settings.aiProviderA },
+      { key: settings.aiKeyA, model: settings.aiModelA, provider: settings.aiProviderA,
+        project: settings.aiProjectA },
       { key: settings.aiKeyB, model: settings.aiModelB, provider: settings.aiProviderB }
     ].filter(function (a) {
       return a.key && root.Providers.detect(a.key, a.provider);
@@ -542,6 +543,16 @@
         '<input id="ai-key-a" data-key="aiKeyA" type="password" autocomplete="off" ' +
         'placeholder="AIza..." value="' + P.esc(settings.aiKeyA || '') + '"></div>' +
       providerPicker('A', settings.aiKeyA, settings.aiProviderA) +
+      (Providers.detect(settings.aiKeyA, settings.aiProviderA) === 'gemini'
+        ? '<div class="field"><label for="ai-project">מספר פרויקט ' +
+          '<span class="unit">לא חובה</span></label>' +
+          '<input id="ai-project" data-project="aiProjectA" type="text" ' +
+          'inputmode="numeric" placeholder="155074336268" value="' +
+          P.esc(settings.aiProjectA || '') + '"></div>' +
+          P.hint('מפתחות Gemini מהסוג החדש (AQ.) קשורים לפרויקט, ולפעמים ' +
+            'השרת דורש לציין אותו. המספר מופיע באותו מסך שבו יצרת את המפתח, ' +
+            'תחת Project number. אם המפתח עובד בלעדיו — אין צורך.')
+        : '') +
 
       '<div class="field"><label for="ai-key-b">מפתח שני ' +
         '<span class="unit">' + P.esc(providerLabel(settings.aiKeyB, settings.aiProviderB)) +

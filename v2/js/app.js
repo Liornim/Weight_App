@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd16',
+    BUILD: 'd17',
     state: {
       date: Dates.today(),
       asOf: 0,             // עד מתי למדוד: היום, שבוע שעבר, שבועיים
@@ -119,6 +119,15 @@
         patch[select.dataset.provider] = select.value;
         Store.updateSettings(patch);
         App.toast(select.value ? 'הספק נבחר' : 'הבחירה בוטלה');
+      });
+    });
+
+    view.querySelectorAll('[data-project]').forEach(function (input) {
+      input.addEventListener('change', function () {
+        var patch = {};
+        patch[input.dataset.project] = input.value.trim();
+        Store.updateSettings(patch);
+        App.toast('מספר הפרויקט נשמר');
       });
     });
 
@@ -286,7 +295,8 @@
     var box = view.querySelector('#debate');
     var settings = Store.getSettings();
     var accounts = [
-      { key: settings.aiKeyA, model: settings.aiModelA, provider: settings.aiProviderA },
+      { key: settings.aiKeyA, model: settings.aiModelA, provider: settings.aiProviderA,
+        project: settings.aiProjectA },
       { key: settings.aiKeyB, model: settings.aiModelB, provider: settings.aiProviderB }
     ].filter(function (a) {
       return a.key && root.Providers.detect(a.key, a.provider);
