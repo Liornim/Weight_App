@@ -262,17 +262,24 @@
    * רשימת המודלים החינמיים שקוראים תמונות ומנסה שוב עם הראשון
    * שעובד. המודל שנבחר מוחזר, כדי שאפשר יהיה לשמור אותו.
    */
-  function callOpenRouter(key, model, system, image, text, onModelPicked) {
+  function callOpenRouter(key, model, system, image, text, onModelPicked, validate) {
     var attempt = function (name) {
       return callOpenRouterOnce(key, name, system, image, text)
         .then(function (answer) {
+          // מודל שעונה אבל התשובה שלו חסרת ערך נחשב לא מתאים,
+          // בדיוק כמו מודל שלא קיים
+          if (validate && !validate(answer)) {
+            var error = new Error('המודל ' + name + ' החזיר תשובה שאינה שמישה');
+            error.unusable = true;
+            throw error;
+          }
           if (onModelPicked) onModelPicked(name);
           return answer;
         });
     };
 
     return attempt(model).catch(function (error) {
-      if (!isMissingModel(error)) throw error;
+      if (!isMissingModel(error) && !error.unusable) throw error;
 
       return freeVisionModels().then(function (models) {
         if (!models.length) {
@@ -283,11 +290,12 @@
         // מנסים אחד אחרי השני; חלקם מדווחים כזמינים ובכל זאת נופלים
         var tryNext = function (index) {
           if (index >= models.length) {
-            throw new Error('אף אחד מהמודלים החינמיים לא הצליח לקרוא את התמונה.');
+            throw new Error('אף אחד מהמודלים החינמיים לא הצליח להעריך את התמונה. ' +
+              'אפשר למחוק את מפתח OpenRouter ולהמשיך עם מפתח אחד בלבד.');
           }
           if (models[index].id === model) return tryNext(index + 1);
           return attempt(models[index].id).catch(function (nextError) {
-            if (!isMissingModel(nextError)) throw nextError;
+            if (!isMissingModel(nextError) && !nextError.unusable) throw nextError;
             return tryNext(index + 1);
           });
         };
@@ -316,7 +324,7 @@
 
     var model = request.model || PROVIDERS[name].defaultModel;
     return CALLS[name](request.key, model, request.system, request.image,
-      request.text, request.onModelPicked);
+      request.text, request.onModelPicked, request.validate);
   }
 
   /**

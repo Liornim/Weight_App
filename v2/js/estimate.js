@@ -29,6 +29,18 @@
 
   var SUM_FIELDS = ['kcal', 'protein', 'carbs', 'fat', 'fiber'];
 
+  // גבולות שפויים לארוחה בודדת. מודל שמחזיר אפס או מספר אבסורדי
+  // כנראה לא באמת ניתח את התמונה — למשל מודל לקריאת מסמכים
+  // שנבחר אוטומטית מרשימת המודלים החינמיים.
+  var MIN_KCAL = 20;
+  var MAX_KCAL = 6000;
+
+  function plausible(parsed) {
+    if (!parsed) return false;
+    var kcal = num(parsed.kcal);
+    return kcal !== null && kcal >= MIN_KCAL && kcal <= MAX_KCAL;
+  }
+
   /**
    * חילוץ המספרים מהתשובה.
    *
@@ -193,14 +205,25 @@
         text: extra || 'הערך את הארוחה בתמונה.',
         onModelPicked: function (name) {
           if (name !== account.model) picked[account.key] = name;
-        }
+        },
+        // מודל שמחזיר תשובה לא שפויה נחשב כלא מתאים, והמערכת
+        // ממשיכה למודל הבא ברשימה במקום להציג אפסים
+        validate: function (answer) { return plausible(parseAnswer(answer)); }
       });
     };
 
     var ask = function (account, system) {
+      var describe = function (error) {
+        if (!error.provider) {
+          error.provider = root.Providers.label(account.key, account.provider);
+          error.model = account.model || '(ברירת מחדל)';
+        }
+        throw error;
+      };
+
       return request(account, system).then(function (text) {
         var parsed = parseAnswer(text);
-        if (parsed) return parsed;
+        if (plausible(parsed)) return parsed;
 
         // ניסיון שני, עם בקשה חד־משמעית יותר
         return request(account, system,
@@ -208,19 +231,22 @@
           'שמתחיל ב-{ ומסתיים ב-}, בלי מילה אחת לפניו או אחריו ובלי סימני קוד.'
         ).then(function (second) {
           var retry = parseAnswer(second);
-          if (retry) {
+          if (plausible(retry)) {
             retry.neededRetry = true;
             return retry;
           }
+
+          var zeroed = retry && num(retry.kcal) !== null && num(retry.kcal) < MIN_KCAL;
           var raw = String(second || text || '').trim();
-          var error = new Error('התשובה חזרה בפורמט שלא ניתן לקרוא' +
-            (raw ? '' : ' (והיא ריקה)'));
+          var error = new Error(zeroed
+            ? 'המודל החזיר אפס קלוריות — כנראה אינו מתאים להערכת מזון'
+            : 'התשובה חזרה בפורמט שלא ניתן לקרוא' + (raw ? '' : ' (והיא ריקה)'));
           error.raw = raw ? raw.slice(0, 500) : '(המודל לא החזיר טקסט בכלל)';
           error.provider = root.Providers.label(account.key, account.provider);
           error.model = account.model || '(ברירת מחדל)';
           throw error;
         });
-      });
+      }).catch(describe);
     };
 
     return Promise.all([
@@ -262,6 +288,7 @@
 
   root.Estimate = {
     run: run,
+    plausible: plausible,
     readImage: readImage,
     parseAnswer: parseAnswer,
     reconcile: reconcile,

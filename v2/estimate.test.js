@@ -436,17 +436,80 @@ test('תשובה בשדה reasoning נקלטת גם היא', () => {
     .then((text) => assert(text.indexOf('650') !== -1, 'לא נקלט: ' + text));
 });
 
-test('שגיאת פורמט כוללת את הספק ואת המודל', () => {
+test('שגיאת פורמט כוללת את הספק ואת הטקסט הגולמי', () => {
+  // Gemini נבחר כאן כי אין לו מנגנון החלפת מודלים, ולכן השגיאה
+  // מגיעה ישירות משלב הפענוח
   w.fetch = () => Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
-    JSON.stringify({ choices: [{ message: { content: 'סתם טקסט' } }] })) });
+    JSON.stringify({ candidates: [{ content: { parts: [{ text: 'סתם טקסט' }] } }] })) });
 
-  return w.Estimate.run([{ key: 'sk-or-X', model: 'tiny:free' }], IMAGE).then(
+  return w.Estimate.run([{ key: 'AQ.KEY' }], IMAGE).then(
     () => { throw new Error('היה צריך להיכשל'); },
     (error) => {
-      assert(error.provider === 'OpenRouter', 'הספק חסר: ' + error.provider);
-      assert(error.model === 'tiny:free', 'המודל חסר: ' + error.model);
-      assert(error.raw.indexOf('סתם טקסט') !== -1, 'הטקסט הגולמי חסר');
+      assert(error.provider === 'Gemini', 'הספק חסר: ' + error.provider);
+      assert(error.raw && error.raw.indexOf('סתם טקסט') !== -1, 'הטקסט הגולמי חסר');
     });
+});
+
+test('הערכה לא שפויה נדחית', () => {
+  const P = w.Estimate.plausible;
+  assert(!P({ kcal: 0 }), 'אפס אינו הערכה');
+  assert(!P({ kcal: 5 }), 'חמש קלוריות לארוחה אינו סביר');
+  assert(!P({ kcal: 99999 }), 'מספר אבסורדי');
+  assert(!P({ protein: 40 }), 'בלי קלוריות');
+  assert(!P(null), 'null');
+  assert(P({ kcal: 250 }), 'ארוחה קטנה תקינה');
+  assert(P({ kcal: 1671 }), 'ארוחה רגילה תקינה');
+});
+
+test('מודל שמחזיר אפסים מוחלף במודל הבא', () => {
+  const tried = [];
+  w.fetch = (url, opts) => {
+    if (url.indexOf('/models') !== -1 && !opts) {
+      return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
+        JSON.stringify({ data: [
+          { id: 'ocr/notes:free', name: 'OCR',
+            pricing: { prompt: '0', completion: '0' },
+            architecture: { input_modalities: ['text', 'image'] } },
+          { id: 'good/vision:free', name: 'Good',
+            pricing: { prompt: '0', completion: '0' },
+            architecture: { input_modalities: ['text', 'image'] } }
+        ] })) });
+    }
+
+    const body = JSON.parse(opts.body);
+    tried.push(body.model);
+    // המודל הראשון והשני מחזירים אפסים, השלישי אמיתי
+    const kcal = body.model === 'good/vision:free' ? 820 : 0;
+    return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
+      JSON.stringify({ choices: [{ message: { content: answer(kcal) } }] })) });
+  };
+
+  return w.Estimate.run([{ key: 'sk-or-X', model: 'zeros/model:free' }], IMAGE)
+    .then((result) => {
+      assert(result.verdict.fields.kcal === 820, 'התוצאה: ' + result.verdict.fields.kcal);
+      assert(tried[0] === 'zeros/model:free', 'התחיל מהמודל השמור');
+      assert(tried.indexOf('good/vision:free') !== -1, 'לא הגיע למודל התקין');
+      assert(tried.length >= 2, 'ציפיתי לפחות לשני ניסיונות, היו ' + tried.length);
+    });
+});
+
+test('כשכל המודלים מחזירים אפסים, נאמר מה לעשות', () => {
+  w.fetch = (url, opts) => {
+    if (url.indexOf('/models') !== -1 && !opts) {
+      return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
+        JSON.stringify({ data: [
+          { id: 'a:free', name: 'A', pricing: { prompt: '0', completion: '0' },
+            architecture: { input_modalities: ['image'] } }
+        ] })) });
+    }
+    return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
+      JSON.stringify({ choices: [{ message: { content: answer(0) } }] })) });
+  };
+
+  return w.Estimate.run([{ key: 'sk-or-X', model: 'z:free' }], IMAGE).then(
+    () => { throw new Error('היה צריך להיכשל'); },
+    (error) => assert(error.message.indexOf('מפתח אחד') !== -1,
+      'לא הוצעה דרך המשך: ' + error.message));
 });
 
 test('פענוח תשובה עמיד לעטיפות', () => {
