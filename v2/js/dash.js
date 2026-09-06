@@ -485,10 +485,29 @@
 
   // ------------------------------------------------------ הגדרות
 
-  function providerLabel(key) {
+  function providerLabel(key, override) {
     if (!key) return 'ריק';
-    var name = root.Providers.detect(key);
-    return name ? root.Providers.PROVIDERS[name].label : 'לא מזוהה — בדוק את הפורמט';
+    var name = root.Providers.detect(key, override);
+    return name ? root.Providers.PROVIDERS[name].label : 'לא מזוהה — בחר ידנית';
+  }
+
+  /**
+   * בורר ספק, מוצג רק כשהזיהוי האוטומטי נכשל.
+   * צורות המפתחות משתנות מדי פעם, ומפתח תקין לגמרי עלול לא להתאים
+   * לתבנית. עדיף לתת דרך להמשיך מאשר לחסום.
+   */
+  function providerPicker(slot, key, override) {
+    if (!key || root.Providers.detect(key)) return '';
+
+    var options = root.Providers.options().map(function (option) {
+      return '<option value="' + option.value + '"' +
+        (option.value === override ? ' selected' : '') + '>' +
+        P.esc(option.label) + (option.free ? ' (חינם)' : '') + '</option>';
+    }).join('');
+
+    return '<div class="field"><label for="prov-' + slot + '">מי הספק של המפתח הזה</label>' +
+      '<select id="prov-' + slot + '" data-provider="aiProvider' + slot + '">' +
+      '<option value="">בחר</option>' + options + '</select></div>';
   }
 
   function settingsSection(state, entries, settings) {
