@@ -508,8 +508,83 @@ test('כשכל המודלים מחזירים אפסים, נאמר מה לעשו�
 
   return w.Estimate.run([{ key: 'sk-or-X', model: 'z:free' }], IMAGE).then(
     () => { throw new Error('היה צריך להיכשל'); },
-    (error) => assert(error.message.indexOf('מפתח אחד') !== -1,
+    (error) => assert(error.message.indexOf('לנסות שוב') !== -1,
       'לא הוצעה דרך המשך: ' + error.message));
+});
+
+test('מודל עמוס מוחלף במקום להיכשל', () => {
+  const tried = [];
+  w.fetch = (url, opts) => {
+    if (url.indexOf('/models') !== -1 && !opts) {
+      return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
+        JSON.stringify({ data: [
+          { id: 'free/one:free', name: 'One', pricing: { prompt: '0', completion: '0' },
+            architecture: { input_modalities: ['image'] } }
+        ] })) });
+    }
+    const body = JSON.parse(opts.body);
+    tried.push(body.model);
+
+    if (body.model === 'busy/model:free') {
+      return Promise.resolve({ ok: false, status: 429, text: () => Promise.resolve(
+        '{"error":{"message":"is temporarily rate-limited upstream","code":429}}') });
+    }
+    return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
+      JSON.stringify({ choices: [{ message: { content: answer(900) } }] })) });
+  };
+
+  return w.Estimate.run([{ key: 'sk-or-X', model: 'busy/model:free' }], IMAGE)
+    .then((result) => {
+      assert(result.verdict.fields.kcal === 900, 'התוצאה: ' + result.verdict.fields.kcal);
+      assert(tried[0] === 'busy/model:free', 'לא ניסה קודם את המקורי');
+      assert(tried.indexOf('free/one:free') !== -1, 'לא עבר למודל פנוי');
+    });
+});
+
+test('מפתח משותף -> הקריאות בזו אחר זו ולא במקביל', () => {
+  let inFlight = 0;
+  let maxParallel = 0;
+
+  w.fetch = () => {
+    inFlight++;
+    maxParallel = Math.max(maxParallel, inFlight);
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        inFlight--;
+        resolve({ ok: true, status: 200, text: () => Promise.resolve(
+          JSON.stringify({ choices: [{ message: { content: answer(700) } }] })) });
+      }, 5);
+    });
+  };
+
+  return w.Estimate.run([{ key: 'sk-or-SAME', model: 'm:free' }], IMAGE).then(() => {
+    assert(maxParallel === 1, 'רצו ' + maxParallel + ' קריאות במקביל על אותו מפתח');
+  });
+});
+
+test('שני מפתחות שונים -> הקריאות במקביל', () => {
+  let inFlight = 0;
+  let maxParallel = 0;
+
+  w.fetch = (url) => {
+    inFlight++;
+    maxParallel = Math.max(maxParallel, inFlight);
+    const gemini = url.indexOf('generativelanguage') !== -1;
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        inFlight--;
+        resolve({ ok: true, status: 200, text: () => Promise.resolve(gemini
+          ? JSON.stringify({ candidates: [{ content: { parts: [{ text: answer(700) }] } }] })
+          : JSON.stringify({ choices: [{ message: { content: answer(900) } }] })) });
+      }, 5);
+    });
+  };
+
+  return w.Estimate.run(
+    [{ key: 'AQ.A' }, { key: 'sk-or-B', model: 'm:free' }], IMAGE
+  ).then(() => {
+    assert(maxParallel === 2, 'ציפיתי להרצה מקבילה, היה ' + maxParallel);
+  });
 });
 
 test('פענוח תשובה עמיד לעטיפות', () => {

@@ -249,10 +249,17 @@
       }).catch(describe);
     };
 
-    return Promise.all([
-      ask(leanAccount, LEAN),
-      ask(richAccount, RICH)
-    ]).then(function (answers) {
+    // כששני המעריכים חולקים מפתח, הרצה במקביל מכפילה את העומס על
+    // אותו מודל חינמי וגוררת 429. במקרה כזה הם רצים בזה אחר זה.
+    var shared = leanAccount.key === richAccount.key;
+
+    var both = shared
+      ? ask(leanAccount, LEAN).then(function (lean) {
+          return ask(richAccount, RICH).then(function (rich) { return [lean, rich]; });
+        })
+      : Promise.all([ask(leanAccount, LEAN), ask(richAccount, RICH)]);
+
+    return both.then(function (answers) {
       stage('משווה בין ההערכות');
       var lean = answers[0];
       var rich = answers[1];

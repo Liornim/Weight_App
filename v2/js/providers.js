@@ -153,10 +153,21 @@
 
   // --- OpenRouter ---
 
-  /** האם השגיאה אומרת שהמודל עצמו לא קיים או לא זמין */
+  /**
+   * האם כדאי לנסות מודל אחר.
+   *
+   * 404 — המודל לא קיים.
+   * 429 — הוא עמוס כרגע; במודלים חינמיים זה שכיח מאוד, והמתנה
+   *       פחות מועילה מלעבור למודל אחר שפנוי.
+   * 502/503 — תקלה זמנית אצל הספק שמאחורי המודל.
+   */
   function isMissingModel(error) {
     var text = String(error && error.message || '');
     return text.indexOf('404') !== -1 ||
+      text.indexOf('429') !== -1 ||
+      text.indexOf('502') !== -1 ||
+      text.indexOf('503') !== -1 ||
+      text.indexOf('rate-limited') !== -1 ||
       text.indexOf('No endpoints found') !== -1 ||
       text.indexOf('not a valid model') !== -1;
   }
@@ -290,8 +301,8 @@
         // מנסים אחד אחרי השני; חלקם מדווחים כזמינים ובכל זאת נופלים
         var tryNext = function (index) {
           if (index >= models.length) {
-            throw new Error('אף אחד מהמודלים החינמיים לא הצליח להעריך את התמונה. ' +
-              'אפשר למחוק את מפתח OpenRouter ולהמשיך עם מפתח אחד בלבד.');
+            throw new Error('כל המודלים החינמיים שנוסו היו עמוסים או לא מתאימים ' +
+              '(נוסו ' + models.length + '). כדאי לנסות שוב בעוד כמה דקות.');
           }
           if (models[index].id === model) return tryNext(index + 1);
           return attempt(models[index].id).catch(function (nextError) {
