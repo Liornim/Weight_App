@@ -692,6 +692,43 @@ test('מודל לא מתאים מוחלף בברירת המחדל של הספק'
   });
 });
 
+test('שם המודל החליפי נקרא מתוך הודעת השגיאה', () => {
+  const S = w.Providers.suggestedModel;
+  assert(S('This model models/gemini-2.0-flash is no longer available. ' +
+    'Please update your code to use models/gemini-3.6-flash for the latest') ===
+    'gemini-3.6-flash', 'לא חולץ השם החליפי');
+  assert(S('שגיאה כללית') === null, 'בלי הצעה');
+  assert(S('') === null, 'ריק');
+});
+
+test('מודל שהוצא משימוש מוחלף בשם שהשרת הציע', () => {
+  const tried = [];
+  w.fetch = (url) => {
+    const model = url.split('/models/')[1].split(':generateContent')[0];
+    tried.push(model);
+
+    if (model === 'gemini-old') {
+      return Promise.resolve({ ok: false, status: 404, text: () => Promise.resolve(
+        JSON.stringify({ error: { code: 404, message:
+          'This model models/gemini-old is no longer available. ' +
+          'Please update your code to use models/gemini-3.6-flash for the latest.' } })) });
+    }
+    return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
+      JSON.stringify({ candidates: [{ content: { parts: [{ text: answer(750) }] } }] })) });
+  };
+
+  let picked = null;
+  return w.Providers.ask({
+    key: 'AQ.KEY', model: 'gemini-old', system: 's', image: IMAGE, text: 't',
+    onModelPicked: (name) => { picked = name; }
+  }).then((text) => {
+    assert(text.indexOf('750') !== -1, 'לא חזרה תשובה');
+    assert(tried[0] === 'gemini-old', 'לא ניסה קודם את המקורי');
+    assert(tried.indexOf('gemini-3.6-flash') !== -1, 'לא עבר לשם החליפי');
+    assert(picked === 'gemini-3.6-flash', 'השם החדש לא דווח לשמירה');
+  });
+});
+
 test('פענוח תשובה עמיד לעטיפות', () => {
     const E = w.Estimate;
     assert(E.parseAnswer('```json\n{"kcal":700}\n```').kcal === 700, 'סימני קוד');

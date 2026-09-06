@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd18',
+    BUILD: 'd19',
     state: {
       date: Dates.today(),
       asOf: 0,             // עד מתי למדוד: היום, שבוע שעבר, שבועיים
@@ -302,7 +302,9 @@
     }).map(function (a) {
       // המודל נשמר לפי ספק, כדי ששם מ-OpenRouter לא יישלח ל-Gemini
       var name = root.Providers.detect(a.key, a.provider);
-      a.model = name === 'openrouter' ? settings.aiModelOpenrouter : null;
+      a.model = name === 'openrouter' ? settings.aiModelOpenrouter
+        : name === 'gemini' ? settings.aiModelGemini
+        : null;
       return a;
     });
 
@@ -338,7 +340,11 @@
         App.toast('המספרים חולצו מטקסט חופשי — כדאי לוודא אותם');
       }
       if (result.pickedModel) {
-        Store.updateSettings({ aiModelOpenrouter: result.pickedModel });
+        // השם נשמר תחת הספק שלו, כדי שלא יגיע לספק אחר
+        var forGemini = result.pickedModel.indexOf('/') === -1;
+        Store.updateSettings(forGemini
+          ? { aiModelGemini: result.pickedModel }
+          : { aiModelOpenrouter: result.pickedModel });
         App.toast('המודל הוחלף ל-' + result.pickedModel);
         // השמירה רינדרה את המסך מחדש, ולכן גם התצוגה המקדימה
         showPreview();

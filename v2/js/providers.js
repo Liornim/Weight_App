@@ -16,7 +16,7 @@
       // גוגל מנפיקה שני פורמטים: AIza הישן ו-AQ. החדש מ-AI Studio.
       // שניהם תקפים, ושניהם נשלחים באותה דרך.
       test: function (key) { return /^AIza/.test(key) || /^AQ\./.test(key); },
-      defaultModel: 'gemini-2.0-flash',
+      defaultModel: 'gemini-3.6-flash',
       free: true,
       keyHint: 'aistudio.google.com/apikey'
     },
@@ -111,6 +111,16 @@
     return text.indexOf('401') !== -1 || text.indexOf('403') !== -1;
   }
 
+  /**
+   * גוגל מוציאה משימוש שמות מודלים, וההודעה שהיא מחזירה כוללת את
+   * השם החליפי: "Please update your code to use models/X".
+   * חבל לתת למשתמש שגיאה כשהתשובה כתובה בתוכה.
+   */
+  function suggestedModel(message) {
+    var match = String(message || '').match(/use\s+models\/([\w.\-]+)/);
+    return match ? match[1] : null;
+  }
+
   function callGemini(key, model, system, image, text, onModelPicked, validate, project) {
     var base = 'https://generativelanguage.googleapis.com/v1beta/models/' +
       encodeURIComponent(model) + ':generateContent';
@@ -161,7 +171,17 @@
         });
     };
 
-    return tryAt(0, null);
+    return tryAt(0, null).catch(function (error) {
+      // מודל שהוצא משימוש: מנסים שוב עם השם שהשרת עצמו הציע
+      var replacement = suggestedModel(error.message);
+      if (!replacement || replacement === model) throw error;
+
+      return callGemini(key, replacement, system, image, text,
+        onModelPicked, validate, project).then(function (answer) {
+          if (onModelPicked) onModelPicked(replacement);
+          return answer;
+        });
+    });
   }
 
   // --- OpenRouter ---
@@ -398,6 +418,7 @@
   root.Providers = {
     ask: ask,
     modelFits: modelFits,
+    suggestedModel: suggestedModel,
     freeVisionModels: freeVisionModels,
     detect: detect,
     label: label,
