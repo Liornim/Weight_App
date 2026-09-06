@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd12',
+    BUILD: 'd13',
     state: {
       date: Dates.today(),
       asOf: 0,             // עד מתי למדוד: היום, שבוע שעבר, שבועיים
@@ -292,15 +292,26 @@
       return a.key && root.Providers.detect(a.key, a.provider);
     });
 
-    var show = function (html) { if (box) box.innerHTML = html; };
-    show('<p class="stage">קורא את התמונה…</p>');
+    /**
+     * האלמנט נשלף מחדש בכל כתיבה ולא נשמר במשתנה.
+     * שמירת הגדרות באמצע התהליך מרנדרת את המסך מחדש, וכתיבה
+     * לאלמנט הישן נעלמת בלי זכר — זה מה שגרם ל"המודל הוחלף וזהו".
+     */
+    var show = function (html) {
+      var el = document.getElementById('debate');
+      if (el) el.innerHTML = html;
+    };
 
-    // תצוגה מקדימה, כדי שיהיה ברור איזו תמונה נשלחה
-    var preview = view.querySelector('#preview');
-    if (preview && root.URL && root.URL.createObjectURL) {
-      preview.innerHTML = '<img class="shot" alt="התמונה שנבחרה" src="' +
-        root.URL.createObjectURL(file) + '">';
-    }
+    var showPreview = function () {
+      var el = document.getElementById('preview');
+      if (el && root.URL && root.URL.createObjectURL) {
+        el.innerHTML = '<img class="shot" alt="התמונה שנבחרה" src="' +
+          root.URL.createObjectURL(file) + '">';
+      }
+    };
+
+    show('<p class="stage">קורא את התמונה…</p>');
+    showPreview();
 
     root.Estimate.readImage(file).then(function (image) {
       return root.Estimate.run(accounts, image, function (message) {
@@ -315,16 +326,18 @@
       if (result.pickedModel) {
         Store.updateSettings({ aiModelB: result.pickedModel });
         App.toast('המודל הוחלף ל-' + result.pickedModel);
+        // השמירה רינדרה את המסך מחדש, ולכן גם התצוגה המקדימה
+        showPreview();
       }
       show(renderDebate(result));
-      var apply = view.querySelector('#apply-estimate');
+      var apply = document.getElementById('apply-estimate');
       if (apply) {
         apply.addEventListener('click', function () {
           var fields = result.verdict.fields;
           var map = { kcal: 'kcal', protein: 'proteinG', carbs: 'carbG',
             fat: 'fatG', fiber: 'fiberG' };
           Object.keys(map).forEach(function (source) {
-            var el = view.querySelector('[data-field="' + map[source] + '"]');
+            var el = document.querySelector('[data-field="' + map[source] + '"]');
             if (el && root.Fmt.isNum(fields[source])) el.value = Math.round(fields[source]);
           });
           App.toast('המספרים הוזנו בטופס. בדוק ולחץ שמירה.');
