@@ -194,7 +194,22 @@
    *       פחות מועילה מלעבור למודל אחר שפנוי.
    * 502/503 — תקלה זמנית אצל הספק שמאחורי המודל.
    */
+  /**
+   * שגיאה ברמת החשבון, לא ברמת המודל.
+   *
+   * "Insufficient credits" אומר שהמכסה נגמרה, ומעבר למודל אחר רק
+   * יבזבז זמן ויחזיר את אותה שגיאה מכל מודל ברשימה.
+   */
+  function isAccountProblem(error) {
+    var text = String(error && error.message || '');
+    return text.indexOf('402') !== -1 ||
+      text.indexOf('Insufficient credits') !== -1 ||
+      text.indexOf('never purchased credits') !== -1 ||
+      text.indexOf('quota') !== -1;
+  }
+
   function isMissingModel(error) {
+    if (isAccountProblem(error)) return false;
     var text = String(error && error.message || '');
     return text.indexOf('404') !== -1 ||
       text.indexOf('429') !== -1 ||
@@ -323,6 +338,10 @@
     };
 
     return attempt(model).catch(function (error) {
+      if (isAccountProblem(error)) {
+        throw new Error('המכסה החינמית של OpenRouter נגמרה. ' +
+          'היא מתאפסת מדי יום. אפשר להמשיך עם Gemini בינתיים.');
+      }
       if (!isMissingModel(error) && !error.unusable) throw error;
 
       return freeVisionModels().then(function (models) {
@@ -418,6 +437,7 @@
   root.Providers = {
     ask: ask,
     modelFits: modelFits,
+    isAccountProblem: isAccountProblem,
     suggestedModel: suggestedModel,
     freeVisionModels: freeVisionModels,
     detect: detect,

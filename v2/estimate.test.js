@@ -819,6 +819,45 @@ test('כישלון בסיבוב התגובה לא מפיל את ההערכה', (
   });
 });
 
+test('מכסה שנגמרה עוצרת מיד ולא עוברת בין מודלים', () => {
+  let modelCalls = 0;
+  let listCalls = 0;
+
+  w.fetch = (url, opts) => {
+    if (url.indexOf('/models') !== -1 && !opts) {
+      listCalls++;
+      return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
+        JSON.stringify({ data: [
+          { id: 'a:free', name: 'A', pricing: { prompt: '0', completion: '0' },
+            architecture: { input_modalities: ['image'] } },
+          { id: 'b:free', name: 'B', pricing: { prompt: '0', completion: '0' },
+            architecture: { input_modalities: ['image'] } }
+        ] })) });
+    }
+    modelCalls++;
+    return Promise.resolve({ ok: false, status: 402, text: () => Promise.resolve(
+      '{"error":{"message":"Insufficient credits. This account never purchased credits."}}') });
+  };
+
+  return w.Providers.ask({ key: 'sk-or-X', model: 'm:free', system: 's', image: IMAGE, text: 't' })
+    .then(() => { throw new Error('היה צריך להיכשל'); },
+      (error) => {
+        assert(modelCalls === 1, 'ניסה ' + modelCalls + ' מודלים במקום לעצור מיד');
+        assert(listCalls === 0, 'לא היה צריך למשוך רשימת מודלים');
+        assert(error.message.indexOf('המכסה החינמית') !== -1,
+          'ההודעה לא ברורה: ' + error.message);
+        assert(error.message.indexOf('Gemini') !== -1, 'לא הוצעה דרך המשך');
+      });
+});
+
+test('הבחנה בין בעיית חשבון לבעיית מודל', () => {
+  const P = w.Providers;
+  assert(P.isAccountProblem({ message: 'שגיאה 402: Insufficient credits' }), 'קרדיט');
+  assert(P.isAccountProblem({ message: 'exceeded your quota' }), 'מכסה');
+  assert(!P.isAccountProblem({ message: 'שגיאה 429: rate-limited' }), 'עומס אינו בעיית חשבון');
+  assert(!P.isAccountProblem({ message: 'שגיאה 404: No endpoints found' }), 'מודל חסר');
+});
+
 test('פענוח תשובה עמיד לעטיפות', () => {
     const E = w.Estimate;
     assert(E.parseAnswer('```json\n{"kcal":700}\n```').kcal === 700, 'סימני קוד');
