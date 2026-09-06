@@ -29,18 +29,65 @@
 
   var SUM_FIELDS = ['kcal', 'protein', 'carbs', 'fat', 'fiber'];
 
-  function parseAnswer(text) {
-    if (!text) return null;
+  /**
+   * חילוץ המספרים מהתשובה.
+   *
+   * מודלים חינמיים לא תמיד מכבדים בקשה ל-JSON: הם עוטפים בסימני קוד,
+   * מוסיפים הסבר לפני ואחרי, או כותבים טבלה בעברית. לכן שלוש שכבות:
+   * JSON תקין, JSON שמוטמע בתוך טקסט, ואם שתיהן נכשלות — חילוץ לפי
+   * תוויות מהטקסט עצמו. עדיף לקלוט מספרים נכונים מטקסט חופשי מאשר
+   * להיכשל על הפורמט.
+   */
+  var LABELS = {
+    kcal: ['קלוריות', 'קלוריה', 'קק"ל', 'קק״ל', 'calories', 'kcal', 'energy'],
+    protein: ['חלבון', 'חלבונים', 'protein'],
+    carbs: ['פחמימות', 'פחמימה', 'carbohydrates', 'carbs', 'carb'],
+    fat: ['שומן', 'שומנים', 'fat'],
+    fiber: ['סיבים', 'סיב', 'fiber', 'fibre']
+  };
+
+  function fromJson(text) {
     var clean = String(text).replace(/```json/gi, '').replace(/```/g, '').trim();
     var start = clean.indexOf('{');
     var end = clean.lastIndexOf('}');
     if (start === -1 || end === -1 || end <= start) return null;
     try {
       var parsed = JSON.parse(clean.slice(start, end + 1));
-      return typeof parsed === 'object' && parsed ? parsed : null;
+      return (parsed && typeof parsed === 'object' && num(parsed.kcal) !== null) ? parsed : null;
     } catch (error) {
       return null;
     }
+  }
+
+  function fromText(text) {
+    var clean = String(text);
+    var found = {};
+
+    Object.keys(LABELS).forEach(function (field) {
+      LABELS[field].some(function (word) {
+        var at = clean.indexOf(word);
+        if (at === -1) return false;
+        // המספר הקרוב אחרי המילה, גם אם ביניהם נקודתיים או מקף
+        var after = clean.slice(at + word.length, at + word.length + 40);
+        var match = after.match(/[\s:=־|-]*(-?[\d,]+(?:\.\d+)?)/);
+        if (!match) return false;
+        var value = num(match[1].replace(/,/g, ''));
+        if (value === null) return false;
+        found[field] = value;
+        return true;
+      });
+    });
+
+    if (num(found.kcal) === null) return null;
+    found.items = [];
+    found.reasoning = 'המספרים חולצו מטקסט חופשי, כי התשובה לא חזרה כ-JSON.';
+    found.recovered = true;
+    return found;
+  }
+
+  function parseAnswer(text) {
+    if (!text) return null;
+    return fromJson(text) || fromText(text);
   }
 
   function num(value) {
@@ -136,21 +183,39 @@
 
     var picked = {};
 
-    var ask = function (account, system) {
+    var request = function (account, system, extra) {
       return root.Providers.ask({
         key: account.key,
         model: account.model,
         provider: account.provider,
         system: system,
         image: image,
-        text: 'הערך את הארוחה בתמונה.',
+        text: extra || 'הערך את הארוחה בתמונה.',
         onModelPicked: function (name) {
           if (name !== account.model) picked[account.key] = name;
         }
-      }).then(function (text) {
+      });
+    };
+
+    var ask = function (account, system) {
+      return request(account, system).then(function (text) {
         var parsed = parseAnswer(text);
-        if (!parsed) throw new Error('התשובה חזרה בפורמט שלא ניתן לקרוא');
-        return parsed;
+        if (parsed) return parsed;
+
+        // ניסיון שני, עם בקשה חד־משמעית יותר
+        return request(account, system,
+          'הערך את הארוחה בתמונה. חשוב: החזר אך ורק אובייקט JSON, ' +
+          'שמתחיל ב-{ ומסתיים ב-}, בלי מילה אחת לפניו או אחריו ובלי סימני קוד.'
+        ).then(function (second) {
+          var retry = parseAnswer(second);
+          if (retry) {
+            retry.neededRetry = true;
+            return retry;
+          }
+          var error = new Error('התשובה חזרה בפורמט שלא ניתן לקרוא');
+          error.raw = String(second || text || '').slice(0, 400);
+          throw error;
+        });
       });
     };
 

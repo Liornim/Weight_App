@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd9',
+    BUILD: 'd10',
     state: {
       date: Dates.today(),
       asOf: 0,             // עד מתי למדוד: היום, שבוע שעבר, שבועיים
@@ -309,6 +309,9 @@
     }).then(function (result) {
       // אם המערכת נאלצה לבחור מודל אחר, הבחירה נשמרת כדי שהפעם
       // הבאה תעבוד ישירות
+      if (result.lean.recovered || result.rich.recovered) {
+        App.toast('המספרים חולצו מטקסט חופשי — כדאי לוודא אותם');
+      }
       if (result.pickedModel) {
         Store.updateSettings({ aiModelB: result.pickedModel });
         App.toast('המודל הוחלף ל-' + result.pickedModel);
@@ -328,8 +331,13 @@
         });
       }
     }).catch(function (error) {
+      // התשובה הגולמית מוצגת, אחרת אין דרך לדעת מה המודל בעצם החזיר
+      var raw = error.raw
+        ? '<details class="round"><summary>מה המודל החזיר בפועל</summary>' +
+          '<p class="why">' + root.Fmt.esc(error.raw) + '</p></details>'
+        : '';
       show('<p class="stage stage--bad">' + root.Fmt.esc(error.message) + '</p>' +
-        diagnose(error.message));
+        diagnose(error.message) + raw);
     });
   }
 
