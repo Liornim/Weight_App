@@ -105,7 +105,15 @@
 
   // --- OpenRouter ---
 
-  function callOpenRouter(key, model, system, image, text) {
+  /** האם השגיאה אומרת שהמודל עצמו לא קיים או לא זמין */
+  function isMissingModel(error) {
+    var text = String(error && error.message || '');
+    return text.indexOf('404') !== -1 ||
+      text.indexOf('No endpoints found') !== -1 ||
+      text.indexOf('not a valid model') !== -1;
+  }
+
+  function callOpenRouterOnce(key, model, system, image, text) {
     var content = [];
     if (image) {
       content.push({
@@ -179,6 +187,49 @@
     });
   }
 
+  /**
+   * OpenRouter עם ריפוי עצמי.
+   *
+   * שמות המודלים שם משתנים ונעלמים, ולכן מודל שנשמר אתמול עלול
+   * להחזיר 404 היום. במקום להעיף שגיאה למשתמש, המערכת מושכת את
+   * רשימת המודלים החינמיים שקוראים תמונות ומנסה שוב עם הראשון
+   * שעובד. המודל שנבחר מוחזר, כדי שאפשר יהיה לשמור אותו.
+   */
+  function callOpenRouter(key, model, system, image, text, onModelPicked) {
+    var attempt = function (name) {
+      return callOpenRouterOnce(key, name, system, image, text)
+        .then(function (answer) {
+          if (onModelPicked) onModelPicked(name);
+          return answer;
+        });
+    };
+
+    return attempt(model).catch(function (error) {
+      if (!isMissingModel(error)) throw error;
+
+      return freeVisionModels().then(function (models) {
+        if (!models.length) {
+          throw new Error('המודל שנבחר אינו זמין, ולא נמצא מודל חינמי חלופי ' +
+            'שקורא תמונות. אפשר להמשיך עם מפתח אחד בלבד.');
+        }
+
+        // מנסים אחד אחרי השני; חלקם מדווחים כזמינים ובכל זאת נופלים
+        var tryNext = function (index) {
+          if (index >= models.length) {
+            throw new Error('אף אחד מהמודלים החינמיים לא הצליח לקרוא את התמונה.');
+          }
+          if (models[index].id === model) return tryNext(index + 1);
+          return attempt(models[index].id).catch(function (nextError) {
+            if (!isMissingModel(nextError)) throw nextError;
+            return tryNext(index + 1);
+          });
+        };
+
+        return tryNext(0);
+      });
+    });
+  }
+
   var CALLS = {
     gemini: callGemini,
     openrouter: callOpenRouter,
@@ -197,7 +248,8 @@
     }
 
     var model = request.model || PROVIDERS[name].defaultModel;
-    return CALLS[name](request.key, model, request.system, request.image, request.text);
+    return CALLS[name](request.key, model, request.system, request.image,
+      request.text, request.onModelPicked);
   }
 
   /**

@@ -307,6 +307,12 @@
         show('<p class="stage">' + root.Fmt.esc(message) + '…</p>');
       });
     }).then(function (result) {
+      // אם המערכת נאלצה לבחור מודל אחר, הבחירה נשמרת כדי שהפעם
+      // הבאה תעבוד ישירות
+      if (result.pickedModel) {
+        Store.updateSettings({ aiModelB: result.pickedModel });
+        App.toast('המודל הוחלף ל-' + result.pickedModel);
+      }
       show(renderDebate(result));
       var apply = view.querySelector('#apply-estimate');
       if (apply) {
@@ -382,6 +388,10 @@
       (result.sameProvider
         ? '<p class="why">שתי ההערכות מאותו מודל. מפתח שני, ממשפחה אחרת, ' +
           'היה חושף יותר.</p>'
+        : '') +
+      (result.pickedModel
+        ? '<p class="why">המודל שהיה מוגדר לא היה זמין, והוחלף אוטומטית ל-' +
+          Fmt.esc(result.pickedModel) + '.</p>'
         : '');
   }
 

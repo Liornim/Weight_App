@@ -18,10 +18,23 @@ const w = dom.window;
 let passed = 0;
 const failures = [];
 
+// הבדיקות חולקות fetch מדומה אחד, ולכן הן חייבות לרוץ בטור.
+// הרצה במקביל גרמה לכך ששרת של בדיקה אחת ענה לבדיקה אחרת.
+const queue = [];
+
 function test(name, fn) {
-  return Promise.resolve()
-    .then(fn)
-    .then(() => { passed++; }, (error) => failures.push({ name, message: error.message }));
+  queue.push({ name, fn });
+}
+
+function runAll() {
+  return queue.reduce(function (chain, item) {
+    return chain.then(function () {
+      return Promise.resolve()
+        .then(item.fn)
+        .then(() => { passed++; },
+          (error) => failures.push({ name: item.name, message: error.message }));
+    });
+  }, Promise.resolve());
 }
 
 function assert(condition, message) {
@@ -53,8 +66,7 @@ const IMAGE = { base64: 'BASE64DATA', mediaType: 'image/jpeg' };
 
 // ---------------------------------------------------------------
 
-const tests = [
-  test('זיהוי הספק לפי צורת המפתח', () => {
+test('זיהוי הספק לפי צורת המפתח', () => {
     const P = w.Providers;
     assert(P.detect('AIzaSyABC') === 'gemini', 'Gemini בפורמט הישן');
     assert(P.detect('AQ.Ab8RN6Ky_hPxp0') === 'gemini', 'Gemini בפורמט החדש');
@@ -63,9 +75,9 @@ const tests = [
     assert(P.detect('משהו אחר') === null, 'לא מזוהה');
     assert(P.detect('') === null, 'ריק');
     assert(P.label('AIzaX') === 'Gemini', 'תווית');
-  }),
+  });
 
-  test('הבקשה ל-Gemini נבנית בפורמט שלה', () => {
+test('הבקשה ל-Gemini נבנית בפורמט שלה', () => {
     const calls = stub(() => JSON.stringify({
       candidates: [{ content: { parts: [{ text: answer(700) }] } }]
     }));
@@ -80,9 +92,9 @@ const tests = [
       assert(parts[0].inline_data.data === 'BASE64DATA', 'התמונה לא נשלחה');
       assert(calls[0].body.systemInstruction.parts[0].text === 'הוראה', 'ההוראה לא נשלחה');
     });
-  }),
+  });
 
-  test('הבקשה ל-OpenRouter נבנית בפורמט שלה', () => {
+test('הבקשה ל-OpenRouter נבנית בפורמט שלה', () => {
     const calls = stub(() => JSON.stringify({
       choices: [{ message: { content: answer(900) } }]
     }));
@@ -96,9 +108,9 @@ const tests = [
       const content = calls[0].body.messages[1].content;
       assert(content[0].image_url.url.indexOf('BASE64DATA') !== -1, 'התמונה לא נשלחה');
     });
-  }),
+  });
 
-  test('שגיאת שרת מוחזרת עם הסבר', () => {
+test('שגיאת שרת מוחזרת עם הסבר', () => {
     w.fetch = () => Promise.resolve({
       ok: false, status: 429, text: () => Promise.resolve('rate limit')
     });
@@ -108,9 +120,9 @@ const tests = [
           assert(error.message.indexOf('429') !== -1, 'קוד השגיאה חסר: ' + error.message);
           assert(error.message.indexOf('rate limit') !== -1, 'גוף השגיאה חסר');
         });
-  }),
+  });
 
-  test('שני ספקים -> ויכוח בין משפחות שונות', () => {
+test('שני ספקים -> ויכוח בין משפחות שונות', () => {
     const calls = stub((url) => url.indexOf('generativelanguage') !== -1
       ? JSON.stringify({ candidates: [{ content: { parts: [{ text: answer(600) }] } }] })
       : JSON.stringify({ choices: [{ message: { content: answer(1000) } }] }));
@@ -130,9 +142,9 @@ const tests = [
       assert(systems[0].indexOf('בחר בנמוכה') !== -1, 'השמרן לא קיבל את ההטיה שלו');
       assert(systems[1].indexOf('בחר בגבוהה') !== -1, 'המחמיר לא קיבל את ההטיה שלו');
     });
-  }),
+  });
 
-  test('מפתח אחד -> אותו ספק בשתי עמדות', () => {
+test('מפתח אחד -> אותו ספק בשתי עמדות', () => {
     const calls = stub(() => JSON.stringify({
       candidates: [{ content: { parts: [{ text: answer(750) }] } }]
     }));
@@ -142,16 +154,16 @@ const tests = [
       assert(result.sameProvider, 'אמור להיות מסומן כאותו ספק');
       assert(result.verdict.confidence === 'high', 'אותו מספר -> הסכמה מלאה');
     });
-  }),
+  });
 
-  test('בלי מפתח בכלל -> שגיאה ברורה', () => {
+test('בלי מפתח בכלל -> שגיאה ברורה', () => {
     return w.Estimate.run([], IMAGE).then(
       () => { throw new Error('היה צריך להיכשל'); },
       (error) => assert(error.message.indexOf('מפתח') !== -1, error.message)
     );
-  }),
+  });
 
-  test('ההכרעה משתנה לפי גודל הפער', () => {
+test('ההכרעה משתנה לפי גודל הפער', () => {
     const R = w.Estimate.reconcile;
 
     const close = R({ kcal: 800, protein: 40 }, { kcal: 850, protein: 44 });
@@ -166,15 +178,15 @@ const tests = [
     assert(far.confidence === 'low', 'פער של 67% -> נמוך');
     assert(far.notes.length > 0, 'אמורה להיות הערה');
     assert(far.range.low === 700 && far.range.high === 1400, 'הטווח');
-  }),
+  });
 
-  test('שדה שחסר אצל אחד נלקח מהשני', () => {
+test('שדה שחסר אצל אחד נלקח מהשני', () => {
     const r = w.Estimate.reconcile({ kcal: 800, fiber: 10 }, { kcal: 900 });
     assert(r.fields.fiber === 10, 'הסיבים: ' + r.fields.fiber);
     assert(r.fields.kcal === 850, 'הקלוריות עדיין ממוצע');
-  }),
+  });
 
-  test('פריט שרק אחד ראה מזוהה', () => {
+test('פריט שרק אחד ראה מזוהה', () => {
     const diff = w.Estimate.itemDifferences(
       { items: [{ name: 'עוף' }, { name: 'אורז' }] },
       { items: [{ name: 'עוף' }, { name: 'אורז' }, { name: 'שמן זית' }] }
@@ -182,9 +194,9 @@ const tests = [
     assert(diff.onlyRich.length === 1 && diff.onlyRich[0] === 'שמן זית',
       'רק המחמיר ראה שמן: ' + JSON.stringify(diff));
     assert(diff.onlyLean.length === 0, 'לשמרן אין פריט ייחודי');
-  }),
+  });
 
-  test('אפשר לבחור ספק ידנית כשהמפתח לא מזוהה', () => {
+test('אפשר לבחור ספק ידנית כשהמפתח לא מזוהה', () => {
     const P = w.Providers;
     assert(P.detect('xyz-unknown-format') === null, 'מפתח בצורה לא מוכרת');
     assert(P.detect('xyz-unknown-format', 'gemini') === 'gemini', 'העקיפה לא נלקחה');
@@ -194,9 +206,9 @@ const tests = [
     const list = P.options();
     assert(list.length === 3, 'שלושה ספקים');
     assert(list.some((o) => o.value === 'gemini' && o.free), 'Gemini מסומן כחינמי');
-  }),
+  });
 
-  test('בקשה עם ספק שנבחר ידנית מגיעה לכתובת הנכונה', () => {
+test('בקשה עם ספק שנבחר ידנית מגיעה לכתובת הנכונה', () => {
     const calls = stub(() => JSON.stringify({
       candidates: [{ content: { parts: [{ text: answer(700) }] } }]
     }));
@@ -207,16 +219,16 @@ const tests = [
       assert(calls[0].url.indexOf('generativelanguage') !== -1,
         'לא פנה ל-Gemini: ' + calls[0].url);
     });
-  }),
+  });
 
-  test('מפתח לא מזוהה ובלי בחירה -> שגיאה מנחה', () => {
+test('מפתח לא מזוהה ובלי בחירה -> שגיאה מנחה', () => {
     return w.Providers.ask({ key: 'totally-unknown', system: 's', image: IMAGE, text: 't' })
       .then(() => { throw new Error('היה צריך להיכשל'); },
         (error) => assert(error.message.indexOf('ידנית') !== -1,
           'השגיאה לא מנחה מה לעשות: ' + error.message));
-  }),
+  });
 
-  test('רשימת המודלים מסננת לחינמיים שקוראים תמונות', () => {
+test('רשימת המודלים מסננת לחינמיים שקוראים תמונות', () => {
     stub(() => JSON.stringify({ data: [
       { id: 'a/vision:free', name: 'Vision Free',
         pricing: { prompt: '0', completion: '0' },
@@ -242,9 +254,9 @@ const tests = [
       // ממוין לפי שם, כדי שהרשימה תהיה יציבה
       assert(models[0].name === 'Another Free', 'לא ממוין: ' + models[0].name);
     });
-  }),
+  });
 
-  test('רשימה ריקה או שגיאה מדווחות ולא קורסות', () => {
+test('רשימה ריקה או שגיאה מדווחות ולא קורסות', () => {
     stub(() => JSON.stringify({ data: [] }));
     return w.Providers.freeVisionModels().then((models) => {
       assert(models.length === 0, 'רשימה ריקה');
@@ -257,19 +269,87 @@ const tests = [
         (error) => assert(error.message.indexOf('500') !== -1, error.message)
       );
     });
-  }),
+  });
 
-  test('פענוח תשובה עמיד לעטיפות', () => {
+test('מודל שאינו זמין מוחלף אוטומטית באחר', () => {
+    const seen = [];
+    w.fetch = (url, opts) => {
+      if (url.indexOf('/models') !== -1 && !opts) {
+        return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
+          JSON.stringify({ data: [
+            { id: 'works/vision:free', name: 'Works',
+              pricing: { prompt: '0', completion: '0' },
+              architecture: { input_modalities: ['text', 'image'] } }
+          ] })) });
+      }
+      const body = JSON.parse(opts.body);
+      seen.push(body.model);
+      if (body.model === 'gone/model:free') {
+        return Promise.resolve({ ok: false, status: 404, text: () => Promise.resolve(
+          '{"error":{"message":"No endpoints found for gone/model:free.","code":404}}') });
+      }
+      return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
+        JSON.stringify({ choices: [{ message: { content: answer(800) } }] })) });
+    };
+
+    let chosen = null;
+    return w.Providers.ask({
+      key: 'sk-or-X', model: 'gone/model:free', system: 's', image: IMAGE, text: 't',
+      onModelPicked: (name) => { chosen = name; }
+    }).then((text) => {
+      assert(text.indexOf('800') !== -1, 'לא חזרה תשובה');
+      assert(seen[0] === 'gone/model:free', 'לא ניסה קודם את המקורי');
+      assert(seen[1] === 'works/vision:free', 'לא עבר לחלופה: ' + seen[1]);
+      assert(chosen === 'works/vision:free', 'המודל שנבחר לא דווח');
+    });
+  });
+
+test('כשאין חלופה זמינה, השגיאה מסבירה מה לעשות', () => {
+    w.fetch = (url, opts) => {
+      if (url.indexOf('/models') !== -1 && !opts) {
+        return Promise.resolve({ ok: true, status: 200,
+          text: () => Promise.resolve(JSON.stringify({ data: [] })) });
+      }
+      return Promise.resolve({ ok: false, status: 404, text: () => Promise.resolve(
+        '{"error":{"message":"No endpoints found","code":404}}') });
+    };
+
+    return w.Providers.ask({
+      key: 'sk-or-X', model: 'gone:free', system: 's', image: IMAGE, text: 't'
+    }).then(() => { throw new Error('היה צריך להיכשל'); },
+      (error) => {
+        assert(error.message.indexOf('מפתח אחד') !== -1,
+          'השגיאה לא מציעה דרך המשך: ' + error.message);
+      });
+  });
+
+test('שגיאה שאינה מודל חסר לא גוררת חיפוש חלופה', () => {
+    let modelListCalls = 0;
+    w.fetch = (url, opts) => {
+      if (url.indexOf('/models') !== -1 && !opts) { modelListCalls++; }
+      return Promise.resolve({ ok: false, status: 401,
+        text: () => Promise.resolve('invalid key') });
+    };
+
+    return w.Providers.ask({
+      key: 'sk-or-X', model: 'm:free', system: 's', image: IMAGE, text: 't'
+    }).then(() => { throw new Error('היה צריך להיכשל'); },
+      (error) => {
+        assert(error.message.indexOf('401') !== -1, 'קוד השגיאה חסר');
+        assert(modelListCalls === 0, 'לא היה צריך למשוך רשימת מודלים');
+      });
+  });
+
+test('פענוח תשובה עמיד לעטיפות', () => {
     const E = w.Estimate;
     assert(E.parseAnswer('```json\n{"kcal":700}\n```').kcal === 700, 'סימני קוד');
     assert(E.parseAnswer('הנה:\n{"kcal":700}\nבהצלחה').kcal === 700, 'טקסט מסביב');
     assert(E.parseAnswer('בלי JSON') === null, 'בלי JSON');
     assert(E.parseAnswer('') === null, 'ריק');
     assert(E.parseAnswer('{"broken":') === null, 'שבור');
-  })
-];
+});
 
-Promise.all(tests).then(() => {
+runAll().then(() => {
   console.log('');
   failures.forEach((f) => { console.log('\u2717 ' + f.name); console.log('   ' + f.message); });
   console.log('\n' + passed + ' עברו, ' + failures.length + ' נכשלו\n');

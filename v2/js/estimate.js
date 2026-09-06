@@ -134,6 +134,8 @@
 
     stage('שולח את התמונה לשני המעריכים');
 
+    var picked = {};
+
     var ask = function (account, system) {
       return root.Providers.ask({
         key: account.key,
@@ -141,7 +143,10 @@
         provider: account.provider,
         system: system,
         image: image,
-        text: 'הערך את הארוחה בתמונה.'
+        text: 'הערך את הארוחה בתמונה.',
+        onModelPicked: function (name) {
+          if (name !== account.model) picked[account.key] = name;
+        }
       }).then(function (text) {
         var parsed = parseAnswer(text);
         if (!parsed) throw new Error('התשובה חזרה בפורמט שלא ניתן לקרוא');
@@ -160,6 +165,8 @@
       return {
         lean: lean,
         rich: rich,
+        // מודל שנבחר אוטומטית אחרי שהמקורי לא היה זמין
+        pickedModel: picked[richAccount.key] || picked[leanAccount.key] || null,
         leanProvider: root.Providers.label(leanAccount.key, leanAccount.provider),
         richProvider: root.Providers.label(richAccount.key, richAccount.provider),
         sameProvider: leanAccount.key === richAccount.key,
