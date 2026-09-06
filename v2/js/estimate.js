@@ -270,6 +270,15 @@
    * accounts הוא [{key, model}] — שניים או אחד. עם אחד, שתי
    * ההערכות ירוצו על אותו ספק עם ההטיות המנוגדות.
    */
+  /**
+   * מריץ את שני המעריכים ומחזיר את שתי ההערכות וההכרעה.
+   *
+   * שלושה כללים שנלמדו בשימוש:
+   * מודל קטן מוסר הערכה אבל אינו משתתף בסיבוב התגובה, כי הוא נוטה
+   * להיסחף אחרי הצד השני. ספק שנופל אינו מפיל את כל ההערכה — הצד
+   * ששרד ממלא את מקומו בעמדה ההפוכה, ונאמר במפורש מי לא ענה.
+   * ושני מעריכים על אותו מפתח רצים בטור, כדי לא להכפיל עומס.
+   */
   function run(accounts, image, onStage) {
     var stage = onStage || function () {};
     var list = (accounts || []).filter(function (a) { return a && a.key; });
@@ -277,9 +286,7 @@
 
     var leanAccount = list[0];
     var richAccount = list[1] || list[0];
-
-    stage('שולח את התמונה לשני המעריכים');
-
+    var shared = leanAccount.key === richAccount.key;
     var picked = {};
 
     var request = function (account, system, extra) {
@@ -292,10 +299,8 @@
         image: image,
         text: extra || 'הערך את הארוחה בתמונה.',
         onModelPicked: function (name) {
-          if (name !== account.model) picked[account.key] = name;
+          if (name !== account.model) picked[account.slot] = name;
         },
-        // מודל שמחזיר תשובה לא שפויה נחשב כלא מתאים, והמערכת
-        // ממשיכה למודל הבא ברשימה במקום להציג אפסים
         validate: function (answer) { return plausible(parseAnswer(answer)); }
       });
     };
@@ -313,7 +318,6 @@
         var parsed = parseAnswer(text);
         if (plausible(parsed)) return parsed;
 
-        // ניסיון שני, עם בקשה חד־משמעית יותר
         return request(account, system,
           'הערך את הארוחה בתמונה. חשוב: החזר אך ורק אובייקט JSON, ' +
           'שמתחיל ב-{ ומסתיים ב-}, בלי מילה אחת לפניו או אחריו ובלי סימני קוד.'
@@ -330,100 +334,167 @@
             ? 'המודל החזיר אפס קלוריות — כנראה אינו מתאים להערכת מזון'
             : 'התשובה חזרה בפורמט שלא ניתן לקרוא' + (raw ? '' : ' (והיא ריקה)'));
           error.raw = raw ? raw.slice(0, 500) : '(המודל לא החזיר טקסט בכלל)';
-          error.provider = root.Providers.label(account.key, account.provider);
-          error.model = account.model || '(ברירת מחדל)';
           throw error;
         });
       }).catch(describe);
     };
 
-    // כששני המעריכים חולקים מפתח, הרצה במקביל מכפילה את העומס על
-    // אותו מודל חינמי וגוררת 429. במקרה כזה הם רצים בזה אחר זה.
-    var shared = leanAccount.key === richAccount.key;
-
-    var both = shared
-      ? ask(leanAccount, LEAN).then(function (lean) {
-          return ask(richAccount, RICH).then(function (rich) { return [lean, rich]; });
-        })
-      : Promise.all([ask(leanAccount, LEAN), ask(richAccount, RICH)]);
-
-    /**
-     * סיבוב תגובה: כל צד רואה את הערכת השני ומגיב.
-     *
-     * זה הלב של הרעיון. הערכה ראשונה היא ניחוש; אחרי שרואים מספר
-     * אחר צריך להצדיק את הפער או להודות בו, וזה מוציא החוצה את
-     * ההנחה שגרמה לו — בדרך כלל הכמות או השמן.
-     */
-    var rebut = function (account, system, mine, theirs) {
-      var text = 'זו ההערכה שלך על התמונה:\n' + JSON.stringify(mine) +
-        '\n\nמעריך אחר בחן את אותה תמונה והגיע למספרים אחרים:\n' +
-        JSON.stringify(theirs) +
-        '\n\nהפער ביניכם הוא בעיקר בכמות. בדוק שוב את התמונה: ' +
-        'היכן הוא מדויק ממך, והיכן אתה ממנו? ' +
-        'אם השתכנעת — עדכן את המספרים. אם לא — השאר אותם. ' +
-        'ב-reasoning כתוב בעברית משפט אחד: מה שינית ולמה, או למה לא שינית. ' +
-        'ענה באותו מבנה JSON בדיוק.';
-
-      return request(account, system, text).then(function (answer) {
-        var parsed = parseAnswer(answer);
-        return plausible(parsed) ? parsed : mine;
-      }).catch(function () { return mine; });
+    /** מריץ צד אחד ומחזיר תוצאה או תקלה, בלי להפיל את השאר */
+    var attempt = function (account, system) {
+      return ask(account, system).then(
+        function (data) { return { ok: true, data: data, account: account }; },
+        function (error) {
+          return {
+            ok: false, account: account, error: error,
+            provider: error.provider || root.Providers.label(account.key, account.provider),
+            message: error.message
+          };
+        });
     };
 
-    return both.then(function (answers) {
-      var lean = answers[0];
-      var rich = answers[1];
+    stage('שולח את התמונה לשני המעריכים');
+
+    var opening = shared
+      ? attempt(leanAccount, LEAN).then(function (a) {
+          return attempt(richAccount, RICH).then(function (b) { return [a, b]; });
+        })
+      : Promise.all([attempt(leanAccount, LEAN), attempt(richAccount, RICH)]);
+
+    return opening.then(function (results) {
+      var failure = null;
+
+      // ספק שנפל: הצד ששרד ממלא את מקומו בעמדה ההפוכה
+      // כששניהם נפלו, השגיאה המקורית מועברת כמו שהיא — כולל
+      // הטקסט הגולמי, שהוא המידע היחיד שמאפשר לאבחן
+      if (!results[0].ok && !results[1].ok) throw results[0].error;
+
+      if (!results[0].ok || !results[1].ok) {
+        var down = results[0].ok ? results[1] : results[0];
+        var up = results[0].ok ? results[0] : results[1];
+        failure = { provider: down.provider, message: down.message };
+
+        stage(down.provider + ' לא ענה; ' + up.account.providerLabel +
+          ' ממלא את שני התפקידים');
+
+        var missingSystem = results[0].ok ? RICH : LEAN;
+        return attempt(up.account, missingSystem).then(function (replacement) {
+          if (!replacement.ok) {
+            var err = new Error(replacement.message);
+            err.provider = replacement.provider;
+            throw err;
+          }
+          return {
+            lean: results[0].ok ? results[0].data : replacement.data,
+            rich: results[0].ok ? replacement.data : results[1].data,
+            leanAccount: results[0].ok ? leanAccount : up.account,
+            richAccount: results[0].ok ? up.account : richAccount,
+            failure: failure,
+            substituted: true
+          };
+        });
+      }
+
+      return {
+        lean: results[0].data,
+        rich: results[1].data,
+        leanAccount: leanAccount,
+        richAccount: richAccount,
+        failure: null,
+        substituted: false
+      };
+    }).then(function (state) {
+      var lean = state.lean;
+      var rich = state.rich;
 
       var gap = Math.abs(num(lean.kcal) - num(rich.kcal));
       var mean = (num(lean.kcal) + num(rich.kcal)) / 2;
       var share = mean ? gap / mean : 0;
 
-      // כששניהם כבר מסכימים אין על מה להתווכח
       if (share < 0.12) {
         stage('שני המעריכים קרובים; אין צורך בוויכוח');
-        return { lean: lean, rich: rich, first: null };
+        return Object.assign(state, { first: null, skipped: null });
       }
 
-      stage('הפער ' + Math.round(share * 100) + '% — כל מעריך רואה את השני ומגיב');
+      // מודל קטן מוסר הערכה אבל אינו מתווכח
+      var leanLight = root.Providers.isLightweight(
+        state.leanAccount.model || defaultModelFor(state.leanAccount));
+      var richLight = root.Providers.isLightweight(
+        state.richAccount.model || defaultModelFor(state.richAccount));
 
-      var rebuttals = shared
-        ? rebut(leanAccount, LEAN, lean, rich).then(function (l) {
-            return rebut(richAccount, RICH, rich, lean).then(function (r) { return [l, r]; });
-          })
-        : Promise.all([
-            rebut(leanAccount, LEAN, lean, rich),
-            rebut(richAccount, RICH, rich, lean)
-          ]);
+      if (leanLight && richLight) {
+        stage('שני המודלים קטנים; מדלג על הוויכוח');
+        return Object.assign(state, { first: null, skipped: 'both' });
+      }
 
-      return rebuttals.then(function (revised) {
-        return { lean: revised[0], rich: revised[1], first: { lean: lean, rich: rich } };
+      stage('הפער ' + Math.round(share * 100) + '% — סיבוב תגובה');
+
+      var rebut = function (account, system, mine, theirs) {
+        var text = 'זו ההערכה שלך על התמונה:\n' + JSON.stringify(mine) +
+          '\n\nמעריך אחר בחן את אותה תמונה והגיע למספרים אחרים:\n' +
+          JSON.stringify(theirs) +
+          '\n\nהפער ביניכם הוא בעיקר בכמות. בדוק שוב את התמונה: ' +
+          'היכן הוא מדויק ממך, והיכן אתה ממנו? ' +
+          'אם השתכנעת — עדכן את המספרים. אם לא — השאר אותם. ' +
+          'ב-reasoning כתוב בעברית משפט אחד: מה שינית ולמה, או למה לא שינית. ' +
+          'ענה באותו מבנה JSON בדיוק.';
+
+        return request(account, system, text).then(function (answer) {
+          var parsed = parseAnswer(answer);
+          return plausible(parsed) ? parsed : mine;
+        }).catch(function () { return mine; });
+      };
+
+      var leanTurn = leanLight
+        ? Promise.resolve(lean)
+        : rebut(state.leanAccount, LEAN, lean, rich);
+      var richTurn = richLight
+        ? Promise.resolve(rich)
+        : rebut(state.richAccount, RICH, rich, lean);
+
+      var turns = shared
+        ? leanTurn.then(function (l) { return richTurn.then(function (r) { return [l, r]; }); })
+        : Promise.all([leanTurn, richTurn]);
+
+      return turns.then(function (revised) {
+        return Object.assign(state, {
+          lean: revised[0],
+          rich: revised[1],
+          first: { lean: lean, rich: rich },
+          skipped: leanLight ? 'lean' : richLight ? 'rich' : null
+        });
       });
     }).then(function (state) {
       stage('משווה בין ההערכות');
-      var lean = state.lean;
-      var rich = state.rich;
 
-      // כמה כל צד זז אחרי ששמע את השני
       var movement = state.first ? {
-        lean: num(lean.kcal) - num(state.first.lean.kcal),
-        rich: num(rich.kcal) - num(state.first.rich.kcal)
+        lean: num(state.lean.kcal) - num(state.first.lean.kcal),
+        rich: num(state.rich.kcal) - num(state.first.rich.kcal)
       } : null;
 
       return {
-        lean: lean,
-        rich: rich,
+        lean: state.lean,
+        rich: state.rich,
         firstRound: state.first,
         movement: movement,
-        shared: sharedItems(lean, rich),
-        // מודל שנבחר אוטומטית אחרי שהמקורי לא היה זמין
-        pickedModel: picked[richAccount.key] || picked[leanAccount.key] || null,
-        leanProvider: root.Providers.label(leanAccount.key, leanAccount.provider),
-        richProvider: root.Providers.label(richAccount.key, richAccount.provider),
-        sameProvider: leanAccount.key === richAccount.key,
-        verdict: reconcile(lean, rich),
-        differences: itemDifferences(lean, rich)
+        skippedDebate: state.skipped,
+        failure: state.failure,
+        substituted: state.substituted,
+        shared: sharedItems(state.lean, state.rich),
+        leanProvider: root.Providers.label(state.leanAccount.key, state.leanAccount.provider),
+        richProvider: root.Providers.label(state.richAccount.key, state.richAccount.provider),
+        leanModel: state.leanAccount.model || defaultModelFor(state.leanAccount),
+        richModel: state.richAccount.model || defaultModelFor(state.richAccount),
+        sameProvider: state.leanAccount.key === state.richAccount.key,
+        pickedModels: picked,
+        verdict: reconcile(state.lean, state.rich),
+        differences: itemDifferences(state.lean, state.rich)
       };
     });
+  }
+
+  function defaultModelFor(account) {
+    var name = root.Providers.detect(account.key, account.provider);
+    return name ? root.Providers.PROVIDERS[name].defaultModel : '';
   }
 
   function readImage(file) {

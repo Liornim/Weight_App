@@ -452,8 +452,8 @@
 
     var settings = Store.getSettings();
     var accounts = [
-      { key: settings.aiKeyA, provider: settings.aiProviderA },
-      { key: settings.aiKeyB, provider: settings.aiProviderB }
+      { key: settings.aiKeyA, provider: settings.aiProviderA, model: settings.aiModelA },
+      { key: settings.aiKeyB, provider: settings.aiProviderB, model: settings.aiModelB }
     ].filter(function (a) {
       return a.key && root.Providers.detect(a.key, a.provider);
     });
@@ -519,6 +519,20 @@
       '<option value="">בחר</option>' + options + '</select></div>';
   }
 
+  /** שדה מודל לכל מפתח, כדי שאפשר יהיה להריץ שני מודלים שונים */
+  function modelField(slot, key, override, value) {
+    var name = root.Providers.detect(key, override);
+    if (!name) return '';
+    var provider = root.Providers.PROVIDERS[name];
+
+    return '<div class="field"><label for="model-' + slot + '">מודל למפתח ' +
+      (slot === 'A' ? 'הראשון' : 'השני') +
+      ' <span class="unit">' + P.esc(provider.label) + '</span></label>' +
+      '<input id="model-' + slot + '" data-model="aiModel' + slot + '" type="text" ' +
+      'placeholder="' + P.esc(provider.defaultModel) + '" value="' +
+      P.esc(value || '') + '"></div>';
+  }
+
   function settingsSection(state, entries, settings) {
     var Providers = root.Providers;
     var rate = Fmt.isNum(settings.goal.ratePerWeekKg) ? Math.abs(settings.goal.ratePerWeekKg) : 0;
@@ -561,12 +575,10 @@
         'placeholder="sk-or-..." value="' + P.esc(settings.aiKeyB || '') + '"></div>' +
       providerPicker('B', settings.aiKeyB, settings.aiProviderB) +
 
+      modelField('A', settings.aiKeyA, settings.aiProviderA, settings.aiModelA) +
+      modelField('B', settings.aiKeyB, settings.aiProviderB, settings.aiModelB) +
       (Providers.detect(settings.aiKeyB, settings.aiProviderB) === 'openrouter'
-        ? '<div class="field"><label for="ai-model-b">מודל ב-OpenRouter</label>' +
-          '<input id="ai-model-b" data-model="aiModelOpenrouter" type="text" ' +
-          'placeholder="' + P.esc(Providers.PROVIDERS.openrouter.defaultModel) + '" value="' +
-          P.esc(settings.aiModelOpenrouter || '') + '"></div>' +
-          '<button type="button" class="btn" id="load-models">' +
+        ? '<button type="button" class="btn" id="load-models">' +
             'טעינת המודלים החינמיים שקוראים תמונות</button>' +
           '<div id="model-list"></div>'
         : '') +

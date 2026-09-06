@@ -858,6 +858,99 @@ test('הבחנה בין בעיית חשבון לבעיית מודל', () => {
   assert(!P.isAccountProblem({ message: 'שגיאה 404: No endpoints found' }), 'מודל חסר');
 });
 
+test('מודל קטן מוסר הערכה אך אינו מתווכח', () => {
+  const prompts = [];
+  let round = 0;
+  w.fetch = (url, opts) => {
+    const body = JSON.parse(opts.body);
+    prompts.push(JSON.stringify(body));
+    round++;
+    const kcal = round === 1 ? 200 : round === 2 ? 400 : 300;
+    return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
+      JSON.stringify({ candidates: [{ content: { parts: [{ text: answer(kcal) }] } }] })) });
+  };
+
+  return w.Estimate.run([
+    { slot: 'A', key: 'AQ.SMALL', model: 'gemini-2.5-flash-lite' },
+    { slot: 'B', key: 'AQ.BIG', model: 'gemini-3.6-pro' }
+  ], IMAGE).then((result) => {
+    // שלוש קריאות: שתי הערכות, ותגובה של הגדול בלבד
+    assert(prompts.length === 3, 'ציפיתי לשלוש קריאות, היו ' + prompts.length);
+    assert(result.skippedDebate === 'lean', 'הקטן היה צריך לדלג: ' + result.skippedDebate);
+    assert(result.lean.kcal === 200, 'הערכת הקטן לא אמורה להשתנות');
+    assert(result.movement.lean === 0, 'הקטן זז למרות שלא התווכח');
+  });
+});
+
+test('שני מודלים גדולים -> שניהם מתווכחים', () => {
+  let round = 0;
+  w.fetch = () => {
+    round++;
+    const kcal = round === 1 ? 200 : round === 2 ? 400 : 300;
+    return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
+      JSON.stringify({ candidates: [{ content: { parts: [{ text: answer(kcal) }] } }] })) });
+  };
+
+  return w.Estimate.run([
+    { slot: 'A', key: 'AQ.ONE', model: 'gemini-3.6-flash' },
+    { slot: 'B', key: 'AQ.TWO', model: 'gemini-3.6-pro' }
+  ], IMAGE).then((result) => {
+    assert(round === 4, 'ציפיתי לארבע קריאות, היו ' + round);
+    assert(result.skippedDebate === null, 'לא היה צריך לדלג');
+  });
+});
+
+test('ספק שנופל אינו מפיל את ההערכה', () => {
+  const seen = [];
+  w.fetch = (url, opts) => {
+    const gemini = url.indexOf('generativelanguage') !== -1;
+    seen.push(gemini ? 'gemini' : 'other');
+
+    if (!gemini) {
+      return Promise.resolve({ ok: false, status: 402, text: () => Promise.resolve(
+        '{"error":{"message":"Insufficient credits"}}') });
+    }
+    return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
+      JSON.stringify({ candidates: [{ content: { parts: [{ text: answer(700) }] } }] })) });
+  };
+
+  return w.Estimate.run([
+    { slot: 'A', key: 'AQ.WORKS', model: 'gemini-3.6-flash' },
+    { slot: 'B', key: 'sk-or-DEAD', model: 'x:free' }
+  ], IMAGE).then((result) => {
+    assert(result.failure, 'לא דווח על הספק שנפל');
+    assert(result.failure.provider === 'OpenRouter', 'הספק: ' + result.failure.provider);
+    assert(result.substituted, 'לא סומן שהיה מילוי מקום');
+    assert(result.verdict.fields.kcal === 700, 'ההערכה לא הושלמה');
+    assert(seen.filter((x) => x === 'gemini').length >= 2,
+      'Gemini היה צריך למלא את שני התפקידים');
+  });
+});
+
+test('שני הספקים נופלים -> שגיאה', () => {
+  w.fetch = () => Promise.resolve({ ok: false, status: 500,
+    text: () => Promise.resolve('boom') });
+
+  return w.Estimate.run([{ slot: 'A', key: 'AQ.A' }], IMAGE).then(
+    () => { throw new Error('היה צריך להיכשל'); },
+    (error) => assert(error.message.indexOf('500') !== -1, error.message));
+});
+
+test('זיהוי מודל קטן', () => {
+  const L = w.Providers.isLightweight;
+  assert(L('gemini-2.5-flash-lite'), 'lite');
+  assert(L('google/gemma-4-26b-a4b-it:free'), 'gemma');
+  assert(L('claude-haiku-4-5'), 'haiku');
+  assert(L('llama-3b-instruct'), '3b');
+  assert(L('gemini-2.5-flash-8b'), '8b');
+  assert(!L('gemini-3.6-pro'), 'pro אינו קטן');
+  assert(!L('gemini-3.6-flash'), 'flash רגיל אינו קטן');
+  // המילה gemini מכילה mini, וזה הכשיל את הזיהוי
+  assert(!L('gemini'), 'gemini אינו מודל קטן');
+  assert(!L('meta/llama-70b'), '70b אינו קטן');
+  assert(!L(''), 'ריק');
+});
+
 test('פענוח תשובה עמיד לעטיפות', () => {
     const E = w.Estimate;
     assert(E.parseAnswer('```json\n{"kcal":700}\n```').kcal === 700, 'סימני קוד');

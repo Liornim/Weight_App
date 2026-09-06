@@ -474,17 +474,24 @@ test('מפתח מזוהה לא מציג בורר מיותר', () => {
   Store.updateSettings({ aiKeyA: '' });
 });
 
-test('שדה המודל מופיע רק כשהמפתח השני הוא OpenRouter', () => {
-  Store.updateSettings({ aiKeyA: 'AIzaTEST', aiKeyB: '' });
+test('לכל מפתח יש שדה מודל משלו', () => {
+  Store.updateSettings({ aiKeyA: 'AQ.TEST', aiKeyB: '', aiProviderA: '', aiProviderB: '' });
   App.setState({ date: Dates.today() });
-  assert(!doc.querySelector('[data-model="aiModelOpenrouter"]'),
-    'שדה המודל לא אמור להופיע');
 
-  Store.updateSettings({ aiKeyB: 'sk-or-TEST' });
+  assert(doc.querySelector('[data-model="aiModelA"]'), 'חסר שדה מודל למפתח הראשון');
+  assert(!doc.querySelector('[data-model="aiModelB"]'), 'אין מפתח שני, אין שדה');
+
+  Store.updateSettings({ aiKeyB: 'AQ.SECOND' });
   App.setState({ date: Dates.today() });
-  assert(doc.querySelector('[data-model="aiModelOpenrouter"]'), 'שדה המודל חסר');
+  assert(doc.querySelector('[data-model="aiModelB"]'), 'חסר שדה מודל למפתח השני');
 
-  Store.updateSettings({ aiKeyA: '', aiKeyB: '' });
+  // כך אפשר להריץ שני מודלים שונים של אותו ספק
+  Store.updateSettings({ aiModelA: 'gemini-3.6-flash', aiModelB: 'gemini-3.6-pro' });
+  App.setState({ date: Dates.today() });
+  assert(doc.querySelector('[data-model="aiModelA"]').value === 'gemini-3.6-flash', 'מודל א׳');
+  assert(doc.querySelector('[data-model="aiModelB"]').value === 'gemini-3.6-pro', 'מודל ב׳');
+
+  Store.updateSettings({ aiKeyA: '', aiKeyB: '', aiModelA: '', aiModelB: '' });
 });
 
 test('פענוח תשובת המודל עמיד לעטיפות', () => {

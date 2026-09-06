@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd21',
+    BUILD: 'd22',
     state: {
       date: Dates.today(),
       asOf: 0,             // עד מתי למדוד: היום, שבוע שעבר, שבועיים
@@ -246,13 +246,13 @@
             }).join('') + '</select></div>';
 
           var picker = box.querySelector('#model-pick');
-          var field = view.querySelector('[data-model="aiModelOpenrouter"]');
+          var field = view.querySelector('[data-model="aiModelB"]');
           if (field) field.value = picker.value;
-          Store.updateSettings({ aiModelOpenrouter: picker.value });
+          Store.updateSettings({ aiModelB: picker.value });
 
           picker.addEventListener('change', function () {
             if (field) field.value = picker.value;
-            Store.updateSettings({ aiModelOpenrouter: picker.value });
+            Store.updateSettings({ aiModelB: picker.value });
             App.toast('המודל נבחר');
           });
         }).catch(function (error) {
@@ -294,18 +294,15 @@
 
     var box = view.querySelector('#debate');
     var settings = Store.getSettings();
+    // כל שדה נושא את המודל שלו, כדי שאפשר יהיה להריץ שני מודלים
+    // שונים של אותו ספק — למשל flash מול pro
     var accounts = [
-      { key: settings.aiKeyA, provider: settings.aiProviderA, project: settings.aiProjectA },
-      { key: settings.aiKeyB, provider: settings.aiProviderB, project: settings.aiProjectB }
+      { slot: 'A', key: settings.aiKeyA, provider: settings.aiProviderA,
+        project: settings.aiProjectA, model: settings.aiModelA },
+      { slot: 'B', key: settings.aiKeyB, provider: settings.aiProviderB,
+        project: settings.aiProjectB, model: settings.aiModelB }
     ].filter(function (a) {
       return a.key && root.Providers.detect(a.key, a.provider);
-    }).map(function (a) {
-      // המודל נשמר לפי ספק, כדי ששם מ-OpenRouter לא יישלח ל-Gemini
-      var name = root.Providers.detect(a.key, a.provider);
-      a.model = name === 'openrouter' ? settings.aiModelOpenrouter
-        : name === 'gemini' ? settings.aiModelGemini
-        : null;
-      return a;
     });
 
     /**
@@ -339,14 +336,13 @@
       if (result.lean.recovered || result.rich.recovered) {
         App.toast('המספרים חולצו מטקסט חופשי — כדאי לוודא אותם');
       }
-      if (result.pickedModel) {
-        // השם נשמר תחת הספק שלו, כדי שלא יגיע לספק אחר
-        var forGemini = result.pickedModel.indexOf('/') === -1;
-        Store.updateSettings(forGemini
-          ? { aiModelGemini: result.pickedModel }
-          : { aiModelOpenrouter: result.pickedModel });
-        App.toast('המודל הוחלף ל-' + result.pickedModel);
-        // השמירה רינדרה את המסך מחדש, ולכן גם התצוגה המקדימה
+      // מודל שהוחלף אוטומטית נשמר בשדה שממנו הגיע
+      var slots = Object.keys(result.pickedModels || {});
+      if (slots.length) {
+        var patch = {};
+        slots.forEach(function (slot) { patch['aiModel' + slot] = result.pickedModels[slot]; });
+        Store.updateSettings(patch);
+        App.toast('המודל הוחלף ל-' + result.pickedModels[slots[0]]);
         showPreview();
       }
       show(renderDebate(result));
@@ -482,6 +478,23 @@
       : '';
 
     // כמה כל צד זז אחרי ששמע את השני
+    // ספק שלא ענה — נאמר, וההערכה נמשכת
+    var down = result.failure
+      ? '<p class="why"><b>' + Fmt.esc(result.failure.provider) + ' לא ענה.</b> ' +
+        Fmt.esc(result.failure.message) + '<br>' +
+        'ההערכה נעשתה בין שני מודלים של ' + Fmt.esc(result.leanProvider) + '.</p>'
+      : '';
+
+    var quiet = '';
+    if (result.skippedDebate === 'lean' || result.skippedDebate === 'rich') {
+      var who = result.skippedDebate === 'lean' ? 'השמרן' : 'המחמיר';
+      var model = result.skippedDebate === 'lean' ? result.leanModel : result.richModel;
+      quiet = '<p class="why">' + Fmt.esc(who + ' רץ על מודל קטן (' + model +
+        ') ולכן מסר הערכה בלבד, בלי להשתתף בוויכוח.') + '</p>';
+    } else if (result.skippedDebate === 'both') {
+      quiet = '<p class="why">שני המודלים קטנים, ולכן לא התקיים ויכוח.</p>';
+    }
+
     var moved = '';
     if (result.movement) {
       var describe = function (name, delta) {
@@ -514,15 +527,15 @@
               : '') + '</div>'
           : '') +
         (v.agreement ? '<p class="why">' + Fmt.esc(v.agreement) + '</p>' : '') +
-        range + missed + moved +
+        range + missed + moved + down + quiet +
         (v.notes.length ? '<p class="why">' + Fmt.esc(v.notes.join(' ')) + '</p>' : '') +
         '<button type="button" class="btn btn--primary" id="apply-estimate">הזן לטופס</button>' +
       '</div>' +
       '<div class="rounds">' +
-        side(result.firstRound ? 'שמרן — אחרי הוויכוח' : 'שמרן',
-          result.leanProvider, result.lean) +
-        side(result.firstRound ? 'מחמיר — אחרי הוויכוח' : 'מחמיר',
-          result.richProvider, result.rich) +
+        side((result.firstRound ? 'שמרן — אחרי הוויכוח' : 'שמרן') +
+          ' · ' + result.leanModel, result.leanProvider, result.lean) +
+        side((result.firstRound ? 'מחמיר — אחרי הוויכוח' : 'מחמיר') +
+          ' · ' + result.richModel, result.richProvider, result.rich) +
         (result.firstRound
           ? side('שמרן — הערכה ראשונה', result.leanProvider, result.firstRound.lean) +
             side('מחמיר — הערכה ראשונה', result.richProvider, result.firstRound.rich)

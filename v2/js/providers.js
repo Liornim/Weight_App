@@ -434,8 +434,29 @@
       });
   }
 
+  /**
+   * האם המודל קטן.
+   *
+   * מודל קטן מספיק בדרך כלל לזהות מה יש בצלחת, אבל בוויכוח הוא
+   * נוטה להיסחף אחרי הצד השני במקום לבחון את התמונה מחדש. לכן הוא
+   * מוסר הערכה ראשונה ולא משתתף בסיבוב התגובה.
+   */
+  function isLightweight(model) {
+    // חיפוש מחרוזת פשוט נכשל: המילה gemini מכילה mini, ולכן כל
+    // מודלי Gemini סווגו כקטנים. ההשוואה היא על מילים שלמות.
+    var tokens = String(model || '').toLowerCase().split(/[^a-z0-9]+/);
+    var marks = ['lite', 'mini', 'small', 'nano', 'tiny', 'haiku', 'gemma', 'flash8b'];
+
+    return tokens.some(function (token) {
+      if (marks.indexOf(token) !== -1) return true;
+      // סימון גודל כמו 3b או 8b, אבל לא 26b או 70b
+      return /^[1-9]b$/.test(token);
+    });
+  }
+
   root.Providers = {
     ask: ask,
+    isLightweight: isLightweight,
     modelFits: modelFits,
     isAccountProblem: isAccountProblem,
     suggestedModel: suggestedModel,
