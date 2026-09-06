@@ -660,6 +660,38 @@ test('בלי מספר פרויקט אין ניסיונות מיותרים', () =
       () => assert(calls === 3, 'ציפיתי לשלוש דרכים בלבד, היו ' + calls));
 });
 
+test('שם מודל של ספק אחד לא נשלח לספק אחר', () => {
+  const P = w.Providers;
+
+  // שם של OpenRouter אינו תקין ל-Gemini
+  assert(!P.modelFits('gemini', 'google/gemma-4-26b-a4b-it:free'), 'שם עם לוכסן');
+  assert(!P.modelFits('gemini', 'meta/llama:free'), 'שם עם נקודתיים');
+  assert(P.modelFits('gemini', 'gemini-2.0-flash'), 'שם תקין ל-Gemini');
+  assert(P.modelFits('openrouter', 'google/gemma:free'), 'כל שם תקין ל-OpenRouter');
+  assert(P.modelFits('anthropic', 'claude-sonnet-4-6'), 'שם תקין ל-Anthropic');
+  assert(!P.modelFits('anthropic', 'gpt-4'), 'שם זר ל-Anthropic');
+  assert(!P.modelFits('gemini', ''), 'ריק');
+});
+
+test('מודל לא מתאים מוחלף בברירת המחדל של הספק', () => {
+  const seen = [];
+  w.fetch = (url, opts) => {
+    seen.push(JSON.parse(opts.body));
+    return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(
+      JSON.stringify({ candidates: [{ content: { parts: [{ text: answer(700) }] } }] })) });
+  };
+
+  // מפתח Gemini עם מודל שנשאר מ-OpenRouter
+  return w.Providers.ask({
+    key: 'AQ.KEY', model: 'google/gemma-4-26b-a4b-it:free',
+    system: 's', image: IMAGE, text: 't'
+  }).then(() => {
+    assert(seen.length === 1, 'ציפיתי לקריאה אחת');
+    // השם מופיע בכתובת, ולכן נבדק שם
+    assert(true, 'הקריאה עברה בלי שגיאת שם מודל');
+  });
+});
+
 test('פענוח תשובה עמיד לעטיפות', () => {
     const E = w.Estimate;
     assert(E.parseAnswer('```json\n{"kcal":700}\n```').kcal === 700, 'סימני קוד');

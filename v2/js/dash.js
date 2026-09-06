@@ -452,9 +452,8 @@
 
     var settings = Store.getSettings();
     var accounts = [
-      { key: settings.aiKeyA, model: settings.aiModelA, provider: settings.aiProviderA,
-        project: settings.aiProjectA },
-      { key: settings.aiKeyB, model: settings.aiModelB, provider: settings.aiProviderB }
+      { key: settings.aiKeyA, provider: settings.aiProviderA },
+      { key: settings.aiKeyB, provider: settings.aiProviderB }
     ].filter(function (a) {
       return a.key && root.Providers.detect(a.key, a.provider);
     });
@@ -543,7 +542,8 @@
         '<input id="ai-key-a" data-key="aiKeyA" type="password" autocomplete="off" ' +
         'placeholder="AIza..." value="' + P.esc(settings.aiKeyA || '') + '"></div>' +
       providerPicker('A', settings.aiKeyA, settings.aiProviderA) +
-      (Providers.detect(settings.aiKeyA, settings.aiProviderA) === 'gemini'
+      ((Providers.detect(settings.aiKeyA, settings.aiProviderA) === 'gemini' ||
+        Providers.detect(settings.aiKeyB, settings.aiProviderB) === 'gemini')
         ? '<div class="field"><label for="ai-project">מספר פרויקט ' +
           '<span class="unit">לא חובה</span></label>' +
           '<input id="ai-project" data-project="aiProjectA" type="text" ' +
@@ -563,9 +563,9 @@
 
       (Providers.detect(settings.aiKeyB, settings.aiProviderB) === 'openrouter'
         ? '<div class="field"><label for="ai-model-b">מודל ב-OpenRouter</label>' +
-          '<input id="ai-model-b" data-model="aiModelB" type="text" ' +
+          '<input id="ai-model-b" data-model="aiModelOpenrouter" type="text" ' +
           'placeholder="' + P.esc(Providers.PROVIDERS.openrouter.defaultModel) + '" value="' +
-          P.esc(settings.aiModelB || '') + '"></div>' +
+          P.esc(settings.aiModelOpenrouter || '') + '"></div>' +
           '<button type="button" class="btn" id="load-models">' +
             'טעינת המודלים החינמיים שקוראים תמונות</button>' +
           '<div id="model-list"></div>'

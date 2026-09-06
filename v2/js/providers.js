@@ -339,6 +339,21 @@
    * ask({key, model, system, image, text}) -> Promise<string>
    * image הוא {base64, mediaType} או null.
    */
+  /**
+   * שם מודל שייך לספק שהוא נוצר עבורו.
+   *
+   * שם של OpenRouter נראה "יצרן/מודל:free", ושליחתו ל-Gemini
+   * מחזירה "unexpected model name format". זה קרה כשמפתח הוחלף
+   * בין השדות והמודל השמור נשאר מהספק הקודם.
+   */
+  function modelFits(name, model) {
+    if (!model) return false;
+    if (name === 'openrouter') return true;
+    if (name === 'gemini') return model.indexOf('/') === -1 && model.indexOf(':') === -1;
+    if (name === 'anthropic') return model.indexOf('claude') === 0;
+    return true;
+  }
+
   function ask(request) {
     var name = detect(request.key, request.provider);
     if (!name) {
@@ -346,7 +361,9 @@
         'המפתח לא מזוהה. אפשר לבחור את הספק ידנית בהגדרות.'));
     }
 
-    var model = request.model || PROVIDERS[name].defaultModel;
+    var model = modelFits(name, request.model)
+      ? request.model
+      : PROVIDERS[name].defaultModel;
     return CALLS[name](request.key, model, request.system, request.image,
       request.text, request.onModelPicked, request.validate, request.project);
   }
@@ -380,6 +397,7 @@
 
   root.Providers = {
     ask: ask,
+    modelFits: modelFits,
     freeVisionModels: freeVisionModels,
     detect: detect,
     label: label,

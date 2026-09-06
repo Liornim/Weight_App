@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd17',
+    BUILD: 'd18',
     state: {
       date: Dates.today(),
       asOf: 0,             // עד מתי למדוד: היום, שבוע שעבר, שבועיים
@@ -246,13 +246,13 @@
             }).join('') + '</select></div>';
 
           var picker = box.querySelector('#model-pick');
-          var field = view.querySelector('[data-model="aiModelB"]');
+          var field = view.querySelector('[data-model="aiModelOpenrouter"]');
           if (field) field.value = picker.value;
-          Store.updateSettings({ aiModelB: picker.value });
+          Store.updateSettings({ aiModelOpenrouter: picker.value });
 
           picker.addEventListener('change', function () {
             if (field) field.value = picker.value;
-            Store.updateSettings({ aiModelB: picker.value });
+            Store.updateSettings({ aiModelOpenrouter: picker.value });
             App.toast('המודל נבחר');
           });
         }).catch(function (error) {
@@ -295,11 +295,15 @@
     var box = view.querySelector('#debate');
     var settings = Store.getSettings();
     var accounts = [
-      { key: settings.aiKeyA, model: settings.aiModelA, provider: settings.aiProviderA,
-        project: settings.aiProjectA },
-      { key: settings.aiKeyB, model: settings.aiModelB, provider: settings.aiProviderB }
+      { key: settings.aiKeyA, provider: settings.aiProviderA, project: settings.aiProjectA },
+      { key: settings.aiKeyB, provider: settings.aiProviderB, project: settings.aiProjectB }
     ].filter(function (a) {
       return a.key && root.Providers.detect(a.key, a.provider);
+    }).map(function (a) {
+      // המודל נשמר לפי ספק, כדי ששם מ-OpenRouter לא יישלח ל-Gemini
+      var name = root.Providers.detect(a.key, a.provider);
+      a.model = name === 'openrouter' ? settings.aiModelOpenrouter : null;
+      return a;
     });
 
     /**
@@ -334,7 +338,7 @@
         App.toast('המספרים חולצו מטקסט חופשי — כדאי לוודא אותם');
       }
       if (result.pickedModel) {
-        Store.updateSettings({ aiModelB: result.pickedModel });
+        Store.updateSettings({ aiModelOpenrouter: result.pickedModel });
         App.toast('המודל הוחלף ל-' + result.pickedModel);
         // השמירה רינדרה את המסך מחדש, ולכן גם התצוגה המקדימה
         showPreview();
