@@ -450,13 +450,17 @@
 
     var settings = Store.getSettings();
     var accounts = [
-      { key: settings.aiKeyA, model: settings.aiModelA },
-      { key: settings.aiKeyB, model: settings.aiModelB }
-    ].filter(function (a) { return a.key; });
+      { key: settings.aiKeyA, model: settings.aiModelA, provider: settings.aiProviderA },
+      { key: settings.aiKeyB, model: settings.aiModelB, provider: settings.aiProviderB }
+    ].filter(function (a) {
+      return a.key && root.Providers.detect(a.key, a.provider);
+    });
 
     var auto = '';
     if (accounts.length) {
-      var who = accounts.map(function (a) { return root.Providers.label(a.key); });
+      var who = accounts.map(function (a) {
+        return root.Providers.label(a.key, a.provider);
+      });
       var note = accounts.length > 1
         ? 'ויכוח בין ' + who[0] + ' ל' + who[1]
         : who[0] + ' מעריך פעמיים, פעם בזהירות ופעם בהחמרה';
@@ -505,24 +509,29 @@
         (Fmt.isNum(settings.targets.proteinG) ? settings.targets.proteinG : '') + '"></div>' +
 
       '<div class="field"><label for="ai-key-a">מפתח ראשון ' +
-        '<span class="unit">' + P.esc(providerLabel(settings.aiKeyA)) + '</span></label>' +
+        '<span class="unit">' + P.esc(providerLabel(settings.aiKeyA, settings.aiProviderA)) +
+        '</span></label>' +
         '<input id="ai-key-a" data-key="aiKeyA" type="password" autocomplete="off" ' +
         'placeholder="AIza..." value="' + P.esc(settings.aiKeyA || '') + '"></div>' +
+      providerPicker('A', settings.aiKeyA, settings.aiProviderA) +
 
       '<div class="field"><label for="ai-key-b">מפתח שני ' +
-        '<span class="unit">' + P.esc(providerLabel(settings.aiKeyB)) + '</span></label>' +
+        '<span class="unit">' + P.esc(providerLabel(settings.aiKeyB, settings.aiProviderB)) +
+        '</span></label>' +
         '<input id="ai-key-b" data-key="aiKeyB" type="password" autocomplete="off" ' +
         'placeholder="sk-or-..." value="' + P.esc(settings.aiKeyB || '') + '"></div>' +
+      providerPicker('B', settings.aiKeyB, settings.aiProviderB) +
 
-      (Providers.detect(settings.aiKeyB) === 'openrouter'
+      (Providers.detect(settings.aiKeyB, settings.aiProviderB) === 'openrouter'
         ? '<div class="field"><label for="ai-model-b">מודל ב-OpenRouter</label>' +
           '<input id="ai-model-b" data-model="aiModelB" type="text" ' +
           'placeholder="' + P.esc(Providers.PROVIDERS.openrouter.defaultModel) + '" value="' +
           P.esc(settings.aiModelB || '') + '"></div>'
         : '') +
 
-      P.hint('שני מפתחות חינמיים: Gemini ב-aistudio.google.com/apikey, ' +
-        'ו-OpenRouter ב-openrouter.ai/keys (בחר מודל שהשם שלו מסתיים ב-free). ' +
+      P.hint('שני מפתחות חינמיים: Gemini ב-aistudio.google.com/apikey — ' +
+        'המפתח משם מתחיל ב-AIza; ו-OpenRouter ב-openrouter.ai/keys, ' +
+        'שם בוחרים מודל שהשם שלו מסתיים ב-free. ' +
         'עם שניהם הוויכוח הוא בין מודלים ממשפחות שונות; עם אחד בלבד הוא ' +
         'בין שתי עמדות של אותו מודל. המפתחות נשמרים במכשיר הזה בלבד.') +
 

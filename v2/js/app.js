@@ -113,6 +113,15 @@
       });
     });
 
+    view.querySelectorAll('[data-provider]').forEach(function (select) {
+      select.addEventListener('change', function () {
+        var patch = {};
+        patch[select.dataset.provider] = select.value;
+        Store.updateSettings(patch);
+        App.toast(select.value ? 'הספק נבחר' : 'הבחירה בוטלה');
+      });
+    });
+
     view.querySelectorAll('[data-model]').forEach(function (input) {
       input.addEventListener('change', function () {
         var patch = {};
@@ -239,9 +248,11 @@
     var box = view.querySelector('#debate');
     var settings = Store.getSettings();
     var accounts = [
-      { key: settings.aiKeyA, model: settings.aiModelA },
-      { key: settings.aiKeyB, model: settings.aiModelB }
-    ].filter(function (a) { return a.key; });
+      { key: settings.aiKeyA, model: settings.aiModelA, provider: settings.aiProviderA },
+      { key: settings.aiKeyB, model: settings.aiModelB, provider: settings.aiProviderB }
+    ].filter(function (a) {
+      return a.key && root.Providers.detect(a.key, a.provider);
+    });
 
     var show = function (html) { if (box) box.innerHTML = html; };
     show('<p class="stage">קורא את התמונה…</p>');

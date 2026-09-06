@@ -138,6 +138,7 @@
       return root.Providers.ask({
         key: account.key,
         model: account.model,
+        provider: account.provider,
         system: system,
         image: image,
         text: 'הערך את הארוחה בתמונה.'
@@ -159,8 +160,8 @@
       return {
         lean: lean,
         rich: rich,
-        leanProvider: root.Providers.label(leanAccount.key),
-        richProvider: root.Providers.label(richAccount.key),
+        leanProvider: root.Providers.label(leanAccount.key, leanAccount.provider),
+        richProvider: root.Providers.label(richAccount.key, richAccount.provider),
         sameProvider: leanAccount.key === richAccount.key,
         verdict: reconcile(lean, rich),
         differences: itemDifferences(lean, rich)

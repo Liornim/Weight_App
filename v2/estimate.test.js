@@ -182,6 +182,38 @@ const tests = [
     assert(diff.onlyLean.length === 0, 'לשמרן אין פריט ייחודי');
   }),
 
+  test('אפשר לבחור ספק ידנית כשהמפתח לא מזוהה', () => {
+    const P = w.Providers;
+    assert(P.detect('AQ.Ab8RN6xyz') === null, 'מפתח בצורה לא מוכרת');
+    assert(P.detect('AQ.Ab8RN6xyz', 'gemini') === 'gemini', 'העקיפה לא נלקחה');
+    assert(P.label('AQ.Ab8RN6xyz', 'gemini') === 'Gemini', 'התווית');
+    assert(P.detect('AIzaX', 'openrouter') === 'openrouter', 'העקיפה גוברת על הזיהוי');
+
+    const list = P.options();
+    assert(list.length === 3, 'שלושה ספקים');
+    assert(list.some((o) => o.value === 'gemini' && o.free), 'Gemini מסומן כחינמי');
+  }),
+
+  test('בקשה עם ספק שנבחר ידנית מגיעה לכתובת הנכונה', () => {
+    const calls = stub(() => JSON.stringify({
+      candidates: [{ content: { parts: [{ text: answer(700) }] } }]
+    }));
+
+    return w.Providers.ask({
+      key: 'AQ.Ab8RN6xyz', provider: 'gemini', system: 's', image: IMAGE, text: 't'
+    }).then(() => {
+      assert(calls[0].url.indexOf('generativelanguage') !== -1,
+        'לא פנה ל-Gemini: ' + calls[0].url);
+    });
+  }),
+
+  test('מפתח לא מזוהה ובלי בחירה -> שגיאה מנחה', () => {
+    return w.Providers.ask({ key: 'AQ.xyz', system: 's', image: IMAGE, text: 't' })
+      .then(() => { throw new Error('היה צריך להיכשל'); },
+        (error) => assert(error.message.indexOf('ידנית') !== -1,
+          'השגיאה לא מנחה מה לעשות: ' + error.message));
+  }),
+
   test('פענוח תשובה עמיד לעטיפות', () => {
     const E = w.Estimate;
     assert(E.parseAnswer('```json\n{"kcal":700}\n```').kcal === 700, 'סימני קוד');

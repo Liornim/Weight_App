@@ -34,7 +34,14 @@
     }
   };
 
-  function detect(key) {
+  /**
+   * זיהוי לפי צורת המפתח, עם אפשרות לעקוף.
+   *
+   * הצורות משתנות מדי פעם, ומפתח תקין לגמרי עלול לא להתאים לתבנית.
+   * לכן אפשר לציין ספק במפורש, ואז הזיהוי לא מנסה לנחש.
+   */
+  function detect(key, override) {
+    if (override && PROVIDERS[override]) return override;
     var clean = String(key || '').trim();
     if (!clean) return null;
     var names = Object.keys(PROVIDERS);
@@ -44,9 +51,16 @@
     return null;
   }
 
-  function label(key) {
-    var name = detect(key);
+  function label(key, override) {
+    var name = detect(key, override);
     return name ? PROVIDERS[name].label : 'לא מזוהה';
+  }
+
+  /** רשימת הספקים לבחירה ידנית */
+  function options() {
+    return Object.keys(PROVIDERS).map(function (name) {
+      return { value: name, label: PROVIDERS[name].label, free: PROVIDERS[name].free };
+    });
   }
 
   function fail(response, body) {
@@ -171,18 +185,22 @@
    * ask({key, model, system, image, text}) -> Promise<string>
    * image הוא {base64, mediaType} או null.
    */
-  function ask(options) {
-    var name = detect(options.key);
-    if (!name) return Promise.reject(new Error('המפתח לא מזוהה כשייך לאף ספק'));
+  function ask(request) {
+    var name = detect(request.key, request.provider);
+    if (!name) {
+      return Promise.reject(new Error(
+        'המפתח לא מזוהה. אפשר לבחור את הספק ידנית בהגדרות.'));
+    }
 
-    var model = options.model || PROVIDERS[name].defaultModel;
-    return CALLS[name](options.key, model, options.system, options.image, options.text);
+    var model = request.model || PROVIDERS[name].defaultModel;
+    return CALLS[name](request.key, model, request.system, request.image, request.text);
   }
 
   root.Providers = {
     ask: ask,
     detect: detect,
     label: label,
+    options: options,
     PROVIDERS: PROVIDERS
   };
 })(typeof window !== 'undefined' ? window : globalThis);

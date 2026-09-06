@@ -381,6 +381,38 @@ test('העלאת תמונה מופיעה רק עם מפתח, הדבקה תמיד
   Store.updateSettings({ aiKeyA: '', aiKeyB: '' });
 });
 
+
+test('מפתח לא מזוהה מציג בורר ספק', () => {
+  Store.updateSettings({ aiKeyA: 'AQ.Ab8RN6xyz', aiProviderA: '', aiKeyB: '' });
+  App.setState({ date: Dates.today() });
+
+  const picker = doc.querySelector('[data-provider="aiProviderA"]');
+  assert(picker, 'בורר הספק חסר');
+  assert(picker.querySelectorAll('option').length === 4, 'ציפיתי לשלושה ספקים ובחירה ריקה');
+
+  const label = [...doc.querySelectorAll('#view label')]
+    .find((l) => l.textContent.includes('מפתח ראשון'));
+  assert(label.textContent.includes('בחר ידנית'), 'לא נאמר שצריך לבחור: ' + label.textContent);
+
+  // בלי בחירה, ההעלאה לא מוצעת
+  assert(!doc.querySelector('#photo'), 'לא אמור להיות שדה תמונה עם מפתח לא מזוהה');
+
+  // אחרי בחירה — הכל נפתח
+  picker.value = 'gemini';
+  picker.dispatchEvent(new window.Event('change', { bubbles: true }));
+  assert(Store.getSettings().aiProviderA === 'gemini', 'הבחירה לא נשמרה');
+  assert(doc.querySelector('#photo'), 'אחרי הבחירה ההעלאה אמורה להיות זמינה');
+
+  Store.updateSettings({ aiKeyA: '', aiProviderA: '' });
+});
+
+test('מפתח מזוהה לא מציג בורר מיותר', () => {
+  Store.updateSettings({ aiKeyA: 'AIzaTEST', aiProviderA: '' });
+  App.setState({ date: Dates.today() });
+  assert(!doc.querySelector('[data-provider="aiProviderA"]'), 'הבורר מיותר כאן');
+  Store.updateSettings({ aiKeyA: '' });
+});
+
 test('שדה המודל מופיע רק כשהמפתח השני הוא OpenRouter', () => {
   Store.updateSettings({ aiKeyA: 'AIzaTEST', aiKeyB: '' });
   App.setState({ date: Dates.today() });
