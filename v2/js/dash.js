@@ -448,28 +448,47 @@
       '</div>' +
       '<div id="paste-result"></div>';
 
-    var photo = key
-      ? '<input type="file" id="photo" accept="image/*" capture="environment">' +
-        '<div id="debate"></div>'
-      : '';
+    var settings = Store.getSettings();
+    var accounts = [
+      { key: settings.aiKeyA, model: settings.aiModelA },
+      { key: settings.aiKeyB, model: settings.aiModelB }
+    ].filter(function (a) { return a.key; });
 
-    return P.card('הזנת ארוחה מתמונה', 'שולחים תמונה בשיחה, מקבלים שורה, מדביקים כאן',
+    var auto = '';
+    if (accounts.length) {
+      var who = accounts.map(function (a) { return root.Providers.label(a.key); });
+      var note = accounts.length > 1
+        ? 'ויכוח בין ' + who[0] + ' ל' + who[1]
+        : who[0] + ' מעריך פעמיים, פעם בזהירות ופעם בהחמרה';
+
+      auto = P.card('העלאת תמונה', note,
+        '<input type="file" id="photo" accept="image/*" capture="environment">' +
+        '<div id="debate"></div>' +
+        P.hint('הערכת כמות מתמונה שוגה בדרך כלל ב-20 עד 30 אחוז, כי אי אפשר לראות ' +
+          'כמה שמן היה במחבת ומה מתחת לפני השטח. ' +
+          (accounts.length > 1
+            ? 'שני מודלים ממשפחות שונות חושפים יותר מאשר אחד.'
+            : 'מפתח שני, ממשפחה אחרת, ישפר את ההערכה.')));
+    }
+
+    return auto + P.card('או בהדבקה', 'ניתוח בשיחה, ושורה אחת שממלאת את הטופס',
       paste +
-      P.hint('הסדר: "העתקת ההוראה" ← מדביקים אותה בשיחה יחד עם התמונה ← ' +
+      P.hint('הסדר: "העתקת ההוראה" ← מדביקים בשיחה יחד עם התמונה ← ' +
         'מקבלים שורה של חמישה מספרים ← מדביקים כאן. ' +
-        'הפורמט הוא קלוריות, חלבון, פחמימות, שומן, סיבים. ' +
-        'אפשר גם לכתוב במילים: "קלוריות 1671, חלבון 118".')) +
-
-      (key
-        ? P.card('הערכה אוטומטית', 'שני מעריכים מתווכחים ומגיעים להכרעה', photo +
-            P.hint('הערכת כמות מתמונה שוגה בדרך כלל ב-20 עד 30 אחוז, כי אי אפשר לראות ' +
-              'כמה שמן היה במחבת ומה מתחת לפני השטח.'))
-        : '');
+        'הפורמט: קלוריות, חלבון, פחמימות, שומן, סיבים. ' +
+        'אפשר גם במילים: "קלוריות 1671, חלבון 118".'));
   }
 
   // ------------------------------------------------------ הגדרות
 
+  function providerLabel(key) {
+    if (!key) return 'ריק';
+    var name = root.Providers.detect(key);
+    return name ? root.Providers.PROVIDERS[name].label : 'לא מזוהה';
+  }
+
   function settingsSection(state, entries, settings) {
+    var Providers = root.Providers;
     var rate = Fmt.isNum(settings.goal.ratePerWeekKg) ? Math.abs(settings.goal.ratePerWeekKg) : 0;
 
     var body =
@@ -485,11 +504,27 @@
         '<input id="protein-target" type="number" step="5" value="' +
         (Fmt.isNum(settings.targets.proteinG) ? settings.targets.proteinG : '') + '"></div>' +
 
-      '<div class="field"><label for="ai-key">מפתח API להערכה מתמונה</label>' +
-        '<input id="ai-key" type="password" autocomplete="off" placeholder="sk-ant-..." value="' +
-        P.esc(settings.aiKey || '') + '"></div>' +
-      P.hint('המפתח נשמר במכשיר הזה בלבד ונשלח רק ל-API של Anthropic. ' +
-        'אפשר לבטל אותו בכל רגע מהחשבון שלך.') +
+      '<div class="field"><label for="ai-key-a">מפתח ראשון ' +
+        '<span class="unit">' + P.esc(providerLabel(settings.aiKeyA)) + '</span></label>' +
+        '<input id="ai-key-a" data-key="aiKeyA" type="password" autocomplete="off" ' +
+        'placeholder="AIza..." value="' + P.esc(settings.aiKeyA || '') + '"></div>' +
+
+      '<div class="field"><label for="ai-key-b">מפתח שני ' +
+        '<span class="unit">' + P.esc(providerLabel(settings.aiKeyB)) + '</span></label>' +
+        '<input id="ai-key-b" data-key="aiKeyB" type="password" autocomplete="off" ' +
+        'placeholder="sk-or-..." value="' + P.esc(settings.aiKeyB || '') + '"></div>' +
+
+      (Providers.detect(settings.aiKeyB) === 'openrouter'
+        ? '<div class="field"><label for="ai-model-b">מודל ב-OpenRouter</label>' +
+          '<input id="ai-model-b" data-model="aiModelB" type="text" ' +
+          'placeholder="' + P.esc(Providers.PROVIDERS.openrouter.defaultModel) + '" value="' +
+          P.esc(settings.aiModelB || '') + '"></div>'
+        : '') +
+
+      P.hint('שני מפתחות חינמיים: Gemini ב-aistudio.google.com/apikey, ' +
+        'ו-OpenRouter ב-openrouter.ai/keys (בחר מודל שהשם שלו מסתיים ב-free). ' +
+        'עם שניהם הוויכוח הוא בין מודלים ממשפחות שונות; עם אחד בלבד הוא ' +
+        'בין שתי עמדות של אותו מודל. המפתחות נשמרים במכשיר הזה בלבד.') +
 
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">' +
         '<button type="button" class="btn btn--primary" id="pull">עדכון נתונים מהגיליון</button>' +

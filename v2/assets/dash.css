@@ -363,12 +363,20 @@ textarea:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
   background: var(--good-bg);
 }
 
+/* הצבע נושא את מידת ההסכמה בין המעריכים */
+.verdict--good { background: var(--good-bg); }
+.verdict--warn { background: var(--warn-bg); }
+.verdict--bad  { background: var(--bad-bg); }
+
 .verdict-num {
   font-size: 40px;
   font-weight: 600;
   line-height: 1;
   color: var(--good);
 }
+
+.verdict--warn .verdict-num { color: var(--warn); }
+.verdict--bad .verdict-num  { color: var(--bad); }
 
 .verdict-macros { font-size: 13px; color: var(--ink-soft); margin-top: 6px; }
 .verdict .range { font-size: 13px; color: var(--ink); margin: 10px 0 0; }

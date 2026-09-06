@@ -353,22 +353,44 @@ test('הדבקה ריקה מדווחת ולא מוחקת', () => {
   assert(doc.querySelector('[data-field="kcal"]').value === '1900', 'הערך נמחק');
 });
 
-test('הדבקה זמינה תמיד, הערכה אוטומטית רק עם מפתח', () => {
-  Store.updateSettings({ aiKey: '' });
+test('העלאת תמונה מופיעה רק עם מפתח, הדבקה תמיד', () => {
+  Store.updateSettings({ aiKeyA: '', aiKeyB: '' });
   App.setState({ date: Dates.today() });
 
   assert(doc.querySelector('#paste-line'), 'שדה ההדבקה אמור להיות זמין תמיד');
   assert(doc.querySelector('#copy-prompt'), 'כפתור העתקת ההוראה חסר');
   assert(!doc.querySelector('#photo'), 'שדה התמונה לא אמור להופיע בלי מפתח');
-  assert(![...doc.querySelectorAll('#view .card')]
-    .some((c) => c.textContent.includes('הערכה אוטומטית')),
-    'הכרטיס האוטומטי לא אמור להופיע בלי מפתח');
 
-  Store.updateSettings({ aiKey: 'sk-ant-test' });
+  Store.updateSettings({ aiKeyA: 'AIzaTEST' });
   App.setState({ date: Dates.today() });
   assert(doc.querySelector('#photo'), 'שדה התמונה חסר למרות שיש מפתח');
-  assert(doc.querySelector('#paste-line'), 'ההדבקה אמורה להישאר גם עם מפתח');
-  Store.updateSettings({ aiKey: '' });
+
+  const card = [...doc.querySelectorAll('#view .card')]
+    .find((c) => c.textContent.includes('העלאת תמונה'));
+  assert(card.textContent.includes('Gemini'), 'הספק לא מזוהה: ' + card.textContent.slice(0, 60));
+  assert(card.textContent.includes('מעריך פעמיים'), 'לא צוין שזה מפתח יחיד');
+
+  Store.updateSettings({ aiKeyB: 'sk-or-TEST' });
+  App.setState({ date: Dates.today() });
+  const both = [...doc.querySelectorAll('#view .card')]
+    .find((c) => c.textContent.includes('העלאת תמונה'));
+  assert(both.textContent.includes('ויכוח בין Gemini ל-OpenRouter') ||
+    (both.textContent.includes('Gemini') && both.textContent.includes('OpenRouter')),
+    'לא צוין הוויכוח בין השניים: ' + both.textContent.slice(0, 80));
+
+  Store.updateSettings({ aiKeyA: '', aiKeyB: '' });
+});
+
+test('שדה המודל מופיע רק כשהמפתח השני הוא OpenRouter', () => {
+  Store.updateSettings({ aiKeyA: 'AIzaTEST', aiKeyB: '' });
+  App.setState({ date: Dates.today() });
+  assert(!doc.querySelector('[data-model="aiModelB"]'), 'שדה המודל לא אמור להופיע');
+
+  Store.updateSettings({ aiKeyB: 'sk-or-TEST' });
+  App.setState({ date: Dates.today() });
+  assert(doc.querySelector('[data-model="aiModelB"]'), 'שדה המודל חסר');
+
+  Store.updateSettings({ aiKeyA: '', aiKeyB: '' });
 });
 
 test('פענוח תשובת המודל עמיד לעטיפות', () => {
@@ -383,18 +405,6 @@ test('פענוח תשובת המודל עמיד לעטיפות', () => {
   assert(E.parseAnswer('בלי JSON בכלל') === null, 'טקסט בלי JSON');
   assert(E.parseAnswer('') === null, 'מחרוזת ריקה');
   assert(E.parseAnswer('{"broken": ') === null, 'JSON שבור');
-});
-
-test('חילוץ הטקסט מתשובת ה-API מדלג על בלוקים אחרים', () => {
-  const E = window.Estimate;
-  const text = E.textOf({ content: [
-    { type: 'text', text: 'שורה' },
-    { type: 'tool_use', name: 'x' },
-    { type: 'text', text: 'שנייה' }
-  ] });
-  assert(text === 'שורה\nשנייה', 'קיבלתי: ' + text);
-  assert(E.textOf(null) === '', 'null');
-  assert(E.textOf({}) === '', 'בלי content');
 });
 
 test('שבוע אחרון חריג מסומן בכותרת', () => {

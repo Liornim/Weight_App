@@ -1,43 +1,34 @@
 /**
- * Estimate — הערכת ארוחה מתמונה, בוויכוח בין שני מעריכים.
+ * Estimate — הערכת ארוחה בוויכוח בין שני מודלים.
  *
- * למה ויכוח ולא הערכה אחת: השגיאה הגדולה בהערכת ארוחה מתמונה היא
- * הכמות, לא הזיהוי. מעריך יחיד נועל את עצמו על ניחוש ראשון ומצדיק
- * אותו. שני מעריכים עם הטיות מנוגדות — אחד שמניח מנות קטנות ומעט
- * שמן, אחד שמניח את ההפך — חושפים בדיוק את ההנחות שהן מקור השגיאה,
- * ואז סיבוב שלישי מכריע ביניהם.
+ * למה שניים ולא אחד: השגיאה הגדולה בהערכה מתמונה היא הכמות, לא
+ * הזיהוי. מודל יחיד נועל את עצמו על הניחוש הראשון. שניים עם הטיות
+ * מנוגדות — אחד שמניח מנות סטנדרטיות ומעט שמן, אחד שמניח שהקלוריות
+ * הנסתרות הן העיקר — חושפים בדיוק את ההנחה שהיא מקור השגיאה.
  *
- * המפתח נשמר במכשיר בלבד ואינו נשלח לשום מקום מלבד ה-API.
+ * ההכרעה נעשית בקוד ולא במודל שלישי. הכלל גלוי, אין לו עלות,
+ * והוא לא יכול "להשתכנע" משכנוע רטורי במקום מראיות.
  */
 (function (root) {
   'use strict';
 
-  var MODEL = 'claude-sonnet-4-6';
-  var API = 'https://api.anthropic.com/v1/messages';
-
-  var SHARED = 'אתה מעריך תזונה. מולך תמונה של ארוחה. ' +
-    'ענה בעברית ובפורמט JSON בלבד, בלי טקסט לפני או אחרי ובלי סימני קוד. ' +
-    'המבנה: {"items":[{"name":"","grams":0,"kcal":0,"protein":0,"carbs":0,"fat":0,' +
-    '"confidence":"high|medium|low","note":""}],' +
+  var BASE = 'אתה מעריך תזונה. מולך תמונה של ארוחה. ' +
+    'ענה ב-JSON בלבד, בלי טקסט לפני או אחרי ובלי סימני קוד. ' +
+    'המבנה: {"items":[{"name":"","grams":0,"kcal":0,"confidence":"high|medium|low"}],' +
     '"kcal":0,"protein":0,"carbs":0,"fat":0,"fiber":0,"reasoning":""}. ' +
-    'שדות הסיכום הם הסכום של הפריטים. ' +
-    'ב-reasoning כתוב שתיים־שלוש שורות: על מה התבססת בהערכת הכמות, ומה לא ברור.';
+    'שדות הסיכום הם הסכום על כל הפריטים. ' +
+    'ב-reasoning כתוב בעברית שתי שורות: על מה התבססת בהערכת הכמות, ומה לא ברור בתמונה.';
 
-  var LEAN = SHARED + '\n\nהעמדה שלך: מנות נראות גדולות יותר משהן. ' +
-    'הנח מנות בגודל סטנדרטי, שמן מועט בבישול, ואל תוסיף קלוריות שאינך רואה. ' +
-    'אם אתה מתלבט בין שתי כמויות, בחר בנמוכה.';
+  var LEAN = BASE + '\n\nהעמדה שלך: מנות נראות גדולות יותר משהן במציאות. ' +
+    'הנח מנות בגודל סטנדרטי ושמן מועט בבישול, ואל תוסיף קלוריות שאינך רואה. ' +
+    'בהתלבטות בין שתי כמויות — בחר בנמוכה.';
 
-  var RICH = SHARED + '\n\nהעמדה שלך: הקלוריות הנסתרות הן העיקר. ' +
+  var RICH = BASE + '\n\nהעמדה שלך: הקלוריות הנסתרות הן העיקר. ' +
     'שמן בישול, רטבים, חמאה וסוכר מוסף כמעט תמיד נשכחים, וכף שמן אחת היא 120 קלוריות. ' +
-    'אם אתה מתלבט בין שתי כמויות, בחר בגבוהה.';
+    'בהתלבטות בין שתי כמויות — בחר בגבוהה.';
 
-  var JUDGE = 'שני מעריכים בחנו את אותה תמונה והגיעו למספרים שונים. ' +
-    'תפקידך להכריע. אל תיקח ממוצע אוטומטי — בדוק היכן כל אחד מהם מדויק יותר, ' +
-    'והסבר במפורש איזו הנחה הכריעה. ' +
-    'ענה באותו מבנה JSON, והוסף שדה "range":{"low":0,"high":0} עם טווח הקלוריות הסביר, ' +
-    'ושדה "verdict" בעברית: משפט אחד שאומר במה הם נחלקו ומה הכרעת.';
+  var SUM_FIELDS = ['kcal', 'protein', 'carbs', 'fat', 'fiber'];
 
-  /** מוציא JSON מתשובה שעשויה לכלול טקסט או סימני קוד */
   function parseAnswer(text) {
     if (!text) return null;
     var clean = String(text).replace(/```json/gi, '').replace(/```/g, '').trim();
@@ -45,136 +36,147 @@
     var end = clean.lastIndexOf('}');
     if (start === -1 || end === -1 || end <= start) return null;
     try {
-      return JSON.parse(clean.slice(start, end + 1));
+      var parsed = JSON.parse(clean.slice(start, end + 1));
+      return typeof parsed === 'object' && parsed ? parsed : null;
     } catch (error) {
       return null;
     }
   }
 
-  /** מאחד את בלוקי הטקסט שהמודל מחזיר */
-  function textOf(payload) {
-    if (!payload || !payload.content) return '';
-    return payload.content
-      .filter(function (block) { return block.type === 'text'; })
-      .map(function (block) { return block.text; })
-      .join('\n');
+  function num(value) {
+    var n = Number(value);
+    return isFinite(n) ? n : null;
   }
 
-  function call(key, messages, system) {
-    // דרך root ולא כמשתנה חופשי, כדי שאפשר יהיה להחליף אותו בבדיקות
-    return root.fetch(API, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 1400,
-        system: system,
-        messages: messages
-      })
-    }).then(function (response) {
-      if (!response.ok) {
-        return response.text().then(function (body) {
-          throw new Error('שגיאה מהשרת (' + response.status + '): ' + body.slice(0, 160));
-        });
-      }
-      return response.json();
+  /**
+   * ההכרעה: כלל גלוי במקום שופט נוסף.
+   *
+   * כשהשניים קרובים, הממוצע אמין והפער עצמו קטן ממילא. ככל שהם
+   * מתרחקים, הממוצע נשאר המספר הסביר ביותר — אבל הביטחון בו יורד,
+   * וזה נאמר במפורש במקום להיבלע. פער גדול אינו כישלון של השיטה:
+   * הוא הממצא, ואומר שהתמונה לא מספיקה.
+   */
+  function reconcile(a, b) {
+    var result = { fields: {}, agreement: null, confidence: 'low', notes: [] };
+
+    SUM_FIELDS.forEach(function (field) {
+      var x = num(a && a[field]);
+      var y = num(b && b[field]);
+      if (x === null && y === null) return;
+      if (x === null) { result.fields[field] = y; return; }
+      if (y === null) { result.fields[field] = x; return; }
+      result.fields[field] = (x + y) / 2;
     });
+
+    var low = num(a && a.kcal);
+    var high = num(b && b.kcal);
+    if (low === null || high === null) {
+      result.notes.push('אחד המעריכים לא החזיר קלוריות.');
+      return result;
+    }
+
+    var gap = Math.abs(high - low);
+    var mean = (high + low) / 2;
+    var share = mean ? gap / mean : 0;
+
+    result.gap = gap;
+    result.gapShare = share;
+    result.range = { low: Math.min(low, high), high: Math.max(low, high) };
+
+    if (share < 0.12) {
+      result.confidence = 'high';
+      result.agreement = 'שני המעריכים הגיעו לאותו טווח, והפער ביניהם קטן.';
+    } else if (share < 0.3) {
+      result.confidence = 'medium';
+      result.agreement = 'יש פער בינוני ביניהם, בעיקר בהערכת הכמות או השמן.';
+    } else {
+      result.confidence = 'low';
+      result.agreement = 'הפער ביניהם גדול. התמונה כנראה לא מספיקה כדי להעריך כמות.';
+      result.notes.push('שווה לשקול את המרכיב העיקרי במקום להסתמך על המספר.');
+    }
+
+    return result;
   }
 
-  function imageMessage(base64, mediaType, extra) {
+  /** מוצא פריטים שרק אחד מהמעריכים ראה — שם בדרך כלל מקור הפער */
+  function itemDifferences(a, b) {
+    var namesOf = function (data) {
+      return ((data && data.items) || []).map(function (item) {
+        return String(item.name || '').trim();
+      }).filter(Boolean);
+    };
+    var first = namesOf(a);
+    var second = namesOf(b);
+    var has = function (list, name) {
+      return list.some(function (other) {
+        return other === name || other.indexOf(name) !== -1 || name.indexOf(other) !== -1;
+      });
+    };
+
     return {
-      role: 'user',
-      content: [
-        { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
-        { type: 'text', text: extra || 'הערך את הארוחה בתמונה.' }
-      ]
+      onlyLean: first.filter(function (name) { return !has(second, name); }),
+      onlyRich: second.filter(function (name) { return !has(first, name); })
     };
   }
 
   /**
-   * שלושה סיבובים: שתי הערכות עצמאיות, סיבוב תגובה שבו כל צד רואה
-   * את השני, והכרעה. onStage מדווח על ההתקדמות כדי שהמסך יראה מה קורה.
+   * מריץ את שני המעריכים במקביל ומחזיר את שתי ההערכות וההכרעה.
+   * accounts הוא [{key, model}] — שניים או אחד. עם אחד, שתי
+   * ההערכות ירוצו על אותו ספק עם ההטיות המנוגדות.
    */
-  function debate(key, base64, mediaType, onStage) {
+  function run(accounts, image, onStage) {
     var stage = onStage || function () {};
-    var result = { rounds: [] };
+    var list = (accounts || []).filter(function (a) { return a && a.key; });
+    if (!list.length) return Promise.reject(new Error('לא הוגדר אף מפתח'));
+
+    var leanAccount = list[0];
+    var richAccount = list[1] || list[0];
 
     stage('שולח את התמונה לשני המעריכים');
 
+    var ask = function (account, system) {
+      return root.Providers.ask({
+        key: account.key,
+        model: account.model,
+        system: system,
+        image: image,
+        text: 'הערך את הארוחה בתמונה.'
+      }).then(function (text) {
+        var parsed = parseAnswer(text);
+        if (!parsed) throw new Error('התשובה חזרה בפורמט שלא ניתן לקרוא');
+        return parsed;
+      });
+    };
+
     return Promise.all([
-      call(key, [imageMessage(base64, mediaType)], LEAN),
-      call(key, [imageMessage(base64, mediaType)], RICH)
+      ask(leanAccount, LEAN),
+      ask(richAccount, RICH)
     ]).then(function (answers) {
-      var lean = parseAnswer(textOf(answers[0]));
-      var rich = parseAnswer(textOf(answers[1]));
-      if (!lean || !rich) throw new Error('אחד המעריכים החזיר תשובה שלא ניתן לקרוא');
+      stage('משווה בין ההערכות');
+      var lean = answers[0];
+      var rich = answers[1];
 
-      result.rounds.push({ name: 'מעריך א׳ — שמרן', data: lean });
-      result.rounds.push({ name: 'מעריך ב׳ — מחמיר', data: rich });
-
-      var gap = Math.abs(lean.kcal - rich.kcal);
-      var mean = (lean.kcal + rich.kcal) / 2;
-      result.initialGap = gap;
-      result.initialGapShare = mean ? gap / mean : 0;
-
-      // כשהשניים כבר מסכימים, סיבוב תגובה לא יוסיף מידע
-      if (result.initialGapShare < 0.12) {
-        stage('שני המעריכים כבר קרובים; עובר להכרעה');
-        return { lean: lean, rich: rich, rebuttals: null };
-      }
-
-      stage('כל מעריך רואה את הערכת השני ומגיב');
-      var confront = function (mine, theirs, system) {
-        return call(key, [
-          imageMessage(base64, mediaType),
-          { role: 'assistant', content: JSON.stringify(mine) },
-          { role: 'user', content: 'מעריך אחר קיבל מספרים אחרים על אותה תמונה:\n' +
-            JSON.stringify(theirs) +
-            '\n\nהיכן הוא צודק יותר ממך, והיכן אתה? ' +
-            'עדכן את ההערכה שלך אם השתכנעת, והשאר אותה אם לא. ' +
-            'ענה באותו מבנה JSON, ובשדה reasoning כתוב מה שינית ולמה.' }
-        ], system);
+      return {
+        lean: lean,
+        rich: rich,
+        leanProvider: root.Providers.label(leanAccount.key),
+        richProvider: root.Providers.label(richAccount.key),
+        sameProvider: leanAccount.key === richAccount.key,
+        verdict: reconcile(lean, rich),
+        differences: itemDifferences(lean, rich)
       };
-
-      return Promise.all([
-        confront(lean, rich, LEAN),
-        confront(rich, lean, RICH)
-      ]).then(function (replies) {
-        var leanTwo = parseAnswer(textOf(replies[0])) || lean;
-        var richTwo = parseAnswer(textOf(replies[1])) || rich;
-        result.rounds.push({ name: 'מעריך א׳ — אחרי התגובה', data: leanTwo });
-        result.rounds.push({ name: 'מעריך ב׳ — אחרי התגובה', data: richTwo });
-        return { lean: leanTwo, rich: richTwo, rebuttals: true };
-      });
-    }).then(function (state) {
-      stage('מכריע בין השניים');
-      return call(key, [
-        imageMessage(base64, mediaType, 'הכרע בין שתי ההערכות הבאות.'),
-        { role: 'user', content: 'מעריך א׳ (נוטה להערכה נמוכה):\n' + JSON.stringify(state.lean) +
-          '\n\nמעריך ב׳ (נוטה להערכה גבוהה):\n' + JSON.stringify(state.rich) }
-      ], JUDGE).then(function (answer) {
-        var final = parseAnswer(textOf(answer));
-        if (!final) throw new Error('ההכרעה חזרה בפורמט שלא ניתן לקרוא');
-        result.final = final;
-        result.rounds.push({ name: 'הכרעה', data: final });
-        return result;
-      });
     });
   }
 
-  /** קורא קובץ תמונה ומחזיר base64 בלי הקידומת */
   function readImage(file) {
     return new Promise(function (resolve, reject) {
       var reader = new FileReader();
       reader.onload = function () {
         var value = String(reader.result);
-        var comma = value.indexOf(',');
-        resolve({ base64: value.slice(comma + 1), mediaType: file.type || 'image/jpeg' });
+        resolve({
+          base64: value.slice(value.indexOf(',') + 1),
+          mediaType: file.type || 'image/jpeg'
+        });
       };
       reader.onerror = function () { reject(new Error('לא הצלחתי לקרוא את הקובץ')); };
       reader.readAsDataURL(file);
@@ -182,10 +184,11 @@
   }
 
   root.Estimate = {
-    debate: debate,
+    run: run,
     readImage: readImage,
     parseAnswer: parseAnswer,
-    textOf: textOf,
-    MODEL: MODEL
+    reconcile: reconcile,
+    itemDifferences: itemDifferences,
+    SUM_FIELDS: SUM_FIELDS
   };
 })(typeof window !== 'undefined' ? window : globalThis);

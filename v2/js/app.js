@@ -97,13 +97,27 @@
       });
     }
 
-    var aiKey = view.querySelector('#ai-key');
-    if (aiKey) {
-      aiKey.addEventListener('change', function () {
-        Store.updateSettings({ aiKey: aiKey.value.trim() });
-        App.toast(aiKey.value.trim() ? 'המפתח נשמר במכשיר' : 'המפתח הוסר');
+    view.querySelectorAll('[data-key]').forEach(function (input) {
+      input.addEventListener('change', function () {
+        var value = input.value.trim();
+        var patch = {};
+        patch[input.dataset.key] = value;
+        Store.updateSettings(patch);
+
+        var provider = root.Providers.detect(value);
+        App.toast(!value ? 'המפתח הוסר'
+          : provider ? 'מפתח ' + root.Providers.PROVIDERS[provider].label + ' נשמר במכשיר'
+          : 'המפתח לא מזוהה כשייך לספק מוכר');
       });
-    }
+    });
+
+    view.querySelectorAll('[data-model]').forEach(function (input) {
+      input.addEventListener('change', function () {
+        var patch = {};
+        patch[input.dataset.model] = input.value.trim();
+        Store.updateSettings(patch);
+      });
+    });
 
     var save = view.querySelector('#save-entry');
     if (save) {
@@ -215,19 +229,23 @@
     }
   }
 
-  /** מריץ את הוויכוח ומציג כל שלב בדרך */
+  /** מריץ את הוויכוח ומציג את שתי ההערכות ואת ההכרעה */
   function runDebate(input, view) {
     var file = input.files && input.files[0];
     if (!file) return;
 
     var box = view.querySelector('#debate');
-    var key = Store.getSettings().aiKey;
-    var show = function (html) { if (box) box.innerHTML = html; };
+    var settings = Store.getSettings();
+    var accounts = [
+      { key: settings.aiKeyA, model: settings.aiModelA },
+      { key: settings.aiKeyB, model: settings.aiModelB }
+    ].filter(function (a) { return a.key; });
 
+    var show = function (html) { if (box) box.innerHTML = html; };
     show('<p class="stage">קורא את התמונה…</p>');
 
     root.Estimate.readImage(file).then(function (image) {
-      return root.Estimate.debate(key, image.base64, image.mediaType, function (message) {
+      return root.Estimate.run(accounts, image, function (message) {
         show('<p class="stage">' + root.Fmt.esc(message) + '…</p>');
       });
     }).then(function (result) {
@@ -235,16 +253,13 @@
       var apply = view.querySelector('#apply-estimate');
       if (apply) {
         apply.addEventListener('click', function () {
-          var f = result.final;
-          var setField = function (name, value) {
-            var el = view.querySelector('[data-field="' + name + '"]');
-            if (el && root.Fmt.isNum(value)) el.value = Math.round(value);
-          };
-          setField('kcal', f.kcal);
-          setField('proteinG', f.protein);
-          setField('carbG', f.carbs);
-          setField('fatG', f.fat);
-          setField('fiberG', f.fiber);
+          var fields = result.verdict.fields;
+          var map = { kcal: 'kcal', protein: 'proteinG', carbs: 'carbG',
+            fat: 'fatG', fiber: 'fiberG' };
+          Object.keys(map).forEach(function (source) {
+            var el = view.querySelector('[data-field="' + map[source] + '"]');
+            if (el && root.Fmt.isNum(fields[source])) el.value = Math.round(fields[source]);
+          });
           App.toast('המספרים הוזנו בטופס. בדוק ולחץ שמירה.');
         });
       }
@@ -255,44 +270,61 @@
 
   function renderDebate(result) {
     var Fmt = root.Fmt;
-    var f = result.final;
+    var v = result.verdict;
+    var tone = v.confidence === 'high' ? 'good' : v.confidence === 'low' ? 'bad' : 'warn';
 
-    var rounds = result.rounds.map(function (round) {
-      var d = round.data;
-      var items = (d.items || []).map(function (item) {
+    var side = function (name, provider, data) {
+      var items = ((data && data.items) || []).map(function (item) {
         return '<li>' + Fmt.esc(item.name) + ' — ' + Fmt.n(item.grams, 0) + ' גר׳, ' +
           Fmt.n(item.kcal, 0) + ' קק״ל' +
           (item.confidence === 'low' ? ' <span class="low">לא בטוח</span>' : '') + '</li>';
       }).join('');
 
-      return '<details class="round"><summary>' + Fmt.esc(round.name) + ' — ' +
-        Fmt.n(d.kcal, 0) + ' קק״ל</summary>' +
+      return '<details class="round"><summary>' + Fmt.esc(name) + ' · ' +
+        Fmt.esc(provider) + ' — ' + Fmt.n(data.kcal, 0) + ' קק״ל</summary>' +
         '<ul>' + items + '</ul>' +
-        (d.reasoning ? '<p class="why">' + Fmt.esc(d.reasoning) + '</p>' : '') +
+        (data.reasoning ? '<p class="why">' + Fmt.esc(data.reasoning) + '</p>' : '') +
         '</details>';
-    }).join('');
+    };
 
-    var range = f.range && Fmt.isNum(f.range.low)
-      ? '<p class="range">טווח סביר: ' + Fmt.n(f.range.low, 0) + '–' +
-        Fmt.n(f.range.high, 0) + ' קלוריות</p>'
+    var missed = '';
+    var diff = result.differences;
+    if (diff.onlyLean.length || diff.onlyRich.length) {
+      var lines = [];
+      if (diff.onlyRich.length) {
+        lines.push('רק המחמיר ראה: ' + diff.onlyRich.join(', '));
+      }
+      if (diff.onlyLean.length) {
+        lines.push('רק השמרן ראה: ' + diff.onlyLean.join(', '));
+      }
+      missed = '<p class="why">' + Fmt.esc(lines.join(' · ')) + '</p>';
+    }
+
+    var range = v.range
+      ? '<p class="range">שתי ההערכות: ' + Fmt.n(v.range.low, 0) + ' ו-' +
+        Fmt.n(v.range.high, 0) + ' קלוריות</p>'
       : '';
 
-    var gap = Fmt.isNum(result.initialGap)
-      ? '<p class="why">הפער בין שני המעריכים בהתחלה: ' + Fmt.n(result.initialGap, 0) +
-        ' קלוריות (' + Fmt.n(result.initialGapShare * 100, 0) + '%).</p>'
-      : '';
+    var f = v.fields;
 
-    return '<div class="verdict">' +
+    return '<div class="verdict verdict--' + tone + '">' +
         '<div class="verdict-num num">' + Fmt.n(f.kcal, 0) + '</div>' +
-        '<div class="verdict-macros num">' +
-          'חלבון ' + Fmt.n(f.protein, 0) + ' · פחמימות ' + Fmt.n(f.carbs, 0) +
-          ' · שומן ' + Fmt.n(f.fat, 0) + '</div>' +
-        (f.verdict ? '<p class="why">' + Fmt.esc(f.verdict) + '</p>' : '') +
-        range + gap +
-        '<button type="button" class="btn btn--primary" id="apply-estimate">' +
-          'הזן לטופס</button>' +
+        '<div class="verdict-macros num">חלבון ' + Fmt.n(f.protein, 0) +
+          ' · פחמימות ' + Fmt.n(f.carbs, 0) + ' · שומן ' + Fmt.n(f.fat, 0) +
+          (root.Fmt.isNum(f.fiber) ? ' · סיבים ' + Fmt.n(f.fiber, 0) : '') + '</div>' +
+        (v.agreement ? '<p class="why">' + Fmt.esc(v.agreement) + '</p>' : '') +
+        range + missed +
+        (v.notes.length ? '<p class="why">' + Fmt.esc(v.notes.join(' ')) + '</p>' : '') +
+        '<button type="button" class="btn btn--primary" id="apply-estimate">הזן לטופס</button>' +
       '</div>' +
-      '<div class="rounds">' + rounds + '</div>';
+      '<div class="rounds">' +
+        side('שמרן', result.leanProvider, result.lean) +
+        side('מחמיר', result.richProvider, result.rich) +
+      '</div>' +
+      (result.sameProvider
+        ? '<p class="why">שתי ההערכות מאותו מודל. מפתח שני, ממשפחה אחרת, ' +
+          'היה חושף יותר.</p>'
+        : '');
   }
 
   function init() {
