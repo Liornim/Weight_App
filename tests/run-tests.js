@@ -2259,6 +2259,12 @@ test('חלוקת המאקרו: חלבון קבוע, שומן באחוז, פחמ�
   close(sum, row.target.kcal, 1e-6, 'החלוקה לא מסתכמת ליעד');
 });
 
+test('יעד החלבון בברירת מחדל הוא 170 גרם', () => {
+  const fresh = Store.getSettings();
+  assert(fresh.targets.proteinG === 170,
+    'ציפיתי ל-170, קיבלתי ' + fresh.targets.proteinG);
+});
+
 test('יעד שנבחר במפורש גובר על היעד של כל חלון', () => {
   const entries = windowFixture();
   const r = Metrics.targetGaps(entries, WIN_SETTINGS,

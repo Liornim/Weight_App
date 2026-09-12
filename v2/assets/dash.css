@@ -531,6 +531,7 @@ table.t th.n, table.t td.n {
 }
 
 table.t .sub { display: block; font-size: 11px; color: var(--ink-faint); }
+table.t .sub.warn { color: var(--warn); }
 table.t .sub-inline { font-size: 11px; color: var(--ink-faint); }
 table.t tr.now { background: rgba(18,133,124,0.07); font-weight: 500; }
 

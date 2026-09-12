@@ -36,8 +36,13 @@
       return '<td class="n">' + P.delta(value, digits, good) + '</td>';
     };
 
+    // ההבחנה חשובה: חלון של 3 ימים שבו דווחו 2 מתאר ממוצע של
+    // יומיים, ולכן הוא רגיש יותר ליום חריג
+    var coverage = row.loggedDays + ' מתוך ' + row.days + ' ימים עם רישום';
+
     return '<tr><td>' + row.days + ' ימים' +
-        '<span class="sub">' + row.loggedDays + ' ימים דווחו</span></td>' +
+        '<span class="sub' + (row.loggedDays < row.days ? ' warn' : '') + '">' +
+        P.esc(coverage) + '</span></td>' +
       cell(row.gapPerDay.kcal, 0, 'down') +
       cell(row.gapPerDay.protein, 0, 'up') +
       cell(row.gapPerDay.fat, 0, 'down') +
@@ -139,12 +144,25 @@
           'והפחמימות הן מה שנשאר.'
         : 'היעד לכל חלון מחושב מההוצאה שאותו חלון מודד, פחות הגירעון שבחרת.'));
 
+    var missing = ['protein', 'fat', 'carbs'].filter(function (key) {
+      return usable.every(function (row) { return !Fmt.isNum(row.actual[key]); });
+    });
+    var labels = { protein: 'חלבון', fat: 'שומן', carbs: 'פחמימות' };
+
+    var missingNote = missing.length
+      ? P.hint('אין רישום של ' + missing.map(function (k) { return labels[k]; }).join(', ') +
+        ' בימים האלה, ולכן העמודות ריקות. אפשר להזין אותם בטאב ההזנה.')
+      : '';
+
     var table = P.card('פער יומי, לפי אורך חלון', 'מספר חיובי = מעל היעד',
       P.table(
         [{ label: 'חלון', n: false }, 'קלוריות', 'חלבון', 'שומן', 'פחמימות'],
         [r.rows.map(summaryRow).join('')],
-        { hint: 'חלון קצר מושפע מיום בודד חריג. כשכל השורות מצביעות לאותו ' +
-          'כיוון, זו מגמה אמיתית.' }));
+        { hint: 'הממוצע מחושב רק על הימים שיש בהם רישום. ' +
+          'בחלון של 3 ימים שבו דווחו 2, מדובר בממוצע של יומיים — ' +
+          'ולכן יום חריג אחד מזיז אותו הרבה. ' +
+          'חלון ארוך יותר אמין יותר, וכשכל השורות מצביעות לאותו כיוון זו מגמה.' }) +
+      missingNote);
 
     var details = '<div class="rounds">' +
       usable.map(detail).join('') + '</div>';

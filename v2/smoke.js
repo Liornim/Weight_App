@@ -609,6 +609,37 @@ test('טאב היעדים מציג פער לכל אורך חלון', () => {
   App.setState({ tab: 'home' });
 });
 
+
+test('כיסוי הימים מוצג במפורש', () => {
+  App.setState({ date: Dates.today(), tab: 'targets' });
+  const table = [...doc.querySelectorAll('#view table.t')]
+    .find((t) => t.textContent.includes('פחמימות'));
+
+  const chosen = window.Dash.adjust(
+    window.Dash.report(Store.getEntries(), Store.getSettings(), Dates.today(), App.state),
+    App.state.caution);
+  const model = Metrics.targetGaps(Store.getEntries(), Store.getSettings(),
+    { endDate: Dates.today(), windows: window.TargetsTab.LENGTHS,
+      overrideTarget: chosen.ok ? chosen.target : null });
+
+  const rows = [...table.querySelectorAll('tbody tr')];
+  model.rows.forEach((row, i) => {
+    if (!row.ok) return;
+    const sub = rows[i].querySelector('.sub');
+    assert(sub, row.days + ': חסרה שורת הכיסוי');
+    assert(sub.textContent.indexOf('מתוך') !== -1,
+      row.days + ': הניסוח לא ברור: ' + sub.textContent);
+    assert(sub.textContent.indexOf(String(row.loggedDays)) === 0,
+      row.days + ': מספר הימים לא תואם');
+
+    // כיסוי חלקי מסומן בצבע
+    assert(sub.classList.contains('warn') === (row.loggedDays < row.days),
+      row.days + ': הסימון לא תואם את הכיסוי');
+  });
+
+  App.setState({ tab: 'home' });
+});
+
 test('בלי בחירה, היעד בכל חלון נגזר מההוצאה שלו', () => {
   const model = Metrics.targetGaps(Store.getEntries(), Store.getSettings(),
     { endDate: Dates.today(), windows: [7, 14] });
