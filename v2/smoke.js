@@ -508,6 +508,71 @@ test('פענוח תשובת המודל עמיד לעטיפות', () => {
   assert(E.parseAnswer('{"broken": ') === null, 'JSON שבור');
 });
 
+
+test('טאב המשקל מציג את כל אורכי החלון', () => {
+  App.setState({ date: Dates.today(), tab: 'home' });
+  const tab = doc.querySelector('[data-tab="weight"]');
+  assert(tab, 'כפתור הטאב חסר');
+
+  tab.dispatchEvent(new window.Event('click', { bubbles: true }));
+  assert(App.state.tab === 'weight', 'הטאב לא התחלף');
+
+  const text = doc.getElementById('view').textContent;
+  assert(text.includes('משקל לפי חלונות'), 'כותרת המקטע חסרה');
+
+  // כל אורך שיש לו מספיק נתונים מקבל כרטיס
+  window.WeightTab.LENGTHS.forEach((days) => {
+    const blocks = Metrics.weightBlocks(Store.getEntries(),
+      { days: days, endDate: Dates.today() });
+    if (blocks.rows.length < 2) return;
+    assert(text.includes('כל ' + days + ' ימים'), 'חסר חלון של ' + days);
+  });
+
+  App.setState({ tab: 'home' });
+});
+
+test('הסיכום מתעלם מחלון שעדיין פתוח', () => {
+  const W = window.WeightTab;
+
+  const withPartial = W.summarise([
+    { mean: 90, change: null, days: 7, partial: false },
+    { mean: 89, change: -1, days: 7, partial: false },
+    { mean: 88, change: -1, days: 7, partial: false },
+    { mean: 95, change: 7, days: 1, partial: true }
+  ]);
+
+  assert(withPartial.count === 3, 'החלון החלקי נספר');
+  assert(Math.abs(withPartial.total - (-2)) < 1e-9, 'שינוי כולל: ' + withPartial.total);
+  assert(Math.abs(withPartial.meanWeight - 89) < 1e-9, 'ממוצע: ' + withPartial.meanWeight);
+  // שינוי ליום = השינוי הממוצע לחלון חלקי אורך החלון
+  assert(Math.abs(withPartial.perDay - (-1 / 7)) < 1e-9, 'ליום: ' + withPartial.perDay);
+});
+
+test('פחות משני חלונות מלאים -> אין סיכום', () => {
+  const W = window.WeightTab;
+  assert(W.summarise([{ mean: 90, change: null, days: 7, partial: false }]) === null,
+    'חלון אחד');
+  assert(W.summarise([]) === null, 'רשימה ריקה');
+});
+
+test('ההמלצה היא החלון הארוך ביותר עם מספיק נתונים', () => {
+  const pick = window.WeightTab.recommend(Store.getEntries(), Dates.today());
+  if (!pick) return;
+
+  const blocks = Metrics.weightBlocks(Store.getEntries(),
+    { days: pick.days, endDate: Dates.today() });
+  const complete = blocks.rows.filter((r) => !r.partial);
+  assert(complete.length >= 3, 'ההמלצה על חלון עם פחות משלושה חלונות מלאים');
+
+  // אין חלון ארוך יותר שעומד בתנאי
+  window.WeightTab.LENGTHS.filter((d) => d > pick.days).forEach((days) => {
+    const longer = Metrics.weightBlocks(Store.getEntries(),
+      { days: days, endDate: Dates.today() });
+    assert(longer.rows.filter((r) => !r.partial).length < 3,
+      'היה חלון ארוך יותר שעומד בתנאי: ' + days);
+  });
+});
+
 test('שבוע אחרון חריג מסומן בכותרת', () => {
   // מוסיפים שבוע של עלייה חדה בסוף
   const base = Store.getEntries();

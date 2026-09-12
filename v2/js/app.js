@@ -11,9 +11,10 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd22',
+    BUILD: 'd23',
     state: {
       date: Dates.today(),
+      tab: 'home',         // סיכום או משקל
       asOf: 0,             // עד מתי למדוד: היום, שבוע שעבר, שבועיים
       basis: 'adaptive',   // על סמך כמה זמן לחשב
       caution: 'mid',      // זהיר / אמצע / נדיב
@@ -50,6 +51,13 @@
     if (fold) {
       fold.addEventListener('toggle', function () { App.state.settingsOpen = fold.open; });
     }
+
+    view.querySelectorAll('[data-tab]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        App.setState({ tab: button.dataset.tab });
+        if (root.scrollTo) root.scrollTo(0, 0);
+      });
+    });
 
     view.querySelectorAll('[data-asof]').forEach(function (chip) {
       chip.addEventListener('click', function () {

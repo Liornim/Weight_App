@@ -186,6 +186,58 @@ html, body {
   margin-top: 6px;
 }
 
+/* טאבים */
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin: -6px 0 20px;
+  padding: 5px;
+  background: var(--card);
+  border-radius: 100px;
+  box-shadow: var(--shadow);
+}
+
+.tab {
+  flex: 1;
+  font: inherit;
+  font-size: 14px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 100px;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.tab[aria-pressed='true'] {
+  background: var(--brand);
+  color: #fff;
+  font-weight: 500;
+}
+
+/* סיכום חלון */
+
+.wsum {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+}
+
+.wsum > div {
+  background: var(--paper);
+  border-radius: var(--radius-sm);
+  padding: 9px 11px;
+}
+
+.wsum .k { display: block; font-size: 11.5px; color: var(--ink-soft); }
+.wsum .v { font-size: 16px; font-weight: 600; }
+
+table.t tr.partial td { color: var(--ink-faint); }
+
 /* ---------------------------------------------------------- מקטע */
 
 .section { margin-bottom: 26px; }

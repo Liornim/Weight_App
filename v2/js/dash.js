@@ -701,6 +701,18 @@
     }
   }
 
+  var TABS = [
+    { value: 'home', label: 'סיכום' },
+    { value: 'weight', label: 'משקל' }
+  ];
+
+  function tabs(active) {
+    return '<nav class="tabs">' + TABS.map(function (tab) {
+      return '<button type="button" class="tab" data-tab="' + tab.value + '"' +
+        ' aria-pressed="' + (tab.value === active) + '">' + P.esc(tab.label) + '</button>';
+    }).join('') + '</nav>';
+  }
+
   function render(container, state) {
     var entries = Store.getEntries();
     var settings = Store.getSettings();
@@ -713,8 +725,17 @@
       return;
     }
 
+    if (state.tab === 'weight') {
+      container.innerHTML =
+        top(state, entries, settings) +
+        tabs('weight') +
+        root.WeightTab.render(state);
+      return;
+    }
+
     container.innerHTML =
       top(state, entries, settings) +
+      tabs('home') +
       todaySection(state, entries, settings) +
       entrySection(state, entries) +
       weightSection(state, entries) +
