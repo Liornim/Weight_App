@@ -584,8 +584,13 @@ test('טאב היעדים מציג פער לכל אורך חלון', () => {
   assert(text.includes('יעד מול בפועל'), 'כותרת המקטע חסרה');
   assert(text.includes('פער יומי'), 'טבלת הסיכום חסרה');
 
+  // היעד נקבע לפי הבחירות שבפס העליון, ולכן הוא מועבר לחישוב
+  const chosen = window.Dash.adjust(
+    window.Dash.report(Store.getEntries(), Store.getSettings(), Dates.today(), App.state),
+    App.state.caution);
   const model = Metrics.targetGaps(Store.getEntries(), Store.getSettings(),
-    { endDate: Dates.today(), windows: window.TargetsTab.LENGTHS });
+    { endDate: Dates.today(), windows: window.TargetsTab.LENGTHS,
+      overrideTarget: chosen.ok ? chosen.target : null });
 
   const table = [...doc.querySelectorAll('#view table.t')]
     .find((t) => t.textContent.includes('פחמימות'));
@@ -604,7 +609,7 @@ test('טאב היעדים מציג פער לכל אורך חלון', () => {
   App.setState({ tab: 'home' });
 });
 
-test('היעד בכל חלון נגזר מההוצאה של אותו חלון', () => {
+test('בלי בחירה, היעד בכל חלון נגזר מההוצאה שלו', () => {
   const model = Metrics.targetGaps(Store.getEntries(), Store.getSettings(),
     { endDate: Dates.today(), windows: [7, 14] });
 
@@ -614,6 +619,47 @@ test('היעד בכל חלון נגזר מההוצאה של אותו חלון', 
     assert(Math.abs(row.target.kcal - report.target) < 0.01,
       row.days + ': היעד אינו של אותו חלון');
   });
+});
+
+test('בחירת חלון וזהירות משנה את היעד בכל השורות', () => {
+  App.setState({ date: Dates.today(), tab: 'targets', basis: 'adaptive', caution: 'mid' });
+
+  const gapsNow = () => [...doc.querySelectorAll('#view table.t')]
+    .find((t) => t.textContent.includes('פחמימות'))
+    .querySelectorAll('tbody tr')[1].children[1].textContent;
+
+  const middle = gapsNow();
+
+  doc.querySelector('[data-caution="low"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+  assert(App.state.caution === 'low', 'הבחירה לא נשמרה');
+  const careful = gapsNow();
+  assert(careful !== middle, 'הפער לא השתנה עם הזהירות');
+
+  // זהיר מניח הוצאה נמוכה -> יעד נמוך -> הפער גדול יותר
+  const num = (t) => Number(t.replace(/[^\d.\-−]/g, '').replace('−', '-'));
+  assert(num(careful) > num(middle),
+    'זהיר אמור להגדיל את הפער: ' + careful + ' מול ' + middle);
+
+  App.setState({ caution: 'mid' });
+});
+
+test('כל השורות נמדדות מול אותו יעד שנבחר', () => {
+  App.setState({ date: Dates.today(), tab: 'targets', basis: 7, caution: 'mid' });
+
+  const chosen = window.Dash.adjust(
+    window.Dash.report(Store.getEntries(), Store.getSettings(), Dates.today(), App.state),
+    'mid');
+  const model = Metrics.targetGaps(Store.getEntries(), Store.getSettings(),
+    { endDate: Dates.today(), windows: [3, 7, 14],
+      overrideTarget: chosen.ok ? chosen.target : null });
+
+  model.rows.filter((r) => r.ok).forEach((row) => {
+    assert(Math.abs(row.target.kcal - chosen.target) < 0.01,
+      row.days + ': היעד אינו זה שנבחר');
+  });
+
+  App.setState({ basis: 'adaptive', tab: 'home' });
 });
 
 test('הפער מוצג ליום ולא כסכום', () => {

@@ -81,12 +81,28 @@
       '</details>';
   }
 
+  /**
+   * היעד שלפיו נמדד הפער.
+   *
+   * שתי בחירות משפיעות עליו: על סמך כמה זמן לחשב את ההוצאה, וכמה
+   * להיזהר בהערכה. "זהיר" מניח הוצאה נמוכה יותר, ולכן היעד יורד
+   * והפער מול מה שאכלת גדל. אותן בחירות בדיוק כמו במסך הסיכום,
+   * כדי ששני המסכים לא יספרו סיפורים שונים.
+   */
+  function targetFor(entries, settings, state) {
+    var raw = root.Dash.report(entries, settings, state.date, state);
+    return root.Dash.adjust(raw, state.caution);
+  }
+
   function render(state) {
     var entries = Store.getEntries();
     var settings = Store.getSettings();
 
+    var chosen = targetFor(entries, settings, state);
+
     var r = Metrics.targetGaps(entries, settings, {
-      endDate: state.date, windows: LENGTHS
+      endDate: state.date, windows: LENGTHS,
+      overrideTarget: chosen.ok ? chosen.target : null
     });
 
     var usable = r.rows.filter(function (row) { return row.ok; });
@@ -117,9 +133,11 @@
           'שומן ליום', Fmt.isNum(main.gapPerDay.fat)
             ? Fmt.signed(main.gapPerDay.fat, 0) + ' גר׳' : '—', 'מול היעד')
       ]) +
-      P.hint('היעד אינו קבוע: לכל חלון מחושבת ההוצאה מהנתונים שלו, ומורד ממנה ' +
-        'הגירעון שבחרת. החלבון הוא היעד שהגדרת, השומן רבע מהקלוריות, ' +
-        'והפחמימות הן מה שנשאר.'));
+      P.hint(chosen.ok
+        ? 'היעד שלפיו נמדד הפער הוא ' + Fmt.n(chosen.target, 0) + ' קלוריות ליום, ' +
+          'לפי הבחירות שלמעלה. החלבון הוא היעד שהגדרת, השומן רבע מהקלוריות, ' +
+          'והפחמימות הן מה שנשאר.'
+        : 'היעד לכל חלון מחושב מההוצאה שאותו חלון מודד, פחות הגירעון שבחרת.'));
 
     var table = P.card('פער יומי, לפי אורך חלון', 'מספר חיובי = מעל היעד',
       P.table(
@@ -131,7 +149,9 @@
     var details = '<div class="rounds">' +
       usable.map(detail).join('') + '</div>';
 
-    return P.section('יעד מול בפועל', head + table +
+    return P.section('יעד מול בפועל',
+      root.Dash.controls(state, entries, state.date) +
+      head + table +
       P.card('פירוט לכל חלון', null, details));
   }
 

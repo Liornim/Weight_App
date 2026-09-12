@@ -2001,6 +2001,9 @@
     var fatShare = num(opts.fatShare);
     if (fatShare === null) fatShare = 0.25;
 
+    // יעד אחיד לכל החלונות, כשהמשתמש בחר אותו במפורש. בלעדיו כל
+    // חלון נמדד מול היעד שהוא עצמו מייצר.
+    var override = num(opts.overrideTarget);
     var proteinTarget = num((settings.targets || {}).proteinG);
     var kcalPerStep = num(settings.kcalPerStep);
     if (kcalPerStep === null) kcalPerStep = 0.040;
@@ -2026,7 +2029,7 @@
       var carbs = mean('carbG');
 
       // היעד היומי, ומתוכו חלוקת המאקרו
-      var targetKcal = report.target;
+      var targetKcal = override === null ? report.target : override;
       var targetFat = (targetKcal * fatShare) / 9;
       var targetProtein = proteinTarget;
       var proteinKcal = proteinTarget === null ? 0 : proteinTarget * 4;

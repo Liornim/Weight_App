@@ -710,5 +710,12 @@
     drawCharts(state, entries, settings);
   }
 
-  root.Dash = { render: render, photoCard: photoCard, COLORS: COLORS };
+  root.Dash = {
+    render: render,
+    photoCard: photoCard,
+    controls: controls,
+    adjust: adjust,
+    report: report,
+    COLORS: COLORS
+  };
 })(typeof window !== 'undefined' ? window : globalThis);

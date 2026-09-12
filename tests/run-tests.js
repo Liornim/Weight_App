@@ -2259,6 +2259,21 @@ test('חלוקת המאקרו: חלבון קבוע, שומן באחוז, פחמ�
   close(sum, row.target.kcal, 1e-6, 'החלוקה לא מסתכמת ליעד');
 });
 
+test('יעד שנבחר במפורש גובר על היעד של כל חלון', () => {
+  const entries = windowFixture();
+  const r = Metrics.targetGaps(entries, WIN_SETTINGS,
+    { endDate: '2026-03-01', windows: [3, 7, 14], overrideTarget: 1800 });
+
+  r.rows.filter((row) => row.ok).forEach((row) => {
+    close(row.target.kcal, 1800, 1e-9, row.days + ': היעד לא נכפה');
+    close(row.gapPerDay.kcal, row.actual.kcal - 1800, 1e-9, row.days + ': הפער');
+  });
+
+  // וחלוקת המאקרו נגזרת מאותו יעד
+  const row = r.rows.find((x) => x.ok);
+  close(row.target.fat, (1800 * 0.25) / 9, 1e-9, 'השומן מחושב מהיעד שנכפה');
+});
+
 test('הקלוריות בניכוי הליכה נמוכות מהצריכה', () => {
   const entries = windowFixture();   // 10,000 צעדים ביום
   const settings = Object.assign({}, WIN_SETTINGS, { kcalPerStep: 0.04 });
