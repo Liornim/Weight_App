@@ -2226,6 +2226,74 @@ test('המדידה עד שבוע שעבר נקייה מחפיפה', () => {
   assert(before.first.weighIns + before.second.weighIns <= 35, 'ספירה כפולה');
 });
 
+// ---------- יעד מול בפועל ----------
+
+test('הפער מחושב מול היעד של אותו חלון', () => {
+  const entries = windowFixture();
+  const r = Metrics.targetGaps(entries, WIN_SETTINGS,
+    { endDate: '2026-03-01', windows: [7, 14] });
+
+  r.rows.filter((row) => row.ok).forEach((row) => {
+    const report = Metrics.windowReport(entries, WIN_SETTINGS,
+      { windowDays: row.days, endDate: '2026-03-01' });
+    close(row.target.kcal, report.target, 1e-9, row.days + ': היעד אינו של אותו חלון');
+    close(row.gapPerDay.kcal, row.actual.kcal - row.target.kcal, 1e-9,
+      row.days + ': הפער אינו ההפרש');
+  });
+});
+
+test('חלוקת המאקרו: חלבון קבוע, שומן באחוז, פחמימות השארית', () => {
+  const entries = windowFixture();
+  const settings = Object.assign({}, WIN_SETTINGS, {
+    targets: { proteinG: 160 }, kcalPerStep: 0.04
+  });
+  const row = Metrics.targetGaps(entries, settings,
+    { endDate: '2026-03-01', windows: [14], fatShare: 0.25 }).rows[0];
+
+  assert(row.ok, 'צריך לרוץ');
+  close(row.target.protein, 160, 1e-9, 'החלבון הוא היעד מההגדרות');
+  close(row.target.fat, (row.target.kcal * 0.25) / 9, 1e-9, 'השומן רבע מהקלוריות');
+
+  // הקלוריות מתחלקות בדיוק בין שלושת המאקרו
+  const sum = row.target.protein * 4 + row.target.fat * 9 + row.target.carbs * 4;
+  close(sum, row.target.kcal, 1e-6, 'החלוקה לא מסתכמת ליעד');
+});
+
+test('הקלוריות בניכוי הליכה נמוכות מהצריכה', () => {
+  const entries = windowFixture();   // 10,000 צעדים ביום
+  const settings = Object.assign({}, WIN_SETTINGS, { kcalPerStep: 0.04 });
+  const row = Metrics.targetGaps(entries, settings,
+    { endDate: '2026-03-01', windows: [14] }).rows[0];
+
+  close(row.actual.netKcal, row.actual.kcal - row.actual.steps * 0.04, 1e-9, 'הניכוי');
+  assert(row.actual.netKcal < row.actual.kcal, 'הניכוי אמור להקטין');
+  close(row.gapPerDay.netKcal, row.actual.netKcal - row.target.kcal, 1e-9, 'הפער בניכוי');
+});
+
+test('חלון בלי כיסוי מסומן ולא מחושב', () => {
+  const entries = buildSeries('2026-01-01', 20, (i) => ({
+    weightKg: 90 - 0.05 * i, kcal: 2200, steps: 9000, proteinG: 150
+  }));
+  const rows = Metrics.targetGaps(entries, WIN_SETTINGS,
+    { endDate: '2026-01-20', windows: [7, 28] }).rows;
+
+  assert(rows[0].ok, 'חלון 7 אמור לעבוד');
+  assert(!rows[1].ok, 'חלון 28 היה צריך להיפסל');
+  assert(rows[1].needDays === 56, 'צריך 56 ימים');
+});
+
+test('מאקרו שלא דווח מוחזר ריק ולא כאפס', () => {
+  const entries = buildSeries('2026-01-01', 40, (i) => ({
+    weightKg: 90 - 0.05 * i, kcal: 2200, steps: 9000
+  }));
+  const row = Metrics.targetGaps(entries, WIN_SETTINGS,
+    { endDate: '2026-02-09', windows: [14] }).rows[0];
+
+  assert(row.actual.protein === null, 'חלבון שלא דווח');
+  assert(row.gapPerDay.protein === null, 'ולכן גם אין פער');
+  assert(row.gapPerDay.kcal !== null, 'הקלוריות כן דווחו');
+});
+
 // ---------- דוח ----------
 // הריצה מופעלת בסוף הקובץ בלבד. אם היא תופעל באמצע, בדיקות שנרשמו
 // אחריה לא ייכנסו לתור וייעלמו בשקט — קרה בפועל.

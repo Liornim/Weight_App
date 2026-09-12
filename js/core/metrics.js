@@ -1983,6 +1983,97 @@
     };
   }
 
+  /**
+   * יעד מול בפועל, לכל אורך חלון.
+   *
+   * היעד אינו קבוע: הוא נגזר מההוצאה שאותו חלון עצמו מודד, פחות
+   * הגירעון המבוקש. כך כל שורה עקבית בתוך עצמה — אותם ימים מספקים
+   * גם את ההוצאה וגם את הצריכה.
+   *
+   * חלוקת המאקרו: החלבון הוא יעד קבוע מההגדרות, השומן אחוז
+   * מהקלוריות, והפחמימות הן מה שנשאר. זה הסדר הנכון, כי החלבון
+   * הוא האילוץ והפחמימות הן השארית.
+   */
+  function targetGaps(entries, settings, options) {
+    var opts = options || {};
+    var endDate = opts.endDate || Dates.today();
+    var windows = opts.windows || [3, 5, 7, 10, 14, 21, 28];
+    var fatShare = num(opts.fatShare);
+    if (fatShare === null) fatShare = 0.25;
+
+    var proteinTarget = num((settings.targets || {}).proteinG);
+    var kcalPerStep = num(settings.kcalPerStep);
+    if (kcalPerStep === null) kcalPerStep = 0.040;
+
+    var rows = windows.map(function (days) {
+      var report = windowReport(entries, settings, { windowDays: days, endDate: endDate });
+      if (!report.ok) {
+        return { days: days, ok: false, reason: report.reason, needDays: report.needDays };
+      }
+
+      var inRange = inWindow(entries, endDate, days);
+      var mean = function (field) {
+        var values = series(inRange, field).map(function (p) { return p.y; });
+        return values.length ? { value: Stats.mean(values), n: values.length } : null;
+      };
+
+      var kcal = mean('kcal');
+      if (!kcal) return { days: days, ok: false, reason: 'no-intake' };
+
+      var steps = mean('steps');
+      var protein = mean('proteinG');
+      var fat = mean('fatG');
+      var carbs = mean('carbG');
+
+      // היעד היומי, ומתוכו חלוקת המאקרו
+      var targetKcal = report.target;
+      var targetFat = (targetKcal * fatShare) / 9;
+      var targetProtein = proteinTarget;
+      var proteinKcal = proteinTarget === null ? 0 : proteinTarget * 4;
+      var targetCarbs = Math.max((targetKcal - proteinKcal - targetFat * 9) / 4, 0);
+
+      var gap = function (actual, target) {
+        if (!actual || target === null || !Fmt_isNum(target)) return null;
+        return actual.value - target;
+      };
+
+      // הקלוריות בניכוי ההליכה: מה שנשאר אחרי שהצעדים "שילמו" על חלקם
+      var stepKcal = steps ? steps.value * kcalPerStep : 0;
+      var netKcal = kcal.value - stepKcal;
+
+      return {
+        days: days,
+        ok: true,
+        loggedDays: kcal.n,
+        tdee: report.tdee,
+        base: report.base,
+        target: {
+          kcal: targetKcal, protein: targetProtein,
+          fat: targetFat, carbs: targetCarbs
+        },
+        actual: {
+          kcal: kcal.value, protein: protein ? protein.value : null,
+          fat: fat ? fat.value : null, carbs: carbs ? carbs.value : null,
+          steps: steps ? steps.value : null, netKcal: netKcal
+        },
+        gapPerDay: {
+          kcal: kcal.value - targetKcal,
+          netKcal: netKcal - targetKcal,
+          protein: gap(protein, targetProtein),
+          fat: gap(fat, targetFat),
+          carbs: gap(carbs, targetCarbs)
+        },
+        kcalPerKg: settings.kcalPerKg || DEFAULT_KCAL_PER_KG
+      };
+    });
+
+    return { ok: true, endDate: endDate, rows: rows };
+  }
+
+  function Fmt_isNum(value) {
+    return typeof value === 'number' && isFinite(value);
+  }
+
   /** מספרי הפתיחה של מסך הבית */
   function dashboard(entries, settings, options) {
     var opts = options || {};
@@ -2140,6 +2231,7 @@
     dashboard: dashboard,
     halfSplit: halfSplit,
     macroSplit: macroSplit,
+    targetGaps: targetGaps,
     dayComparison: dayComparison,
     weightBlocks: weightBlocks,
     KCAL_PER_GRAM: KCAL_PER_GRAM,

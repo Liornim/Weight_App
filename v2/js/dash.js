@@ -703,7 +703,8 @@
 
   var TABS = [
     { value: 'home', label: 'סיכום' },
-    { value: 'weight', label: 'משקל' }
+    { value: 'weight', label: 'משקל' },
+    { value: 'targets', label: 'יעדים' }
   ];
 
   function tabs(active) {
@@ -725,11 +726,13 @@
       return;
     }
 
-    if (state.tab === 'weight') {
+    if (state.tab === 'weight' || state.tab === 'targets') {
+      var panel = state.tab === 'weight'
+        ? root.WeightTab.render(state)
+        : root.TargetsTab.render(state);
+
       container.innerHTML =
-        top(state, entries, settings) +
-        tabs('weight') +
-        root.WeightTab.render(state);
+        top(state, entries, settings) + tabs(state.tab) + panel;
       return;
     }
 

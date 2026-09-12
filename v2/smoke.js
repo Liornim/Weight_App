@@ -509,6 +509,66 @@ test('פענוח תשובת המודל עמיד לעטיפות', () => {
 });
 
 
+
+test('טאב היעדים מציג פער לכל אורך חלון', () => {
+  Store.updateSettings({ targets: { proteinG: 170 }, goal: { ratePerWeekKg: -0.5 } });
+  App.setState({ date: Dates.today(), tab: 'targets' });
+
+  const text = doc.getElementById('view').textContent;
+  assert(text.includes('יעד מול בפועל'), 'כותרת המקטע חסרה');
+  assert(text.includes('פער יומי'), 'טבלת הסיכום חסרה');
+
+  const model = Metrics.targetGaps(Store.getEntries(), Store.getSettings(),
+    { endDate: Dates.today(), windows: window.TargetsTab.LENGTHS });
+
+  const table = [...doc.querySelectorAll('#view table.t')]
+    .find((t) => t.textContent.includes('פחמימות'));
+  assert(table, 'הטבלה חסרה');
+  const rows = [...table.querySelectorAll('tbody tr')];
+  assert(rows.length === model.rows.length, 'מספר שורות לא תואם');
+
+  // הפער המוצג תואם את החישוב
+  model.rows.forEach((row, i) => {
+    if (!row.ok) return;
+    const shown = Number(rows[i].children[1].textContent.replace(/[^\d.\-−]/g, '').replace('−', '-'));
+    assert(Math.abs(shown - Math.round(row.gapPerDay.kcal)) <= 1,
+      row.days + ' ימים: מוצג ' + shown + ' מול ' + Math.round(row.gapPerDay.kcal));
+  });
+
+  App.setState({ tab: 'home' });
+});
+
+test('היעד בכל חלון נגזר מההוצאה של אותו חלון', () => {
+  const model = Metrics.targetGaps(Store.getEntries(), Store.getSettings(),
+    { endDate: Dates.today(), windows: [7, 14] });
+
+  model.rows.filter((r) => r.ok).forEach((row) => {
+    const report = Metrics.windowReport(Store.getEntries(), Store.getSettings(),
+      { windowDays: row.days, endDate: Dates.today() });
+    assert(Math.abs(row.target.kcal - report.target) < 0.01,
+      row.days + ': היעד אינו של אותו חלון');
+  });
+});
+
+test('הפער מוצג ליום ולא כסכום', () => {
+  App.setState({ date: Dates.today(), tab: 'targets' });
+  const model = Metrics.targetGaps(Store.getEntries(), Store.getSettings(),
+    { endDate: Dates.today(), windows: window.TargetsTab.LENGTHS });
+  const usable = model.rows.filter((r) => r.ok);
+  if (!usable.length) return;
+
+  const table = [...doc.querySelectorAll('#view table.t')]
+    .find((t) => t.textContent.includes('פחמימות'));
+  const numbers = [...table.querySelectorAll('tbody tr')]
+    .map((tr) => Math.abs(Number(tr.children[1].textContent.replace(/[^\d.]/g, ''))))
+    .filter((n) => n > 0);
+
+  // מספר יומי סביר, לא סכום של שבועות
+  numbers.forEach((n) => assert(n < 3000, 'מספר שנראה כמו סכום ולא כממוצע יומי: ' + n));
+
+  App.setState({ tab: 'home' });
+});
+
 test('טאב המשקל מציג את כל אורכי החלון', () => {
   App.setState({ date: Dates.today(), tab: 'home' });
   const tab = doc.querySelector('[data-tab="weight"]');
