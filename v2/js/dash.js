@@ -85,14 +85,30 @@
       };
     });
 
-    return P.card(null, null,
+    // היעד שנוצר מהבחירות מוצג כאן עצמו, כדי שהשינוי יהיה מיידי
+    // ולא ידרוש גלילה למקום אחר
+    var picked = adjust(
+      Metrics.windowReport(entries, Store.getSettings(), {
+        windowDays: state.basis, endDate: date
+      }), state.caution);
+
+    var live = picked.ok
+      ? '<div class="pick-live">' +
+          '<span class="k">היעד לפי הבחירה</span>' +
+          '<span class="v num">' + Fmt.n(picked.target, 0) + '</span>' +
+          '<span class="s">קלוריות ליום · שורף ' + Fmt.n(picked.tdee, 0) + '</span>' +
+        '</div>'
+      : '<div class="pick-live"><span class="k">אין מספיק נתונים לחלון הזה</span></div>';
+
+    return '<div class="sticky-bar">' + P.card(null, null,
       '<label class="pick-label">על סמך כמה זמן לחשב</label>' +
       P.chips(options, state.basis, 'data-basis') +
       '<label class="pick-label">כמה להיזהר בהערכה</label>' +
       P.chips(CAUTION, state.caution, 'data-caution') +
+      live +
       P.hint('אי אפשר לדעת במדויק כמה הגוף שורף, אז יש טווח. ' +
         '"זהיר" מניח שאתה שורף פחות ממה שנראה, ולכן הוא נותן יעד נמוך יותר ' +
-        'ומבטיח שתרד גם אם ההערכה אופטימית. "נדיב" מניח את ההפך.'));
+        'ומבטיח שתרד גם אם ההערכה אופטימית. "נדיב" מניח את ההפך.')) + '</div>';
   }
 
   // ---------------------------------------------------------- כותרת

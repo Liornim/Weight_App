@@ -610,6 +610,57 @@ test('טאב היעדים מציג פער לכל אורך חלון', () => {
 });
 
 
+
+test('פס הבחירה מציג את היעד שנוצר ממנו', () => {
+  App.setState({ date: Dates.today(), tab: 'targets', basis: 'adaptive', caution: 'mid' });
+
+  const live = doc.querySelector('.pick-live .v');
+  assert(live, 'היעד לא מוצג בפס');
+
+  const chosen = window.Dash.adjust(
+    window.Dash.report(Store.getEntries(), Store.getSettings(), Dates.today(), App.state),
+    'mid');
+  const shown = Number(live.textContent.replace(/[^\d]/g, ''));
+  assert(Math.abs(shown - Math.round(chosen.target)) <= 1,
+    'מוצג ' + shown + ' מול ' + Math.round(chosen.target));
+
+  // והוא זז עם הבחירה, בלי לגלול לשום מקום
+  doc.querySelector('[data-caution="low"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+  const careful = Number(doc.querySelector('.pick-live .v').textContent.replace(/[^\d]/g, ''));
+  assert(careful < shown, 'זהיר אמור להוריד את היעד: ' + careful + ' מול ' + shown);
+
+  App.setState({ caution: 'mid', tab: 'home' });
+});
+
+test('פס הבחירה והטאבים נדבקים לראש המסך', () => {
+  const css = fs.readFileSync(path.join(__dirname, 'assets/dash.css'), 'utf8');
+
+  const bar = css.match(/\.sticky-bar\s*\{[^}]*\}/);
+  assert(bar && bar[0].indexOf('position: sticky') !== -1, 'פס הבחירה אינו דביק');
+
+  const tabs = css.match(/\.tabs\s*\{[^}]*\}/);
+  assert(tabs && tabs[0].indexOf('position: sticky') !== -1, 'הטאבים אינם דביקים');
+
+  // הטאבים מעל פס הבחירה, אחרת הם ייחתכו
+  const barZ = Number((bar[0].match(/z-index:\s*(\d+)/) || [])[1]);
+  const tabsZ = Number((tabs[0].match(/z-index:\s*(\d+)/) || [])[1]);
+  assert(tabsZ > barZ, 'סדר השכבות שגוי: טאבים ' + tabsZ + ' מול פס ' + barZ);
+});
+
+test('הבחירה נשמרת במעבר בין טאבים', () => {
+  App.setState({ date: Dates.today(), tab: 'targets', basis: 7, caution: 'low' });
+  App.setState({ tab: 'home' });
+  assert(App.state.basis === 7 && App.state.caution === 'low', 'הבחירה אבדה');
+
+  App.setState({ tab: 'targets' });
+  const active = doc.querySelector('[data-basis="7"]');
+  assert(active && active.getAttribute('aria-pressed') === 'true',
+    'הבחירה לא מסומנת אחרי חזרה');
+
+  App.setState({ basis: 'adaptive', caution: 'mid', tab: 'home' });
+});
+
 test('כיסוי הימים מוצג במפורש', () => {
   App.setState({ date: Dates.today(), tab: 'targets' });
   const table = [...doc.querySelectorAll('#view table.t')]
