@@ -41,7 +41,8 @@ for (let i = 0; i < 20; i++) {
   });
 }
 Store.updateSettings({ aiKeyA: 'AQ.TEST', goal: { ratePerWeekKg: -0.5 } });
-App.setState({ date: Dates.today() });
+// ההערכה מתמונה עברה לטאב ההזנה
+App.setState({ date: Dates.today(), tab: 'entry' });
 
 test('ההערכה מתמזגת גם כשהפריטים חסרים', () => {
   const merged = Estimate.reconcile(
@@ -88,7 +89,7 @@ test('חילוץ מטקסט מחזיר מבנה שהתצוגה יודעת לקר
 test('שמירת הגדרה באמצע התהליך לא מבטלת את התצוגה', () => {
   // זה בדיוק התרחיש שנשבר: שמירת המודל שהוחלף מרנדרת מחדש,
   // וכתיבה לאלמנט שנשמר קודם נעלמת
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'entry' });
   const before = w.document.getElementById('debate');
   assert(before, 'אלמנט התוצאה חסר');
 

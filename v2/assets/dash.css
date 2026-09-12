@@ -669,6 +669,12 @@ details.fold .body { padding: 0 18px 18px; }
   text-align: end;
 }
 
+.field input[type='date'] {
+  direction: ltr;
+  text-align: center;
+  font-family: var(--mono);
+}
+
 .field input:focus,
 .field select:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
 

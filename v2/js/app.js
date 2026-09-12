@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd24',
+    BUILD: 'd25',
     state: {
       date: Dates.today(),
       tab: 'home',         // סיכום או משקל
@@ -147,36 +147,45 @@
       });
     });
 
-    var save = view.querySelector('#save-entry');
-    if (save) {
-      save.addEventListener('click', function () {
+    // שמירה לפי קבוצה, כדי ששמירת תזונה לא תמחק מדד גוף ריק
+    view.querySelectorAll('[data-save]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var group = button.dataset.save === 'body'
+          ? root.EntryTab.BODY : root.EntryTab.FOOD;
+
         var payload = { date: App.state.date };
-        view.querySelectorAll('[data-field]').forEach(function (input) {
-          payload[input.dataset.field] = input.value;
+        group.forEach(function (field) {
+          var input = document.querySelector('[data-field="' + field.key + '"]');
+          if (input) payload[field.key] = input.value;
         });
+
         try {
           Store.upsert(payload);
-          App.toast('נשמר');
+          App.toast(button.dataset.save === 'body' ? 'מדדי הגוף נשמרו' : 'התזונה נשמרה');
         } catch (error) {
           App.toast('השמירה נכשלה: ' + error.message);
         }
       });
-    }
+    });
 
-    var back = view.querySelector('#day-back');
-    if (back) {
-      back.addEventListener('click', function () {
-        App.setState({ date: Dates.addDays(App.state.date, -1) });
+    var dateField = view.querySelector('#entry-date');
+    if (dateField) {
+      dateField.addEventListener('change', function () {
+        var value = dateField.value;
+        if (!value || value > Dates.today()) {
+          App.toast('אי אפשר לבחור תאריך עתידי');
+          dateField.value = App.state.date;
+          return;
+        }
+        App.setState({ date: value });
       });
     }
 
-    var forward = view.querySelector('#day-fwd');
-    if (forward) {
-      forward.addEventListener('click', function () {
-        var next = Dates.addDays(App.state.date, 1);
-        App.setState({ date: next > Dates.today() ? Dates.today() : next });
+    view.querySelectorAll('[data-jump]').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        App.setState({ date: Dates.addDays(Dates.today(), -Number(chip.dataset.jump)) });
       });
-    }
+    });
 
     var applyPaste = view.querySelector('#paste-apply');
     if (applyPaste) {

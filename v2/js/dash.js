@@ -396,47 +396,8 @@
         P.hint('חלבון שומר על השריר בזמן ירידה במשקל ומשאיר תחושת שובע לאורך זמן.')));
   }
 
-  // ------------------------------------------------- הזנה וצילום
+  // ------------------------------------------------- צילום
 
-  var ENTRY_FIELDS = [
-    { key: 'weightKg', label: 'משקל', unit: 'ק״ג', step: '0.1' },
-    { key: 'bodyFatKg', label: 'שומן', unit: 'ק״ג', step: '0.1' },
-    { key: 'muscleKg', label: 'שריר', unit: 'ק״ג', step: '0.1' },
-    { key: 'kcal', label: 'קלוריות', unit: '', step: '10' },
-    { key: 'proteinG', label: 'חלבון', unit: 'גר׳', step: '1' },
-    { key: 'carbG', label: 'פחמימות', unit: 'גר׳', step: '1' },
-    { key: 'fatG', label: 'שומן באוכל', unit: 'גר׳', step: '1' },
-    { key: 'fiberG', label: 'סיבים', unit: 'גר׳', step: '1' },
-    { key: 'steps', label: 'צעדים', unit: '', step: '100' }
-  ];
-
-  function entrySection(state, entries) {
-    var entry = Store.getEntry(state.date) || {};
-
-    var fields = ENTRY_FIELDS.map(function (f) {
-      return '<div class="field"><label for="in-' + f.key + '">' + P.esc(f.label) +
-        (f.unit ? ' <span class="unit">' + P.esc(f.unit) + '</span>' : '') + '</label>' +
-        '<input id="in-' + f.key + '" data-field="' + f.key + '" type="number" ' +
-        'inputmode="decimal" step="' + f.step + '" value="' +
-        (Fmt.isNum(entry[f.key]) ? entry[f.key] : '') + '"></div>';
-    }).join('');
-
-    return P.section('הזנה',
-      P.card(null, Dates.long(state.date),
-        '<div class="field-grid">' + fields + '</div>' +
-        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">' +
-          '<button type="button" class="btn btn--primary" id="save-entry">שמירה</button>' +
-          '<button type="button" class="btn" id="day-back">יום אחורה</button>' +
-          '<button type="button" class="btn" id="day-fwd">יום קדימה</button>' +
-        '</div>') +
-      photoCard(state));
-  }
-
-  /**
-   * הערכת ארוחה מתמונה. שני מעריכים עם הטיות מנוגדות מגיעים למספרים
-   * שונים, מגיבים זה לזה, וסיבוב שלישי מכריע. כל השלבים מוצגים —
-   * המחלוקת עצמה היא המידע השימושי, לא רק המספר הסופי.
-   */
   function photoCard(state) {
     var key = Store.getSettings().aiKey;
 
@@ -703,6 +664,7 @@
 
   var TABS = [
     { value: 'home', label: 'סיכום' },
+    { value: 'entry', label: 'הזנה' },
     { value: 'weight', label: 'משקל' },
     { value: 'targets', label: 'יעדים' }
   ];
@@ -726,10 +688,10 @@
       return;
     }
 
-    if (state.tab === 'weight' || state.tab === 'targets') {
-      var panel = state.tab === 'weight'
-        ? root.WeightTab.render(state)
-        : root.TargetsTab.render(state);
+    if (state.tab !== 'home') {
+      var panel = state.tab === 'weight' ? root.WeightTab.render(state)
+        : state.tab === 'targets' ? root.TargetsTab.render(state)
+        : root.EntryTab.render(state);
 
       container.innerHTML =
         top(state, entries, settings) + tabs(state.tab) + panel;
@@ -740,7 +702,6 @@
       top(state, entries, settings) +
       tabs('home') +
       todaySection(state, entries, settings) +
-      entrySection(state, entries) +
       weightSection(state, entries) +
       bodySection(state, entries) +
       foodSection(state, entries, settings) +
@@ -749,5 +710,5 @@
     drawCharts(state, entries, settings);
   }
 
-  root.Dash = { render: render, COLORS: COLORS };
+  root.Dash = { render: render, photoCard: photoCard, COLORS: COLORS };
 })(typeof window !== 'undefined' ? window : globalThis);

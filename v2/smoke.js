@@ -311,7 +311,7 @@ test('הירידה בכותרת היא ההפרש בין חצאי התקופה',
 
 
 test('טופס ההזנה כולל את כל השדות ושומר', () => {
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'entry' });
   ['weightKg', 'bodyFatKg', 'muscleKg', 'kcal', 'proteinG', 'carbG', 'fatG', 'fiberG', 'steps']
     .forEach((field) => {
       assert(doc.querySelector('[data-field="' + field + '"]'), 'חסר שדה: ' + field);
@@ -319,29 +319,90 @@ test('טופס ההזנה כולל את כל השדות ושומר', () => {
 
   doc.querySelector('[data-field="fiberG"]').value = '31';
   doc.querySelector('[data-field="steps"]').value = '11500';
-  doc.querySelector('#save-entry').dispatchEvent(new window.Event('click', { bubbles: true }));
+  doc.querySelector('[data-save="food"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
 
   const saved = Store.getEntry(Dates.today());
   assert(saved.fiberG === 31, 'הסיבים לא נשמרו: ' + saved.fiberG);
   assert(saved.steps === 11500, 'הצעדים לא נשמרו: ' + saved.steps);
 });
 
-test('ניווט בין ימים מזיז את הטופס', () => {
-  App.setState({ date: Dates.today() });
-  doc.querySelector('#day-back').dispatchEvent(new window.Event('click', { bubbles: true }));
-  assert(App.state.date === Dates.addDays(Dates.today(), -1), 'לא חזר יום אחורה');
+test('בחירת תאריך במקום ניווט יום־יום', () => {
+  App.setState({ date: Dates.today(), tab: 'entry' });
 
-  doc.querySelector('#day-fwd').dispatchEvent(new window.Event('click', { bubbles: true }));
-  assert(App.state.date === Dates.today(), 'לא חזר קדימה');
+  const field = doc.querySelector('#entry-date');
+  assert(field, 'שדה התאריך חסר');
+  assert(field.type === 'date', 'אמור להיות שדה תאריך');
+  assert(field.getAttribute('max') === Dates.today(), 'אין חסימה של תאריך עתידי');
 
-  // אי אפשר לעבור אל מעבר להיום
-  doc.querySelector('#day-fwd').dispatchEvent(new window.Event('click', { bubbles: true }));
-  assert(App.state.date === Dates.today(), 'עבר לתאריך עתידי');
+  // קפיצה ישירה לכל תאריך
+  const target = Dates.addDays(Dates.today(), -9);
+  field.value = target;
+  field.dispatchEvent(new window.Event('change', { bubbles: true }));
+  assert(App.state.date === target, 'התאריך לא התעדכן: ' + App.state.date);
+
+  // וקיצורים לימים הקרובים
+  doc.querySelector('[data-jump="1"]').dispatchEvent(new window.Event('click', { bubbles: true }));
+  assert(App.state.date === Dates.addDays(Dates.today(), -1), 'הקיצור לאתמול נכשל');
+
+  doc.querySelector('[data-jump="0"]').dispatchEvent(new window.Event('click', { bubbles: true }));
+  assert(App.state.date === Dates.today(), 'הקיצור להיום נכשל');
 });
 
+test('תאריך עתידי נדחה', () => {
+  App.setState({ date: Dates.today(), tab: 'entry' });
+  const field = doc.querySelector('#entry-date');
+  field.value = Dates.addDays(Dates.today(), 3);
+  field.dispatchEvent(new window.Event('change', { bubbles: true }));
+  assert(App.state.date === Dates.today(), 'התקבל תאריך עתידי');
+});
+
+test('מדדי גוף ותזונה נשמרים בנפרד', () => {
+  const day = Dates.addDays(Dates.today(), -3);
+  App.setState({ date: day, tab: 'entry' });
+
+  // שמירת תזונה בלבד לא אמורה לגעת במשקל
+  Store.upsert({ date: day, weightKg: 87.7 });
+  App.setState({ date: day, tab: 'entry' });
+
+  doc.querySelector('[data-field="kcal"]').value = '2100';
+  doc.querySelector('[data-save="food"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+
+  const saved = Store.getEntry(day);
+  assert(saved.kcal === 2100, 'הקלוריות לא נשמרו');
+  assert(saved.weightKg === 87.7, 'המשקל נמחק בשמירת תזונה: ' + saved.weightKg);
+
+  // ולהפך
+  doc.querySelector('[data-field="weightKg"]').value = '87.2';
+  doc.querySelector('[data-save="body"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+
+  const after = Store.getEntry(day);
+  assert(after.weightKg === 87.2, 'המשקל לא עודכן');
+  assert(after.kcal === 2100, 'הקלוריות נמחקו בשמירת גוף');
+
+  App.setState({ date: Dates.today() });
+});
+
+test('שתי הקבוצות מופרדות בכרטיסים', () => {
+  App.setState({ date: Dates.today(), tab: 'entry' });
+  const cards = [...doc.querySelectorAll('#view .card')];
+
+  const titleOf = (card) => (card.querySelector('h3') || {}).textContent || '';
+  const body = cards.find((c) => titleOf(c) === 'מדדי גוף');
+  const food = cards.find((c) => titleOf(c) === 'תזונה');
+  assert(body && food, 'חסר אחד הכרטיסים');
+  assert(body !== food, 'שתי הקבוצות באותו כרטיס');
+
+  // שדה מכל קבוצה נמצא בכרטיס שלה
+  assert(body.querySelector('[data-field="weightKg"]'), 'המשקל לא בכרטיס הגוף');
+  assert(food.querySelector('[data-field="kcal"]'), 'הקלוריות לא בכרטיס התזונה');
+  assert(!body.querySelector('[data-field="kcal"]'), 'קלוריות בכרטיס הגוף');
+});
 
 test('הדבקת שורה ממלאת את הטופס', () => {
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'entry' });
   const input = doc.querySelector('#paste-line');
   assert(input, 'שדה ההדבקה חסר');
 
@@ -361,7 +422,7 @@ test('הדבקת שורה ממלאת את הטופס', () => {
 });
 
 test('הדבקה במילים ממלאת רק את מה שנכתב', () => {
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'entry' });
   const input = doc.querySelector('#paste-line');
   input.value = 'קלוריות 2000, חלבון 150';
   doc.querySelector('#paste-apply').dispatchEvent(new window.Event('click', { bubbles: true }));
@@ -371,7 +432,7 @@ test('הדבקה במילים ממלאת רק את מה שנכתב', () => {
 });
 
 test('הדבקה ריקה מדווחת ולא מוחקת', () => {
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'entry' });
   doc.querySelector('[data-field="kcal"]').value = '1900';
   doc.querySelector('#paste-line').value = '';
   doc.querySelector('#paste-apply').dispatchEvent(new window.Event('click', { bubbles: true }));
@@ -382,14 +443,14 @@ test('הדבקה ריקה מדווחת ולא מוחקת', () => {
 
 test('העלאת תמונה מופיעה רק עם מפתח, הדבקה תמיד', () => {
   Store.updateSettings({ aiKeyA: '', aiKeyB: '' });
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'entry' });
 
   assert(doc.querySelector('#paste-line'), 'שדה ההדבקה אמור להיות זמין תמיד');
   assert(doc.querySelector('#copy-prompt'), 'כפתור העתקת ההוראה חסר');
   assert(!doc.querySelector('#photo'), 'שדה התמונה לא אמור להופיע בלי מפתח');
 
   Store.updateSettings({ aiKeyA: 'AIzaTEST' });
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'entry' });
   assert(doc.querySelector('#photo'), 'שדה התמונה חסר למרות שיש מפתח');
 
   const card = [...doc.querySelectorAll('#view .card')]
@@ -398,7 +459,7 @@ test('העלאת תמונה מופיעה רק עם מפתח, הדבקה תמיד
   assert(card.textContent.includes('מעריך פעמיים'), 'לא צוין שזה מפתח יחיד');
 
   Store.updateSettings({ aiKeyB: 'sk-or-TEST' });
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'entry' });
   const both = [...doc.querySelectorAll('#view .card')]
     .find((c) => c.textContent.includes('העלאת תמונה'));
   assert(both.textContent.includes('ויכוח בין Gemini ל-OpenRouter') ||
@@ -432,10 +493,11 @@ test('אפשר להעלות מהגלריה וגם לצלם', () => {
 
 test('מפתח Gemini בפורמט החדש מזוהה בלי בורר', () => {
   Store.updateSettings({ aiKeyA: 'AQ.Ab8RN6Ky_hPxp0JeCEien', aiProviderA: '', aiKeyB: '' });
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'home' });
 
   assert(!doc.querySelector('[data-provider="aiProviderA"]'),
     'לא אמור להידרש בורר ספק');
+  App.setState({ tab: 'entry' });
   const card = [...doc.querySelectorAll('#view .card')]
     .find((c) => c.textContent.includes('העלאת תמונה'));
   assert(card && card.textContent.includes('Gemini'), 'הספק לא זוהה');
@@ -445,7 +507,7 @@ test('מפתח Gemini בפורמט החדש מזוהה בלי בורר', () => {
 
 test('מפתח לא מזוהה מציג בורר ספק', () => {
   Store.updateSettings({ aiKeyA: 'unknown-format-key', aiProviderA: '', aiKeyB: '' });
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'home' });
 
   const picker = doc.querySelector('[data-provider="aiProviderA"]');
   assert(picker, 'בורר הספק חסר');
@@ -456,12 +518,16 @@ test('מפתח לא מזוהה מציג בורר ספק', () => {
   assert(label.textContent.includes('בחר ידנית'), 'לא נאמר שצריך לבחור: ' + label.textContent);
 
   // בלי בחירה, ההעלאה לא מוצעת
+  App.setState({ tab: 'entry' });
   assert(!doc.querySelector('#photo'), 'לא אמור להיות שדה תמונה עם מפתח לא מזוהה');
+  App.setState({ tab: 'home' });
 
   // אחרי בחירה — הכל נפתח
   picker.value = 'gemini';
   picker.dispatchEvent(new window.Event('change', { bubbles: true }));
   assert(Store.getSettings().aiProviderA === 'gemini', 'הבחירה לא נשמרה');
+
+  App.setState({ tab: 'entry' });
   assert(doc.querySelector('#photo'), 'אחרי הבחירה ההעלאה אמורה להיות זמינה');
 
   Store.updateSettings({ aiKeyA: '', aiProviderA: '' });
@@ -469,25 +535,25 @@ test('מפתח לא מזוהה מציג בורר ספק', () => {
 
 test('מפתח מזוהה לא מציג בורר מיותר', () => {
   Store.updateSettings({ aiKeyA: 'AIzaTEST', aiProviderA: '' });
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'home' });
   assert(!doc.querySelector('[data-provider="aiProviderA"]'), 'הבורר מיותר כאן');
   Store.updateSettings({ aiKeyA: '' });
 });
 
 test('לכל מפתח יש שדה מודל משלו', () => {
   Store.updateSettings({ aiKeyA: 'AQ.TEST', aiKeyB: '', aiProviderA: '', aiProviderB: '' });
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'home' });
 
   assert(doc.querySelector('[data-model="aiModelA"]'), 'חסר שדה מודל למפתח הראשון');
   assert(!doc.querySelector('[data-model="aiModelB"]'), 'אין מפתח שני, אין שדה');
 
   Store.updateSettings({ aiKeyB: 'AQ.SECOND' });
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'home' });
   assert(doc.querySelector('[data-model="aiModelB"]'), 'חסר שדה מודל למפתח השני');
 
   // כך אפשר להריץ שני מודלים שונים של אותו ספק
   Store.updateSettings({ aiModelA: 'gemini-3.6-flash', aiModelB: 'gemini-3.6-pro' });
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'home' });
   assert(doc.querySelector('[data-model="aiModelA"]').value === 'gemini-3.6-flash', 'מודל א׳');
   assert(doc.querySelector('[data-model="aiModelB"]').value === 'gemini-3.6-pro', 'מודל ב׳');
 
