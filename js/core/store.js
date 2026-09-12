@@ -157,6 +157,14 @@
         state.settings = Object.assign(clone(DEFAULT_SETTINGS), parsed.settings || {});
         state.settings.profile = Object.assign(clone(DEFAULT_SETTINGS.profile), parsed.settings && parsed.settings.profile);
         state.settings.targets = Object.assign(clone(DEFAULT_SETTINGS.targets), parsed.settings && parsed.settings.targets);
+
+        // הגדרות שנשמרו לפני שנקבעה ברירת מחדל נשארות ריקות לנצח,
+        // כי Object.assign מעתיק גם null. יעד חלבון ריק אומר שאין
+        // מול מה להשוות, ולכן הוא מושלם כאן.
+        if (state.settings.targets.proteinG === null ||
+            state.settings.targets.proteinG === undefined) {
+          state.settings.targets.proteinG = DEFAULT_SETTINGS.targets.proteinG;
+        }
         state.settings.goal = Object.assign(clone(DEFAULT_SETTINGS.goal), parsed.settings && parsed.settings.goal);
         state.settings.sync = Object.assign(clone(DEFAULT_SETTINGS.sync), parsed.settings && parsed.settings.sync);
         state.meta = Object.assign({ seedId: null, manualEdits: 0 }, parsed.meta || {});

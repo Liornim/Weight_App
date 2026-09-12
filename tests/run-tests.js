@@ -2259,6 +2259,42 @@ test('חלוקת המאקרו: חלבון קבוע, שומן באחוז, פחמ�
   close(sum, row.target.kcal, 1e-6, 'החלוקה לא מסתכמת ליעד');
 });
 
+test('יעד חלבון ריק מהגדרות ישנות מושלם בטעינה', () => {
+  // האחסון אינו קיים בסביבת הבדיקות, ולכן מסופק זמנית
+  const saved = globalThis.localStorage;
+  const box = {};
+  globalThis.localStorage = {
+    getItem: (k) => (k in box ? box[k] : null),
+    setItem: (k, v) => { box[k] = String(v); },
+    removeItem: (k) => { delete box[k]; }
+  };
+
+  try {
+    const raw = { version: 1, entries: [], settings: { targets: { proteinG: null } } };
+    globalThis.localStorage.setItem('metrics-lab', JSON.stringify(raw));
+
+    Store.init();
+    assert(Store.getSettings().targets.proteinG === 170,
+      'היעד לא הושלם: ' + Store.getSettings().targets.proteinG);
+  } finally {
+    if (saved === undefined) delete globalThis.localStorage;
+    else globalThis.localStorage = saved;
+    Store.clearAll();
+    Store.init();
+  }
+});
+
+test('בלי יעד חלבון משמש המינימום כגיבוי', () => {
+  const entries = windowFixture();
+  const settings = Object.assign({}, WIN_SETTINGS, {
+    targets: { proteinG: null, proteinMinG: 160 }
+  });
+  const row = Metrics.targetGaps(entries, settings,
+    { endDate: '2026-03-01', windows: [14] }).rows[0];
+
+  close(row.target.protein, 160, 1e-9, 'הגיבוי לא נלקח');
+});
+
 test('יעד החלבון בברירת מחדל הוא 170 גרם', () => {
   const fresh = Store.getSettings();
   assert(fresh.targets.proteinG === 170,

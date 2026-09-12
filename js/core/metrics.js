@@ -2004,7 +2004,12 @@
     // יעד אחיד לכל החלונות, כשהמשתמש בחר אותו במפורש. בלעדיו כל
     // חלון נמדד מול היעד שהוא עצמו מייצר.
     var override = num(opts.overrideTarget);
-    var proteinTarget = num((settings.targets || {}).proteinG);
+
+    // בלי יעד חלבון אין מול מה להשוות, והעמודה חוזרת ריקה בלי
+    // שום הסבר. המינימום שהוגדר משמש כגיבוי.
+    var targets = settings.targets || {};
+    var proteinTarget = num(targets.proteinG);
+    if (proteinTarget === null) proteinTarget = num(targets.proteinMinG);
     var kcalPerStep = num(settings.kcalPerStep);
     if (kcalPerStep === null) kcalPerStep = 0.040;
 

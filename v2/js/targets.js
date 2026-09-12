@@ -149,6 +149,13 @@
     });
     var labels = { protein: 'חלבון', fat: 'שומן', carbs: 'פחמימות' };
 
+    var noTarget = usable.some(function (row) {
+      return !Fmt.isNum(row.target.protein);
+    })
+      ? P.hint('לא הוגדר יעד חלבון, ולכן העמודה ריקה. אפשר להגדיר אותו ' +
+        'בהגדרות שבתחתית מסך הסיכום.')
+      : '';
+
     var missingNote = missing.length
       ? P.hint('אין רישום של ' + missing.map(function (k) { return labels[k]; }).join(', ') +
         ' בימים האלה, ולכן העמודות ריקות. אפשר להזין אותם בטאב ההזנה.')
@@ -162,7 +169,7 @@
           'בחלון של 3 ימים שבו דווחו 2, מדובר בממוצע של יומיים — ' +
           'ולכן יום חריג אחד מזיז אותו הרבה. ' +
           'חלון ארוך יותר אמין יותר, וכשכל השורות מצביעות לאותו כיוון זו מגמה.' }) +
-      missingNote);
+      missingNote + noTarget);
 
     var details = '<div class="rounds">' +
       usable.map(detail).join('') + '</div>';
