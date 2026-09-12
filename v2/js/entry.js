@@ -63,6 +63,29 @@
         (food ? 'תזונה: ' + food + ' מתוך ' + FOOD.length : 'אין תזונה')));
   }
 
+  /**
+   * מאקרו שלא קיים באף יום מדווח פעם אחת כאן, במקום להופיע כשדה
+   * ריק בכל מסך. בדרך כלל זה אומר שהעמודה בגיליון לא נקלטה.
+   */
+  function missingMacroNote() {
+    var entries = Store.getEntries();
+    var withKcal = entries.filter(function (e) { return Fmt.isNum(e.kcal); });
+    if (withKcal.length < 5) return '';
+
+    var missing = FOOD.filter(function (field) {
+      if (field.key === 'kcal') return false;
+      return !entries.some(function (e) { return Fmt.isNum(e[field.key]); });
+    });
+
+    if (!missing.length) return '';
+
+    return P.hint('אין אף רישום של ' +
+      missing.map(function (f) { return f.label; }).join(', ') +
+      ' בכל הנתונים, למרות שיש ' + withKcal.length + ' ימים עם קלוריות. ' +
+      'אם הנתונים מגיעים מהגיליון, ייתכן שהעמודה לא נקלטה — ' +
+      'כדאי למשוך שוב מההגדרות.');
+  }
+
   function render(state) {
     var entry = Store.getEntry(state.date) || {};
 
@@ -77,7 +100,8 @@
       P.card('תזונה', 'מה שאכלת באותו יום',
         fields(FOOD, entry) +
         '<button type="button" class="btn btn--primary" data-save="food">' +
-          'שמירת התזונה</button>') +
+          'שמירת התזונה</button>' +
+        missingMacroNote()) +
 
       root.Dash.photoCard(state));
   }

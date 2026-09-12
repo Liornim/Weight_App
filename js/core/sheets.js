@@ -23,6 +23,59 @@
   /** [תאריך, משקל, שריר, שומן, נוזלים] */
   var BODY_COLUMNS = [null, 'weightKg', 'muscleKg', 'bodyFatKg', 'waterKg'];
 
+  /**
+   * שמות עמודות מוכרים.
+   *
+   * מיפוי לפי מיקום נשבר ברגע שמישהו מוסיף עמודה או מחליף סדר —
+   * והתוצאה שקטה: שדה שלם חוזר ריק בלי שום שגיאה. לכן, אם השורה
+   * הראשונה נראית ככותרות, המיפוי נבנה ממנה.
+   *
+   * הסדר חשוב: "שומן בגוף" נבדק לפני "שומן", אחרת שומן האוכל היה
+   * בולע את מדידת הגוף.
+   */
+  var HEADER_NAMES = [
+    { key: 'kcal', words: ['קלוריות', 'קלוריה', 'קק"ל', 'קק״ל', 'kcal', 'calories'] },
+    { key: 'proteinG', words: ['חלבון', 'protein'] },
+    { key: 'carbG', words: ['פחמימות', 'פחמימה', 'carbs', 'carbohydrate'] },
+    { key: 'fiberG', words: ['סיבים', 'סיב', 'fiber', 'fibre'] },
+    { key: 'steps', words: ['צעדים', 'steps'] },
+    { key: 'weightKg', words: ['משקל', 'weight'] },
+    { key: 'muscleKg', words: ['שריר', 'muscle'] },
+    { key: 'waterKg', words: ['נוזלים', 'מים', 'water'] },
+    { key: 'bodyFatKg', words: ['שומן בגוף', 'אחוז שומן', 'שומן גוף', 'body fat', 'bodyfat'] },
+    { key: 'fatG', words: ['שומן', 'fat'] }
+  ];
+
+  function headerKey(cell) {
+    var text = String(cell === null || cell === undefined ? '' : cell).toLowerCase().trim();
+    if (!text) return null;
+
+    for (var i = 0; i < HEADER_NAMES.length; i++) {
+      var found = HEADER_NAMES[i].words.some(function (word) {
+        return text.indexOf(String(word).toLowerCase()) !== -1;
+      });
+      if (found) return HEADER_NAMES[i].key;
+    }
+    return null;
+  }
+
+  /**
+   * בונה מיפוי עמודות מהשורה הראשונה, אם היא כותרות.
+   * מזוהה ככותרות כשהתא הראשון אינו תאריך ולפחות שתי עמודות
+   * מזוהות בשם — שורת נתונים לא תעמוד בשני התנאים.
+   */
+  function columnsFromHeader(row) {
+    if (!row || !row.length) return null;
+    if (toIso(row[0]) !== null) return null;
+
+    var mapped = row.map(function (cell, index) {
+      return index === 0 ? null : headerKey(cell);
+    });
+
+    var named = mapped.filter(Boolean).length;
+    return named >= 2 ? mapped : null;
+  }
+
   function isIsoLike(value) {
     return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value);
   }
@@ -63,6 +116,13 @@
 
   /** ממיר מערך שורות מהגיליון לרשומות של האפליקציה */
   function rowsToEntries(rows, columns) {
+    // כותרות גוברות על המיקום הקבוע
+    var header = columnsFromHeader((rows || [])[0]);
+    if (header) {
+      columns = header;
+      rows = rows.slice(1);
+    }
+
     var out = [];
     (rows || []).forEach(function (row) {
       if (!Array.isArray(row) || !row.length) return;
@@ -163,6 +223,9 @@
     toIso: toIso,
     NUTRITION_COLUMNS: NUTRITION_COLUMNS,
     BODY_COLUMNS: BODY_COLUMNS,
+    columnsFromHeader: columnsFromHeader,
+    headerKey: headerKey,
+    rowsToEntries: rowsToEntries,
     NUTRITION_ACTIONS: NUTRITION_ACTIONS,
     BODY_ACTIONS: BODY_ACTIONS
   };

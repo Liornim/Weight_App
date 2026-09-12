@@ -2315,6 +2315,71 @@ test('מאקרו שלא דווח מוחזר ריק ולא כאפס', () => {
   assert(row.gapPerDay.kcal !== null, 'הקלוריות כן דווחו');
 });
 
+// ---------- מיפוי עמודות מהגיליון ----------
+
+test('כותרות בעברית ממפות את העמודות', () => {
+  const map = Sheets.columnsFromHeader(
+    ['תאריך', 'קלוריות', 'חלבון (גרם)', 'פחמימות', 'שומן', 'סיבים', 'צעדים']);
+
+  assert(map, 'הכותרות לא זוהו');
+  assert(map[0] === null, 'עמודת התאריך');
+  assert(map[1] === 'kcal', 'קלוריות: ' + map[1]);
+  assert(map[2] === 'proteinG', 'חלבון: ' + map[2]);
+  assert(map[3] === 'carbG', 'פחמימות: ' + map[3]);
+  assert(map[4] === 'fatG', 'שומן: ' + map[4]);
+  assert(map[5] === 'fiberG', 'סיבים: ' + map[5]);
+  assert(map[6] === 'steps', 'צעדים: ' + map[6]);
+});
+
+test('סדר עמודות שונה ממופה נכון', () => {
+  // בדיוק המקרה ששבר: חלבון לפני פחמימות במקום אחריהן
+  const map = Sheets.columnsFromHeader(['Date', 'Calories', 'Protein', 'Carbs', 'Fat']);
+  assert(map[2] === 'proteinG', 'חלבון: ' + map[2]);
+  assert(map[3] === 'carbG', 'פחמימות: ' + map[3]);
+  assert(map[4] === 'fatG', 'שומן: ' + map[4]);
+});
+
+test('"שומן בגוף" אינו מתבלבל עם שומן באוכל', () => {
+  const map = Sheets.columnsFromHeader(['תאריך', 'משקל (ק"ג)', 'שריר', 'שומן בגוף', 'נוזלים']);
+  assert(map[1] === 'weightKg', 'משקל');
+  assert(map[2] === 'muscleKg', 'שריר');
+  assert(map[3] === 'bodyFatKg', 'שומן בגוף: ' + map[3]);
+  assert(map[4] === 'waterKg', 'נוזלים');
+});
+
+test('שורת נתונים אינה נחשבת לכותרות', () => {
+  assert(Sheets.columnsFromHeader(['26/07/2026', 2400, 90, 200, 80]) === null, 'תאריך ראשון');
+  assert(Sheets.columnsFromHeader(['2026-07-26', 2400]) === null, 'תאריך ISO');
+  assert(Sheets.columnsFromHeader([]) === null, 'ריק');
+  // שם אחד מזוהה אינו מספיק
+  assert(Sheets.columnsFromHeader(['משהו', 'קלוריות', 'סתם']) === null, 'עמודה אחת בלבד');
+});
+
+test('ייבוא עם כותרות מציב את החלבון במקום הנכון', () => {
+  const rows = [
+    ['תאריך', 'קלוריות', 'חלבון', 'פחמימות', 'שומן'],
+    ['05/09/2026', 1671, 118, 126, 24]
+  ];
+  const entries = Sheets.rowsToEntries(rows, Sheets.NUTRITION_COLUMNS);
+
+  assert(entries.length === 1, 'שורת הכותרות נספרה כנתון');
+  const day = entries[0];
+  assert(day.date === '2026-09-05', 'תאריך: ' + day.date);
+  assert(day.kcal === 1671, 'קלוריות');
+  assert(day.proteinG === 118, 'חלבון: ' + day.proteinG);
+  assert(day.carbG === 126, 'פחמימות: ' + day.carbG);
+  assert(day.fatG === 24, 'שומן: ' + day.fatG);
+});
+
+test('בלי כותרות נשמר המיפוי לפי מיקום', () => {
+  const rows = [['05/09/2026', 1671, 24, 126, 118, 12, 9500]];
+  const day = Sheets.rowsToEntries(rows, Sheets.NUTRITION_COLUMNS)[0];
+
+  assert(day.kcal === 1671, 'קלוריות');
+  assert(day.fatG === 24, 'שומן במקום השני');
+  assert(day.proteinG === 118, 'חלבון במקום הרביעי');
+});
+
 // ---------- דוח ----------
 // הריצה מופעלת בסוף הקובץ בלבד. אם היא תופעל באמצע, בדיקות שנרשמו
 // אחריה לא ייכנסו לתור וייעלמו בשקט — קרה בפועל.
