@@ -565,8 +565,22 @@
         'עם שניהם הוויכוח הוא בין מודלים ממשפחות שונות; עם אחד בלבד הוא ' +
         'בין שתי עמדות של אותו מודל. המפתחות נשמרים במכשיר הזה בלבד.') +
 
+      '<div class="section-label">גיליון</div>' +
+      '<div class="field"><label for="sync-url">כתובת הגיליון</label>' +
+        '<input id="sync-url" data-sync="url" type="url" inputmode="url" ' +
+        'placeholder="https://script.google.com/macros/s/.../exec" value="' +
+        P.esc((settings.sync || {}).url || '') + '"></div>' +
+
+      '<label class="switch"><input type="checkbox" id="sync-write"' +
+        ((settings.sync || {}).write ? ' checked' : '') + '>' +
+        '<span>לשמור גם לגיליון, לא רק במכשיר</span></label>' +
+      P.hint('ברירת המחדל היא שמירה במכשיר בלבד. כתיבה לגיליון דורשת ' +
+        'פעולת doPost בסקריפט שלו — בלעדיה השמירה תיכשל ותאמר זאת. ' +
+        'הכפתור למטה מעתיק את הקוד שצריך להדביק שם.') +
+
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">' +
         '<button type="button" class="btn btn--primary" id="pull">עדכון נתונים מהגיליון</button>' +
+        '<button type="button" class="btn" id="copy-script">העתקת קוד ה-doPost</button>' +
         '<button type="button" class="btn" id="open-old">התצוגה המפורטת</button>' +
       '</div>';
 

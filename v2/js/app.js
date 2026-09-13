@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd30',
+    BUILD: 'd31',
     state: {
       date: Dates.today(),
       tab: 'home',         // סיכום או משקל
@@ -159,12 +159,29 @@
           if (input) payload[field.key] = input.value;
         });
 
+        var what = button.dataset.save === 'body' ? 'מדדי הגוף' : 'התזונה';
+
         try {
           Store.upsert(payload);
-          App.toast(button.dataset.save === 'body' ? 'מדדי הגוף נשמרו' : 'התזונה נשמרה');
         } catch (error) {
           App.toast('השמירה נכשלה: ' + error.message);
+          return;
         }
+
+        var sync = Store.getSettings().sync || {};
+        if (!sync.write || !sync.url) {
+          // ההודעה אומרת איפה נשמר, כי "נשמר" לבדו נקרא כאילו
+          // הגיליון התעדכן גם הוא
+          App.toast(what + ' נשמרו במכשיר');
+          return;
+        }
+
+        App.toast(what + ' נשמרו · שולח לגיליון…');
+        root.Sheets.push(sync.url, Store.getEntry(App.state.date)).then(function () {
+          App.toast(what + ' נשמרו גם בגיליון');
+        }).catch(function (error) {
+          App.toast('נשמר במכשיר, אבל לא בגיליון: ' + error.message);
+        });
       });
     });
 
@@ -276,6 +293,37 @@
           box.innerHTML = '<p class="stage stage--bad">' +
             root.Fmt.esc(error.message) + '</p>';
         });
+      });
+    }
+
+    var syncUrl = view.querySelector('[data-sync="url"]');
+    if (syncUrl) {
+      syncUrl.addEventListener('change', function () {
+        var current = Store.getSettings().sync || {};
+        Store.updateSettings({ sync: { url: syncUrl.value.trim(), write: current.write } });
+        App.toast('כתובת הגיליון נשמרה');
+      });
+    }
+
+    var syncWrite = view.querySelector('#sync-write');
+    if (syncWrite) {
+      syncWrite.addEventListener('change', function () {
+        var current = Store.getSettings().sync || {};
+        Store.updateSettings({ sync: { url: current.url, write: syncWrite.checked } });
+        App.toast(syncWrite.checked ? 'שמירה לגיליון הופעלה' : 'שמירה לגיליון כבויה');
+      });
+    }
+
+    var copyScript = view.querySelector('#copy-script');
+    if (copyScript) {
+      copyScript.addEventListener('click', function () {
+        if (root.navigator && root.navigator.clipboard) {
+          root.navigator.clipboard.writeText(root.Sheets.DO_POST_SNIPPET).then(function () {
+            App.toast('הקוד הועתק — להדביק ב-Apps Script של הגיליון');
+          }).catch(function () { App.toast('ההעתקה נכשלה'); });
+        } else {
+          App.toast('הדפדפן לא מאפשר העתקה');
+        }
       });
     }
 

@@ -5,8 +5,9 @@
  * לקרוא ולכתוב לגיליון בלי שום אימות. כתובת בתוך ריפו ציבורי היא
  * כתובת פומבית.
  *
- * הסנכרון הוא חד־כיווני — משיכה בלבד. כתיבה חזרה תדרוש טיפול
- * בהתנגשויות, ואין סיבה לקחת את הסיכון הזה כשהאפליקציה שומרת מקומית.
+ * המשיכה עובדת מול כל Apps Script קיים. הכתיבה חזרה דורשת פעולה
+ * אחת נוספת בסקריפט (doPost), ולכן היא כבויה עד שמפעילים אותה
+ * במפורש — כדי ששמירה לא תיכשל בשקט מול סקריפט שלא מכיר אותה.
  */
 (function (root) {
   'use strict';
@@ -216,7 +217,108 @@
     });
   }
 
+  /**
+   * כתיבת יום אחד חזרה לגיליון.
+   *
+   * נשלח כ-text/plain ולא כ-JSON בכוונה: בקשת JSON חוצת־מקורות
+   * גוררת preflight, ו-Apps Script אינו עונה עליו. עם text/plain
+   * הדפדפן שולח ישירות, והסקריפט קורא את הגוף ומפענח בעצמו.
+   */
+  function push(url, entry) {
+    if (!url) return Promise.reject(new Error('לא הוגדרה כתובת גיליון'));
+    if (!entry || !entry.date) return Promise.reject(new Error('אין תאריך לשמירה'));
+
+    return root.fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'save', entry: entry })
+    }).then(function (response) {
+      return response.text().then(function (body) {
+        if (!response.ok) {
+          throw new Error('הגיליון החזיר ' + response.status + ': ' + body.slice(0, 120));
+        }
+
+        var data;
+        try {
+          data = JSON.parse(body);
+        } catch (error) {
+          // סקריפט בלי doPost מחזיר דף HTML של שגיאה
+          throw new Error('הסקריפט של הגיליון אינו תומך בשמירה. ' +
+            'צריך להוסיף לו פעולת doPost.');
+        }
+
+        if (data && data.ok === false) {
+          throw new Error(data.error || 'השמירה נדחתה');
+        }
+        return data;
+      });
+    });
+  }
+
+  /** הקוד שצריך להדביק ב-Apps Script של הגיליון כדי לאפשר שמירה */
+  var DO_POST_SNIPPET = [
+    '// מקבל יום אחד מהאפליקציה ומעדכן את שתי הלשוניות.',
+    '// מעדכן שורה קיימת לפי התאריך, ומוסיף חדשה אם אין.',
+    'function doPost(e) {',
+    '  try {',
+    '    var body = JSON.parse(e.postData.contents);',
+    '    if (body.action !== "save") throw new Error("פעולה לא מוכרת");',
+    '',
+    '    var entry = body.entry;',
+    '    var date = new Date(entry.date + "T12:00:00");',
+    '',
+    '    writeRow("גיליון1", date, [',
+    '      entry.weightKg, entry.muscleKg, entry.bodyFatKg, entry.waterKg]);',
+    '    writeRow("Nutrition", date, [',
+    '      entry.kcal, entry.fatG, entry.carbG, entry.proteinG,',
+    '      entry.fiberG, entry.steps]);',
+    '',
+    '    return json({ ok: true });',
+    '  } catch (error) {',
+    '    return json({ ok: false, error: String(error) });',
+    '  }',
+    '}',
+    '',
+    'function writeRow(sheetName, date, values) {',
+    '  var sheet = SpreadsheetApp.getActive().getSheetByName(sheetName);',
+    '  if (!sheet) return;',
+    '',
+    '  var key = Utilities.formatDate(date, "Asia/Jerusalem", "yyyy-MM-dd");',
+    '  var dates = sheet.getRange(1, 1, sheet.getLastRow(), 1).getValues();',
+    '  var target = 0;',
+    '',
+    '  for (var i = 0; i < dates.length; i++) {',
+    '    var cell = dates[i][0];',
+    '    if (!cell) continue;',
+    '    var asDate = cell instanceof Date ? cell : new Date(cell);',
+    '    if (isNaN(asDate.getTime())) continue;',
+    '    if (Utilities.formatDate(asDate, "Asia/Jerusalem", "yyyy-MM-dd") === key) {',
+    '      target = i + 1;',
+    '      break;',
+    '    }',
+    '  }',
+    '',
+    '  if (!target) {',
+    '    target = sheet.getLastRow() + 1;',
+    '    sheet.getRange(target, 1).setValue(date);',
+    '  }',
+    '',
+    '  // ערך ריק לא מוחק את מה שכבר בגיליון',
+    '  for (var c = 0; c < values.length; c++) {',
+    '    if (values[c] === null || values[c] === undefined || values[c] === "") continue;',
+    '    sheet.getRange(target, c + 2).setValue(values[c]);',
+    '  }',
+    '}',
+    '',
+    'function json(payload) {',
+    '  return ContentService.createTextOutput(JSON.stringify(payload))',
+    '    .setMimeType(ContentService.MimeType.JSON);',
+    '}'
+  ].join('\n');
+
   root.Sheets = {
+    push: push,
+    DO_POST_SNIPPET: DO_POST_SNIPPET,
     pull: pull,
     rowsToEntries: rowsToEntries,
     merge: merge,
