@@ -98,7 +98,7 @@ test('תזונה נשלחת בפעולת addNutrition', () => {
   });
 });
 
-test('יום עם שתי הקבוצות נשלח בשתי קריאות', () => {
+test('יום עם שתי הקבוצות נשלח בשתי קריאות כשלא הוגבל', () => {
   const seen = serve();
 
   return w.Sheets.push(URL, {
@@ -110,6 +110,44 @@ test('יום עם שתי הקבוצות נשלח בשתי קריאות', () => {
     assert(actions[0] === 'add' && actions[1] === 'addNutrition',
       'פעולות: ' + actions.join(','));
   });
+});
+
+test('שמירת תזונה לא נוגעת במדדי הגוף', () => {
+  const seen = serve();
+
+  // ליום יש גם משקל וגם קלוריות, אבל נלחץ כפתור התזונה בלבד
+  return w.Sheets.push(URL, {
+    date: '2026-09-13', weightKg: 88.4, muscleKg: 35.4, kcal: 2100
+  }, 'food').then(() => {
+    assert(seen.length === 1, 'נשלחו ' + seen.length + ' קריאות במקום אחת');
+    const params = new w.URLSearchParams(seen[0].split('?')[1]);
+    assert(params.get('action') === 'addNutrition', 'פעולה: ' + params.get('action'));
+    assert(!params.has('weight'), 'המשקל נשלח למרות שנלחץ כפתור התזונה');
+  });
+});
+
+test('שמירת מדדי גוף לא נוגעת בתזונה', () => {
+  const seen = serve();
+
+  return w.Sheets.push(URL, {
+    date: '2026-09-13', weightKg: 88.4, kcal: 2100, proteinG: 150
+  }, 'body').then(() => {
+    assert(seen.length === 1, 'נשלחו ' + seen.length + ' קריאות במקום אחת');
+    const params = new w.URLSearchParams(seen[0].split('?')[1]);
+    assert(params.get('action') === 'add', 'פעולה: ' + params.get('action'));
+    assert(!params.has('calories'), 'הקלוריות נשלחו למרות שנלחץ כפתור הגוף');
+  });
+});
+
+test('קבוצה ריקה מדווחת בשמה', () => {
+  const seen = serve();
+
+  return w.Sheets.push(URL, { date: '2026-09-13', kcal: 2100 }, 'body').then(
+    () => { throw new Error('היה צריך להיכשל'); },
+    (error) => {
+      assert(error.message.indexOf('מדדי גוף') !== -1, error.message);
+      assert(seen.length === 0, 'נשלחה בקשה למרות שאין מה לשלוח');
+    });
 });
 
 test('קבוצה ריקה אינה נשלחת כלל', () => {

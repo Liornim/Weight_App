@@ -325,7 +325,11 @@
 
   /**
    * שומר יום אחד: מדדי גוף ותזונה, כל אחד בפעולה שלו.
-   * נשלח רק מה שיש — פעולה בלי ערכים תדרוס נתונים קיימים בריק.
+   *
+   * group מגביל לקבוצה אחת — 'body' או 'food'. בלעדיו נשלח כל מה
+   * שיש ביום, וזו התנהגות שגויה כשהמשתמש לחץ על כפתור אחד: לחיצה
+   * על "שמירת התזונה" שלחה גם את מדדי הגוף, ובכך דרסה בגיליון
+   * שורה שהמשתמש לא נגע בה.
    */
   /**
    * הסקריפט מצפה ל-DD/MM/YYYY.
@@ -339,11 +343,12 @@
     return m ? m[3] + '/' + m[2] + '/' + m[1] : String(iso || '');
   }
 
-  function push(url, entry) {
+  function push(url, entry, group) {
     if (!url) return Promise.reject(new Error('לא הוגדרה כתובת גיליון'));
     if (!entry || !entry.date) return Promise.reject(new Error('אין תאריך לשמירה'));
 
     var sheetDate = toSheetDate(entry.date);
+    var wants = function (name) { return !group || group === name; };
 
     var has = function (fields) {
       return fields.some(function (key) {
@@ -353,7 +358,7 @@
 
     var jobs = [];
 
-    if (has(['weightKg', 'muscleKg', 'bodyFatKg', 'waterKg'])) {
+    if (wants('body') && has(['weightKg', 'muscleKg', 'bodyFatKg', 'waterKg'])) {
       jobs.push(jsonp(url, {
         action: 'add',
         date: sheetDate,
@@ -364,7 +369,7 @@
       }).then(function (data) { return { part: 'body', data: data }; }));
     }
 
-    if (has(['kcal', 'proteinG', 'carbG', 'fatG', 'fiberG', 'steps'])) {
+    if (wants('food') && has(['kcal', 'proteinG', 'carbG', 'fatG', 'fiberG', 'steps'])) {
       jobs.push(jsonp(url, {
         action: 'addNutrition',
         date: sheetDate,
@@ -377,7 +382,12 @@
       }).then(function (data) { return { part: 'nutrition', data: data }; }));
     }
 
-    if (!jobs.length) return Promise.reject(new Error('אין מה לשמור ליום הזה'));
+    if (!jobs.length) {
+      return Promise.reject(new Error(group === 'body'
+        ? 'אין מדדי גוף למלא ביום הזה'
+        : group === 'food' ? 'אין נתוני תזונה למלא ביום הזה'
+        : 'אין מה לשמור ליום הזה'));
+    }
     return Promise.all(jobs);
   }
 

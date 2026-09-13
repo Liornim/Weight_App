@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd38',
+    BUILD: 'd39',
     state: {
       date: Dates.today(),
       tab: 'home',         // סיכום או משקל
@@ -181,7 +181,11 @@
         var status = outputAfter(button, 'save-status');
         status.innerHTML = '<p class="stage">' + what + ' נשמרו במכשיר · שולח לגיליון…</p>';
 
-        root.Sheets.push(sync.url, Store.getEntry(App.state.date)).then(function (parts) {
+        // נשלחת רק הקבוצה שהכפתור שייך לה
+        var group = button.dataset.save === 'body' ? 'body' : 'food';
+
+        root.Sheets.push(sync.url, Store.getEntry(App.state.date), group)
+          .then(function (parts) {
           var names = { body: 'מדדי גוף', nutrition: 'תזונה' };
           var sent = (parts || []).map(function (part) { return names[part.part]; });
 
