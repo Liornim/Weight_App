@@ -1,19 +1,20 @@
 /**
- * בדיקות לכתיבה חזרה לגיליון, עם שרת מדומה.
- * הנקודה הרגישה כאן היא כישלון שקט: סקריפט בלי doPost מחזיר דף
- * HTML עם קוד 200, ובלי בדיקה זה נראה כמו הצלחה.
+ * בדיקות לשמירה בגיליון.
+ *
+ * השמירה נעשית ב-JSONP ולא ב-POST: בקשה חוצת־מקורות ל-Apps Script
+ * גוררת preflight שהוא אינו עונה עליו, וזה מה שהחזיר "Failed to
+ * fetch". כאן נבדק שהכתובת נבנית בדיוק כמו בדפים שעובדים.
  */
 const fs = require('fs');
 const path = require('path');
 const { JSDOM } = require('jsdom');
 
 const ROOT = path.join(__dirname, '..');
-const dom = new JSDOM('<div></div>', { url: 'https://x.local/' });
+const dom = new JSDOM('<html><head></head><body></body></html>', { url: 'https://x.local/' });
 const w = dom.window;
 
-['js/lib/dates.js', 'js/core/sheets.js'].forEach((file) => {
-  new Function('window', 'globalThis', fs.readFileSync(path.join(ROOT, file), 'utf8'))(w, w);
-});
+new Function('window', 'globalThis',
+  fs.readFileSync(path.join(ROOT, 'js/core/sheets.js'), 'utf8'))(w, w);
 
 let passed = 0;
 const failures = [];
@@ -25,66 +26,124 @@ function assert(condition, message) {
 }
 
 const URL = 'https://script.google.com/macros/s/TEST/exec';
-const ENTRY = { date: '2026-09-13', weightKg: 88.4, kcal: 2100 };
 
-test('היום נשלח כ-JSON בגוף הבקשה', () => {
-  let sent = null;
-  w.fetch = (url, opts) => {
-    sent = { url, opts };
-    return Promise.resolve({ ok: true, status: 200,
-      text: () => Promise.resolve('{"ok":true}') });
+/** מדמה את גוגל: קולט את תג הסקריפט וקורא ל-callback */
+function serve(handler) {
+  const seen = [];
+  const head = w.document.head;
+  const original = head.appendChild.bind(head);
+
+  head.appendChild = function (node) {
+    if (node.tagName !== 'SCRIPT') return original(node);
+    seen.push(node.src);
+
+    setTimeout(function () {
+      const params = new w.URLSearchParams(node.src.split('?')[1]);
+      const name = params.get('callback');
+      const reply = handler ? handler(params) : { ok: true };
+      if (reply === null) {
+        if (node.onerror) node.onerror();
+      } else {
+        w[name](reply);
+      }
+    }, 0);
+
+    return node;
   };
 
-  return w.Sheets.push(URL, ENTRY).then(() => {
-    assert(sent.url === URL, 'כתובת שגויה');
-    assert(sent.opts.method === 'POST', 'לא POST');
-    const body = JSON.parse(sent.opts.body);
-    assert(body.action === 'save', 'פעולה: ' + body.action);
-    assert(body.entry.date === '2026-09-13', 'התאריך לא נשלח');
-    assert(body.entry.weightKg === 88.4, 'המשקל לא נשלח');
+  return seen;
+}
+
+test('מדדי גוף נשלחים בפעולת add עם אותם שמות פרמטרים', () => {
+  const seen = serve();
+
+  return w.Sheets.push(URL, {
+    date: '2026-09-13', weightKg: 88.4, muscleKg: 35.4,
+    bodyFatKg: 22.3, waterKg: 48.4
+  }).then(() => {
+    assert(seen.length === 1, 'ציפיתי לקריאה אחת, היו ' + seen.length);
+    const params = new w.URLSearchParams(seen[0].split('?')[1]);
+
+    assert(params.get('action') === 'add', 'פעולה: ' + params.get('action'));
+    assert(params.get('date') === '2026-09-13', 'תאריך');
+    assert(params.get('weight') === '88.4', 'משקל: ' + params.get('weight'));
+    assert(params.get('muscle') === '35.4', 'שריר');
+    assert(params.get('fat') === '22.3', 'שומן');
+    assert(params.get('fluids') === '48.4', 'נוזלים');
+    assert(params.get('callback'), 'חסר callback');
   });
 });
 
-test('נשלח כ-text/plain כדי להימנע מ-preflight', () => {
-  let headers = null;
-  w.fetch = (url, opts) => {
-    headers = opts.headers;
-    return Promise.resolve({ ok: true, status: 200,
-      text: () => Promise.resolve('{"ok":true}') });
-  };
+test('תזונה נשלחת בפעולת addNutrition', () => {
+  const seen = serve();
 
-  return w.Sheets.push(URL, ENTRY).then(() => {
-    assert(headers['Content-Type'].indexOf('text/plain') === 0,
-      'סוג התוכן: ' + headers['Content-Type'] + ' — application/json גורר preflight ' +
-      'ש-Apps Script לא עונה עליו');
+  return w.Sheets.push(URL, {
+    date: '2026-09-13', kcal: 2100, proteinG: 150,
+    carbG: 200, fatG: 80, fiberG: 25, steps: 9500
+  }).then(() => {
+    const params = new w.URLSearchParams(seen[0].split('?')[1]);
+
+    assert(params.get('action') === 'addNutrition', 'פעולה: ' + params.get('action'));
+    assert(params.get('calories') === '2100', 'קלוריות');
+    assert(params.get('protein') === '150', 'חלבון');
+    assert(params.get('carbs') === '200', 'פחמימות');
+    assert(params.get('fat') === '80', 'שומן');
+    assert(params.get('fiber') === '25', 'סיבים');
+    assert(params.get('steps') === '9500', 'צעדים');
   });
 });
 
-test('סקריפט בלי doPost מזוהה ולא נחשב להצלחה', () => {
-  // Apps Script מחזיר דף HTML עם קוד 200 כשהפעולה לא קיימת
-  w.fetch = () => Promise.resolve({ ok: true, status: 200,
-    text: () => Promise.resolve('<!DOCTYPE html><html>Script function not found</html>') });
+test('יום עם שתי הקבוצות נשלח בשתי קריאות', () => {
+  const seen = serve();
 
-  return w.Sheets.push(URL, ENTRY).then(
-    () => { throw new Error('היה צריך להיכשל'); },
-    (error) => assert(error.message.indexOf('doPost') !== -1,
-      'ההודעה לא מסבירה מה חסר: ' + error.message));
+  return w.Sheets.push(URL, {
+    date: '2026-09-13', weightKg: 88.4, kcal: 2100
+  }).then(() => {
+    assert(seen.length === 2, 'ציפיתי לשתי קריאות, היו ' + seen.length);
+    const actions = seen.map((src) =>
+      new w.URLSearchParams(src.split('?')[1]).get('action')).sort();
+    assert(actions[0] === 'add' && actions[1] === 'addNutrition',
+      'פעולות: ' + actions.join(','));
+  });
 });
 
-test('שגיאה שהסקריפט מחזיר מועברת כמו שהיא', () => {
-  w.fetch = () => Promise.resolve({ ok: true, status: 200,
-    text: () => Promise.resolve('{"ok":false,"error":"לשונית לא נמצאה"}') });
+test('קבוצה ריקה אינה נשלחת כלל', () => {
+  const seen = serve();
 
-  return w.Sheets.push(URL, ENTRY).then(
+  // רק מדדי גוף — אין סיבה לשלוח פעולת תזונה ריקה שתדרוס נתונים
+  return w.Sheets.push(URL, { date: '2026-09-13', weightKg: 88.4 }).then(() => {
+    assert(seen.length === 1, 'נשלחו ' + seen.length + ' קריאות');
+    assert(seen[0].indexOf('action=add&') !== -1 || seen[0].indexOf('action=add') !== -1,
+      'הפעולה שנשלחה: ' + seen[0]);
+    assert(seen[0].indexOf('addNutrition') === -1, 'נשלחה פעולת תזונה ריקה');
+  });
+});
+
+test('ערכים ריקים אינם נכנסים לכתובת', () => {
+  const seen = serve();
+
+  return w.Sheets.push(URL, {
+    date: '2026-09-13', kcal: 2100, proteinG: null, fiberG: ''
+  }).then(() => {
+    const params = new w.URLSearchParams(seen[0].split('?')[1]);
+    assert(!params.has('protein'), 'חלבון ריק נשלח');
+    assert(!params.has('fiber'), 'סיבים ריקים נשלחו');
+    assert(params.get('calories') === '2100', 'הקלוריות לא נשלחו');
+  });
+});
+
+test('כישלון טעינה מדווח בהודעה מובנת', () => {
+  serve(() => null);
+
+  return w.Sheets.push(URL, { date: '2026-09-13', weightKg: 88 }).then(
     () => { throw new Error('היה צריך להיכשל'); },
-    (error) => assert(error.message.indexOf('לשונית') !== -1, error.message));
+    (error) => assert(error.message.indexOf('לא נענה') !== -1, error.message));
 });
 
 test('בלי כתובת או בלי תאריך אין שליחה', () => {
-  let called = false;
-  w.fetch = () => { called = true; return Promise.resolve({}); };
+  const seen = serve();
 
-  return w.Sheets.push('', ENTRY).then(
+  return w.Sheets.push('', { date: '2026-09-13' }).then(
     () => { throw new Error('היה צריך להיכשל'); },
     (error) => {
       assert(error.message.indexOf('כתובת') !== -1, error.message);
@@ -92,50 +151,19 @@ test('בלי כתובת או בלי תאריך אין שליחה', () => {
         () => { throw new Error('היה צריך להיכשל'); },
         (second) => {
           assert(second.message.indexOf('תאריך') !== -1, second.message);
-          assert(!called, 'נשלחה בקשה למרות הקלט החסר');
+          assert(seen.length === 0, 'נשלחה בקשה למרות קלט חסר');
         });
     });
 });
 
-test('בדיקת החיבור מבחינה בין קבלה לדחייה', () => {
-  w.fetch = () => Promise.resolve({ ok: true, status: 200,
-    text: () => Promise.resolve('{"ok":true}') });
-
-  return w.Sheets.probe(URL).then((result) => {
-    assert(result.accepted, 'תשובה תקינה לא זוהתה כקבלה');
-    assert(result.isJson, 'לא זוהה כ-JSON');
-
-    // דף HTML מסקריפט בלי doPost
-    w.fetch = () => Promise.resolve({ ok: true, status: 200,
-      text: () => Promise.resolve('<!DOCTYPE html>Script function not found: doPost') });
-
-    return w.Sheets.probe(URL).then((html) => {
-      assert(!html.accepted, 'דף HTML נחשב לקבלה');
-      assert(!html.isJson, 'זוהה בטעות כ-JSON');
-      assert(html.body.indexOf('doPost') !== -1, 'הגוף לא הוחזר לאבחון');
+test('יום בלי שום ערך אינו נשלח', () => {
+  const seen = serve();
+  return w.Sheets.push(URL, { date: '2026-09-13' }).then(
+    () => { throw new Error('היה צריך להיכשל'); },
+    (error) => {
+      assert(error.message.indexOf('אין מה לשמור') !== -1, error.message);
+      assert(seen.length === 0, 'נשלחה בקשה ריקה');
     });
-  });
-});
-
-test('בדיקת החיבור מקבלת גם success כמו בסקריפט הישן', () => {
-  w.fetch = () => Promise.resolve({ ok: true, status: 200,
-    text: () => Promise.resolve('{"success":true}') });
-
-  return w.Sheets.probe(URL).then((result) => {
-    assert(result.accepted, 'הסקריפט הישן מחזיר success ולא ok');
-  });
-});
-
-test('קוד ה-doPost מכיל את מה שצריך', () => {
-  const code = w.Sheets.DO_POST_SNIPPET;
-  ['function doPost', 'JSON.parse', 'getSheetByName', 'ContentService']
-    .forEach((part) => assert(code.indexOf(part) !== -1, 'חסר: ' + part));
-
-  // ערך ריק לא מוחק נתון קיים
-  assert(code.indexOf('=== ""') !== -1 || code.indexOf('continue') !== -1,
-    'אין הגנה מפני מחיקת ערכים');
-  // אזור הזמן מפורש, אחרת התאריך יזוז
-  assert(code.indexOf('Asia/Jerusalem') !== -1, 'אזור הזמן לא מפורש');
 });
 
 queue.reduce(function (chain, item) {

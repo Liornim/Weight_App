@@ -574,14 +574,12 @@
       '<label class="switch"><input type="checkbox" id="sync-write"' +
         ((settings.sync || {}).write ? ' checked' : '') + '>' +
         '<span>לשמור גם לגיליון, לא רק במכשיר</span></label>' +
-      P.hint('ברירת המחדל היא שמירה במכשיר בלבד. כתיבה לגיליון דורשת ' +
-        'פעולת doPost בסקריפט שלו — בלעדיה השמירה תיכשל ותאמר זאת. ' +
-        'הכפתור למטה מעתיק את הקוד שצריך להדביק שם.') +
+      P.hint('השמירה משתמשת באותן פעולות שהדפים הקיימים משתמשים בהן, ' +
+        'ולכן אין צורך לשנות דבר בסקריפט של הגיליון.') +
 
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">' +
         '<button type="button" class="btn btn--primary" id="pull">עדכון נתונים מהגיליון</button>' +
         '<button type="button" class="btn" id="test-sync">בדיקת שמירה לגיליון</button>' +
-        '<button type="button" class="btn" id="copy-script">העתקת קוד ה-doPost</button>' +
         '<button type="button" class="btn" id="open-old">התצוגה המפורטת</button>' +
       '</div>';
 

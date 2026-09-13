@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd33',
+    BUILD: 'd34',
     state: {
       date: Dates.today(),
       tab: 'home',         // סיכום או משקל
@@ -330,31 +330,14 @@
         box.innerHTML = '<p class="stage">בודק…</p>';
 
         root.Sheets.probe(url).then(function (result) {
-          var verdict = result.accepted
-            ? '<p class="stage">הסקריפט קיבל את השמירה. אפשר להדליק את המתג.</p>'
-            : '<p class="stage stage--bad">הסקריפט לא קיבל את הפעולה ' +
-              '(סטטוס ' + result.status + '). צריך להוסיף לו doPost.</p>';
-
-          box.innerHTML = verdict +
-            '<details class="round" open><summary>מה הגיליון החזיר</summary>' +
+          box.innerHTML = '<p class="stage">החיבור לגיליון עובד' +
+            (result.rows !== null ? ' · ' + result.rows + ' שורות' : '') + '.</p>' +
+            '<details class="round"><summary>מה הגיליון החזיר</summary>' +
             '<p class="why">' + root.Fmt.esc(result.body) + '</p></details>';
         }).catch(function (error) {
           box.innerHTML = '<p class="stage stage--bad">' +
             root.Fmt.esc(error.message) + '</p>';
         });
-      });
-    }
-
-    var copyScript = view.querySelector('#copy-script');
-    if (copyScript) {
-      copyScript.addEventListener('click', function () {
-        if (root.navigator && root.navigator.clipboard) {
-          root.navigator.clipboard.writeText(root.Sheets.DO_POST_SNIPPET).then(function () {
-            App.toast('הקוד הועתק — להדביק ב-Apps Script של הגיליון');
-          }).catch(function () { App.toast('ההעתקה נכשלה'); });
-        } else {
-          App.toast('הדפדפן לא מאפשר העתקה');
-        }
       });
     }
 

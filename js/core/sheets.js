@@ -5,9 +5,9 @@
  * לקרוא ולכתוב לגיליון בלי שום אימות. כתובת בתוך ריפו ציבורי היא
  * כתובת פומבית.
  *
- * המשיכה עובדת מול כל Apps Script קיים. הכתיבה חזרה דורשת פעולה
- * אחת נוספת בסקריפט (doPost), ולכן היא כבויה עד שמפעילים אותה
- * במפורש — כדי ששמירה לא תיכשל בשקט מול סקריפט שלא מכיר אותה.
+ * הקריאה והכתיבה נעשות שתיהן דרך הפעולות שכבר מוגדרות בסקריפט:
+ * get ו-getNutrition לקריאה, add ו-addNutrition לכתיבה. אין צורך
+ * לשנות בו דבר.
  */
 (function (root) {
   'use strict';
@@ -218,145 +218,132 @@
   }
 
   /**
-   * כתיבת יום אחד חזרה לגיליון.
+   * שמירה לגיליון ב-JSONP.
    *
-   * נשלח כ-text/plain ולא כ-JSON בכוונה: בקשת JSON חוצת־מקורות
-   * גוררת preflight, ו-Apps Script אינו עונה עליו. עם text/plain
-   * הדפדפן שולח ישירות, והסקריפט קורא את הגוף ומפענח בעצמו.
+   * POST רגיל נכשל ב-"Failed to fetch": בקשה חוצת־מקורות ל-Apps
+   * Script גוררת preflight שהוא אינו עונה עליו. JSONP עוקף את זה
+   * לגמרי — תג script לכתובת GET אינו כפוף ל-CORS, והסקריפט מחזיר
+   * קריאה לפונקציה שהגדרנו.
+   *
+   * זו בדיוק השיטה שבה הדפים הקיימים שומרים, ולכן אין צורך לגעת
+   * בסקריפט: הפעולות add ו-addNutrition כבר מוגדרות בו.
+   */
+  function jsonp(url, params, timeoutMs) {
+    return new Promise(function (resolve, reject) {
+      var doc = root.document;
+      if (!doc) { reject(new Error('אין דפדפן')); return; }
+
+      var name = 'sheetsCallback_' + Date.now() + '_' +
+        Math.floor(Math.random() * 100000);
+      var script = doc.createElement('script');
+      var done = false;
+
+      var cleanup = function () {
+        if (done) return;
+        done = true;
+        try { delete root[name]; } catch (error) { root[name] = undefined; }
+        if (script.parentNode) script.parentNode.removeChild(script);
+      };
+
+      root[name] = function (data) {
+        cleanup();
+        resolve(data === undefined ? { ok: true } : data);
+      };
+
+      var query = Object.keys(params)
+        .filter(function (key) {
+          var value = params[key];
+          return value !== null && value !== undefined && value !== '';
+        })
+        .map(function (key) {
+          return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
+        })
+        .join('&');
+
+      script.src = url + (url.indexOf('?') === -1 ? '?' : '&') +
+        query + '&callback=' + name;
+
+      script.onerror = function () {
+        cleanup();
+        reject(new Error('הגיליון לא נענה. כדאי לוודא שהכתובת נכונה ' +
+          'ושהפריסה פתוחה לכולם.'));
+      };
+
+      setTimeout(function () {
+        if (done) return;
+        cleanup();
+        reject(new Error('הגיליון לא ענה בזמן.'));
+      }, timeoutMs || 15000);
+
+      doc.head.appendChild(script);
+    });
+  }
+
+  /**
+   * שומר יום אחד: מדדי גוף ותזונה, כל אחד בפעולה שלו.
+   * נשלח רק מה שיש — פעולה בלי ערכים תדרוס נתונים קיימים בריק.
    */
   function push(url, entry) {
     if (!url) return Promise.reject(new Error('לא הוגדרה כתובת גיליון'));
     if (!entry || !entry.date) return Promise.reject(new Error('אין תאריך לשמירה'));
 
-    return root.fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'save', entry: entry })
-    }).then(function (response) {
-      return response.text().then(function (body) {
-        if (!response.ok) {
-          throw new Error('הגיליון החזיר ' + response.status + ': ' + body.slice(0, 120));
-        }
-
-        var data;
-        try {
-          data = JSON.parse(body);
-        } catch (error) {
-          // סקריפט בלי doPost מחזיר דף HTML של שגיאה
-          throw new Error('הסקריפט של הגיליון אינו תומך בשמירה. ' +
-            'צריך להוסיף לו פעולת doPost.');
-        }
-
-        if (data && data.ok === false) {
-          throw new Error(data.error || 'השמירה נדחתה');
-        }
-        return data;
+    var has = function (fields) {
+      return fields.some(function (key) {
+        return entry[key] !== null && entry[key] !== undefined && entry[key] !== '';
       });
-    });
+    };
+
+    var jobs = [];
+
+    if (has(['weightKg', 'muscleKg', 'bodyFatKg', 'waterKg'])) {
+      jobs.push(jsonp(url, {
+        action: 'add',
+        date: entry.date,
+        weight: entry.weightKg,
+        muscle: entry.muscleKg,
+        fat: entry.bodyFatKg,
+        fluids: entry.waterKg
+      }).then(function (data) { return { part: 'body', data: data }; }));
+    }
+
+    if (has(['kcal', 'proteinG', 'carbG', 'fatG', 'fiberG', 'steps'])) {
+      jobs.push(jsonp(url, {
+        action: 'addNutrition',
+        date: entry.date,
+        calories: entry.kcal,
+        fat: entry.fatG,
+        carbs: entry.carbG,
+        protein: entry.proteinG,
+        fiber: entry.fiberG,
+        steps: entry.steps
+      }).then(function (data) { return { part: 'nutrition', data: data }; }));
+    }
+
+    if (!jobs.length) return Promise.reject(new Error('אין מה לשמור ליום הזה'));
+    return Promise.all(jobs);
   }
 
   /**
-   * בדיקת חיבור: שולח פעולת שמירה ומחזיר את התשובה הגולמית.
-   *
-   * ב-Apps Script אי אפשר לדעת מבחוץ אילו פעולות מוגדרות, וניחוש
-   * עולה בסבב שלם של ניסוי וטעייה. עדיף לשלוח פעם אחת ולהראות
-   * בדיוק מה חזר.
+   * בדיקת חיבור: שולחת פעולת שמירה ריקה ומדווחת מה חזר.
+   * משתמשת באותו ערוץ שבו נעשית השמירה, כדי שהבדיקה תשקף את המציאות.
    */
-  function probe(url, action) {
+  function probe(url) {
     if (!url) return Promise.reject(new Error('לא הוגדרה כתובת גיליון'));
 
-    var body = JSON.stringify({
-      action: action || 'save',
-      entry: { date: localIso(new Date()), weightKg: null }
-    });
-
-    return root.fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: body
-    }).then(function (response) {
-      return response.text().then(function (text) {
-        var parsed = null;
-        try { parsed = JSON.parse(text); } catch (error) { parsed = null; }
-
-        return {
-          status: response.status,
-          ok: response.ok,
-          isJson: parsed !== null,
-          // סקריפט שלא מכיר את הפעולה מחזיר דף HTML או ok:false
-          accepted: !!(parsed && (parsed.ok === true || parsed.success === true)),
-          body: String(text).slice(0, 400),
-          parsed: parsed
-        };
-      });
+    return jsonp(url, { action: 'get' }, 12000).then(function (data) {
+      var rows = data && (data.rows || data.data);
+      return {
+        accepted: true,
+        rows: rows ? rows.length : null,
+        body: JSON.stringify(data).slice(0, 300)
+      };
     });
   }
-
-  /** הקוד שצריך להדביק ב-Apps Script של הגיליון כדי לאפשר שמירה */
-  var DO_POST_SNIPPET = [
-    '// מקבל יום אחד מהאפליקציה ומעדכן את שתי הלשוניות.',
-    '// מעדכן שורה קיימת לפי התאריך, ומוסיף חדשה אם אין.',
-    'function doPost(e) {',
-    '  try {',
-    '    var body = JSON.parse(e.postData.contents);',
-    '    if (body.action !== "save") throw new Error("פעולה לא מוכרת");',
-    '',
-    '    var entry = body.entry;',
-    '    var date = new Date(entry.date + "T12:00:00");',
-    '',
-    '    writeRow("גיליון1", date, [',
-    '      entry.weightKg, entry.muscleKg, entry.bodyFatKg, entry.waterKg]);',
-    '    writeRow("Nutrition", date, [',
-    '      entry.kcal, entry.fatG, entry.carbG, entry.proteinG,',
-    '      entry.fiberG, entry.steps]);',
-    '',
-    '    return json({ ok: true });',
-    '  } catch (error) {',
-    '    return json({ ok: false, error: String(error) });',
-    '  }',
-    '}',
-    '',
-    'function writeRow(sheetName, date, values) {',
-    '  var sheet = SpreadsheetApp.getActive().getSheetByName(sheetName);',
-    '  if (!sheet) return;',
-    '',
-    '  var key = Utilities.formatDate(date, "Asia/Jerusalem", "yyyy-MM-dd");',
-    '  var dates = sheet.getRange(1, 1, sheet.getLastRow(), 1).getValues();',
-    '  var target = 0;',
-    '',
-    '  for (var i = 0; i < dates.length; i++) {',
-    '    var cell = dates[i][0];',
-    '    if (!cell) continue;',
-    '    var asDate = cell instanceof Date ? cell : new Date(cell);',
-    '    if (isNaN(asDate.getTime())) continue;',
-    '    if (Utilities.formatDate(asDate, "Asia/Jerusalem", "yyyy-MM-dd") === key) {',
-    '      target = i + 1;',
-    '      break;',
-    '    }',
-    '  }',
-    '',
-    '  if (!target) {',
-    '    target = sheet.getLastRow() + 1;',
-    '    sheet.getRange(target, 1).setValue(date);',
-    '  }',
-    '',
-    '  // ערך ריק לא מוחק את מה שכבר בגיליון',
-    '  for (var c = 0; c < values.length; c++) {',
-    '    if (values[c] === null || values[c] === undefined || values[c] === "") continue;',
-    '    sheet.getRange(target, c + 2).setValue(values[c]);',
-    '  }',
-    '}',
-    '',
-    'function json(payload) {',
-    '  return ContentService.createTextOutput(JSON.stringify(payload))',
-    '    .setMimeType(ContentService.MimeType.JSON);',
-    '}'
-  ].join('\n');
 
   root.Sheets = {
     push: push,
     probe: probe,
-    DO_POST_SNIPPET: DO_POST_SNIPPET,
+    jsonp: jsonp,
     pull: pull,
     rowsToEntries: rowsToEntries,
     merge: merge,
