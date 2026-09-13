@@ -97,6 +97,35 @@ test('בלי כתובת או בלי תאריך אין שליחה', () => {
     });
 });
 
+test('בדיקת החיבור מבחינה בין קבלה לדחייה', () => {
+  w.fetch = () => Promise.resolve({ ok: true, status: 200,
+    text: () => Promise.resolve('{"ok":true}') });
+
+  return w.Sheets.probe(URL).then((result) => {
+    assert(result.accepted, 'תשובה תקינה לא זוהתה כקבלה');
+    assert(result.isJson, 'לא זוהה כ-JSON');
+
+    // דף HTML מסקריפט בלי doPost
+    w.fetch = () => Promise.resolve({ ok: true, status: 200,
+      text: () => Promise.resolve('<!DOCTYPE html>Script function not found: doPost') });
+
+    return w.Sheets.probe(URL).then((html) => {
+      assert(!html.accepted, 'דף HTML נחשב לקבלה');
+      assert(!html.isJson, 'זוהה בטעות כ-JSON');
+      assert(html.body.indexOf('doPost') !== -1, 'הגוף לא הוחזר לאבחון');
+    });
+  });
+});
+
+test('בדיקת החיבור מקבלת גם success כמו בסקריפט הישן', () => {
+  w.fetch = () => Promise.resolve({ ok: true, status: 200,
+    text: () => Promise.resolve('{"success":true}') });
+
+  return w.Sheets.probe(URL).then((result) => {
+    assert(result.accepted, 'הסקריפט הישן מחזיר success ולא ok');
+  });
+});
+
 test('קוד ה-doPost מכיל את מה שצריך', () => {
   const code = w.Sheets.DO_POST_SNIPPET;
   ['function doPost', 'JSON.parse', 'getSheetByName', 'ContentService']

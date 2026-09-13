@@ -255,6 +255,43 @@
     });
   }
 
+  /**
+   * בדיקת חיבור: שולח פעולת שמירה ומחזיר את התשובה הגולמית.
+   *
+   * ב-Apps Script אי אפשר לדעת מבחוץ אילו פעולות מוגדרות, וניחוש
+   * עולה בסבב שלם של ניסוי וטעייה. עדיף לשלוח פעם אחת ולהראות
+   * בדיוק מה חזר.
+   */
+  function probe(url, action) {
+    if (!url) return Promise.reject(new Error('לא הוגדרה כתובת גיליון'));
+
+    var body = JSON.stringify({
+      action: action || 'save',
+      entry: { date: localIso(new Date()), weightKg: null }
+    });
+
+    return root.fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: body
+    }).then(function (response) {
+      return response.text().then(function (text) {
+        var parsed = null;
+        try { parsed = JSON.parse(text); } catch (error) { parsed = null; }
+
+        return {
+          status: response.status,
+          ok: response.ok,
+          isJson: parsed !== null,
+          // סקריפט שלא מכיר את הפעולה מחזיר דף HTML או ok:false
+          accepted: !!(parsed && (parsed.ok === true || parsed.success === true)),
+          body: String(text).slice(0, 400),
+          parsed: parsed
+        };
+      });
+    });
+  }
+
   /** הקוד שצריך להדביק ב-Apps Script של הגיליון כדי לאפשר שמירה */
   var DO_POST_SNIPPET = [
     '// מקבל יום אחד מהאפליקציה ומעדכן את שתי הלשוניות.',
@@ -318,6 +355,7 @@
 
   root.Sheets = {
     push: push,
+    probe: probe,
     DO_POST_SNIPPET: DO_POST_SNIPPET,
     pull: pull,
     rowsToEntries: rowsToEntries,

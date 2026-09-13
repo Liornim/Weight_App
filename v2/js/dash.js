@@ -580,6 +580,7 @@
 
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">' +
         '<button type="button" class="btn btn--primary" id="pull">עדכון נתונים מהגיליון</button>' +
+        '<button type="button" class="btn" id="test-sync">בדיקת שמירה לגיליון</button>' +
         '<button type="button" class="btn" id="copy-script">העתקת קוד ה-doPost</button>' +
         '<button type="button" class="btn" id="open-old">התצוגה המפורטת</button>' +
       '</div>';

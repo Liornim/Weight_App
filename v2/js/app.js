@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd31',
+    BUILD: 'd32',
     state: {
       date: Dates.today(),
       tab: 'home',         // סיכום או משקל
@@ -311,6 +311,31 @@
         var current = Store.getSettings().sync || {};
         Store.updateSettings({ sync: { url: current.url, write: syncWrite.checked } });
         App.toast(syncWrite.checked ? 'שמירה לגיליון הופעלה' : 'שמירה לגיליון כבויה');
+      });
+    }
+
+    var testSync = view.querySelector('#test-sync');
+    if (testSync) {
+      testSync.addEventListener('click', function () {
+        var box = document.getElementById('sync-probe');
+        var url = (Store.getSettings().sync || {}).url;
+        if (!url) { App.toast('לא הוגדרה כתובת גיליון'); return; }
+
+        box.innerHTML = '<p class="stage">בודק…</p>';
+
+        root.Sheets.probe(url).then(function (result) {
+          var verdict = result.accepted
+            ? '<p class="stage">הסקריפט קיבל את השמירה. אפשר להדליק את המתג.</p>'
+            : '<p class="stage stage--bad">הסקריפט לא קיבל את הפעולה ' +
+              '(סטטוס ' + result.status + '). צריך להוסיף לו doPost.</p>';
+
+          box.innerHTML = verdict +
+            '<details class="round" open><summary>מה הגיליון החזיר</summary>' +
+            '<p class="why">' + root.Fmt.esc(result.body) + '</p></details>';
+        }).catch(function (error) {
+          box.innerHTML = '<p class="stage stage--bad">' +
+            root.Fmt.esc(error.message) + '</p>';
+        });
       });
     }
 
