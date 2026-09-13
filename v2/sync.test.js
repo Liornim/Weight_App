@@ -68,7 +68,9 @@ test('מדדי גוף נשלחים בפעולת add עם אותם שמות פר�
     const params = new w.URLSearchParams(seen[0].split('?')[1]);
 
     assert(params.get('action') === 'add', 'פעולה: ' + params.get('action'));
-    assert(params.get('date') === '2026-09-13', 'תאריך');
+    // הסקריפט מצפה ל-DD/MM/YYYY, כמו בדפים שעובדים
+    assert(params.get('date') === '13/09/2026',
+      'התאריך נשלח בפורמט הלא נכון: ' + params.get('date'));
     assert(params.get('weight') === '88.4', 'משקל: ' + params.get('weight'));
     assert(params.get('muscle') === '35.4', 'שריר');
     assert(params.get('fat') === '22.3', 'שומן');
@@ -137,6 +139,23 @@ test('כל הפרמטרים נשלחים גם כשהם ריקים', () => {
     assert(params.get('protein') === '', 'חלבון ריק אמור להישלח ריק');
     assert(params.get('fiber') === '', 'סיבים ריקים אמורים להישלח ריקים');
     assert(params.get('calories') === '2100', 'הקלוריות לא נשלחו');
+  });
+});
+
+test('התאריך מומר לפורמט של הגיליון', () => {
+  const T = w.Sheets.toSheetDate;
+  assert(T('2026-09-13') === '13/09/2026', 'המרה: ' + T('2026-09-13'));
+  assert(T('2026-01-05') === '05/01/2026', 'אפסים מובילים');
+  assert(T('13/09/2026') === '13/09/2026', 'פורמט שכבר נכון נשאר');
+  assert(T('') === '', 'ריק');
+});
+
+test('גם התזונה נשלחת בפורמט התאריך של הגיליון', () => {
+  const seen = serve();
+
+  return w.Sheets.push(URL, { date: '2026-09-13', kcal: 2100 }).then(() => {
+    const params = new w.URLSearchParams(seen[0].split('?')[1]);
+    assert(params.get('date') === '13/09/2026', 'תאריך: ' + params.get('date'));
   });
 });
 

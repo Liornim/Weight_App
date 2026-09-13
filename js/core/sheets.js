@@ -327,9 +327,23 @@
    * שומר יום אחד: מדדי גוף ותזונה, כל אחד בפעולה שלו.
    * נשלח רק מה שיש — פעולה בלי ערכים תדרוס נתונים קיימים בריק.
    */
+  /**
+   * הסקריפט מצפה ל-DD/MM/YYYY.
+   *
+   * זה הפורמט שהדפים הקיימים שולחים, והם אלה שעובדים. שליחת
+   * YYYY-MM-DD גרמה לסקריפט לזרוק שגיאה, להחזיר דף HTML במקום
+   * JavaScript, ולכישלון שנראה כמו בעיית הרשאות.
+   */
+  function toSheetDate(iso) {
+    var m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m ? m[3] + '/' + m[2] + '/' + m[1] : String(iso || '');
+  }
+
   function push(url, entry) {
     if (!url) return Promise.reject(new Error('לא הוגדרה כתובת גיליון'));
     if (!entry || !entry.date) return Promise.reject(new Error('אין תאריך לשמירה'));
+
+    var sheetDate = toSheetDate(entry.date);
 
     var has = function (fields) {
       return fields.some(function (key) {
@@ -342,7 +356,7 @@
     if (has(['weightKg', 'muscleKg', 'bodyFatKg', 'waterKg'])) {
       jobs.push(jsonp(url, {
         action: 'add',
-        date: entry.date,
+        date: sheetDate,
         weight: entry.weightKg,
         muscle: entry.muscleKg,
         fat: entry.bodyFatKg,
@@ -353,7 +367,7 @@
     if (has(['kcal', 'proteinG', 'carbG', 'fatG', 'fiberG', 'steps'])) {
       jobs.push(jsonp(url, {
         action: 'addNutrition',
-        date: entry.date,
+        date: sheetDate,
         calories: entry.kcal,
         fat: entry.fatG,
         carbs: entry.carbG,
@@ -388,6 +402,7 @@
     push: push,
     probe: probe,
     jsonp: jsonp,
+    toSheetDate: toSheetDate,
     pull: pull,
     rowsToEntries: rowsToEntries,
     merge: merge,
