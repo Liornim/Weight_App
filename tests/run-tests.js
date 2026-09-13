@@ -2228,6 +2228,54 @@ test('המדידה עד שבוע שעבר נקייה מחפיפה', () => {
 
 // ---------- יעד מול בפועל ----------
 
+test('החלון מסתיים ביום האחרון שדווח ולא בהיום הריק', () => {
+  // 20 ימים של נתונים, ואז שני ימים עם משקל בלבד
+  const entries = buildSeries('2026-01-01', 20, (i) => ({
+    weightKg: 90 - 0.05 * i, kcal: 2200, steps: 9000, proteinG: 150
+  }));
+  entries.push({ date: '2026-01-21', weightKg: 89 });
+  entries.push({ date: '2026-01-22', weightKg: 88.9 });
+
+  const r = Metrics.targetGaps(entries, WIN_SETTINGS,
+    { endDate: '2026-01-22', windows: [3, 7] });
+
+  assert(r.lastLogged === '2026-01-20', 'היום האחרון שדווח: ' + r.lastLogged);
+  assert(r.shiftedDays === 2, 'ההזזה: ' + r.shiftedDays);
+
+  r.rows.filter((row) => row.ok).forEach((row) => {
+    assert(row.to === '2026-01-20', row.days + ': החלון לא מסתיים ביום שדווח');
+    assert(row.from === Dates.addDays('2026-01-20', -(row.days - 1)),
+      row.days + ': תחילת החלון שגויה');
+    // וזה העיקר: החלון מלא
+    assert(row.loggedDays === row.days,
+      row.days + ' ימים: רק ' + row.loggedDays + ' דווחו');
+  });
+});
+
+test('כשהיום מדווח, החלון מסתיים היום', () => {
+  const entries = buildSeries('2026-01-01', 20, (i) => ({
+    weightKg: 90 - 0.05 * i, kcal: 2200, steps: 9000
+  }));
+  const r = Metrics.targetGaps(entries, WIN_SETTINGS,
+    { endDate: '2026-01-20', windows: [5] });
+
+  assert(r.lastLogged === '2026-01-20', 'לא היה צריך להזיז');
+  assert(r.shiftedDays === 0, 'ההזזה: ' + r.shiftedDays);
+  assert(r.rows[0].loggedDays === 5, 'החלון לא מלא');
+});
+
+test('יום חסר באמצע עדיין מדווח ככיסוי חלקי', () => {
+  // הזזה פותרת ימים ריקים בסוף, לא חורים באמצע
+  const entries = buildSeries('2026-01-01', 20, (i) => ({
+    weightKg: 90 - 0.05 * i, kcal: 2200
+  })).filter((e) => e.date !== '2026-01-18');
+
+  const r = Metrics.targetGaps(entries, WIN_SETTINGS,
+    { endDate: '2026-01-20', windows: [5] });
+
+  assert(r.rows[0].loggedDays === 4, 'ציפיתי ל-4 מתוך 5, קיבלתי ' + r.rows[0].loggedDays);
+});
+
 test('הפער מחושב מול היעד של אותו חלון', () => {
   const entries = windowFixture();
   const r = Metrics.targetGaps(entries, WIN_SETTINGS,

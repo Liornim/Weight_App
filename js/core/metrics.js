@@ -2013,13 +2013,25 @@
     var kcalPerStep = num(settings.kcalPerStep);
     if (kcalPerStep === null) kcalPerStep = 0.040;
 
+    /**
+     * החלון מסתיים ביום האחרון שיש בו רישום אוכל, ולא היום.
+     *
+     * כשהיום עדיין ריק, חלון "3 ימים" שמסתיים היום מכסה בפועל
+     * שני ימים מדווחים בלבד — והממוצע נשען על פחות נתונים ממה
+     * שהכותרת מבטיחה. עיגון ליום האחרון שדווח נותן חלון מלא.
+     */
+    var logged = series(sorted(entries).filter(function (e) {
+      return e.date <= endDate;
+    }), 'kcal');
+    var lastLogged = logged.length ? logged[logged.length - 1].date : endDate;
+
     var rows = windows.map(function (days) {
-      var report = windowReport(entries, settings, { windowDays: days, endDate: endDate });
+      var report = windowReport(entries, settings, { windowDays: days, endDate: lastLogged });
       if (!report.ok) {
         return { days: days, ok: false, reason: report.reason, needDays: report.needDays };
       }
 
-      var inRange = inWindow(entries, endDate, days);
+      var inRange = inWindow(entries, lastLogged, days);
       var mean = function (field) {
         var values = series(inRange, field).map(function (p) { return p.y; });
         return values.length ? { value: Stats.mean(values), n: values.length } : null;
@@ -2052,6 +2064,8 @@
       return {
         days: days,
         ok: true,
+        from: Dates.addDays(lastLogged, -(days - 1)),
+        to: lastLogged,
         loggedDays: kcal.n,
         tdee: report.tdee,
         base: report.base,
@@ -2075,7 +2089,14 @@
       };
     });
 
-    return { ok: true, endDate: endDate, rows: rows };
+    return {
+      ok: true,
+      endDate: endDate,
+      lastLogged: lastLogged,
+      // כמה ימים אחורה הוזז החלון כדי שיהיה מלא
+      shiftedDays: Dates.diffDays(lastLogged, endDate) || 0,
+      rows: rows
+    };
   }
 
   function Fmt_isNum(value) {

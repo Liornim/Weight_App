@@ -661,6 +661,26 @@ test('הבחירה נשמרת במעבר בין טאבים', () => {
   App.setState({ basis: 'adaptive', caution: 'mid', tab: 'home' });
 });
 
+
+test('החלונות מלאים גם כשהיום עדיין ריק', () => {
+  // מוודאים שהיום האחרון בלי רישום אוכל
+  Store.upsert({ date: Dates.today(), kcal: '' });
+  App.setState({ date: Dates.today(), tab: 'targets' });
+
+  const model = Metrics.targetGaps(Store.getEntries(), Store.getSettings(),
+    { endDate: Dates.today(), windows: [3, 5, 7] });
+
+  assert(model.lastLogged <= Dates.today(), 'היום האחרון שדווח');
+  model.rows.filter((r) => r.ok).forEach((row) => {
+    assert(row.to === model.lastLogged,
+      row.days + ': החלון לא מסתיים ביום שדווח');
+    assert(row.loggedDays === row.days || row.loggedDays >= row.days - 1,
+      row.days + ' ימים: רק ' + row.loggedDays + ' דווחו');
+  });
+
+  App.setState({ tab: 'home' });
+});
+
 test('כיסוי הימים מוצג במפורש', () => {
   App.setState({ date: Dates.today(), tab: 'targets' });
   const table = [...doc.querySelectorAll('#view table.t')]
@@ -678,13 +698,15 @@ test('כיסוי הימים מוצג במפורש', () => {
     if (!row.ok) return;
     const sub = rows[i].querySelector('.sub');
     assert(sub, row.days + ': חסרה שורת הכיסוי');
-    assert(sub.textContent.indexOf('מתוך') !== -1,
-      row.days + ': הניסוח לא ברור: ' + sub.textContent);
-    assert(sub.textContent.indexOf(String(row.loggedDays)) === 0,
-      row.days + ': מספר הימים לא תואם');
 
-    // כיסוי חלקי מסומן בצבע
-    assert(sub.classList.contains('warn') === (row.loggedDays < row.days),
+    // הטווח תמיד מוצג, וכיסוי חלקי מסומן בנוסף
+    assert(sub.textContent.indexOf(window.Dates.short(row.to)) !== -1,
+      row.days + ': הטווח לא מוצג: ' + sub.textContent);
+
+    const partial = row.loggedDays < row.days;
+    assert(sub.textContent.indexOf('דווחו') !== -1 === partial,
+      row.days + ': הכיסוי החלקי לא סומן נכון: ' + sub.textContent);
+    assert(sub.classList.contains('warn') === partial,
       row.days + ': הסימון לא תואם את הכיסוי');
   });
 

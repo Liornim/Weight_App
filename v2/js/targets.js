@@ -38,10 +38,16 @@
 
     // ההבחנה חשובה: חלון של 3 ימים שבו דווחו 2 מתאר ממוצע של
     // יומיים, ולכן הוא רגיש יותר ליום חריג
-    var coverage = row.loggedDays + ' מתוך ' + row.days + ' ימים עם רישום';
+    var range = (row.from && row.to)
+      ? Dates.short(row.from) + '–' + Dates.short(row.to)
+      : '';
+    var partial = row.loggedDays < row.days;
+    var coverage = partial
+      ? range + ' · ' + row.loggedDays + ' מתוך ' + row.days + ' דווחו'
+      : range;
 
     return '<tr><td>' + row.days + ' ימים' +
-        '<span class="sub' + (row.loggedDays < row.days ? ' warn' : '') + '">' +
+        '<span class="sub' + (partial ? ' warn' : '') + '">' +
         P.esc(coverage) + '</span></td>' +
       cell(row.gapPerDay.kcal, 0, 'down') +
       cell(row.gapPerDay.protein, 0, 'up') +
@@ -165,10 +171,13 @@
       P.table(
         [{ label: 'חלון', n: false }, 'קלוריות', 'חלבון', 'שומן', 'פחמימות'],
         [r.rows.map(summaryRow).join('')],
-        { hint: 'הממוצע מחושב רק על הימים שיש בהם רישום. ' +
-          'בחלון של 3 ימים שבו דווחו 2, מדובר בממוצע של יומיים — ' +
-          'ולכן יום חריג אחד מזיז אותו הרבה. ' +
-          'חלון ארוך יותר אמין יותר, וכשכל השורות מצביעות לאותו כיוון זו מגמה.' }) +
+        { hint: (r.shiftedDays
+            ? 'החלונות מסתיימים ב' + Dates.short(r.lastLogged) +
+              ', היום האחרון שיש בו רישום אוכל, ולכן כל חלון מלא. ' +
+              'אחרת חלון של 3 ימים היה מכסה יומיים מדווחים בלבד. '
+            : '') +
+          'חלון קצר מושפע מיום בודד חריג, וארוך יותר אמין יותר. ' +
+          'כשכל השורות מצביעות לאותו כיוון זו מגמה.' }) +
       missingNote + noTarget);
 
     var details = '<div class="rounds">' +
