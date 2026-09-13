@@ -157,15 +157,17 @@ test('סדר הפרמטרים זהה לדפים שעובדים', () => {
   });
 });
 
-test('תשובה בלי callback עדיין נחשבת הצלחה', () => {
-  // חלק מהפעולות מחזירות JSON נקי; התג נטען, הפונקציה לא נקראת,
-  // והבקשה בכל זאת בוצעה
+test('טעינה בלי קריאה ל-callback אינה הצלחה', () => {
+  // תג script יורה onload גם על דף HTML שנכשל בפענוח, ולכן
+  // onload לבדו אינו עדות לשמירה
   serve(() => 'silent');
 
-  return w.Sheets.push(URL, { date: '2026-09-13', weightKg: 88 }).then((parts) => {
-    assert(parts.length === 1, 'לא הוחזרה תוצאה');
-    assert(parts[0].data.viaLoad, 'לא סומן שההצלחה נקבעה מהטעינה');
-  });
+  return w.Sheets.push(URL, { date: '2026-09-13', weightKg: 88 }).then(
+    () => { throw new Error('דווחה הצלחה בלי תשובה מהסקריפט'); },
+    (error) => {
+      assert(error.message.indexOf('פורמט') !== -1, error.message);
+      assert(error.url, 'הכתובת לא צורפה לאבחון');
+    });
 });
 
 test('כישלון טעינה מדווח בהודעה מובנת', () => {

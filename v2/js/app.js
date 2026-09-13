@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd36',
+    BUILD: 'd37',
     state: {
       date: Dates.today(),
       tab: 'home',         // סיכום או משקל
@@ -191,8 +191,12 @@
         }).catch(function (error) {
           // הכתובת שנשלחה מוצגת, כדי שאפשר יהיה לפתוח אותה ידנית
           // ולראות מה הסקריפט עונה
+          // קישור שאפשר ללחוץ עליו ולראות מה הסקריפט באמת מחזיר
           var tried = error.url
-            ? '<details class="round"><summary>הכתובת שנשלחה</summary>' +
+            ? '<details class="round" open><summary>הכתובת שנשלחה</summary>' +
+              '<p class="why"><a href="' + root.Fmt.esc(error.url) +
+              '" target="_blank" rel="noopener">לפתוח אותה בלשונית חדשה</a> ' +
+              'כדי לראות מה הגיליון מחזיר.</p>' +
               '<p class="why" style="word-break:break-all">' +
               root.Fmt.esc(error.url) + '</p></details>'
             : '';

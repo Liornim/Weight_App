@@ -258,13 +258,27 @@
       };
 
       /**
-       * הסקריפט לא תמיד עוטף את התשובה בקריאה ל-callback: פעולות
-       * מסוימות מחזירות JSON נקי. במקרה כזה התג נטען בהצלחה,
-       * הפונקציה לא נקראת, והבקשה בכל זאת בוצעה — ולכן טעינה
-       * מוצלחת נחשבת הצלחה גם בלי קריאה חוזרת.
+       * onload אינו עדות להצלחה.
+       *
+       * תג script יורה onload גם כשהתוכן שהתקבל אינו JavaScript
+       * תקין — דף שגיאה של Apps Script נטען "בהצלחה" ורק נכשל
+       * בפענוח, וכישלון פענוח אינו מגיע ל-onerror. הסתמכות על
+       * onload גרמה לכך שכישלון דווח כשמירה מוצלחת.
+       *
+       * ההצלחה היחידה שנחשבת היא קריאה בפועל ל-callback.
        */
       script.onload = function () {
-        setTimeout(function () { finish({ ok: true, viaLoad: true }); }, 120);
+        setTimeout(function () {
+          if (settled) return;
+          settled = true;
+          var address = script.src;
+          cleanup();
+          var error = new Error('הגיליון החזיר תשובה שאינה בפורמט הצפוי. ' +
+            'כנראה הסקריפט לא מכיר את הפעולה, או שהוא החזיר דף שגיאה.');
+          error.url = address;
+          error.loaded = true;
+          reject(error);
+        }, 1500);
       };
 
       /**
