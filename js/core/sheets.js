@@ -245,9 +245,26 @@
         if (script.parentNode) script.parentNode.removeChild(script);
       };
 
-      root[name] = function (data) {
+      var settled = false;
+      var finish = function (value) {
+        if (settled) return;
+        settled = true;
         cleanup();
-        resolve(data === undefined ? { ok: true } : data);
+        resolve(value);
+      };
+
+      root[name] = function (data) {
+        finish(data === undefined ? { ok: true } : data);
+      };
+
+      /**
+       * הסקריפט לא תמיד עוטף את התשובה בקריאה ל-callback: פעולות
+       * מסוימות מחזירות JSON נקי. במקרה כזה התג נטען בהצלחה,
+       * הפונקציה לא נקראת, והבקשה בכל זאת בוצעה — ולכן טעינה
+       * מוצלחת נחשבת הצלחה גם בלי קריאה חוזרת.
+       */
+      script.onload = function () {
+        setTimeout(function () { finish({ ok: true, viaLoad: true }); }, 120);
       };
 
       var query = Object.keys(params)
@@ -264,16 +281,19 @@
         query + '&callback=' + name;
 
       script.onerror = function () {
+        if (settled) return;
+        settled = true;
         cleanup();
         reject(new Error('הגיליון לא נענה. כדאי לוודא שהכתובת נכונה ' +
-          'ושהפריסה פתוחה לכולם.'));
+          'ושהפריסה מוגדרת "Anyone" ולא "Anyone with Google account".'));
       };
 
       setTimeout(function () {
-        if (done) return;
+        if (settled) return;
+        settled = true;
         cleanup();
         reject(new Error('הגיליון לא ענה בזמן.'));
-      }, timeoutMs || 15000);
+      }, timeoutMs || 20000);
 
       doc.head.appendChild(script);
     });

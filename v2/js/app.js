@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd34',
+    BUILD: 'd35',
     state: {
       date: Dates.today(),
       tab: 'home',         // סיכום או משקל
@@ -176,11 +176,22 @@
           return;
         }
 
-        App.toast(what + ' נשמרו · שולח לגיליון…');
-        root.Sheets.push(sync.url, Store.getEntry(App.state.date)).then(function () {
-          App.toast(what + ' נשמרו גם בגיליון');
+        // הדיווח מאוחד: קודם נשלחו שתי קריאות ודווח על כל אחת
+        // בנפרד, וכך הופיעו הודעות סותרות
+        var status = outputAfter(button, 'save-status');
+        status.innerHTML = '<p class="stage">' + what + ' נשמרו במכשיר · שולח לגיליון…</p>';
+
+        root.Sheets.push(sync.url, Store.getEntry(App.state.date)).then(function (parts) {
+          var names = { body: 'מדדי גוף', nutrition: 'תזונה' };
+          var sent = (parts || []).map(function (part) { return names[part.part]; });
+
+          status.innerHTML = '<p class="stage">נשמר בגיליון: ' +
+            root.Fmt.esc(sent.join(' ו')) + '.</p>';
+          App.toast('נשמר גם בגיליון');
         }).catch(function (error) {
-          App.toast('נשמר במכשיר, אבל לא בגיליון: ' + error.message);
+          status.innerHTML = '<p class="stage stage--bad">נשמר במכשיר, ' +
+            'אבל לא בגיליון.<br>' + root.Fmt.esc(error.message) + '</p>';
+          App.toast('הגיליון לא התעדכן');
         });
       });
     });

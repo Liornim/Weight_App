@@ -43,6 +43,9 @@ function serve(handler) {
       const reply = handler ? handler(params) : { ok: true };
       if (reply === null) {
         if (node.onerror) node.onerror();
+      } else if (reply === 'silent') {
+        // הסקריפט החזיר JSON נקי בלי לעטוף בקריאה ל-callback
+        if (node.onload) node.onload();
       } else {
         w[name](reply);
       }
@@ -132,12 +135,27 @@ test('ערכים ריקים אינם נכנסים לכתובת', () => {
   });
 });
 
+test('תשובה בלי callback עדיין נחשבת הצלחה', () => {
+  // חלק מהפעולות מחזירות JSON נקי; התג נטען, הפונקציה לא נקראת,
+  // והבקשה בכל זאת בוצעה
+  serve(() => 'silent');
+
+  return w.Sheets.push(URL, { date: '2026-09-13', weightKg: 88 }).then((parts) => {
+    assert(parts.length === 1, 'לא הוחזרה תוצאה');
+    assert(parts[0].data.viaLoad, 'לא סומן שההצלחה נקבעה מהטעינה');
+  });
+});
+
 test('כישלון טעינה מדווח בהודעה מובנת', () => {
   serve(() => null);
 
   return w.Sheets.push(URL, { date: '2026-09-13', weightKg: 88 }).then(
     () => { throw new Error('היה צריך להיכשל'); },
-    (error) => assert(error.message.indexOf('לא נענה') !== -1, error.message));
+    (error) => {
+      assert(error.message.indexOf('לא נענה') !== -1, error.message);
+      assert(error.message.indexOf('Anyone') !== -1,
+        'ההודעה לא מכוונת להגדרת הפריסה: ' + error.message);
+    });
 });
 
 test('בלי כתובת או בלי תאריך אין שליחה', () => {
