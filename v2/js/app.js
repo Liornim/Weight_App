@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd32',
+    BUILD: 'd33',
     state: {
       date: Dates.today(),
       tab: 'home',         // סיכום או משקל
@@ -317,9 +317,15 @@
     var testSync = view.querySelector('#test-sync');
     if (testSync) {
       testSync.addEventListener('click', function () {
-        var box = document.getElementById('sync-probe');
+        // המיכל נוצר לפי הצורך ולא מניחים שהוא קיים: כתיבה
+        // לאלמנט חסר נופלת בשקט, וזה נראה כאילו הכפתור לא עובד
+        var box = outputAfter(testSync, 'sync-probe');
         var url = (Store.getSettings().sync || {}).url;
-        if (!url) { App.toast('לא הוגדרה כתובת גיליון'); return; }
+        if (!url) {
+          box.innerHTML = '<p class="stage stage--bad">לא הוגדרה כתובת גיליון. ' +
+            'אפשר להזין אותה בשדה שלמעלה.</p>';
+          return;
+        }
 
         box.innerHTML = '<p class="stage">בודק…</p>';
 
@@ -360,13 +366,20 @@
           App.toast('לא הוגדרה כתובת גיליון');
           return;
         }
+        var status = outputAfter(pull, 'pull-status');
+        status.innerHTML = '<p class="stage">מושך נתונים…</p>';
+
         App.toast('מושך נתונים…');
         root.Sheets.pull(url).then(function (result) {
+          status.innerHTML = '<p class="stage">נמשכו ' + result.entries.length +
+            ' רשומות.</p>';
           Store.importJSON(JSON.stringify({ entries: result.entries }), 'merge');
           Store.updateSettings({ sync: { url: url, lastSyncAt: new Date().toISOString() } });
           App.toast('נמשכו ' + result.entries.length + ' רשומות');
         }).catch(function (error) {
-          App.toast('המשיכה נכשלה: ' + error.message);
+          status.innerHTML = '<p class="stage stage--bad">' +
+            root.Fmt.esc(error.message) + '</p>';
+          App.toast('המשיכה נכשלה');
         });
       });
     }
@@ -501,6 +514,24 @@
     }
 
     return advice ? '<p class="why">' + root.Fmt.esc(advice) + '</p>' : '';
+  }
+
+  /**
+   * מחזיר אלמנט פלט, ויוצר אותו אם אינו קיים.
+   *
+   * הנחה שאלמנט קיים במבנה היא מקור חוזר לכישלון שקט: המבנה משתנה,
+   * הכתיבה הולכת לשום מקום, והמשתמש רואה כפתור שלא מגיב.
+   */
+  function outputAfter(anchor, id) {
+    var existing = document.getElementById(id);
+    if (existing) return existing;
+
+    var box = document.createElement('div');
+    box.id = id;
+    var host = anchor.parentNode;
+    if (host && host.parentNode) host.parentNode.insertBefore(box, host.nextSibling);
+    else if (host) host.appendChild(box);
+    return box;
   }
 
   function renderDebate(result) {

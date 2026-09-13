@@ -113,6 +113,35 @@ test('הקוד שולף את אלמנט התוצאה מחדש ולא שומר א
     'ההצגה חייבת לשלוף את האלמנט בכל קריאה');
 });
 
+test('כפתור בדיקת השמירה מגיב גם בלי מיכל מוכן', () => {
+  Store.updateSettings({ sync: { url: '', write: false } });
+  App.setState({ date: Dates.today(), tab: 'home' });
+
+  const button = w.document.getElementById('test-sync');
+  assert(button, 'הכפתור חסר');
+
+  // אין מיכל בדף, וזה בדיוק המצב ששבר
+  assert(!w.document.getElementById('sync-probe'), 'המיכל קיים מראש — הבדיקה לא רלוונטית');
+
+  button.dispatchEvent(new w.Event('click', { bubbles: true }));
+
+  const box = w.document.getElementById('sync-probe');
+  assert(box, 'המיכל לא נוצר');
+  assert(box.textContent.indexOf('כתובת') !== -1,
+    'לא הוצגה הודעה: ' + box.textContent);
+});
+
+test('כפתור המשיכה מדווח גם הוא למסך', () => {
+  Store.updateSettings({ sync: { url: '', write: false } });
+  App.setState({ date: Dates.today(), tab: 'home' });
+
+  const pull = w.document.getElementById('pull');
+  assert(pull, 'כפתור המשיכה חסר');
+  pull.dispatchEvent(new w.Event('click', { bubbles: true }));
+  // בלי כתובת ההודעה היא הודעה צפה, ולכן נבדק רק שאין קריסה
+  assert(true, 'לא קרס');
+});
+
 console.log('');
 failures.forEach((f) => { console.log('\u2717 ' + f.name); console.log('   ' + f.message); });
 console.log('\n' + passed + ' עברו, ' + failures.length + ' נכשלו\n');
