@@ -267,15 +267,19 @@
         setTimeout(function () { finish({ ok: true, viaLoad: true }); }, 120);
       };
 
-      var query = Object.keys(params)
-        .filter(function (key) {
-          var value = params[key];
-          return value !== null && value !== undefined && value !== '';
-        })
-        .map(function (key) {
-          return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
-        })
-        .join('&');
+      /**
+       * כל הפרמטרים נשלחים תמיד, גם ריקים.
+       *
+       * השמטת פרמטר ריק נראתה נקייה יותר, אבל הסקריפט מצפה לכולם:
+       * חסר אחד והוא זורק שגיאה, מחזיר דף HTML במקום JavaScript,
+       * והתג נכשל בטעינה. זה בדיוק מה שהחזיר "הגיליון לא נענה".
+       * הדפים שעובדים שולחים את כולם.
+       */
+      var query = Object.keys(params).map(function (key) {
+        var value = params[key];
+        var text = (value === null || value === undefined) ? '' : String(value);
+        return encodeURIComponent(key) + '=' + encodeURIComponent(text);
+      }).join('&');
 
       script.src = url + (url.indexOf('?') === -1 ? '?' : '&') +
         query + '&callback=' + name;
@@ -283,16 +287,22 @@
       script.onerror = function () {
         if (settled) return;
         settled = true;
+        var address = script.src;
         cleanup();
-        reject(new Error('הגיליון לא נענה. כדאי לוודא שהכתובת נכונה ' +
-          'ושהפריסה מוגדרת "Anyone" ולא "Anyone with Google account".'));
+        var error = new Error('הגיליון לא נענה. כדאי לוודא שהכתובת נכונה ' +
+          'ושהפריסה מוגדרת "Anyone" ולא "Anyone with Google account".');
+        error.url = address;
+        reject(error);
       };
 
       setTimeout(function () {
         if (settled) return;
         settled = true;
+        var address = script.src;
         cleanup();
-        reject(new Error('הגיליון לא ענה בזמן.'));
+        var late = new Error('הגיליון לא ענה בזמן.');
+        late.url = address;
+        reject(late);
       }, timeoutMs || 20000);
 
       doc.head.appendChild(script);

@@ -122,16 +122,38 @@ test('קבוצה ריקה אינה נשלחת כלל', () => {
   });
 });
 
-test('ערכים ריקים אינם נכנסים לכתובת', () => {
+test('כל הפרמטרים נשלחים גם כשהם ריקים', () => {
+  // הסקריפט מצפה לכולם; חסר אחד והוא מחזיר דף שגיאה במקום JS
   const seen = serve();
 
   return w.Sheets.push(URL, {
     date: '2026-09-13', kcal: 2100, proteinG: null, fiberG: ''
   }).then(() => {
     const params = new w.URLSearchParams(seen[0].split('?')[1]);
-    assert(!params.has('protein'), 'חלבון ריק נשלח');
-    assert(!params.has('fiber'), 'סיבים ריקים נשלחו');
+
+    ['action', 'date', 'calories', 'fat', 'carbs', 'protein', 'fiber', 'steps']
+      .forEach((key) => assert(params.has(key), 'חסר פרמטר: ' + key));
+
+    assert(params.get('protein') === '', 'חלבון ריק אמור להישלח ריק');
+    assert(params.get('fiber') === '', 'סיבים ריקים אמורים להישלח ריקים');
     assert(params.get('calories') === '2100', 'הקלוריות לא נשלחו');
+  });
+});
+
+test('סדר הפרמטרים זהה לדפים שעובדים', () => {
+  const seen = serve();
+
+  return w.Sheets.push(URL, {
+    date: '2026-09-13', weightKg: 88.4, muscleKg: 35.4, bodyFatKg: 22.3, waterKg: 48.4
+  }).then(() => {
+    const query = seen[0].split('?')[1];
+    const order = query.split('&').map((pair) => pair.split('=')[0]);
+    const expected = ['action', 'date', 'weight', 'muscle', 'fat', 'fluids', 'callback'];
+
+    expected.forEach((key, i) => {
+      assert(order[i] === key,
+        'במקום ' + i + ' ציפיתי ל-' + key + ' וקיבלתי ' + order[i]);
+    });
   });
 });
 

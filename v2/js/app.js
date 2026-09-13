@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd35',
+    BUILD: 'd36',
     state: {
       date: Dates.today(),
       tab: 'home',         // סיכום או משקל
@@ -189,8 +189,16 @@
             root.Fmt.esc(sent.join(' ו')) + '.</p>';
           App.toast('נשמר גם בגיליון');
         }).catch(function (error) {
+          // הכתובת שנשלחה מוצגת, כדי שאפשר יהיה לפתוח אותה ידנית
+          // ולראות מה הסקריפט עונה
+          var tried = error.url
+            ? '<details class="round"><summary>הכתובת שנשלחה</summary>' +
+              '<p class="why" style="word-break:break-all">' +
+              root.Fmt.esc(error.url) + '</p></details>'
+            : '';
+
           status.innerHTML = '<p class="stage stage--bad">נשמר במכשיר, ' +
-            'אבל לא בגיליון.<br>' + root.Fmt.esc(error.message) + '</p>';
+            'אבל לא בגיליון.<br>' + root.Fmt.esc(error.message) + '</p>' + tried;
           App.toast('הגיליון לא התעדכן');
         });
       });
