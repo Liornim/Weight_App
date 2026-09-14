@@ -1017,10 +1017,22 @@ test('הדילוג מוגבל: לא בורחים חודשיים אחורה', () 
 
     assert(found.skipped <= 3, days + ' ימים: דולגו ' + found.skipped + ' סבבים');
 
-    // והסבב שנבחר קרוב לסוף התקופה, לא בתחילתה
-    const gap = Dates.diffDays(found.row.to, Dates.today());
-    assert(gap <= days * 5,
-      days + ' ימים: הסבב מסתיים ' + gap + ' ימים לפני היום — רחוק מדי');
+    // החוזה: או סבב מכוסה במרחק של עד שלושה דילוגים, או הסבב
+    // המלא האחרון עם הערה — אף פעם לא משהו רחוק יותר
+    const all = Metrics.blockWindows(Store.getEntries(), {
+      days: days, count: 60, endDate: Dates.today()
+    }).rows.filter((r) => r.complete);
+
+    const newest = all[all.length - 1];
+    const chosen = all.findIndex((r) => r.from === found.row.from);
+    const back = all.length - 1 - chosen;
+
+    if (found.partial) {
+      assert(found.row.from === newest.from,
+        days + ' ימים: כיסוי חלקי אבל לא נבחר הסבב האחרון');
+    } else {
+      assert(back <= 3, days + ' ימים: נבחר סבב ' + back + ' מקומות אחורה');
+    }
   });
 
   App.setState({ basis: 'adaptive', tab: 'home' });
