@@ -26,18 +26,55 @@
     return state.basis === 'adaptive' ? 7 : Number(state.basis);
   }
 
-  /** שרשרת החישוב לחלון אחד, שלב אחר שלב */
-  function derivation(entries, settings, state, days) {
-    var r = Metrics.blockWindows(entries, {
-      days: days, count: 1, endDate: state.date,
+  /**
+   * הסבב המלא האחרון — ובאמת מלא.
+   *
+   * blockWindows מסמן סבב כמלא לפי טווח הימים, בלי לבדוק שיש בכל
+   * יום רישום אוכל. יום אחרון שיש בו שקילה אך לא אוכל יצר "סבב
+   * מלא" שהממוצע בו חושב על פחות ימים — למשל 12/09–14/09 כשב-14/09
+   * אין אוכל, כלומר ממוצע של יומיים שמוצג כשלושה.
+   *
+   * כאן נסרקים הסבבים מהחדש לישן, ונבחר הראשון שבו לכל יום — גם
+   * בסבב הנוכחי וגם בקודם — יש רישום אוכל.
+   */
+  function solidBlock(entries, settings, state, days) {
+    var byDate = {};
+    entries.forEach(function (e) { byDate[e.date] = e; });
+
+    var covered = function (from, to) {
+      for (var d = from; d <= to; d = Dates.addDays(d, 1)) {
+        var day = byDate[d];
+        if (!day || !Fmt.isNum(day.kcal)) return false;
+      }
+      return true;
+    };
+
+    var all = Metrics.blockWindows(entries, {
+      days: days, count: 40, endDate: state.date,
       kcalPerKg: settings.kcalPerKg, kcalPerStep: settings.kcalPerStep
     });
 
-    var row = r.rows[0];
-    if (!row || !row.complete) {
+    var complete = all.rows.filter(function (row) { return row.complete; });
+
+    for (var i = complete.length - 1; i >= 0; i--) {
+      var row = complete[i];
+      if (covered(row.from, row.to) && covered(row.prevFrom, row.prevTo)) {
+        return { row: row, skipped: complete.length - 1 - i, total: complete.length };
+      }
+    }
+
+    return { row: null, skipped: complete.length, total: complete.length };
+  }
+
+  /** שרשרת החישוב לחלון אחד, שלב אחר שלב */
+  function derivation(entries, settings, state, days) {
+    var found = solidBlock(entries, settings, state, days);
+    var row = found.row;
+
+    if (!row) {
       return P.card('איך הגענו למספר', null,
-        P.empty('לחלון של ' + days + ' ימים צריך שני סבבים מלאים, כלומר ' +
-          (days * 2) + ' ימי נתונים.'));
+        P.empty('לחלון של ' + days + ' ימים צריך שני סבבים רצופים שבכל יום ' +
+          'שלהם יש רישום אוכל — ' + (days * 2) + ' ימים מלאים.'));
     }
 
     var kcalPerKg = settings.kcalPerKg || 7700;
@@ -105,6 +142,11 @@
         '<span class="s">קלוריות ליום</span>' +
       '</div>' +
 
+      (found.skipped
+        ? P.hint('דולגו ' + found.skipped + ' סבבים חדשים יותר שחסר בהם ' +
+          'רישום אוכל ביום אחד לפחות. ממוצע על חלק מהימים אינו ממוצע של החלון.')
+        : '') +
+
       P.hint('רווח הסמך של החלון הזה הוא ±' + Fmt.n(row.ci95, 0) + ' קלוריות. ' +
         'כלומר היעד יכול לנוע בין ' + Fmt.n(target - row.ci95, 0) + ' ל-' +
         Fmt.n(target + row.ci95, 0) + '. ' +
@@ -116,15 +158,13 @@
   /** אותה שרשרת לכל אורכי החלון, בטבלה אחת */
   function comparison(entries, settings, state) {
     var rows = LENGTHS.map(function (days) {
-      var r = Metrics.blockWindows(entries, {
-        days: days, count: 1, endDate: state.date,
-        kcalPerKg: settings.kcalPerKg, kcalPerStep: settings.kcalPerStep
-      });
-      var row = r.rows[0];
+      var found = solidBlock(entries, settings, state, days);
+      var row = found.row;
 
-      if (!row || !row.complete) {
+      if (!row) {
         return '<tr><td class="n">' + days + '</td>' +
-          '<td colspan="8" class="flat">צריך ' + (days * 2) + ' ימים</td></tr>';
+          '<td colspan="8" class="flat">צריך ' + (days * 2) +
+          ' ימים רצופים עם רישום אוכל</td></tr>';
       }
 
       var noisy = row.ci95 > 600;
@@ -134,7 +174,8 @@
         '<td class="n">' + days + (active ? ' ✓' : '') + '</td>' +
         '<td class="date-cell">' + P.esc(Dates.short(row.from) + '–' + Dates.short(row.to)) +
           '<span class="sub">מול ' + P.esc(Dates.short(row.prevFrom) + '–' +
-            Dates.short(row.prevTo)) + '</span></td>' +
+            Dates.short(row.prevTo)) +
+          (found.skipped ? ' · דולגו ' + found.skipped : '') + '</span></td>' +
         '<td class="n">' + Fmt.n(row.meanWeight, 2) + '</td>' +
         '<td class="n">' + Fmt.n(row.prevMeanWeight, 2) + '</td>' +
         '<td class="n">' + P.delta(-row.deltaKg, 2, 'down') + '</td>' +
@@ -151,7 +192,10 @@
         { label: 'ימים', n: true }, { label: 'תקופה', n: true },
         'משקל', 'קודם', 'שינוי', 'קלוריות', 'ממשקל', 'מצעדים', 'תחזוקה'
       ], [rows],
-      { hint: '"תחזוקה" היא ההוצאה בלי הליכה: קלוריות ממוצעות ועוד מה שהמשקל ' +
+      { hint: 'כל שורה היא הסבב המלא האחרון שבכל יום שלו יש רישום אוכל; ' +
+        'סבבים חדשים יותר עם יום חסר מדולגים, כי ממוצע על חלק מהימים ' +
+        'אינו ממוצע של החלון. ' +
+        '"תחזוקה" היא ההוצאה בלי הליכה: קלוריות ממוצעות ועוד מה שהמשקל ' +
         'מראה, פחות הצעדים. המספר הקטן מתחתיה הוא רוחב אי־הוודאות — ' +
         'ככל שהחלון קצר יותר הוא גדול יותר, כי אותו רעש שקילה מתחלק ' +
         'בפחות ימים.' }));
@@ -182,5 +226,10 @@
       comparison(entries, settings, state));
   }
 
-  root.CalcTab = { render: render, LENGTHS: LENGTHS, windowOf: windowOf };
+  root.CalcTab = {
+    render: render,
+    LENGTHS: LENGTHS,
+    windowOf: windowOf,
+    solidBlock: solidBlock
+  };
 })(typeof window !== 'undefined' ? window : globalThis);

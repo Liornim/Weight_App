@@ -917,13 +917,12 @@ test('היעד בטאב החישוב תואם את מה שהמנוע מחשב', 
 
   const shown = Number(doc.querySelector('#view .final .v').textContent.replace(/[^\d]/g, ''));
 
-  const row = Metrics.blockWindows(Store.getEntries(), {
-    days: 7, count: 1, endDate: Dates.today(),
-    kcalPerKg: Store.getSettings().kcalPerKg,
-    kcalPerStep: Store.getSettings().kcalPerStep
-  }).rows[0];
+  // הסבב הנבחר הוא המלא האחרון שיש בו רישום אוכל בכל יום
+  const found = window.CalcTab.solidBlock(
+    Store.getEntries(), Store.getSettings(), App.state, 7);
+  const row = found.row;
 
-  if (!row || !row.complete) { App.setState({ tab: 'home' }); return; }
+  if (!row) { App.setState({ tab: 'home' }); return; }
 
   const rate = Math.abs(Store.getSettings().goal.ratePerWeekKg || 0);
   const deficit = (rate * (Store.getSettings().kcalPerKg || 7700)) / 7;
@@ -943,12 +942,10 @@ test('בחירת "עם צעדים" משנה גם את שרשרת החישוב', 
     new window.Event('click', { bubbles: true }));
   const withSteps = doc.querySelector('#view .final .v').textContent;
 
-  const row = Metrics.blockWindows(Store.getEntries(), {
-    days: 7, count: 1, endDate: Dates.today(),
-    kcalPerStep: Store.getSettings().kcalPerStep
-  }).rows[0];
+  const row = window.CalcTab.solidBlock(
+    Store.getEntries(), Store.getSettings(), App.state, 7).row;
 
-  if (row && row.complete && row.fromSteps > 0) {
+  if (row && row.fromSteps > 0) {
     assert(withSteps !== without, 'היעד לא השתנה');
     const diff = Number(withSteps.replace(/[^\d]/g, '')) -
       Number(without.replace(/[^\d]/g, ''));
@@ -983,6 +980,47 @@ test('במצב מסתגל מוצג חלון שבוע עם הסבר', () => {
   assert(window.CalcTab.windowOf({ basis: 'adaptive' }) === 7, 'לא נבחר שבוע');
 
   App.setState({ tab: 'home' });
+});
+
+
+test('סבב עם יום בלי רישום אוכל אינו נבחר', () => {
+  // 30 ימים מלאים, ואז יום עם משקל בלבד — בדיוק המקרה ששבר
+  const day = Dates.today();
+  Store.upsert({ date: day, weightKg: 88.4, kcal: '' });
+
+  const found = window.CalcTab.solidBlock(
+    Store.getEntries(), Store.getSettings(), { date: day }, 3);
+
+  if (!found.row) return;
+
+  const byDate = {};
+  Store.getEntries().forEach((e) => { byDate[e.date] = e; });
+
+  // בכל יום בסבב הנבחר ובקודם יש רישום אוכל
+  [[found.row.from, found.row.to], [found.row.prevFrom, found.row.prevTo]]
+    .forEach(([from, to]) => {
+      for (let d = from; d <= to; d = Dates.addDays(d, 1)) {
+        assert(byDate[d] && Fmt.isNum(byDate[d].kcal),
+          'יום בלי אוכל בתוך הסבב: ' + d);
+      }
+    });
+
+  // והסבב אינו מגיע עד היום הריק
+  assert(found.row.to < day, 'הסבב כולל את היום הריק: ' + found.row.to);
+});
+
+test('מספר הסבבים שדולגו מדווח', () => {
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 3 });
+  const found = window.CalcTab.solidBlock(
+    Store.getEntries(), Store.getSettings(), App.state, 3);
+
+  if (found.skipped) {
+    const text = doc.getElementById('view').textContent;
+    assert(text.indexOf('דולגו') !== -1, 'הדילוג לא דווח');
+    assert(text.indexOf(String(found.skipped)) !== -1, 'מספר הסבבים לא מופיע');
+  }
+
+  App.setState({ basis: 'adaptive', tab: 'home' });
 });
 
 test('טאב המשקל מציג את כל אורכי החלון', () => {
