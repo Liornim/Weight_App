@@ -890,6 +890,57 @@ test('הפער מוצג ליום ולא כסכום', () => {
 });
 
 
+
+test('כל אורכי החלון זמינים ומגיעים ממקור אחד', () => {
+  const expected = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 21, 28];
+  assert(window.Parts.WINDOWS.join() === expected.join(),
+    'הרשימה: ' + window.Parts.WINDOWS.join());
+
+  // כל המסכים משתמשים באותה רשימה
+  [window.CalcTab, window.TargetsTab, window.WeightTab].forEach((tab, i) => {
+    assert(tab.LENGTHS === window.Parts.WINDOWS,
+      'מסך ' + i + ' מחזיק רשימה משלו');
+  });
+
+  // וכל אורך מקבל צ'יפ בפס הבחירה
+  App.setState({ date: Dates.today(), tab: 'targets' });
+  expected.forEach((days) => {
+    assert(doc.querySelector('[data-basis="' + days + '"]'),
+      'חסר צ׳יפ לחלון של ' + days);
+  });
+
+  App.setState({ tab: 'home' });
+});
+
+test('לחלונות המוכרים יש שם ולאחרים מספר', () => {
+  const L = window.Parts.windowLabel;
+  assert(L(7) === 'שבוע', 'שבוע');
+  assert(L(14) === 'שבועיים', 'שבועיים');
+  assert(L(21) === '3 שבועות', '3 שבועות');
+  assert(L(28) === 'חודש', 'חודש');
+  assert(L(11) === '11 ימים', '11: ' + L(11));
+  assert(L(4) === '4 ימים', '4: ' + L(4));
+});
+
+test('טבלת החישוב מציגה שורה לכל אורך', () => {
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7 });
+
+  const table = [...doc.querySelectorAll('#view table.t')]
+    .find((t) => t.textContent.indexOf('תחזוקה') !== -1);
+  assert(table, 'הטבלה חסרה');
+
+  const rows = [...table.querySelectorAll('tbody tr')];
+  assert(rows.length === window.Parts.WINDOWS.length,
+    'ציפיתי ל-' + window.Parts.WINDOWS.length + ' שורות, יש ' + rows.length);
+
+  window.Parts.WINDOWS.forEach((days, i) => {
+    assert(rows[i].children[0].textContent.indexOf(String(days)) === 0,
+      'שורה ' + i + ' אינה של ' + days + ' ימים');
+  });
+
+  App.setState({ basis: 'adaptive', tab: 'home' });
+});
+
 test('טאב החישוב מציג את כל השלבים עם מספרים', () => {
   App.setState({ date: Dates.today(), tab: 'calc', basis: 7,
     stepsMode: 'off', align: 'blocks' });

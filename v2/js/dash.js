@@ -22,16 +22,10 @@
     faint: 'rgba(18,133,124,0.28)'
   };
 
-  var BASIS = [
-    { value: 'adaptive', days: null, label: 'הכל' },
-    { value: 3, days: 3, label: '3 ימים' },
-    { value: 5, days: 5, label: '5 ימים' },
-    { value: 7, days: 7, label: 'שבוע' },
-    { value: 10, days: 10, label: '10 ימים' },
-    { value: 14, days: 14, label: 'שבועיים' },
-    { value: 21, days: 21, label: '3 שבועות' },
-    { value: 28, days: 28, label: 'חודש' }
-  ];
+  var BASIS = [{ value: 'adaptive', days: null, label: 'הכל' }].concat(
+    P.WINDOWS.map(function (days) {
+      return { value: days, days: days, label: P.windowLabel(days) };
+    }));
 
   var CAUTION = [
     { value: 'low', label: 'זהיר' },
@@ -74,7 +68,7 @@
   function controls(state, entries, date, options) {
     var extras = options || {};
     var available = Metrics.availableWindows(entries, {
-      endDate: date, candidates: [3, 5, 7, 10, 14, 21, 28]
+      endDate: date, candidates: P.WINDOWS
     });
     var byDays = {};
     available.forEach(function (w) { byDays[w.days] = w; });

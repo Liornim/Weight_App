@@ -15,7 +15,7 @@
   var Fmt = root.Fmt, Dates = root.Dates, Metrics = root.Metrics,
       Store = root.Store, P = root.Parts;
 
-  var LENGTHS = [3, 5, 7, 10, 14, 21, 28];
+  var LENGTHS = P.WINDOWS;
 
   var ALIGN_MODES = [
     { value: 'aligned', label: 'מיושר ליום' },

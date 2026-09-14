@@ -14,7 +14,7 @@
   var Fmt = root.Fmt, Dates = root.Dates, Metrics = root.Metrics,
       Store = root.Store, P = root.Parts;
 
-  var LENGTHS = [3, 5, 7, 10, 14, 21, 28];
+  var LENGTHS = P.WINDOWS;
   var SHOW = 4;
 
   /** מחשב את סיכום החלונות המלאים האחרונים */

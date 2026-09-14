@@ -7,6 +7,21 @@
 
   var Fmt = root.Fmt;
 
+
+  /**
+   * אורכי החלון הזמינים, במקום אחד.
+   *
+   * הרשימה הייתה משוכפלת בארבעה קבצים, וכל הוספה דרשה לזכור את
+   * כולם. עכשיו יש מקור אחד, ו-labels נגזר ממנו.
+   */
+  var WINDOWS = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 21, 28];
+
+  var WINDOW_LABELS = { 7: 'שבוע', 14: 'שבועיים', 21: '3 שבועות', 28: 'חודש' };
+
+  function windowLabel(days) {
+    return WINDOW_LABELS[days] || days + ' ימים';
+  }
+
   function esc(value) { return Fmt.esc(String(value === undefined ? '' : value)); }
 
   /** כרטיס עם כותרת אופציונלית */
@@ -106,6 +121,8 @@
   }
 
   root.Parts = {
+    WINDOWS: WINDOWS,
+    windowLabel: windowLabel,
     card: card, section: section, tile: tile, tiles: tiles, rows: rows,
     chips: chips, table: table, hint: hint, empty: empty, delta: delta,
     keys: keys, chart: chart, fold: fold, esc: esc
