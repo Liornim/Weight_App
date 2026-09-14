@@ -1140,6 +1140,7 @@ test('בטבלה יש עמודת סבב מלא ועמודת אחרונים', () 
 test('טווח ישן מוסבר במקום להישאר תעלומה', () => {
   // משקל נפסק לפני שבועיים, אוכל ממשיך — בדיוק המצב שמייצר
   // תאריכים ישנים בטבלה
+  Store.clearAll();
   const cut = Dates.addDays(Dates.today(), -20);
   for (let i = 0; i < 40; i++) {
     const d = Dates.addDays(Dates.today(), -(39 - i));
@@ -1159,6 +1160,7 @@ test('טווח ישן מוסבר במקום להישאר תעלומה', () => {
 });
 
 test('כשהטווח עדכני אין הודעת אבחון', () => {
+  Store.clearAll();
   for (let i = 0; i < 40; i++) {
     Store.upsert({ date: Dates.addDays(Dates.today(), -(39 - i)),
       weightKg: 89 - 0.02 * i, kcal: 2500, steps: 9000 });
