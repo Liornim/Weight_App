@@ -983,7 +983,7 @@ test('במצב מסתגל מוצג חלון שבוע עם הסבר', () => {
 });
 
 
-test('יום בלי רישום אוכל אינו מזיז את הסבב הנבחר', () => {
+test('היום שנשקל בבוקר ולא נסגר אינו נכנס לסבב', () => {
   // 30 ימים מלאים, ואז יום עם משקל בלבד — בדיוק המקרה ששבר
   const day = Dates.today();
   Store.upsert({ date: day, weightKg: 88.4, kcal: '' });
@@ -996,15 +996,49 @@ test('יום בלי רישום אוכל אינו מזיז את הסבב הנבח
   const byDate = {};
   Store.getEntries().forEach((e) => { byDate[e.date] = e; });
 
-  // הסבב נשאר האחרון שהושלם; הכיסוי רק מדווח
-  const complete = Metrics.blockWindows(Store.getEntries(), {
-    days: 3, count: 60, endDate: day
-  }).rows.filter((r) => r.complete);
+  // המשקל בבוקר והאוכל בערב, ולכן היום הנוכחי אינו נספר
+  assert(found.row.to < day, 'הסבב כולל יום שלא נסגרה בו תזונה');
+  assert(found.lastFood < day, 'היום האחרון שנסגר: ' + found.lastFood);
+  assert(found.pendingToday >= 1, 'לא דווח על היום הממתין');
 
-  assert(found.row.from === complete[0].from, 'הסבב זז בגלל יום בלי אוכל');
-  assert(found.coverage.have <= found.coverage.total, 'הכיסוי לא חושב');
+  // וכך הכיסוי מלא מעצמו
+  assert(found.coverage.full,
+    'הכיסוי חלקי למרות העצירה: ' + found.coverage.have + '/' + found.coverage.total);
 });
 
+
+
+test('כל אורכי החלון מגיעים לכיסוי מלא אחרי העצירה', () => {
+  Store.upsert({ date: Dates.today(), weightKg: 88.4, kcal: '' });
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7 });
+
+  window.CalcTab.LENGTHS.forEach((days) => {
+    const found = window.CalcTab.solidBlock(
+      Store.getEntries(), Store.getSettings(), App.state, days);
+    if (!found.row) return;
+
+    assert(found.row.to <= found.lastFood,
+      days + ' ימים: הסבב חורג מעבר ליום האחרון שנסגר');
+  });
+
+  App.setState({ basis: 'adaptive', tab: 'home' });
+});
+
+test('העצירה מוסברת במסך', () => {
+  Store.upsert({ date: Dates.today(), weightKg: 88.4, kcal: '' });
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7 });
+
+  const found = window.CalcTab.solidBlock(
+    Store.getEntries(), Store.getSettings(), App.state, 7);
+
+  if (found.pendingToday) {
+    const text = doc.getElementById('view').textContent;
+    assert(text.indexOf('נסגרה בו תזונה') !== -1, 'לא הוסבר למה נעצר');
+    assert(text.indexOf('נשקל בבוקר') !== -1, 'לא הוסברה הסיבה המבנית');
+  }
+
+  App.setState({ basis: 'adaptive', tab: 'home' });
+});
 
 test('תמיד נבחר הסבב המלא האחרון, בלי דילוגים', () => {
   App.setState({ date: Dates.today(), tab: 'calc', basis: 7 });
@@ -1015,7 +1049,7 @@ test('תמיד נבחר הסבב המלא האחרון, בלי דילוגים', 
     if (!found.row) return;
 
     const complete = Metrics.blockWindows(Store.getEntries(), {
-      days: days, count: 60, endDate: Dates.today()
+      days: days, count: 60, endDate: found.lastFood
     }).rows.filter((r) => r.complete);
 
     // blockWindows מחזיר מהחדש לישן

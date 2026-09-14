@@ -40,6 +40,21 @@
     var byDate = {};
     entries.forEach(function (e) { byDate[e.date] = e; });
 
+    /**
+     * החישוב נעצר ביום האחרון שיש בו תזונה.
+     *
+     * המשקל נשקל בבוקר והתזונה נסגרת בערב, ולכן ליום הנוכחי כמעט
+     * תמיד יש משקל בלי אוכל. סבב שמסתיים היום יהיה לכן חסר יום
+     * בהגדרה — לא בגלל שכחה אלא בגלל סדר היום.
+     *
+     * עצירה ביום האחרון שנסגר פותרת את זה מהשורש, ומיישרת את
+     * הטאב הזה עם מסך היעדים שכבר עובד כך.
+     */
+    var withFood = entries.filter(function (e) {
+      return e.date <= state.date && Fmt.isNum(e.kcal);
+    });
+    var lastFood = withFood.length ? withFood[withFood.length - 1].date : state.date;
+
     var coverage = function (from, to) {
       var have = 0;
       var total = 0;
@@ -52,7 +67,7 @@
     };
 
     var all = Metrics.blockWindows(entries, {
-      days: days, count: 60, endDate: state.date,
+      days: days, count: 60, endDate: lastFood,
       kcalPerKg: settings.kcalPerKg, kcalPerStep: settings.kcalPerStep
     });
 
@@ -63,7 +78,7 @@
     var row = complete[0];
 
     // כמה ימים נאספו כבר לסבב הבא, שעדיין אינו מלא
-    var openDays = Dates.diffDays(row.to, state.date);
+    var openDays = Dates.diffDays(row.to, lastFood);
 
     return {
       row: row,
@@ -71,7 +86,10 @@
       total: all.totalBlocks,
       coverage: coverage(row.from, row.to),
       openDays: openDays > 0 ? openDays : 0,
-      anchor: all.first
+      anchor: all.first,
+      lastFood: lastFood,
+      // כמה ימים מהיום יש משקל בלי אוכל
+      pendingToday: Dates.diffDays(lastFood, state.date)
     };
   }
 
@@ -153,6 +171,13 @@
         '<span class="s">קלוריות ליום</span>' +
       '</div>' +
 
+      (found.pendingToday
+        ? P.hint('החישוב נעצר ב' + Dates.short(found.lastFood) + ', היום האחרון ' +
+          'שנסגרה בו תזונה. המשקל נשקל בבוקר והאוכל נרשם בערב, ולכן ' +
+          (found.pendingToday === 1 ? 'ליום הנוכחי' : 'לימים האחרונים') +
+          ' יש משקל בלי אוכל — וסבב שהיה מסתיים שם היה חסר יום בהגדרה.')
+        : '') +
+
       (found.openDays
         ? P.hint('הסבב הבא כבר התחיל — ' + found.openDays + ' מתוך ' + days +
           ' ימים — אבל הוא עדיין לא מלא, ולכן מוצג האחרון שהושלם. ' +
@@ -213,8 +238,10 @@
         { label: 'ימים', n: true }, { label: 'תקופה', n: true },
         'משקל', 'קודם', 'שינוי', 'קלוריות', 'ממשקל', 'מצעדים', 'תחזוקה'
       ], [rows],
-      { hint: 'הסבבים מעוגנים לשקילה הראשונה ונספרים משם ברצף; מוצג האחרון ' +
-        'שהושלם. סבב שעדיין נאסף אינו מושווה, וכשיושלם הוא ייכנס לחישוב. ' +
+      { hint: 'הסבבים מעוגנים לשקילה הראשונה ונספרים משם ברצף, ונעצרים ביום ' +
+        'האחרון שנסגרה בו תזונה — המשקל נשקל בבוקר והאוכל נרשם בערב, ' +
+        'ולכן ליום הנוכחי כמעט תמיד יש משקל בלי אוכל. מוצג הסבב האחרון ' +
+        'שהושלם. ' +
         '"תחזוקה" היא ההוצאה בלי הליכה: קלוריות ממוצעות ועוד מה שהמשקל ' +
         'מראה, פחות הצעדים. המספר הקטן מתחתיה הוא רוחב אי־הוודאות — ' +
         'ככל שהחלון קצר יותר הוא גדול יותר, כי אותו רעש שקילה מתחלק ' +
