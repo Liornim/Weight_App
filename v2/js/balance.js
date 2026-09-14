@@ -33,7 +33,9 @@
         ? 'חסרה שקילה בבוקר שאחרי היום האחרון שנרשם בו אוכל'
         : r.reason === 'no-opening-weigh-in'
           ? 'חסרה שקילה ב' + Dates.short(r.needDate)
-          : 'אין מספיק ימים עם רישום אוכל';
+          : r.reason === 'no-complete-block'
+            ? 'עוד לא הושלם סבב אחד: יש ' + r.have + ' ימים מתוך ' + r.need
+            : 'אין מספיק ימים עם רישום אוכל';
 
       return P.card(P.windowLabel(days), null, P.empty(why));
     }
@@ -61,7 +63,7 @@
     var implausible = maintenance < 800 || maintenance > 6000;
 
     return P.card(P.windowLabel(days),
-      span + ' · ' + r.loggedDays + ' ימי אוכל',
+      span + ' · סבב ' + r.blockIndex + ' מתוך ' + r.blockCount,
 
       line('י.פ', Dates.short(r.startDate), Fmt.n(r.startWeight, 1), 'ק״ג', 'edge') +
       line('קלוריות', span, Fmt.n(r.meanKcal, 0), 'ממוצע ליום') +
@@ -103,6 +105,11 @@
       (partial
         ? P.hint('רק ' + r.loggedDays + ' מתוך ' + days + ' הימים בחלון יש בהם ' +
           'רישום אוכל, ולכן הממוצע נשען על פחות ימים מהחלון.')
+        : '') +
+
+      (r.openDays
+        ? P.hint('הסבב הבא כבר התחיל — ' + r.openDays + ' מתוך ' + days +
+          ' ימים — ויוצג כאן כשיושלם.')
         : ''));
   }
 
@@ -116,7 +123,10 @@
       P.hint('י.פ היא יתרת הפתיחה — המשקל בבוקר שפותח את החלון. ' +
         'י.ס היא יתרת הסגירה — המשקל בבוקר שאחרי היום האחרון, כי מה שנאכל ' +
         'ביום מופיע במשקל של הבוקר שאחריו. ' +
-        'לכן לחלון של N ימי אוכל יש N+1 שקילות.'));
+        'לכן לחלון של N ימי אוכל יש N+1 שקילות.') +
+      P.hint('הסבבים נספרים מיום האוכל הראשון קדימה ברצף, ומוצג האחרון ' +
+        'שהושלם. לכן כל אורך חלון נגמר בתאריך אחר — ואילו סבב שעדיין ' +
+        'נאסף אינו מוצג, כדי שלא ייראה כמלא.'));
 
     var cards = LENGTHS.map(function (days) {
       return card(entries, settings, state, days);

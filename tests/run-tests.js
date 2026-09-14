@@ -2527,6 +2527,77 @@ test('בלי כותרות נשמר המיפוי לפי מיקום', () => {
 
 // ---------- חישוב מיושר-יום ----------
 
+test('סבבים מעוגנים: כל אורך נגמר בתאריך משלו', () => {
+  const entries = buildSeries('2026-01-01', 30, (i) => ({
+    weightKg: 90 - 0.04 * i, kcal: 2400, steps: 8000
+  }));
+  entries.push({ date: '2026-01-31', weightKg: 88.8 });
+
+  const ends = {};
+  [3, 5, 7].forEach((days) => {
+    const r = Metrics.dayAligned(entries, { kcalPerKg: 7700 },
+      { days: days, endDate: '2026-01-31' });
+    assert(r.ok, days + ': ' + r.reason);
+    assert(r.anchored, days + ': לא מעוגן');
+
+    // הסבב מתחיל בכפולה שלמה מיום האוכל הראשון
+    const offset = Dates.diffDays(r.anchor, r.foodFrom);
+    assert(offset % days === 0,
+      days + ': הסבב אינו מיושר לעוגן, היסט ' + offset);
+    assert(Dates.diffDays(r.foodFrom, r.foodTo) === days - 1,
+      days + ': אורך הסבב שגוי');
+
+    ends[days] = r.foodTo;
+  });
+
+  // 30 ימי אוכל: 3 מתחלק, 7 מתחלק ל-4 סבבים שלמים עם שארית
+  assert(ends[3] !== ends[7] || ends[5] !== ends[7],
+    'כל האורכים נגמרו באותו יום, כלומר העיגון לא פעל');
+});
+
+test('סבב שעדיין נאסף אינו מוצג', () => {
+  // 10 ימי אוכל, חלון 7: סבב אחד מלא ועוד 3 ימים פתוחים
+  const entries = buildSeries('2026-01-01', 10, (i) => ({
+    weightKg: 90 - 0.04 * i, kcal: 2400
+  }));
+  entries.push({ date: '2026-01-11', weightKg: 89.6 });
+
+  const r = Metrics.dayAligned(entries, { kcalPerKg: 7700 },
+    { days: 7, endDate: '2026-01-11' });
+
+  assert(r.blockIndex === 1 && r.blockCount === 1, 'סבב ' + r.blockIndex);
+  assert(r.foodFrom === '2026-01-01' && r.foodTo === '2026-01-07',
+    'הסבב: ' + r.foodFrom + '–' + r.foodTo);
+  assert(r.openDays === 3, 'נאספו לסבב הבא: ' + r.openDays);
+});
+
+test('בלי סבב מלא אחד מדווחת הסיבה', () => {
+  const entries = buildSeries('2026-01-01', 5, (i) => ({
+    weightKg: 90, kcal: 2400
+  }));
+  entries.push({ date: '2026-01-06', weightKg: 89.8 });
+
+  const r = Metrics.dayAligned(entries, { kcalPerKg: 7700 },
+    { days: 14, endDate: '2026-01-06' });
+
+  assert(!r.ok, 'היה צריך להיכשל');
+  assert(r.reason === 'no-complete-block', 'הסיבה: ' + r.reason);
+  assert(r.have === 5 && r.need === 14, 'יש ' + r.have + ' מתוך ' + r.need);
+});
+
+test('מצב מתגלגל עדיין זמין במפורש', () => {
+  const entries = buildSeries('2026-01-01', 30, (i) => ({
+    weightKg: 90 - 0.04 * i, kcal: 2400
+  }));
+  entries.push({ date: '2026-01-31', weightKg: 88.8 });
+
+  const rolling = Metrics.dayAligned(entries, { kcalPerKg: 7700 },
+    { days: 7, endDate: '2026-01-31', anchored: false });
+
+  assert(rolling.foodTo === '2026-01-30', 'המתגלגל נגמר ביום האחרון שאפשר לסגור');
+  assert(rolling.anchored === false, 'הסימון');
+});
+
 test('הדוגמה של יום אחד', () => {
   // 80.0 בבוקר, אכל 3000, 79.9 למחרת
   const entries = [
@@ -2578,12 +2649,12 @@ test('לחלון של N ימי אוכל דרושות N+1 שקילות', () => {
 });
 
 test('היום האחרון נסגר רק אם יש שקילה בבוקר שאחריו', () => {
-  // אכל ב-14, אבל אין שקילה ב-15
+  // אכל ב-14, אבל אין שקילה ב-15, ולכן 13 הוא האחרון שאפשר לסגור
   const entries = buildSeries('2026-01-01', 14, (i) => ({
     weightKg: 90 - 0.05 * i, kcal: 2400
   }));
   const r = Metrics.dayAligned(entries, { kcalPerKg: 7700 },
-    { days: 3, endDate: '2026-01-14' });
+    { days: 3, endDate: '2026-01-14', anchored: false });
 
   assert(r.ok, 'צריך לעבוד');
   assert(r.foodTo === '2026-01-13', 'היום האחרון שנסגר: ' + r.foodTo);

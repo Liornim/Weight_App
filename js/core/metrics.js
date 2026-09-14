@@ -2016,7 +2016,6 @@
     var byDate = {};
     all.forEach(function (e) { byDate[e.date] = e; });
 
-    // היום האחרון שנסגרה בו תזונה, ושיש שקילה בבוקר שאחריו
     var foodDays = all.filter(function (e) {
       return e.date <= endDate && Fmt_isNum(e.kcal);
     }).map(function (e) { return e.date; });
@@ -2032,8 +2031,40 @@
       return { ok: false, reason: 'no-closing-weigh-in', lastFood: foodDays[foodDays.length - 1] };
     }
 
-    var foodTo = closable[closable.length - 1];
-    var foodFrom = Dates.addDays(foodTo, -(days - 1));
+    var lastClosable = closable[closable.length - 1];
+    var foodFrom;
+    var foodTo;
+    var blockIndex = null;
+    var blockCount = null;
+    var openDays = 0;
+
+    if (opts.anchored === false) {
+      // חלון מתגלגל: נגמר ביום האחרון שאפשר לסגור
+      foodTo = lastClosable;
+      foodFrom = Dates.addDays(foodTo, -(days - 1));
+    } else {
+      /**
+       * סבבים מעוגנים: נספרים מיום האוכל הראשון קדימה, ברצף קבוע.
+       * מוצג האחרון שהושלם — סבב שעדיין נאסף אינו מוצג, אחרת כל
+       * אורך חלון היה נגמר באותו יום והם היו נראים כאילו הם מודדים
+       * את אותה תקופה.
+       */
+      var anchor = foodDays[0];
+      var spanDays = Dates.diffDays(anchor, lastClosable) + 1;
+      blockCount = Math.floor(spanDays / days);
+
+      if (blockCount < 1) {
+        return {
+          ok: false, reason: 'no-complete-block',
+          anchor: anchor, have: spanDays, need: days
+        };
+      }
+
+      blockIndex = blockCount;
+      foodFrom = Dates.addDays(anchor, (blockCount - 1) * days);
+      foodTo = Dates.addDays(foodFrom, days - 1);
+      openDays = spanDays - blockCount * days;
+    }
 
     var startDate = foodFrom;                       // בוקר שפותח
     var endWeighDate = Dates.addDays(foodTo, 1);    // בוקר שסוגר
@@ -2073,6 +2104,11 @@
     return {
       ok: true,
       days: days,
+      anchored: opts.anchored !== false,
+      anchor: foodDays[0],
+      blockIndex: blockIndex,
+      blockCount: blockCount,
+      openDays: openDays,
       foodFrom: foodFrom,
       foodTo: foodTo,
       startDate: startDate,

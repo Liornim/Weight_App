@@ -945,6 +945,44 @@ test('המאזן סגור: הסגירה היא הבוקר שאחרי היום ה
   App.setState({ tab: 'home' });
 });
 
+test('הסבבים מעוגנים, ולכן לא כולם נגמרים באותו יום', () => {
+  App.setState({ date: Dates.today(), tab: 'balance' });
+
+  const ends = {};
+  window.Parts.WINDOWS.forEach((days) => {
+    const r = Metrics.dayAligned(Store.getEntries(), Store.getSettings(),
+      { days: days, endDate: Dates.today() });
+    if (!r.ok) return;
+
+    // כל סבב מיושר לעוגן בכפולה שלמה
+    const offset = Dates.diffDays(r.anchor, r.foodFrom);
+    assert(offset % days === 0,
+      days + ': הסבב אינו מיושר לעוגן, היסט ' + offset);
+
+    ends[days] = r.foodTo;
+  });
+
+  const unique = new Set(Object.values(ends));
+  assert(unique.size > 1,
+    'כל האורכים נגמרו באותו יום — העיגון לא פעל: ' + JSON.stringify(ends));
+
+  App.setState({ tab: 'home' });
+});
+
+test('כותרת הכרטיס מציגה את מספר הסבב', () => {
+  App.setState({ date: Dates.today(), tab: 'balance' });
+
+  const card = [...doc.querySelectorAll('#view .card')]
+    .find((c) => c.querySelector('.bal-line'));
+  if (!card) { App.setState({ tab: 'home' }); return; }
+
+  const sub = card.textContent;
+  assert(sub.indexOf('סבב') !== -1 && sub.indexOf('מתוך') !== -1,
+    'מספר הסבב לא מוצג');
+
+  App.setState({ tab: 'home' });
+});
+
 test('התחזוקה בכרטיס תואמת את המנוע', () => {
   App.setState({ date: Dates.today(), tab: 'balance', stepsMode: 'off' });
 
