@@ -983,7 +983,7 @@ test('במצב מסתגל מוצג חלון שבוע עם הסבר', () => {
 });
 
 
-test('סבב עם יום בלי רישום אוכל אינו נבחר', () => {
+test('יום בלי רישום אוכל אינו מזיז את הסבב הנבחר', () => {
   // 30 ימים מלאים, ואז יום עם משקל בלבד — בדיוק המקרה ששבר
   const day = Dates.today();
   Store.upsert({ date: day, weightKg: 88.4, kcal: '' });
@@ -996,18 +996,17 @@ test('סבב עם יום בלי רישום אוכל אינו נבחר', () => {
   const byDate = {};
   Store.getEntries().forEach((e) => { byDate[e.date] = e; });
 
-  // הדרישה חלה על הסבב הנוכחי, שממנו נלקחות הקלוריות
-  if (!found.partial) {
-    for (let d = found.row.from; d <= found.row.to; d = Dates.addDays(d, 1)) {
-      assert(byDate[d] && Fmt.isNum(byDate[d].kcal),
-        'יום בלי אוכל בתוך הסבב הנוכחי: ' + d);
-    }
-    assert(found.row.to < day, 'הסבב כולל את היום הריק: ' + found.row.to);
-  }
+  // הסבב נשאר האחרון שהושלם; הכיסוי רק מדווח
+  const complete = Metrics.blockWindows(Store.getEntries(), {
+    days: 3, count: 60, endDate: day
+  }).rows.filter((r) => r.complete);
+
+  assert(found.row.from === complete[0].from, 'הסבב זז בגלל יום בלי אוכל');
+  assert(found.coverage.have <= found.coverage.total, 'הכיסוי לא חושב');
 });
 
 
-test('הדילוג מוגבל: לא בורחים חודשיים אחורה', () => {
+test('תמיד נבחר הסבב המלא האחרון, בלי דילוגים', () => {
   App.setState({ date: Dates.today(), tab: 'calc', basis: 7 });
 
   window.CalcTab.LENGTHS.forEach((days) => {
@@ -1015,52 +1014,45 @@ test('הדילוג מוגבל: לא בורחים חודשיים אחורה', () 
       Store.getEntries(), Store.getSettings(), App.state, days);
     if (!found.row) return;
 
-    assert(found.skipped <= 3, days + ' ימים: דולגו ' + found.skipped + ' סבבים');
-
-    // החוזה: או סבב מכוסה במרחק של עד שלושה דילוגים, או הסבב
-    // המלא האחרון עם הערה — אף פעם לא משהו רחוק יותר
-    const all = Metrics.blockWindows(Store.getEntries(), {
+    const complete = Metrics.blockWindows(Store.getEntries(), {
       days: days, count: 60, endDate: Dates.today()
     }).rows.filter((r) => r.complete);
 
-    const newest = all[all.length - 1];
-    const chosen = all.findIndex((r) => r.from === found.row.from);
-    const back = all.length - 1 - chosen;
-
-    if (found.partial) {
-      assert(found.row.from === newest.from,
-        days + ' ימים: כיסוי חלקי אבל לא נבחר הסבב האחרון');
-    } else {
-      assert(back <= 3, days + ' ימים: נבחר סבב ' + back + ' מקומות אחורה');
-    }
+    // blockWindows מחזיר מהחדש לישן
+    const newest = complete[0];
+    assert(found.row.from === newest.from && found.row.to === newest.to,
+      days + ' ימים: נבחר ' + found.row.from + ' במקום ' + newest.from);
+    assert(found.index === newest.index, days + ' ימים: מספר הסבב שגוי');
   });
 
   App.setState({ basis: 'adaptive', tab: 'home' });
 });
 
-test('כיסוי חלקי מדווח במקום לברוח אחורה', () => {
-  App.setState({ date: Dates.today(), tab: 'calc', basis: 3 });
+test('סבב שעדיין נאסף מדווח ואינו מוצג כמלא', () => {
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7 });
   const found = window.CalcTab.solidBlock(
-    Store.getEntries(), Store.getSettings(), App.state, 3);
+    Store.getEntries(), Store.getSettings(), App.state, 7);
 
-  if (found.partial) {
+  if (found.row && found.openDays) {
     const text = doc.getElementById('view').textContent;
-    assert(text.indexOf('מתוך') !== -1, 'הכיסוי החלקי לא דווח');
-    assert(found.coverage.have < found.coverage.total, 'סומן חלקי בלי סיבה');
+    assert(text.indexOf('הסבב הבא כבר התחיל') !== -1, 'לא דווח על הסבב הפתוח');
+    assert(found.openDays < 7, 'סבב שנאסף לא אמור להיות מלא: ' + found.openDays);
+    // והמוצג נגמר לפני שהסבב הפתוח מתחיל
+    assert(found.row.to < Dates.today(), 'הסבב המוצג מגיע עד היום');
   }
 
   App.setState({ basis: 'adaptive', tab: 'home' });
 });
 
-test('מספר הסבבים שדולגו מדווח', () => {
+test('כיסוי חלקי מדווח אבל אינו פוסל את הסבב', () => {
   App.setState({ date: Dates.today(), tab: 'calc', basis: 3 });
   const found = window.CalcTab.solidBlock(
     Store.getEntries(), Store.getSettings(), App.state, 3);
 
-  if (found.skipped) {
+  if (found.row && found.coverage && !found.coverage.full) {
     const text = doc.getElementById('view').textContent;
-    assert(text.indexOf('דולגו') !== -1, 'הדילוג לא דווח');
-    assert(text.indexOf(String(found.skipped)) !== -1, 'מספר הסבבים לא מופיע');
+    assert(text.indexOf('מתוך') !== -1, 'הכיסוי החלקי לא דווח');
+    assert(found.coverage.have < found.coverage.total, 'סומן חלקי בלי סיבה');
   }
 
   App.setState({ basis: 'adaptive', tab: 'home' });
