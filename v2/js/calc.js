@@ -17,11 +17,6 @@
 
   var LENGTHS = P.WINDOWS;
 
-  var ALIGN_MODES = [
-    { value: 'aligned', label: 'מיושר ליום' },
-    { value: 'blocks', label: 'ממוצעי סבבים' }
-  ];
-
   var STEPS_MODES = [
     { value: 'off', label: 'בלי צעדים' },
     { value: 'on', label: 'עם צעדים' }
@@ -29,73 +24,6 @@
 
   function windowOf(state) {
     return state.basis === 'adaptive' ? 7 : Number(state.basis);
-  }
-
-  /**
-   * הסבב המלא האחרון.
-   *
-   * הסבבים מעוגנים לשקילה הראשונה ונספרים משם ברצף. מוצג האחרון
-   * שהושלם — סבב שעדיין באמצע אינו מושווה, כי ממוצע של יומיים מול
-   * ממוצע של שבוע אינו השוואה.
-   *
-   * כיסוי הרישום מדווח אבל אינו פוסל: דילוג אחורה בגללו שלח את
-   * הבחירה חודשיים לאחור, וזה גרוע ממספר עדכני עם הערה.
-   */
-  function solidBlock(entries, settings, state, days) {
-    var byDate = {};
-    entries.forEach(function (e) { byDate[e.date] = e; });
-
-    /**
-     * החישוב נעצר ביום האחרון שיש בו תזונה.
-     *
-     * המשקל נשקל בבוקר והתזונה נסגרת בערב, ולכן ליום הנוכחי כמעט
-     * תמיד יש משקל בלי אוכל. סבב שמסתיים היום יהיה לכן חסר יום
-     * בהגדרה — לא בגלל שכחה אלא בגלל סדר היום.
-     *
-     * עצירה ביום האחרון שנסגר פותרת את זה מהשורש, ומיישרת את
-     * הטאב הזה עם מסך היעדים שכבר עובד כך.
-     */
-    var withFood = entries.filter(function (e) {
-      return e.date <= state.date && Fmt.isNum(e.kcal);
-    });
-    var lastFood = withFood.length ? withFood[withFood.length - 1].date : state.date;
-
-    var coverage = function (from, to) {
-      var have = 0;
-      var total = 0;
-      for (var d = from; d <= to; d = Dates.addDays(d, 1)) {
-        total++;
-        var day = byDate[d];
-        if (day && Fmt.isNum(day.kcal)) have++;
-      }
-      return { have: have, total: total, full: have === total };
-    };
-
-    var all = Metrics.blockWindows(entries, {
-      days: days, count: 60, endDate: lastFood,
-      kcalPerKg: settings.kcalPerKg, kcalPerStep: settings.kcalPerStep
-    });
-
-    // השורות מוחזרות מהחדש לישן, ולכן הראשונה היא האחרונה בזמן
-    var complete = all.rows.filter(function (row) { return row.complete; });
-    if (!complete.length) return { row: null };
-
-    var row = complete[0];
-
-    // כמה ימים נאספו כבר לסבב הבא, שעדיין אינו מלא
-    var openDays = Dates.diffDays(row.to, lastFood);
-
-    return {
-      row: row,
-      index: row.index,
-      total: all.totalBlocks,
-      coverage: coverage(row.from, row.to),
-      openDays: openDays > 0 ? openDays : 0,
-      anchor: all.first,
-      lastFood: lastFood,
-      // כמה ימים מהיום יש משקל בלי אוכל
-      pendingToday: Dates.diffDays(lastFood, state.date)
-    };
   }
 
   /**
@@ -183,111 +111,6 @@
         'בתמורה, כל קלוריה נמדדת מול השינוי שהיא עצמה גרמה.'));
   }
 
-  /** שרשרת החישוב לחלון אחד, שלב אחר שלב */
-  function derivation(entries, settings, state, days) {
-    var found = solidBlock(entries, settings, state, days);
-    var row = found.row;
-
-    if (!row) {
-      return P.card('איך הגענו למספר', null,
-        P.empty('לחלון של ' + days + ' ימים צריך שני סבבים מלאים, ' +
-          'כלומר ' + (days * 2) + ' ימי שקילה.'));
-    }
-
-    var kcalPerKg = settings.kcalPerKg || 7700;
-    var rate = Math.abs(settings.goal.ratePerWeekKg || 0);
-    var deficit = (rate * kcalPerKg) / 7;
-    var withSteps = state.stepsMode === 'on';
-    var target = (withSteps ? row.tdee : row.base) - deficit;
-
-    var step = function (number, title, body, result) {
-      return '<div class="step">' +
-        '<div class="step-head"><span class="step-num">' + number + '</span>' +
-          '<span class="step-title">' + P.esc(title) + '</span></div>' +
-        '<div class="step-body">' + body + '</div>' +
-        (result ? '<div class="step-result num">' + result + '</div>' : '') +
-      '</div>';
-    };
-
-    var calc = function (text) {
-      return '<div class="calc num">' + P.esc(text) + '</div>';
-    };
-
-    return P.card('איך הגענו למספר',
-      'חלון של ' + days + ' ימים · סבב ' + found.index +
-      ' · מעוגן ל' + Dates.short(found.anchor),
-      step(1, 'ההפרש במשקל בין שני הסבבים',
-        '<p>הסבב הנוכחי ' + P.esc(Dates.short(row.from) + '–' + Dates.short(row.to)) +
-        ' מושווה לסבב שלפניו ' + P.esc(Dates.short(row.prevFrom) + '–' +
-          Dates.short(row.prevTo)) + '.</p>' +
-        calc('ממוצע קודם   ' + Fmt.n(row.prevMeanWeight, 3) + '\n' +
-             'ממוצע נוכחי  ' + Fmt.n(row.meanWeight, 3)),
-        Fmt.signed(-row.deltaKg, 3) + ' ק״ג') +
-
-      step(2, 'תרגום לקלוריות',
-        '<p>כל קילוגרם הוא ' + Fmt.n(kcalPerKg, 0) + ' קלוריות, והשינוי נפרס ' +
-        'על ' + days + ' ימים.</p>' +
-        calc(Fmt.n(Math.abs(row.deltaKg), 3) + ' × ' + Fmt.n(kcalPerKg, 0) +
-             ' ÷ ' + days + ' = ' + Fmt.n(Math.abs(row.fromWeight), 0)),
-        Fmt.signed(row.fromWeight, 0) + ' קק״ל ליום') +
-
-      step(3, 'ההוצאה',
-        '<p>אם אכלת ' + Fmt.numHtml(row.meanKcal, 0) + ' בממוצע וירדת בקצב הזה, ' +
-        'שרפת את הסכום שלהם. זו מדידה מהמשקל, לא נוסחה.</p>' +
-        calc('קלוריות ממוצעות  ' + Fmt.n(row.meanKcal, 0) + '\n' +
-             'מהשינוי במשקל    ' + Fmt.signed(row.fromWeight, 0)),
-        Fmt.n(row.tdee, 0) + ' קק״ל') +
-
-      step(4, 'ההליכה',
-        '<p>' + Fmt.numHtml(row.meanSteps, 0) + ' צעדים ביום, ' +
-        Fmt.n(settings.kcalPerStep || 0.04, 3) + ' קלוריות לצעד.</p>' +
-        calc(Fmt.n(row.meanSteps, 0) + ' × ' + Fmt.n(settings.kcalPerStep || 0.04, 3) +
-             ' = ' + Fmt.n(row.fromSteps, 0)) +
-        '<p>' + (withSteps
-          ? 'בחרת לספור אותה, ולכן היא נשארת ביעד.'
-          : 'בחרת לא לספור אותה, ולכן היא יורדת מההוצאה והופכת לתוספת לגירעון.') +
-        '</p>',
-        (withSteps ? Fmt.n(row.tdee, 0) : Fmt.n(row.base, 0)) + ' קק״ל') +
-
-      step(5, 'הגירעון',
-        '<p>' + Fmt.n(rate, 2) + ' ק״ג בשבוע, פרוס על שבעה ימים.</p>' +
-        calc(Fmt.n(rate, 2) + ' × ' + Fmt.n(kcalPerKg, 0) + ' ÷ 7 = ' +
-             Fmt.n(deficit, 0)),
-        '−' + Fmt.n(deficit, 0) + ' קק״ל') +
-
-      '<div class="final">' +
-        '<span class="k">היעד</span>' +
-        '<span class="v num">' + Fmt.n(target, 0) + '</span>' +
-        '<span class="s">קלוריות ליום</span>' +
-      '</div>' +
-
-      (found.pendingToday
-        ? P.hint('החישוב נעצר ב' + Dates.short(found.lastFood) + ', היום האחרון ' +
-          'שנסגרה בו תזונה. המשקל נשקל בבוקר והאוכל נרשם בערב, ולכן ' +
-          (found.pendingToday === 1 ? 'ליום הנוכחי' : 'לימים האחרונים') +
-          ' יש משקל בלי אוכל — וסבב שהיה מסתיים שם היה חסר יום בהגדרה.')
-        : '') +
-
-      (found.openDays
-        ? P.hint('הסבב הבא כבר התחיל — ' + found.openDays + ' מתוך ' + days +
-          ' ימים — אבל הוא עדיין לא מלא, ולכן מוצג האחרון שהושלם. ' +
-          'הוא ייכנס לחישוב כשיושלם.')
-        : '') +
-
-      (found.coverage && !found.coverage.full
-        ? P.hint('בסבב הזה יש רישום אוכל ב-' + found.coverage.have + ' מתוך ' +
-          found.coverage.total + ' ימים, ולכן ממוצע הקלוריות נשען על פחות ימים ' +
-          'ממה שהחלון מתאר.')
-        : '') +
-
-      P.hint('רווח הסמך של החלון הזה הוא ±' + Fmt.n(row.ci95, 0) + ' קלוריות. ' +
-        'כלומר היעד יכול לנוע בין ' + Fmt.n(target - row.ci95, 0) + ' ל-' +
-        Fmt.n(target + row.ci95, 0) + '. ' +
-        (row.ci95 > 600
-          ? 'זה רחב מדי כדי לפעול לפיו — חלון ארוך יותר ייתן מספר צר בהרבה.'
-          : 'זה טווח שאפשר לעבוד איתו.')));
-  }
-
   /**
    * אותו חישוב לכל אורכי החלון, בטבלה אחת.
    *
@@ -367,31 +190,19 @@
       '<label class="pick-label">איך להתייחס להליכה</label>' +
       P.chips(STEPS_MODES, state.stepsMode === 'on' ? 'on' : 'off', 'data-steps');
 
-    var aligned = state.align !== 'blocks';
-
-    var picker = stepsPicker +
-      '<label class="pick-label">איך למדוד</label>' +
-      P.chips(ALIGN_MODES, aligned ? 'aligned' : 'blocks', 'data-align');
-
     return P.section('החישוב',
       root.Dash.controls(state, entries, state.date, {
-        extra: picker,
-        note: aligned
-          ? 'המשקל של הבוקר סוגר את היום שלפניו.'
-          : 'השוואת ממוצע סבב לממוצע הסבב שלפניו.'
+        extra: stepsPicker,
+        note: 'המשקל של הבוקר סוגר את היום שלפניו.'
       }) +
       note +
-      (aligned
-        ? alignedDerivation(entries, settings, state, days)
-        : derivation(entries, settings, state, days)) +
+      alignedDerivation(entries, settings, state, days) +
       comparison(entries, settings, state));
   }
 
   root.CalcTab = {
     render: render,
-    ALIGN_MODES: ALIGN_MODES,
     LENGTHS: LENGTHS,
-    windowOf: windowOf,
-    solidBlock: solidBlock
+    windowOf: windowOf
   };
 })(typeof window !== 'undefined' ? window : globalThis);

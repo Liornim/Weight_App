@@ -1137,8 +1137,7 @@ test('טבלת החישוב מציגה שורה לכל אורך', () => {
 });
 
 test('טאב החישוב מציג את כל השלבים עם מספרים', () => {
-  App.setState({ date: Dates.today(), tab: 'calc', basis: 7,
-    stepsMode: 'off', align: 'blocks' });
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7, stepsMode: 'off' });
 
   const text = doc.getElementById('view').textContent;
   assert(text.indexOf('איך הגענו למספר') !== -1, 'הכרטיס חסר');
@@ -1146,7 +1145,7 @@ test('טאב החישוב מציג את כל השלבים עם מספרים', ()
   const steps = [...doc.querySelectorAll('#view .step')];
   assert(steps.length === 5, 'ציפיתי לחמישה שלבים, יש ' + steps.length);
 
-  ['ההפרש במשקל', 'תרגום לקלוריות', 'ההוצאה', 'ההליכה', 'הגירעון']
+  ['שתי שקילות', 'תרגום לקלוריות', 'ההוצאה', 'ההליכה', 'הגירעון']
     .forEach((title) => assert(text.indexOf(title) !== -1, 'חסר שלב: ' + title));
 
   // כל שלב מסתיים בתוצאה מספרית
@@ -1156,30 +1155,7 @@ test('טאב החישוב מציג את כל השלבים עם מספרים', ()
       'שלב ' + (i + 1) + ' בלי תוצאה מספרית');
   });
 
-  App.setState({ tab: 'home', align: 'aligned' });
-});
-
-test('היעד בטאב החישוב תואם את מה שהמנוע מחשב', () => {
-  App.setState({ date: Dates.today(), tab: 'calc', basis: 7,
-    stepsMode: 'off', align: 'blocks' });
-
-  const shown = Number(doc.querySelector('#view .final .v').textContent.replace(/[^\d]/g, ''));
-
-  // הסבב הנבחר הוא המלא האחרון שיש בו רישום אוכל בכל יום
-  const found = window.CalcTab.solidBlock(
-    Store.getEntries(), Store.getSettings(), App.state, 7);
-  const row = found.row;
-
-  if (!row) { App.setState({ tab: 'home' }); return; }
-
-  const rate = Math.abs(Store.getSettings().goal.ratePerWeekKg || 0);
-  const deficit = (rate * (Store.getSettings().kcalPerKg || 7700)) / 7;
-  const expected = Math.round(row.base - deficit);
-
-  assert(Math.abs(shown - expected) <= 1,
-    'מוצג ' + shown + ' מול ' + expected);
-
-  App.setState({ tab: 'home', align: 'aligned' });
+  App.setState({ tab: 'home' });
 });
 
 test('המודל המיושר תואם את המנוע', () => {
@@ -1200,44 +1176,39 @@ test('המודל המיושר תואם את המנוע', () => {
   App.setState({ tab: 'home' });
 });
 
-test('שתי שיטות המדידה נותנות מספרים שונים ושתיהן מוסברות', () => {
-  App.setState({ date: Dates.today(), tab: 'calc', basis: 7, align: 'aligned' });
-  const alignedText = doc.getElementById('view').textContent;
-  assert(alignedText.indexOf('סוגר את היום שלפניו') !== -1,
-    'המודל המיושר לא מוסבר');
-
-  doc.querySelector('[data-align="blocks"]').dispatchEvent(
-    new window.Event('click', { bubbles: true }));
-  assert(App.state.align === 'blocks', 'הבחירה לא נשמרה');
-
-  const blocksText = doc.getElementById('view').textContent;
-  assert(blocksText.indexOf('ההפרש במשקל בין שני הסבבים') !== -1,
-    'מודל הסבבים לא הוצג');
-
-  App.setState({ align: 'aligned', tab: 'home' });
-});
-
 test('בחירת "עם צעדים" משנה גם את שרשרת החישוב', () => {
-  App.setState({ date: Dates.today(), tab: 'calc', basis: 7,
-    stepsMode: 'off', align: 'blocks' });
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7, stepsMode: 'off' });
   const without = doc.querySelector('#view .final .v').textContent;
 
   doc.querySelector('[data-steps="on"]').dispatchEvent(
     new window.Event('click', { bubbles: true }));
   const withSteps = doc.querySelector('#view .final .v').textContent;
 
-  const row = window.CalcTab.solidBlock(
-    Store.getEntries(), Store.getSettings(), App.state, 7).row;
+  const r = Metrics.dayAligned(Store.getEntries(), Store.getSettings(),
+    { days: 7, endDate: Dates.today() });
 
-  if (row && row.fromSteps > 0) {
+  if (r.ok && r.stepKcal > 0) {
     assert(withSteps !== without, 'היעד לא השתנה');
-    const diff = Number(withSteps.replace(/[^\d]/g, '')) -
-      Number(without.replace(/[^\d]/g, ''));
-    assert(Math.abs(diff - Math.round(row.fromSteps)) <= 2,
-      'ההפרש ' + diff + ' אינו קלוריות ההליכה ' + Math.round(row.fromSteps));
+    const diff = Number(withSteps.replace(/[^0-9.\-]/g, '')) -
+      Number(without.replace(/[^0-9.\-]/g, ''));
+    assert(Math.abs(diff - Math.round(r.stepKcal)) <= 2,
+      'ההפרש ' + diff + ' אינו קלוריות ההליכה ' + Math.round(r.stepKcal));
   }
 
-  App.setState({ stepsMode: 'off', align: 'aligned', tab: 'home' });
+  App.setState({ stepsMode: 'off', tab: 'home' });
+});
+
+test('המודל המיושר הוא היחיד, ואין בורר שיטות', () => {
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7 });
+  assert(!doc.querySelector('[data-align]'), 'נשאר בורר שיטות מדידה');
+
+  // הכרטיס והטבלה מציגים את אותו מודל
+  const text = doc.getElementById('view').textContent;
+  assert(text.indexOf('שתי שקילות') !== -1, 'הכרטיס אינו במודל המיושר');
+  assert(text.indexOf('י.פ') !== -1 && text.indexOf('י.ס') !== -1,
+    'הטבלה אינה במודל המיושר');
+
+  App.setState({ tab: 'home' });
 });
 
 test('הטבלה מציגה את הסבב הנאסף עם המספר שנגזר ממנו', () => {
@@ -1297,117 +1268,6 @@ test('במצב מסתגל מוצג חלון שבוע עם הסבר', () => {
   App.setState({ tab: 'home' });
 });
 
-
-test('היום שנשקל בבוקר ולא נסגר אינו נכנס לסבב', () => {
-  // 30 ימים מלאים, ואז יום עם משקל בלבד — בדיוק המקרה ששבר
-  const day = Dates.today();
-  Store.upsert({ date: day, weightKg: 88.4, kcal: '' });
-
-  const found = window.CalcTab.solidBlock(
-    Store.getEntries(), Store.getSettings(), { date: day }, 3);
-
-  if (!found.row) return;
-
-  const byDate = {};
-  Store.getEntries().forEach((e) => { byDate[e.date] = e; });
-
-  // המשקל בבוקר והאוכל בערב, ולכן היום הנוכחי אינו נספר
-  assert(found.row.to < day, 'הסבב כולל יום שלא נסגרה בו תזונה');
-  assert(found.lastFood < day, 'היום האחרון שנסגר: ' + found.lastFood);
-  assert(found.pendingToday >= 1, 'לא דווח על היום הממתין');
-
-  // וכך הכיסוי מלא מעצמו
-  assert(found.coverage.full,
-    'הכיסוי חלקי למרות העצירה: ' + found.coverage.have + '/' + found.coverage.total);
-});
-
-
-
-test('כל אורכי החלון מגיעים לכיסוי מלא אחרי העצירה', () => {
-  Store.upsert({ date: Dates.today(), weightKg: 88.4, kcal: '' });
-  App.setState({ date: Dates.today(), tab: 'calc', basis: 7 });
-
-  window.CalcTab.LENGTHS.forEach((days) => {
-    const found = window.CalcTab.solidBlock(
-      Store.getEntries(), Store.getSettings(), App.state, days);
-    if (!found.row) return;
-
-    assert(found.row.to <= found.lastFood,
-      days + ' ימים: הסבב חורג מעבר ליום האחרון שנסגר');
-  });
-
-  App.setState({ basis: 'adaptive', tab: 'home' });
-});
-
-test('העצירה מוסברת במסך', () => {
-  // ההסבר שייך למודל הסבבים, שבו החישוב נעצר ביום שנסגר
-  Store.upsert({ date: Dates.today(), weightKg: 88.4, kcal: '' });
-  App.setState({ date: Dates.today(), tab: 'calc', basis: 7, align: 'blocks' });
-
-  const found = window.CalcTab.solidBlock(
-    Store.getEntries(), Store.getSettings(), App.state, 7);
-
-  if (found.pendingToday) {
-    const text = doc.getElementById('view').textContent;
-    assert(text.indexOf('נסגרה בו תזונה') !== -1, 'לא הוסבר למה נעצר');
-    assert(text.indexOf('נשקל בבוקר') !== -1, 'לא הוסברה הסיבה המבנית');
-  }
-
-  App.setState({ basis: 'adaptive', align: 'aligned', tab: 'home' });
-});
-
-test('תמיד נבחר הסבב המלא האחרון, בלי דילוגים', () => {
-  App.setState({ date: Dates.today(), tab: 'calc', basis: 7 });
-
-  window.CalcTab.LENGTHS.forEach((days) => {
-    const found = window.CalcTab.solidBlock(
-      Store.getEntries(), Store.getSettings(), App.state, days);
-    if (!found.row) return;
-
-    const complete = Metrics.blockWindows(Store.getEntries(), {
-      days: days, count: 60, endDate: found.lastFood
-    }).rows.filter((r) => r.complete);
-
-    // blockWindows מחזיר מהחדש לישן
-    const newest = complete[0];
-    assert(found.row.from === newest.from && found.row.to === newest.to,
-      days + ' ימים: נבחר ' + found.row.from + ' במקום ' + newest.from);
-    assert(found.index === newest.index, days + ' ימים: מספר הסבב שגוי');
-  });
-
-  App.setState({ basis: 'adaptive', tab: 'home' });
-});
-
-test('סבב שעדיין נאסף מדווח ואינו מוצג כמלא', () => {
-  // ההערה שייכת למודל הסבבים
-  App.setState({ date: Dates.today(), tab: 'calc', basis: 7, align: 'blocks' });
-  const found = window.CalcTab.solidBlock(
-    Store.getEntries(), Store.getSettings(), App.state, 7);
-
-  if (found.row && found.openDays) {
-    const text = doc.getElementById('view').textContent;
-    assert(text.indexOf('הסבב הבא כבר התחיל') !== -1, 'לא דווח על הסבב הפתוח');
-    assert(found.openDays < 7, 'סבב שנאסף לא אמור להיות מלא: ' + found.openDays);
-    // והמוצג נגמר לפני שהסבב הפתוח מתחיל
-    assert(found.row.to < Dates.today(), 'הסבב המוצג מגיע עד היום');
-  }
-
-  App.setState({ basis: 'adaptive', align: 'aligned', tab: 'home' });
-});
-
-test('כיסוי חלקי מדווח אבל אינו פוסל את הסבב', () => {
-  App.setState({ date: Dates.today(), tab: 'calc', basis: 3 });
-  const found = window.CalcTab.solidBlock(
-    Store.getEntries(), Store.getSettings(), App.state, 3);
-
-  if (found.row && found.coverage && !found.coverage.full) {
-    const text = doc.getElementById('view').textContent;
-    assert(text.indexOf('מתוך') !== -1, 'הכיסוי החלקי לא דווח');
-    assert(found.coverage.have < found.coverage.total, 'סומן חלקי בלי סיבה');
-  }
-
-  App.setState({ basis: 'adaptive', tab: 'home' });
-});
 
 test('טאב המשקל מציג את כל אורכי החלון', () => {
   App.setState({ date: Dates.today(), tab: 'home' });

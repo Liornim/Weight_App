@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd53',
+    BUILD: 'd54',
     state: {
       date: Dates.today(),
       tab: 'home',         // סיכום או משקל
@@ -19,7 +19,6 @@
       basis: 'adaptive',   // על סמך כמה זמן לחשב
       caution: 'mid',      // זהיר / אמצע / נדיב
       stepsMode: 'off',    // האם ההליכה נספרת ביעד
-      align: 'aligned',    // מיושר ליום או השוואת ממוצעי סבבים
       settingsOpen: false
     }
   };
@@ -71,12 +70,6 @@
       chip.addEventListener('click', function () {
         var raw = chip.dataset.basis;
         App.setState({ basis: raw === 'adaptive' ? 'adaptive' : Number(raw) });
-      });
-    });
-
-    view.querySelectorAll('[data-align]').forEach(function (chip) {
-      chip.addEventListener('click', function () {
-        App.setState({ align: chip.dataset.align });
       });
     });
 
