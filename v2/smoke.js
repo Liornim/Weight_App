@@ -996,17 +996,48 @@ test('סבב עם יום בלי רישום אוכל אינו נבחר', () => {
   const byDate = {};
   Store.getEntries().forEach((e) => { byDate[e.date] = e; });
 
-  // בכל יום בסבב הנבחר ובקודם יש רישום אוכל
-  [[found.row.from, found.row.to], [found.row.prevFrom, found.row.prevTo]]
-    .forEach(([from, to]) => {
-      for (let d = from; d <= to; d = Dates.addDays(d, 1)) {
-        assert(byDate[d] && Fmt.isNum(byDate[d].kcal),
-          'יום בלי אוכל בתוך הסבב: ' + d);
-      }
-    });
+  // הדרישה חלה על הסבב הנוכחי, שממנו נלקחות הקלוריות
+  if (!found.partial) {
+    for (let d = found.row.from; d <= found.row.to; d = Dates.addDays(d, 1)) {
+      assert(byDate[d] && Fmt.isNum(byDate[d].kcal),
+        'יום בלי אוכל בתוך הסבב הנוכחי: ' + d);
+    }
+    assert(found.row.to < day, 'הסבב כולל את היום הריק: ' + found.row.to);
+  }
+});
 
-  // והסבב אינו מגיע עד היום הריק
-  assert(found.row.to < day, 'הסבב כולל את היום הריק: ' + found.row.to);
+
+test('הדילוג מוגבל: לא בורחים חודשיים אחורה', () => {
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7 });
+
+  window.CalcTab.LENGTHS.forEach((days) => {
+    const found = window.CalcTab.solidBlock(
+      Store.getEntries(), Store.getSettings(), App.state, days);
+    if (!found.row) return;
+
+    assert(found.skipped <= 3, days + ' ימים: דולגו ' + found.skipped + ' סבבים');
+
+    // והסבב שנבחר קרוב לסוף התקופה, לא בתחילתה
+    const gap = Dates.diffDays(found.row.to, Dates.today());
+    assert(gap <= days * 5,
+      days + ' ימים: הסבב מסתיים ' + gap + ' ימים לפני היום — רחוק מדי');
+  });
+
+  App.setState({ basis: 'adaptive', tab: 'home' });
+});
+
+test('כיסוי חלקי מדווח במקום לברוח אחורה', () => {
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 3 });
+  const found = window.CalcTab.solidBlock(
+    Store.getEntries(), Store.getSettings(), App.state, 3);
+
+  if (found.partial) {
+    const text = doc.getElementById('view').textContent;
+    assert(text.indexOf('מתוך') !== -1, 'הכיסוי החלקי לא דווח');
+    assert(found.coverage.have < found.coverage.total, 'סומן חלקי בלי סיבה');
+  }
+
+  App.setState({ basis: 'adaptive', tab: 'home' });
 });
 
 test('מספר הסבבים שדולגו מדווח', () => {

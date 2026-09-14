@@ -27,43 +27,60 @@
   }
 
   /**
-   * הסבב המלא האחרון — ובאמת מלא.
+   * הסבב שעליו מציגים את החישוב.
    *
-   * blockWindows מסמן סבב כמלא לפי טווח הימים, בלי לבדוק שיש בכל
-   * יום רישום אוכל. יום אחרון שיש בו שקילה אך לא אוכל יצר "סבב
-   * מלא" שהממוצע בו חושב על פחות ימים — למשל 12/09–14/09 כשב-14/09
-   * אין אוכל, כלומר ממוצע של יומיים שמוצג כשלושה.
+   * שני הסבבים אינם ממלאים אותו תפקיד: מהסבב הקודם נלקח רק ממוצע
+   * המשקל, ואילו הקלוריות והצעדים נלקחים מהסבב הנוכחי בלבד. לכן
+   * הדרישה לרישום אוכל חלה על הנוכחי בלבד — דרישה גם מהקודם שלחה
+   * את הבחירה חודשיים אחורה בלי סיבה.
    *
-   * כאן נסרקים הסבבים מהחדש לישן, ונבחר הראשון שבו לכל יום — גם
-   * בסבב הנוכחי וגם בקודם — יש רישום אוכל.
+   * אם גם הסבב הנוכחי חסר, מדלגים אחורה — אבל עד גבול. עדיף להציג
+   * את הסבב האחרון עם הערה על כיסוי חלקי מאשר מספר נכון מיולי.
    */
+  var MAX_SKIP = 3;
+
   function solidBlock(entries, settings, state, days) {
     var byDate = {};
     entries.forEach(function (e) { byDate[e.date] = e; });
 
-    var covered = function (from, to) {
+    var coverage = function (from, to) {
+      var have = 0;
+      var total = 0;
       for (var d = from; d <= to; d = Dates.addDays(d, 1)) {
+        total++;
         var day = byDate[d];
-        if (!day || !Fmt.isNum(day.kcal)) return false;
+        if (day && Fmt.isNum(day.kcal)) have++;
       }
-      return true;
+      return { have: have, total: total, full: have === total };
     };
 
     var all = Metrics.blockWindows(entries, {
-      days: days, count: 40, endDate: state.date,
+      days: days, count: 60, endDate: state.date,
       kcalPerKg: settings.kcalPerKg, kcalPerStep: settings.kcalPerStep
     });
 
     var complete = all.rows.filter(function (row) { return row.complete; });
+    if (!complete.length) return { row: null, skipped: 0 };
+
+    var newest = complete[complete.length - 1];
 
     for (var i = complete.length - 1; i >= 0; i--) {
-      var row = complete[i];
-      if (covered(row.from, row.to) && covered(row.prevFrom, row.prevTo)) {
-        return { row: row, skipped: complete.length - 1 - i, total: complete.length };
+      var skipped = complete.length - 1 - i;
+      if (skipped > MAX_SKIP) break;
+
+      var cover = coverage(complete[i].from, complete[i].to);
+      if (cover.full) {
+        return { row: complete[i], skipped: skipped, coverage: cover };
       }
     }
 
-    return { row: null, skipped: complete.length, total: complete.length };
+    // לא נמצא סבב מכוסה במרחק סביר: מציגים את האחרון ואומרים זאת
+    return {
+      row: newest,
+      skipped: 0,
+      coverage: coverage(newest.from, newest.to),
+      partial: true
+    };
   }
 
   /** שרשרת החישוב לחלון אחד, שלב אחר שלב */
@@ -73,8 +90,8 @@
 
     if (!row) {
       return P.card('איך הגענו למספר', null,
-        P.empty('לחלון של ' + days + ' ימים צריך שני סבבים רצופים שבכל יום ' +
-          'שלהם יש רישום אוכל — ' + (days * 2) + ' ימים מלאים.'));
+        P.empty('לחלון של ' + days + ' ימים צריך שני סבבים מלאים, ' +
+          'כלומר ' + (days * 2) + ' ימי שקילה.'));
     }
 
     var kcalPerKg = settings.kcalPerKg || 7700;
@@ -143,8 +160,15 @@
       '</div>' +
 
       (found.skipped
-        ? P.hint('דולגו ' + found.skipped + ' סבבים חדשים יותר שחסר בהם ' +
-          'רישום אוכל ביום אחד לפחות. ממוצע על חלק מהימים אינו ממוצע של החלון.')
+        ? P.hint('דולג ' + (found.skipped === 1 ? 'סבב חדש יותר' :
+            found.skipped + ' סבבים חדשים יותר') + ' שחסר בו רישום אוכל ' +
+          'ביום אחד לפחות. ממוצע על חלק מהימים אינו ממוצע של החלון.')
+        : '') +
+
+      (found.partial
+        ? P.hint('בסבב הזה יש רישום אוכל ב-' + found.coverage.have + ' מתוך ' +
+          found.coverage.total + ' ימים, ולכן ממוצע הקלוריות נשען על פחות ימים ' +
+          'ממה שהחלון מתאר.')
         : '') +
 
       P.hint('רווח הסמך של החלון הזה הוא ±' + Fmt.n(row.ci95, 0) + ' קלוריות. ' +
@@ -163,8 +187,7 @@
 
       if (!row) {
         return '<tr><td class="n">' + days + '</td>' +
-          '<td colspan="8" class="flat">צריך ' + (days * 2) +
-          ' ימים רצופים עם רישום אוכל</td></tr>';
+          '<td colspan="8" class="flat">צריך ' + (days * 2) + ' ימי שקילה</td></tr>';
       }
 
       var noisy = row.ci95 > 600;
@@ -175,7 +198,9 @@
         '<td class="date-cell">' + P.esc(Dates.short(row.from) + '–' + Dates.short(row.to)) +
           '<span class="sub">מול ' + P.esc(Dates.short(row.prevFrom) + '–' +
             Dates.short(row.prevTo)) +
-          (found.skipped ? ' · דולגו ' + found.skipped : '') + '</span></td>' +
+          (found.skipped ? ' · דולגו ' + found.skipped : '') +
+          (found.partial ? ' · ' + found.coverage.have + '/' +
+            found.coverage.total + ' ימים עם אוכל' : '') + '</span></td>' +
         '<td class="n">' + Fmt.n(row.meanWeight, 2) + '</td>' +
         '<td class="n">' + Fmt.n(row.prevMeanWeight, 2) + '</td>' +
         '<td class="n">' + P.delta(-row.deltaKg, 2, 'down') + '</td>' +
@@ -192,9 +217,9 @@
         { label: 'ימים', n: true }, { label: 'תקופה', n: true },
         'משקל', 'קודם', 'שינוי', 'קלוריות', 'ממשקל', 'מצעדים', 'תחזוקה'
       ], [rows],
-      { hint: 'כל שורה היא הסבב המלא האחרון שבכל יום שלו יש רישום אוכל; ' +
-        'סבבים חדשים יותר עם יום חסר מדולגים, כי ממוצע על חלק מהימים ' +
-        'אינו ממוצע של החלון. ' +
+      { hint: 'הקלוריות והצעדים נלקחים מהסבב הנוכחי, ומהסבב הקודם נלקח ' +
+        'רק ממוצע המשקל. לכן הדרישה לרישום אוכל חלה על הנוכחי בלבד, ' +
+        'ומדלגים אחורה עד שלושה סבבים לכל היותר. ' +
         '"תחזוקה" היא ההוצאה בלי הליכה: קלוריות ממוצעות ועוד מה שהמשקל ' +
         'מראה, פחות הצעדים. המספר הקטן מתחתיה הוא רוחב אי־הוודאות — ' +
         'ככל שהחלון קצר יותר הוא גדול יותר, כי אותו רעש שקילה מתחלק ' +
