@@ -2005,6 +2005,18 @@
     // חלון נמדד מול היעד שהוא עצמו מייצר.
     var override = num(opts.overrideTarget);
 
+    /**
+     * האם ההליכה נספרת.
+     *
+     * "בלי צעדים" הוא היעד השמרני: אתה אוכל לפי מה שהגוף שורף
+     * במנוחה, וההליכה היא תוספת שמגדילה את הגירעון. "עם צעדים"
+     * מוסיף אותה ליעד, כלומר מרשה לאכול יותר ביום שהלכת בו.
+     *
+     * הבחירה משנה את היעד, את הפער, ואת חלוקת המאקרו שנגזרת ממנו —
+     * ולכן היא עוברת דרך כל החישוב ולא רק דרך שורת התצוגה.
+     */
+    var withSteps = opts.withSteps === true;
+
     // בלי יעד חלבון אין מול מה להשוות, והעמודה חוזרת ריקה בלי
     // שום הסבר. המינימום שהוגדר משמש כגיבוי.
     var targets = settings.targets || {};
@@ -2040,13 +2052,17 @@
       var kcal = mean('kcal');
       if (!kcal) return { days: days, ok: false, reason: 'no-intake' };
 
-      var steps = mean('steps');
       var protein = mean('proteinG');
       var fat = mean('fatG');
       var carbs = mean('carbG');
 
+      // הצעדים של אותו חלון, שהם מה שמוסיפים ליעד כשבוחרים בכך
+      var steps = mean('steps');
+      var stepKcal = steps ? steps.value * kcalPerStep : 0;
+
       // היעד היומי, ומתוכו חלוקת המאקרו
-      var targetKcal = override === null ? report.target : override;
+      var baseTarget = override === null ? report.target : override;
+      var targetKcal = withSteps ? baseTarget + stepKcal : baseTarget;
       var targetFat = (targetKcal * fatShare) / 9;
       var targetProtein = proteinTarget;
       var proteinKcal = proteinTarget === null ? 0 : proteinTarget * 4;
@@ -2058,7 +2074,6 @@
       };
 
       // הקלוריות בניכוי ההליכה: מה שנשאר אחרי שהצעדים "שילמו" על חלקם
-      var stepKcal = steps ? steps.value * kcalPerStep : 0;
       var netKcal = kcal.value - stepKcal;
 
       return {
@@ -2069,6 +2084,9 @@
         loggedDays: kcal.n,
         tdee: report.tdee,
         base: report.base,
+        withSteps: withSteps,
+        baseTarget: baseTarget,
+        stepKcal: stepKcal,
         target: {
           kcal: targetKcal, protein: targetProtein,
           fat: targetFat, carbs: targetCarbs
@@ -2091,6 +2109,7 @@
 
     return {
       ok: true,
+      withSteps: withSteps,
       endDate: endDate,
       lastLogged: lastLogged,
       // כמה ימים אחורה הוזז החלון כדי שיהיה מלא

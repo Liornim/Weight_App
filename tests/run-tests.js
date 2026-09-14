@@ -2364,6 +2364,67 @@ test('יעד שנבחר במפורש גובר על היעד של כל חלון',
   close(row.target.fat, (1800 * 0.25) / 9, 1e-9, 'השומן מחושב מהיעד שנכפה');
 });
 
+test('בחירת "עם צעדים" מגדילה את היעד בדיוק בקלוריות ההליכה', () => {
+  const entries = windowFixture();   // 10,000 צעדים ביום
+  const settings = Object.assign({}, WIN_SETTINGS, { kcalPerStep: 0.04 });
+
+  const without = Metrics.targetGaps(entries, settings,
+    { endDate: '2026-03-01', windows: [14] }).rows[0];
+  const withSteps = Metrics.targetGaps(entries, settings,
+    { endDate: '2026-03-01', windows: [14], withSteps: true }).rows[0];
+
+  close(withSteps.stepKcal, 10000 * 0.04, 1e-9, 'קלוריות ההליכה');
+  close(withSteps.target.kcal, without.target.kcal + withSteps.stepKcal, 1e-9,
+    'היעד לא גדל בדיוק בקלוריות ההליכה');
+  assert(without.withSteps === false && withSteps.withSteps === true, 'הסימון');
+});
+
+test('הפער קטן בדיוק באותה מידה', () => {
+  const entries = windowFixture();
+  const settings = Object.assign({}, WIN_SETTINGS, { kcalPerStep: 0.04 });
+
+  const without = Metrics.targetGaps(entries, settings,
+    { endDate: '2026-03-01', windows: [14] }).rows[0];
+  const withSteps = Metrics.targetGaps(entries, settings,
+    { endDate: '2026-03-01', windows: [14], withSteps: true }).rows[0];
+
+  close(withSteps.gapPerDay.kcal, without.gapPerDay.kcal - withSteps.stepKcal, 1e-9,
+    'הפער לא הצטמצם בדיוק בקלוריות ההליכה');
+  assert(withSteps.gapPerDay.kcal < without.gapPerDay.kcal, 'הכיוון');
+});
+
+test('חלוקת המאקרו נגזרת מהיעד שנבחר', () => {
+  const entries = windowFixture();
+  const settings = Object.assign({}, WIN_SETTINGS, {
+    kcalPerStep: 0.04, targets: { proteinG: 170 }
+  });
+
+  const withSteps = Metrics.targetGaps(entries, settings,
+    { endDate: '2026-03-01', windows: [14], withSteps: true, fatShare: 0.25 }).rows[0];
+
+  // השומן רבע מהיעד הגדול, לא מהקטן
+  close(withSteps.target.fat, (withSteps.target.kcal * 0.25) / 9, 1e-9, 'שומן');
+
+  // והחלוקה מסתכמת ליעד השלם
+  const sum = withSteps.target.protein * 4 + withSteps.target.fat * 9 +
+    withSteps.target.carbs * 4;
+  close(sum, withSteps.target.kcal, 1e-6, 'החלוקה לא מסתכמת');
+});
+
+test('בלי רישום צעדים אין הבדל בין השתיים', () => {
+  const entries = buildSeries('2026-01-01', 40, (i) => ({
+    weightKg: 90 - 0.05 * i, kcal: 2200
+  }));
+
+  const without = Metrics.targetGaps(entries, WIN_SETTINGS,
+    { endDate: '2026-02-09', windows: [14] }).rows[0];
+  const withSteps = Metrics.targetGaps(entries, WIN_SETTINGS,
+    { endDate: '2026-02-09', windows: [14], withSteps: true }).rows[0];
+
+  close(withSteps.stepKcal, 0, 1e-9, 'אין צעדים');
+  close(withSteps.target.kcal, without.target.kcal, 1e-9, 'היעד לא אמור להשתנות');
+});
+
 test('הקלוריות בניכוי הליכה נמוכות מהצריכה', () => {
   const entries = windowFixture();   // 10,000 צעדים ביום
   const settings = Object.assign({}, WIN_SETTINGS, { kcalPerStep: 0.04 });

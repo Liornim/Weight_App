@@ -11,13 +11,14 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd40',
+    BUILD: 'd41',
     state: {
       date: Dates.today(),
       tab: 'home',         // סיכום או משקל
       asOf: 0,             // עד מתי למדוד: היום, שבוע שעבר, שבועיים
       basis: 'adaptive',   // על סמך כמה זמן לחשב
       caution: 'mid',      // זהיר / אמצע / נדיב
+      stepsMode: 'off',    // האם ההליכה נספרת ביעד
       settingsOpen: false
     }
   };
@@ -69,6 +70,12 @@
       chip.addEventListener('click', function () {
         var raw = chip.dataset.basis;
         App.setState({ basis: raw === 'adaptive' ? 'adaptive' : Number(raw) });
+      });
+    });
+
+    view.querySelectorAll('[data-steps]').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        App.setState({ stepsMode: chip.dataset.steps });
       });
     });
 

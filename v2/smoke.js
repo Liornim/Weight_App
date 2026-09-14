@@ -681,6 +681,56 @@ test('החלונות מלאים גם כשהיום עדיין ריק', () => {
   App.setState({ tab: 'home' });
 });
 
+
+test('בחירת "עם צעדים" מזיזה את כל השורות', () => {
+  App.setState({ date: Dates.today(), tab: 'targets', stepsMode: 'off' });
+
+  const gapsOf = () => [...[...doc.querySelectorAll('#view table.t')]
+    .find((t) => t.textContent.includes('פחמימות'))
+    .querySelectorAll('tbody tr')]
+    .map((tr) => tr.children[1].textContent.replace(/[^\d.\-−]/g, '').replace('−', '-'))
+    .filter((v) => v !== '');
+
+  const without = gapsOf();
+
+  const toggle = doc.querySelector('[data-steps="on"]');
+  assert(toggle, 'הבורר חסר');
+  toggle.dispatchEvent(new window.Event('click', { bubbles: true }));
+  assert(App.state.stepsMode === 'on', 'הבחירה לא נשמרה');
+
+  const withSteps = gapsOf();
+  assert(withSteps.length === without.length, 'מספר השורות השתנה');
+
+  // עם צעדים היעד גדול יותר, ולכן הפער קטן יותר בכל שורה
+  const model = Metrics.targetGaps(Store.getEntries(), Store.getSettings(),
+    { endDate: Dates.today(), windows: window.TargetsTab.LENGTHS, withSteps: true });
+  const hasSteps = model.rows.some((r) => r.ok && r.stepKcal > 0);
+
+  if (hasSteps) {
+    without.forEach((value, i) => {
+      assert(Number(withSteps[i]) < Number(value),
+        'שורה ' + i + ': הפער לא קטן — ' + withSteps[i] + ' מול ' + value);
+    });
+  }
+
+  App.setState({ stepsMode: 'off', tab: 'home' });
+});
+
+test('הבחירה משפיעה גם על הפירוט ועל ההסבר', () => {
+  App.setState({ date: Dates.today(), tab: 'targets', stepsMode: 'off' });
+  let text = doc.getElementById('view').textContent;
+  assert(text.indexOf('בניכוי הליכה') !== -1, 'חסרה שורת הניכוי במצב הרגיל');
+  assert(text.indexOf('השמרני') !== -1, 'לא הוסבר מה המשמעות');
+
+  doc.querySelector('[data-steps="on"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+  text = doc.getElementById('view').textContent;
+  assert(text.indexOf('היעד בלי הליכה') !== -1, 'הפירוט לא התחלף');
+  assert(text.indexOf('מרשה לאכול יותר') !== -1, 'ההסבר לא התחלף');
+
+  App.setState({ stepsMode: 'off', tab: 'home' });
+});
+
 test('כיסוי הימים מוצג במפורש', () => {
   App.setState({ date: Dates.today(), tab: 'targets' });
   const table = [...doc.querySelectorAll('#view table.t')]

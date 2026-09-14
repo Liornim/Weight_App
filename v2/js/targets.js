@@ -16,6 +16,11 @@
 
   var LENGTHS = [3, 5, 7, 10, 14, 21, 28];
 
+  var STEPS_MODES = [
+    { value: 'off', label: 'בלי צעדים' },
+    { value: 'on', label: 'עם צעדים' }
+  ];
+
   var MACROS = [
     { key: 'protein', label: 'חלבון', unit: 'גר׳', good: 'up', digits: 0 },
     { key: 'fat', label: 'שומן', unit: 'גר׳', good: 'down', digits: 0 },
@@ -73,7 +78,9 @@
     var kg = totalKcal / row.kcalPerKg;
 
     var rows = line('קלוריות', row.actual.kcal, row.target.kcal, 0, '', 'down') +
-      line('בניכוי הליכה', row.actual.netKcal, row.target.kcal, 0, '', 'down') +
+      (row.withSteps
+        ? line('היעד בלי הליכה', row.actual.kcal, row.baseTarget, 0, '', 'down')
+        : line('בניכוי הליכה', row.actual.netKcal, row.target.kcal, 0, '', 'down')) +
       MACROS.map(function (macro) {
         return line(macro.label, row.actual[macro.key], row.target[macro.key],
           macro.digits, macro.unit, macro.good);
@@ -111,8 +118,11 @@
 
     var chosen = targetFor(entries, settings, state);
 
+    var withSteps = state.stepsMode === 'on';
+
     var r = Metrics.targetGaps(entries, settings, {
       endDate: state.date, windows: LENGTHS,
+      withSteps: withSteps,
       overrideTarget: chosen.ok ? chosen.target : null
     });
 
@@ -144,11 +154,15 @@
           'שומן ליום', Fmt.isNum(main.gapPerDay.fat)
             ? Fmt.signed(main.gapPerDay.fat, 0) + ' גר׳' : '—', 'מול היעד')
       ]) +
-      P.hint(chosen.ok
-        ? 'היעד שלפיו נמדד הפער הוא ' + Fmt.n(chosen.target, 0) + ' קלוריות ליום, ' +
-          'לפי הבחירות שלמעלה. החלבון הוא היעד שהגדרת, השומן רבע מהקלוריות, ' +
-          'והפחמימות הן מה שנשאר.'
-        : 'היעד לכל חלון מחושב מההוצאה שאותו חלון מודד, פחות הגירעון שבחרת.'));
+      P.hint((chosen.ok
+        ? 'היעד הבסיסי הוא ' + Fmt.n(chosen.target, 0) + ' קלוריות ליום. '
+        : '') +
+        (withSteps
+          ? 'מצב "עם צעדים" מוסיף לו את קלוריות ההליכה של כל חלון, ' +
+            'כלומר מרשה לאכול יותר ביום שהלכת בו.'
+          : 'מצב "בלי צעדים" הוא השמרני: ההליכה אינה נספרת ביעד, ' +
+            'ולכן היא מגדילה את הגירעון.') +
+        ' החלבון הוא היעד שהגדרת, השומן רבע מהקלוריות, והפחמימות השארית.'));
 
     var missing = ['protein', 'fat', 'carbs'].filter(function (key) {
       return usable.every(function (row) { return !Fmt.isNum(row.actual[key]); });
@@ -183,8 +197,17 @@
     var details = '<div class="rounds">' +
       usable.map(detail).join('') + '</div>';
 
+    var stepsPicker = P.card(null, null,
+      '<label class="pick-label">איך להתייחס להליכה</label>' +
+      P.chips(STEPS_MODES, state.stepsMode === 'on' ? 'on' : 'off', 'data-steps') +
+      (usable.length && usable[0].stepKcal
+        ? P.hint('ההליכה בחלון הנבחר שווה בערך ' +
+          Fmt.n(usable[usable.length - 1].stepKcal, 0) + ' קלוריות ביום.')
+        : P.hint('אין רישום צעדים בימים האלה, ולכן הבחירה לא תשנה דבר.')));
+
     return P.section('יעד מול בפועל',
       root.Dash.controls(state, entries, state.date) +
+      stepsPicker +
       head + table +
       P.card('פירוט לכל חלון', null, details));
   }
