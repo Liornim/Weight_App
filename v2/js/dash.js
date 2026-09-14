@@ -702,7 +702,8 @@
     { value: 'home', label: 'סיכום' },
     { value: 'entry', label: 'הזנה' },
     { value: 'weight', label: 'משקל' },
-    { value: 'targets', label: 'יעדים' }
+    { value: 'targets', label: 'יעדים' },
+    { value: 'calc', label: 'החישוב' }
   ];
 
   function tabs(active) {
@@ -727,6 +728,7 @@
     if (state.tab !== 'home') {
       var panel = state.tab === 'weight' ? root.WeightTab.render(state)
         : state.tab === 'targets' ? root.TargetsTab.render(state)
+        : state.tab === 'calc' ? root.CalcTab.render(state)
         : root.EntryTab.render(state);
 
       container.innerHTML =

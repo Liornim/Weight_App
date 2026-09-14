@@ -753,9 +753,21 @@ test('הבורר עדיין פועל מתוך הפס', () => {
   App.setState({ stepsMode: 'off', tab: 'home' });
 });
 
-test('הבורר אינו מופיע במסכים שאינם יעדים', () => {
-  App.setState({ date: Dates.today(), tab: 'home' });
-  assert(!doc.querySelector('[data-steps]'), 'הבורר הופיע בסיכום');
+test('בורר הצעדים מופיע היכן שהוא משפיע, ולא במקומות אחרים', () => {
+  // הוא משנה את היעד ואת שרשרת החישוב
+  ['targets', 'calc'].forEach((tab) => {
+    App.setState({ date: Dates.today(), tab: tab });
+    const bar = doc.querySelector('.sticky-bar');
+    assert(bar && bar.querySelector('[data-steps]'), 'הבורר חסר בטאב ' + tab);
+  });
+
+  // ובמסכים שאינו נוגע להם הוא רק היה מבלבל
+  ['home', 'weight'].forEach((tab) => {
+    App.setState({ date: Dates.today(), tab: tab });
+    assert(!doc.querySelector('[data-steps]'), 'הבורר הופיע בטאב ' + tab);
+  });
+
+  App.setState({ tab: 'home' });
 });
 
 test('הבחירה משפיעה גם על הפירוט ועל ההסבר', () => {
@@ -873,6 +885,102 @@ test('הפער מוצג ליום ולא כסכום', () => {
 
   // מספר יומי סביר, לא סכום של שבועות
   numbers.forEach((n) => assert(n < 3000, 'מספר שנראה כמו סכום ולא כממוצע יומי: ' + n));
+
+  App.setState({ tab: 'home' });
+});
+
+
+test('טאב החישוב מציג את כל השלבים עם מספרים', () => {
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7, stepsMode: 'off' });
+
+  const text = doc.getElementById('view').textContent;
+  assert(text.indexOf('איך הגענו למספר') !== -1, 'הכרטיס חסר');
+
+  const steps = [...doc.querySelectorAll('#view .step')];
+  assert(steps.length === 5, 'ציפיתי לחמישה שלבים, יש ' + steps.length);
+
+  ['ההפרש במשקל', 'תרגום לקלוריות', 'ההוצאה', 'ההליכה', 'הגירעון']
+    .forEach((title) => assert(text.indexOf(title) !== -1, 'חסר שלב: ' + title));
+
+  // כל שלב מסתיים בתוצאה מספרית
+  steps.forEach((step, i) => {
+    const result = step.querySelector('.step-result');
+    assert(result && /\d/.test(result.textContent),
+      'שלב ' + (i + 1) + ' בלי תוצאה מספרית');
+  });
+
+  App.setState({ tab: 'home' });
+});
+
+test('היעד בטאב החישוב תואם את מה שהמנוע מחשב', () => {
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7, stepsMode: 'off' });
+
+  const shown = Number(doc.querySelector('#view .final .v').textContent.replace(/[^\d]/g, ''));
+
+  const row = Metrics.blockWindows(Store.getEntries(), {
+    days: 7, count: 1, endDate: Dates.today(),
+    kcalPerKg: Store.getSettings().kcalPerKg,
+    kcalPerStep: Store.getSettings().kcalPerStep
+  }).rows[0];
+
+  if (!row || !row.complete) { App.setState({ tab: 'home' }); return; }
+
+  const rate = Math.abs(Store.getSettings().goal.ratePerWeekKg || 0);
+  const deficit = (rate * (Store.getSettings().kcalPerKg || 7700)) / 7;
+  const expected = Math.round(row.base - deficit);
+
+  assert(Math.abs(shown - expected) <= 1,
+    'מוצג ' + shown + ' מול ' + expected);
+
+  App.setState({ tab: 'home' });
+});
+
+test('בחירת "עם צעדים" משנה גם את שרשרת החישוב', () => {
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7, stepsMode: 'off' });
+  const without = doc.querySelector('#view .final .v').textContent;
+
+  doc.querySelector('[data-steps="on"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+  const withSteps = doc.querySelector('#view .final .v').textContent;
+
+  const row = Metrics.blockWindows(Store.getEntries(), {
+    days: 7, count: 1, endDate: Dates.today(),
+    kcalPerStep: Store.getSettings().kcalPerStep
+  }).rows[0];
+
+  if (row && row.complete && row.fromSteps > 0) {
+    assert(withSteps !== without, 'היעד לא השתנה');
+    const diff = Number(withSteps.replace(/[^\d]/g, '')) -
+      Number(without.replace(/[^\d]/g, ''));
+    assert(Math.abs(diff - Math.round(row.fromSteps)) <= 2,
+      'ההפרש ' + diff + ' אינו קלוריות ההליכה ' + Math.round(row.fromSteps));
+  }
+
+  App.setState({ stepsMode: 'off', tab: 'home' });
+});
+
+test('טבלת כל אורכי החלון מסמנת את הנבחר', () => {
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 10 });
+
+  const table = [...doc.querySelectorAll('#view table.t')]
+    .find((t) => t.textContent.indexOf('תחזוקה') !== -1);
+  assert(table, 'הטבלה חסרה');
+
+  const marked = [...table.querySelectorAll('tbody tr')]
+    .filter((tr) => tr.textContent.indexOf('✓') !== -1);
+  assert(marked.length === 1, 'ציפיתי לשורה מסומנת אחת, יש ' + marked.length);
+  assert(marked[0].children[0].textContent.indexOf('10') === 0,
+    'הסימון על החלון הלא נכון');
+
+  App.setState({ basis: 'adaptive', tab: 'home' });
+});
+
+test('במצב מסתגל מוצג חלון שבוע עם הסבר', () => {
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 'adaptive' });
+
+  const text = doc.getElementById('view').textContent;
+  assert(text.indexOf('אין לו טבלה') !== -1, 'לא הוסבר למה');
+  assert(window.CalcTab.windowOf({ basis: 'adaptive' }) === 7, 'לא נבחר שבוע');
 
   App.setState({ tab: 'home' });
 });
