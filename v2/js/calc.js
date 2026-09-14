@@ -92,6 +92,59 @@
         'כשהם מסכימים אפשר להאמין למספר.' }));
   }
 
+  /**
+   * מה מגביל את הטווח.
+   *
+   * כשהטבלה מראה תאריכים ישנים משמעותית מהיום, הסיבה כמעט תמיד
+   * אחת: היום האחרון שאפשר לסגור אינו היום האחרון שיש בו נתונים.
+   * להציג את זה חוסך ניחושים.
+   */
+  function coverage(entries) {
+    var weighed = entries.filter(function (e) { return Fmt.isNum(e.weightKg); });
+    var eaten = entries.filter(function (e) { return Fmt.isNum(e.kcal); });
+    if (!weighed.length || !eaten.length) return null;
+
+    var byDate = {};
+    entries.forEach(function (e) { byDate[e.date] = e; });
+
+    var closable = eaten.filter(function (e) {
+      var next = byDate[Dates.addDays(e.date, 1)];
+      return next && Fmt.isNum(next.weightKg);
+    });
+
+    return {
+      lastWeighed: weighed[weighed.length - 1].date,
+      lastEaten: eaten[eaten.length - 1].date,
+      lastClosable: closable.length ? closable[closable.length - 1].date : null,
+      weighIns: weighed.length,
+      meals: eaten.length
+    };
+  }
+
+  function coverageCard(entries, state) {
+    var c = coverage(entries);
+    if (!c) return '';
+
+    var stale = c.lastClosable &&
+      Dates.diffDays(c.lastClosable, state.date) > 3;
+
+    if (!stale) return '';
+
+    // מה חוסם: אין אוכל אחרי, או שאין שקילה שסוגרת אותו
+    var blocked = c.lastEaten > c.lastClosable
+      ? 'יש רישום אוכל עד ' + Dates.short(c.lastEaten) + ', אבל אין שקילה ' +
+        'בבוקר שאחרי הימים האלה — ולכן אי אפשר לסגור אותם.'
+      : 'הרישום האחרון של אוכל הוא ' + Dates.short(c.lastEaten) + '.';
+
+    return P.card('הטווח נעצר ב' + Dates.short(c.lastClosable), null,
+      P.empty(blocked) +
+      P.hint('שקילה אחרונה: ' + Dates.short(c.lastWeighed) + ' · ' +
+        'אוכל אחרון: ' + Dates.short(c.lastEaten) + ' · ' +
+        'סה״כ ' + c.weighIns + ' שקילות ו-' + c.meals + ' ימי אוכל. ' +
+        'כל חלון נסגר בשקילה של הבוקר שאחרי היום האחרון שלו, ' +
+        'ולכן יום אוכל בלי שקילה למחרת אינו נספר.'));
+  }
+
   function render(state) {
     var entries = Store.getEntries();
     var settings = Store.getSettings();
@@ -115,6 +168,7 @@
         note: 'המשקל של הבוקר סוגר את היום שלפניו.'
       }) +
       note +
+      coverageCard(entries, state) +
       comparison(entries, settings, state));
   }
 

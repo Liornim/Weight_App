@@ -1136,6 +1136,41 @@ test('בטבלה יש עמודת סבב מלא ועמודת אחרונים', () 
   App.setState({ basis: 'adaptive', tab: 'home' });
 });
 
+
+test('טווח ישן מוסבר במקום להישאר תעלומה', () => {
+  // משקל נפסק לפני שבועיים, אוכל ממשיך — בדיוק המצב שמייצר
+  // תאריכים ישנים בטבלה
+  const cut = Dates.addDays(Dates.today(), -20);
+  for (let i = 0; i < 40; i++) {
+    const d = Dates.addDays(Dates.today(), -(39 - i));
+    const e = { date: d, kcal: 2500, steps: 9000 };
+    if (d <= cut) e.weightKg = 89 - 0.02 * i;
+    Store.upsert(e);
+  }
+
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7 });
+
+  const text = doc.getElementById('view').textContent;
+  assert(text.indexOf('הטווח נעצר') !== -1, 'לא הוסבר למה הטווח ישן');
+  assert(text.indexOf('אין שקילה') !== -1, 'לא נאמר מה חוסם');
+  assert(text.indexOf('שקילה אחרונה') !== -1, 'לא מוצגות נקודות הקצה');
+
+  App.setState({ tab: 'home' });
+});
+
+test('כשהטווח עדכני אין הודעת אבחון', () => {
+  for (let i = 0; i < 40; i++) {
+    Store.upsert({ date: Dates.addDays(Dates.today(), -(39 - i)),
+      weightKg: 89 - 0.02 * i, kcal: 2500, steps: 9000 });
+  }
+
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7 });
+  assert(doc.getElementById('view').textContent.indexOf('הטווח נעצר') === -1,
+    'הודעת אבחון מיותרת');
+
+  App.setState({ tab: 'home' });
+});
+
 test('כל אורכי החלון זמינים ומגיעים ממקור אחד', () => {
   const expected = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 21, 28];
   assert(window.Parts.WINDOWS.join() === expected.join(),
