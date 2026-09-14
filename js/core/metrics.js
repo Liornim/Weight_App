@@ -1984,6 +1984,116 @@
   }
 
   /**
+   * חישוב מיושר-יום: המשקל של הבוקר סוגר את היום שלפניו.
+   *
+   * מה שאכלת ביום שני מופיע במשקל של בוקר יום שלישי, לא בזה של
+   * יום שני. לכן לחלון של N ימי אוכל דרושות N+1 שקילות: אחת בבוקר
+   * שפותח את היום הראשון, ואחת בבוקר שאחרי היום האחרון.
+   *
+   *   12/09 בוקר  80.0 ────┐
+   *   12/09 אוכל  3,000    │ שני ימי אוכל
+   *   13/09 אוכל  3,000    │
+   *   14/09 בוקר  79.8 ────┘  ירידה 0.2 ק״ג
+   *
+   *   שריפה = 3,000 + (0.2 × 7700 ÷ 2) = 3,770
+   *
+   * ההבדל מהשוואת ממוצעי סבבים אינו סגנוני: שם חלק מהאוכל נספר מול
+   * משקל שנמדד לפניו. כאן כל קלוריה נמדדת מול השינוי שהיא גרמה.
+   *
+   * המחיר: שתי שקילות קצה נושאות את מלוא רעש השקילה, בעוד ממוצע
+   * מקטין אותו. ב-ci95 מוחזר האומדן כדי שאפשר יהיה לשפוט.
+   */
+  function dayAligned(entries, settings, options) {
+    var opts = options || {};
+    var days = Math.max(1, Math.round(num(opts.days) || 7));
+    var endDate = opts.endDate || Dates.today();
+
+    var kcalPerKg = num(settings.kcalPerKg) || DEFAULT_KCAL_PER_KG;
+    var kcalPerStep = num(settings.kcalPerStep);
+    if (kcalPerStep === null) kcalPerStep = 0.040;
+
+    var all = sorted(entries);
+    var byDate = {};
+    all.forEach(function (e) { byDate[e.date] = e; });
+
+    // היום האחרון שנסגרה בו תזונה, ושיש שקילה בבוקר שאחריו
+    var foodDays = all.filter(function (e) {
+      return e.date <= endDate && Fmt_isNum(e.kcal);
+    }).map(function (e) { return e.date; });
+
+    if (!foodDays.length) return { ok: false, reason: 'no-intake' };
+
+    var closable = foodDays.filter(function (date) {
+      var next = byDate[Dates.addDays(date, 1)];
+      return next && Fmt_isNum(next.weightKg);
+    });
+
+    if (!closable.length) {
+      return { ok: false, reason: 'no-closing-weigh-in', lastFood: foodDays[foodDays.length - 1] };
+    }
+
+    var foodTo = closable[closable.length - 1];
+    var foodFrom = Dates.addDays(foodTo, -(days - 1));
+
+    var startDate = foodFrom;                       // בוקר שפותח
+    var endWeighDate = Dates.addDays(foodTo, 1);    // בוקר שסוגר
+
+    var startEntry = byDate[startDate];
+    var endEntry = byDate[endWeighDate];
+
+    if (!startEntry || !Fmt_isNum(startEntry.weightKg)) {
+      return { ok: false, reason: 'no-opening-weigh-in', needDate: startDate };
+    }
+
+    // ימי האוכל שבתוך החלון
+    var inside = [];
+    for (var d = foodFrom; d <= foodTo; d = Dates.addDays(d, 1)) {
+      var day = byDate[d];
+      if (day && Fmt_isNum(day.kcal)) inside.push(day);
+    }
+
+    if (!inside.length) return { ok: false, reason: 'no-intake' };
+
+    var kcals = inside.map(function (e) { return e.kcal; });
+    var steps = inside.filter(function (e) { return Fmt_isNum(e.steps); })
+      .map(function (e) { return e.steps; });
+
+    var deltaKg = endEntry.weightKg - startEntry.weightKg;
+    var fromWeight = (-deltaKg * kcalPerKg) / days;
+    var meanKcal = Stats.mean(kcals);
+    var meanSteps = steps.length ? Stats.mean(steps) : null;
+    var stepKcal = meanSteps === null ? 0 : meanSteps * kcalPerStep;
+
+    var tdee = meanKcal + fromWeight;
+
+    // שתי שקילות קצה, ולכן שונות כפולה של רעש יחיד
+    var noise = weightNoiseSd(entries);
+    var ci95 = (1.96 * Math.sqrt(2) * noise * kcalPerKg) / days;
+
+    return {
+      ok: true,
+      days: days,
+      foodFrom: foodFrom,
+      foodTo: foodTo,
+      startDate: startDate,
+      endDate: endWeighDate,
+      startWeight: startEntry.weightKg,
+      endWeight: endEntry.weightKg,
+      deltaKg: deltaKg,
+      fromWeight: fromWeight,
+      meanKcal: meanKcal,
+      loggedDays: inside.length,
+      meanSteps: meanSteps,
+      stepKcal: stepKcal,
+      tdee: tdee,
+      base: tdee - stepKcal,
+      ci95: ci95,
+      kcalPerKg: kcalPerKg,
+      kcalPerStep: kcalPerStep
+    };
+  }
+
+  /**
    * יעד מול בפועל, לכל אורך חלון.
    *
    * היעד אינו קבוע: הוא נגזר מההוצאה שאותו חלון עצמו מודד, פחות
@@ -2280,6 +2390,7 @@
     halfSplit: halfSplit,
     macroSplit: macroSplit,
     targetGaps: targetGaps,
+    dayAligned: dayAligned,
     dayComparison: dayComparison,
     weightBlocks: weightBlocks,
     KCAL_PER_GRAM: KCAL_PER_GRAM,

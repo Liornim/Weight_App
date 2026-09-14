@@ -2525,6 +2525,113 @@ test('בלי כותרות נשמר המיפוי לפי מיקום', () => {
   assert(day.proteinG === 118, 'חלבון במקום הרביעי');
 });
 
+// ---------- חישוב מיושר-יום ----------
+
+test('הדוגמה של יום אחד', () => {
+  // 80.0 בבוקר, אכל 3000, 79.9 למחרת
+  const entries = [
+    { date: '2026-09-13', weightKg: 80.0, kcal: 3000, steps: 0 },
+    { date: '2026-09-14', weightKg: 79.9 }
+  ];
+  const r = Metrics.dayAligned(entries, { kcalPerKg: 7700, kcalPerStep: 0.04 },
+    { days: 1, endDate: '2026-09-14' });
+
+  assert(r.ok, 'צריך לעבוד: ' + r.reason);
+  assert(r.foodFrom === '2026-09-13' && r.foodTo === '2026-09-13', 'יום האוכל');
+  close(r.deltaKg, -0.1, 1e-9, 'הירידה');
+  close(r.fromWeight, 770, 1e-9, 'מהמשקל');
+  close(r.tdee, 3770, 1e-9, 'השריפה');
+});
+
+test('הדוגמה של יומיים', () => {
+  // 12/09 בוקר 80.0, אכל 12 ו-13 ממוצע 3000, 14/09 בוקר 79.8
+  const entries = [
+    { date: '2026-09-12', weightKg: 80.0, kcal: 3000, steps: 0 },
+    { date: '2026-09-13', kcal: 3000, steps: 0 },
+    { date: '2026-09-14', weightKg: 79.8 }
+  ];
+  const r = Metrics.dayAligned(entries, { kcalPerKg: 7700, kcalPerStep: 0.04 },
+    { days: 2, endDate: '2026-09-14' });
+
+  assert(r.ok, 'צריך לעבוד');
+  assert(r.startDate === '2026-09-12' && r.endDate === '2026-09-14',
+    'שקילות הקצה: ' + r.startDate + ' → ' + r.endDate);
+  assert(r.loggedDays === 2, 'ימי אוכל: ' + r.loggedDays);
+  close(r.deltaKg, -0.2, 1e-9, 'הירידה');
+  close(r.fromWeight, 770, 1e-9, '0.2 × 7700 ÷ 2');
+  close(r.tdee, 3770, 1e-9, 'השריפה');
+});
+
+test('לחלון של N ימי אוכל דרושות N+1 שקילות', () => {
+  const entries = buildSeries('2026-01-01', 20, (i) => ({
+    weightKg: 90 - 0.05 * i, kcal: 2400, steps: 8000
+  }));
+  const r = Metrics.dayAligned(entries, { kcalPerKg: 7700 },
+    { days: 7, endDate: '2026-01-20' });
+
+  assert(r.ok, 'צריך לעבוד');
+  assert(Dates.diffDays(r.foodFrom, r.foodTo) === 6, 'שבעה ימי אוכל');
+  assert(r.startDate === r.foodFrom, 'השקילה הפותחת היא בוקר היום הראשון');
+  assert(r.endDate === Dates.addDays(r.foodTo, 1),
+    'השקילה הסוגרת היא הבוקר שאחרי היום האחרון');
+  assert(Dates.diffDays(r.startDate, r.endDate) === 7, 'המרווח בין השקילות');
+});
+
+test('היום האחרון נסגר רק אם יש שקילה בבוקר שאחריו', () => {
+  // אכל ב-14, אבל אין שקילה ב-15
+  const entries = buildSeries('2026-01-01', 14, (i) => ({
+    weightKg: 90 - 0.05 * i, kcal: 2400
+  }));
+  const r = Metrics.dayAligned(entries, { kcalPerKg: 7700 },
+    { days: 3, endDate: '2026-01-14' });
+
+  assert(r.ok, 'צריך לעבוד');
+  assert(r.foodTo === '2026-01-13', 'היום האחרון שנסגר: ' + r.foodTo);
+  assert(r.endDate === '2026-01-14', 'השקילה הסוגרת');
+});
+
+test('בלי שקילה סוגרת בכלל מדווחת הסיבה', () => {
+  const entries = [
+    { date: '2026-01-01', weightKg: 90, kcal: 2400 },
+    { date: '2026-01-02', kcal: 2400 }
+  ];
+  const r = Metrics.dayAligned(entries, { kcalPerKg: 7700 },
+    { days: 1, endDate: '2026-01-02' });
+
+  assert(!r.ok, 'היה צריך להיכשל');
+  assert(r.reason === 'no-closing-weigh-in', 'הסיבה: ' + r.reason);
+});
+
+test('ההליכה יורדת מהשריפה', () => {
+  const entries = [
+    { date: '2026-09-12', weightKg: 80.0, kcal: 3000, steps: 10000 },
+    { date: '2026-09-13', kcal: 3000, steps: 10000 },
+    { date: '2026-09-14', weightKg: 79.8 }
+  ];
+  const r = Metrics.dayAligned(entries, { kcalPerKg: 7700, kcalPerStep: 0.04 },
+    { days: 2, endDate: '2026-09-14' });
+
+  close(r.stepKcal, 400, 1e-9, 'קלוריות ההליכה');
+  close(r.tdee, 3770, 1e-9, 'השריפה הכוללת');
+  close(r.base, 3370, 1e-9, 'בלי הליכה');
+});
+
+test('רווח הסמך גדול מזה של השוואת ממוצעים', () => {
+  // שתי שקילות קצה נושאות רעש מלא; ממוצע מקטין אותו
+  const entries = buildSeries('2026-01-01', 40, (i) => ({
+    weightKg: 90 - 0.03 * i + (i % 3 === 0 ? 0.4 : -0.2), kcal: 2400, steps: 8000
+  }));
+
+  const aligned = Metrics.dayAligned(entries, { kcalPerKg: 7700 },
+    { days: 7, endDate: '2026-02-09' });
+  const blocks = Metrics.blockWindows(entries,
+    { days: 7, count: 1, endDate: '2026-02-09', kcalPerKg: 7700 });
+
+  assert(aligned.ci95 > blocks.rows[0].ci95,
+    'ציפיתי לרווח רחב יותר: ' + aligned.ci95.toFixed(0) +
+    ' מול ' + blocks.rows[0].ci95.toFixed(0));
+});
+
 // ---------- דוח ----------
 // הריצה מופעלת בסוף הקובץ בלבד. אם היא תופעל באמצע, בדיקות שנרשמו
 // אחריה לא ייכנסו לתור וייעלמו בשקט — קרה בפועל.

@@ -891,7 +891,8 @@ test('הפער מוצג ליום ולא כסכום', () => {
 
 
 test('טאב החישוב מציג את כל השלבים עם מספרים', () => {
-  App.setState({ date: Dates.today(), tab: 'calc', basis: 7, stepsMode: 'off' });
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7,
+    stepsMode: 'off', align: 'blocks' });
 
   const text = doc.getElementById('view').textContent;
   assert(text.indexOf('איך הגענו למספר') !== -1, 'הכרטיס חסר');
@@ -909,11 +910,12 @@ test('טאב החישוב מציג את כל השלבים עם מספרים', ()
       'שלב ' + (i + 1) + ' בלי תוצאה מספרית');
   });
 
-  App.setState({ tab: 'home' });
+  App.setState({ tab: 'home', align: 'aligned' });
 });
 
 test('היעד בטאב החישוב תואם את מה שהמנוע מחשב', () => {
-  App.setState({ date: Dates.today(), tab: 'calc', basis: 7, stepsMode: 'off' });
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7,
+    stepsMode: 'off', align: 'blocks' });
 
   const shown = Number(doc.querySelector('#view .final .v').textContent.replace(/[^\d]/g, ''));
 
@@ -931,11 +933,47 @@ test('היעד בטאב החישוב תואם את מה שהמנוע מחשב', 
   assert(Math.abs(shown - expected) <= 1,
     'מוצג ' + shown + ' מול ' + expected);
 
+  App.setState({ tab: 'home', align: 'aligned' });
+});
+
+test('המודל המיושר תואם את המנוע', () => {
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7,
+    stepsMode: 'off', align: 'aligned' });
+
+  const r = Metrics.dayAligned(Store.getEntries(), Store.getSettings(),
+    { days: 7, endDate: Dates.today() });
+  if (!r.ok) { App.setState({ tab: 'home' }); return; }
+
+  const shown = Number(doc.querySelector('#view .final .v').textContent.replace(/[^\d]/g, ''));
+  const rate = Math.abs(Store.getSettings().goal.ratePerWeekKg || 0);
+  const deficit = (rate * (Store.getSettings().kcalPerKg || 7700)) / 7;
+
+  assert(Math.abs(shown - Math.round(r.base - deficit)) <= 1,
+    'מוצג ' + shown + ' מול ' + Math.round(r.base - deficit));
+
   App.setState({ tab: 'home' });
 });
 
+test('שתי שיטות המדידה נותנות מספרים שונים ושתיהן מוסברות', () => {
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7, align: 'aligned' });
+  const alignedText = doc.getElementById('view').textContent;
+  assert(alignedText.indexOf('סוגר את היום שלפניו') !== -1,
+    'המודל המיושר לא מוסבר');
+
+  doc.querySelector('[data-align="blocks"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+  assert(App.state.align === 'blocks', 'הבחירה לא נשמרה');
+
+  const blocksText = doc.getElementById('view').textContent;
+  assert(blocksText.indexOf('ההפרש במשקל בין שני הסבבים') !== -1,
+    'מודל הסבבים לא הוצג');
+
+  App.setState({ align: 'aligned', tab: 'home' });
+});
+
 test('בחירת "עם צעדים" משנה גם את שרשרת החישוב', () => {
-  App.setState({ date: Dates.today(), tab: 'calc', basis: 7, stepsMode: 'off' });
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7,
+    stepsMode: 'off', align: 'blocks' });
   const without = doc.querySelector('#view .final .v').textContent;
 
   doc.querySelector('[data-steps="on"]').dispatchEvent(
@@ -953,7 +991,7 @@ test('בחירת "עם צעדים" משנה גם את שרשרת החישוב', 
       'ההפרש ' + diff + ' אינו קלוריות ההליכה ' + Math.round(row.fromSteps));
   }
 
-  App.setState({ stepsMode: 'off', tab: 'home' });
+  App.setState({ stepsMode: 'off', align: 'aligned', tab: 'home' });
 });
 
 test('טבלת כל אורכי החלון מסמנת את הנבחר', () => {
@@ -1063,7 +1101,8 @@ test('תמיד נבחר הסבב המלא האחרון, בלי דילוגים', 
 });
 
 test('סבב שעדיין נאסף מדווח ואינו מוצג כמלא', () => {
-  App.setState({ date: Dates.today(), tab: 'calc', basis: 7 });
+  // ההערה שייכת למודל הסבבים
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7, align: 'blocks' });
   const found = window.CalcTab.solidBlock(
     Store.getEntries(), Store.getSettings(), App.state, 7);
 
@@ -1075,7 +1114,7 @@ test('סבב שעדיין נאסף מדווח ואינו מוצג כמלא', () 
     assert(found.row.to < Dates.today(), 'הסבב המוצג מגיע עד היום');
   }
 
-  App.setState({ basis: 'adaptive', tab: 'home' });
+  App.setState({ basis: 'adaptive', align: 'aligned', tab: 'home' });
 });
 
 test('כיסוי חלקי מדווח אבל אינו פוסל את הסבב', () => {
