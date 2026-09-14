@@ -701,16 +701,24 @@ test('בחירת "עם צעדים" מזיזה את כל השורות', () => {
   const withSteps = gapsOf();
   assert(withSteps.length === without.length, 'מספר השורות השתנה');
 
-  // עם צעדים היעד גדול יותר, ולכן הפער קטן יותר בכל שורה
+  // עם צעדים היעד גדול יותר, ולכן הפער קטן — אבל רק בחלונות
+  // שיש בהם רישום צעדים
   const model = Metrics.targetGaps(Store.getEntries(), Store.getSettings(),
     { endDate: Dates.today(), windows: window.TargetsTab.LENGTHS, withSteps: true });
-  const hasSteps = model.rows.some((r) => r.ok && r.stepKcal > 0);
+  const usable = model.rows.filter((r) => r.ok);
 
-  if (hasSteps) {
-    without.forEach((value, i) => {
-      assert(Number(withSteps[i]) < Number(value),
-        'שורה ' + i + ': הפער לא קטן — ' + withSteps[i] + ' מול ' + value);
-    });
+  let compared = 0;
+  usable.forEach((row, i) => {
+    if (!row.stepKcal) return;
+    assert(Number(withSteps[i]) < Number(without[i]),
+      row.days + ' ימים: הפער לא קטן — ' + withSteps[i] + ' מול ' + without[i]);
+    compared++;
+  });
+
+  if (!compared) {
+    // בלי רישום צעדים הבחירה לא אמורה לשנות דבר, וזה גם תקין
+    assert(withSteps.join() === without.join(),
+      'אין צעדים ובכל זאת המספרים השתנו');
   }
 
   App.setState({ stepsMode: 'off', tab: 'home' });
