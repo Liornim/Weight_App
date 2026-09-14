@@ -891,6 +891,113 @@ test('הפער מוצג ליום ולא כסכום', () => {
 
 
 
+
+test('טאב המאזן מציג כרטיס לכל אורך חלון', () => {
+  App.setState({ date: Dates.today(), tab: 'balance', stepsMode: 'off' });
+
+  const cards = [...doc.querySelectorAll('#view .card')]
+    .filter((c) => c.querySelector('.bal-line') || c.querySelector('.empty'));
+
+  assert(cards.length >= window.Parts.WINDOWS.length,
+    'ציפיתי לכרטיס לכל אורך, יש ' + cards.length);
+
+  App.setState({ tab: 'home' });
+});
+
+test('כל כרטיס בנוי כמאזן: פתיחה, תנועה, סגירה', () => {
+  App.setState({ date: Dates.today(), tab: 'balance', stepsMode: 'off' });
+
+  const card = [...doc.querySelectorAll('#view .card')]
+    .find((c) => c.querySelector('.bal-line'));
+  if (!card) { App.setState({ tab: 'home' }); return; }
+
+  const labels = [...card.querySelectorAll('.bal-label')].map((l) => l.textContent);
+  assert(labels.join() === 'י.פ,קלוריות,צעדים,י.ס',
+    'הסדר שגוי: ' + labels.join());
+
+  // לשקילות יש תאריך בודד, לתנועה טווח
+  const when = [...card.querySelectorAll('.bal-when')].map((l) => l.textContent);
+  assert(when[0].indexOf('–') === -1, 'לפתיחה יש טווח במקום תאריך');
+  assert(when[3].indexOf('–') === -1, 'לסגירה יש טווח במקום תאריך');
+  assert(when[1].indexOf('–') !== -1, 'לקלוריות אין טווח');
+  assert(when[2].indexOf('–') !== -1, 'לצעדים אין טווח');
+
+  assert(card.querySelector('.bal-calc'), 'חסר חישוב התחזוקה');
+  App.setState({ tab: 'home' });
+});
+
+test('המאזן סגור: הסגירה היא הבוקר שאחרי היום האחרון', () => {
+  App.setState({ date: Dates.today(), tab: 'balance' });
+
+  window.Parts.WINDOWS.forEach((days) => {
+    const r = Metrics.dayAligned(Store.getEntries(), Store.getSettings(),
+      { days: days, endDate: Dates.today() });
+    if (!r.ok) return;
+
+    assert(r.endDate === Dates.addDays(r.foodTo, 1),
+      days + ': הסגירה אינה הבוקר שאחרי');
+    assert(r.startDate === r.foodFrom,
+      days + ': הפתיחה אינה בוקר היום הראשון');
+    assert(Dates.diffDays(r.startDate, r.endDate) === days,
+      days + ': המרווח בין השקילות אינו ' + days);
+  });
+
+  App.setState({ tab: 'home' });
+});
+
+test('התחזוקה בכרטיס תואמת את המנוע', () => {
+  App.setState({ date: Dates.today(), tab: 'balance', stepsMode: 'off' });
+
+  const card = [...doc.querySelectorAll('#view .card')]
+    .find((c) => c.querySelector('.bal-result'));
+  if (!card) { App.setState({ tab: 'home' }); return; }
+
+  const title = card.querySelector('h3').textContent;
+  const days = window.Parts.WINDOWS.find((d) => window.Parts.windowLabel(d) === title);
+
+  const r = Metrics.dayAligned(Store.getEntries(), Store.getSettings(),
+    { days: days, endDate: Dates.today() });
+
+  // הסינון הקודם הסיר את סימן המינוס
+  const raw = card.querySelector('.bal-result .v').textContent
+    .replace(/[^0-9.\-]/g, '');
+  const shown = Number(raw);
+  assert(Math.abs(shown - Math.round(r.base)) <= 1,
+    days + ': מוצג ' + shown + ' מול ' + Math.round(r.base));
+
+  App.setState({ tab: 'home' });
+});
+
+
+test('תחזוקה לא סבירה מסומנת ומוסברת', () => {
+  App.setState({ date: Dates.today(), tab: 'balance', stepsMode: 'off' });
+
+  window.Parts.WINDOWS.forEach((days) => {
+    const r = Metrics.dayAligned(Store.getEntries(), Store.getSettings(),
+      { days: days, endDate: Dates.today() });
+    if (!r.ok) return;
+
+    const title = window.Parts.windowLabel(days);
+    const card = [...doc.querySelectorAll('#view .card')]
+      .find((c) => (c.querySelector('h3') || {}).textContent === title);
+    if (!card || !card.querySelector('.bal-result')) return;
+
+    const bad = r.base < 800 || r.base > 6000;
+    const marked = !!card.querySelector('.bal-result--bad');
+    assert(marked === bad, title + ': הסימון ' + marked + ' מול הצפוי ' + bad);
+
+    if (bad) {
+      assert(card.textContent.indexOf('אינו סביר') !== -1,
+        title + ': לא הוסבר למה המספר לא סביר');
+      // ויעד שנגזר ממספר לא סביר לא מוצג בכלל
+      assert(!card.querySelector('.bal-result--target'),
+        title + ': הוצג יעד על בסיס מספר לא סביר');
+    }
+  });
+
+  App.setState({ tab: 'home' });
+});
+
 test('כל אורכי החלון זמינים ומגיעים ממקור אחד', () => {
   const expected = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 21, 28];
   assert(window.Parts.WINDOWS.join() === expected.join(),

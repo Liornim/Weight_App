@@ -637,6 +637,60 @@ textarea:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
 .final .v { font-size: 30px; font-weight: 600; color: var(--good); }
 .final .s { font-size: 12.5px; color: var(--ink-faint); }
 
+/* מאזן */
+
+.bal-line {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  align-items: baseline;
+  gap: 8px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 14px;
+}
+
+.bal-line--edge {
+  background: var(--paper);
+  margin: 0 -10px;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  border-bottom: 0;
+}
+
+.bal-label { font-weight: 600; color: var(--ink); }
+.bal-when { font-size: 12px; color: var(--ink-faint); }
+.bal-value { font-size: 16px; font-weight: 600; }
+.bal-unit { font-size: 11.5px; font-weight: 400; color: var(--ink-faint); }
+
+.bal-calc { margin-top: 14px; }
+
+.bal-calc-head {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink-faint);
+  margin-bottom: 8px;
+}
+
+.bal-result {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--good-bg);
+}
+
+.bal-result--target { background: var(--paper); }
+.bal-result--bad { background: var(--bad-bg); }
+.bal-result--bad .v { color: var(--bad); }
+.bal-result .k { font-size: 13px; color: var(--ink-soft); }
+.bal-result .v { font-size: 24px; font-weight: 600; color: var(--good); }
+.bal-result--target .v { color: var(--brand); }
+.bal-result .s { font-size: 12px; color: var(--ink-faint); }
+
 /* טבלה */
 
 .table-wrap { overflow-x: auto; margin: 0 -4px; }

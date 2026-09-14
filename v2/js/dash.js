@@ -697,7 +697,8 @@
     { value: 'entry', label: 'הזנה' },
     { value: 'weight', label: 'משקל' },
     { value: 'targets', label: 'יעדים' },
-    { value: 'calc', label: 'החישוב' }
+    { value: 'calc', label: 'החישוב' },
+    { value: 'balance', label: 'מאזן' }
   ];
 
   function tabs(active) {
@@ -723,6 +724,7 @@
       var panel = state.tab === 'weight' ? root.WeightTab.render(state)
         : state.tab === 'targets' ? root.TargetsTab.render(state)
         : state.tab === 'calc' ? root.CalcTab.render(state)
+        : state.tab === 'balance' ? root.BalanceTab.render(state)
         : root.EntryTab.render(state);
 
       container.innerHTML =
