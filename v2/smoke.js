@@ -911,12 +911,15 @@ test('כל כרטיס בנוי כמאזן: פתיחה, תנועה, סגירה', 
     .find((c) => c.querySelector('.bal-line'));
   if (!card) { App.setState({ tab: 'home' }); return; }
 
-  const labels = [...card.querySelectorAll('.bal-label')].map((l) => l.textContent);
-  assert(labels.join() === 'י.פ,קלוריות,צעדים,י.ס',
-    'הסדר שגוי: ' + labels.join());
+  // המאזן הראשון בכרטיס הוא הסבב המלא; אחריו החלון המתגלגל
+  const main = [...card.querySelectorAll('.bal-label')]
+    .filter((l) => !l.closest('.pending'))
+    .map((l) => l.textContent);
+  assert(main.join() === 'י.פ,קלוריות,צעדים,י.ס', 'הסדר שגוי: ' + main.join());
 
   // לשקילות יש תאריך בודד, לתנועה טווח
-  const when = [...card.querySelectorAll('.bal-when')].map((l) => l.textContent);
+  const when = [...card.querySelectorAll('.bal-when')]
+    .filter((l) => !l.closest('.pending')).map((l) => l.textContent);
   assert(when[0].indexOf('–') === -1, 'לפתיחה יש טווח במקום תאריך');
   assert(when[3].indexOf('–') === -1, 'לסגירה יש טווח במקום תאריך');
   assert(when[1].indexOf('–') !== -1, 'לקלוריות אין טווח');
@@ -1037,14 +1040,15 @@ test('תחזוקה לא סבירה מסומנת ומוסברת', () => {
 });
 
 
-test('הסבב שנאסף מוצג עם ההערכה שלו', () => {
+
+test('החלון המתגלגל מוצג לצד הסבב המלא', () => {
   App.setState({ date: Dates.today(), tab: 'balance', stepsMode: 'off' });
 
   let checked = 0;
   window.Parts.WINDOWS.forEach((days) => {
     const r = Metrics.dayAligned(Store.getEntries(), Store.getSettings(),
       { days: days, endDate: Dates.today() });
-    if (!r.ok || !r.pending) return;
+    if (!r.ok || !r.rolling) return;
 
     const card = [...doc.querySelectorAll('#view .card')]
       .find((c) => (c.querySelector('h3') || {}).textContent ===
@@ -1052,38 +1056,84 @@ test('הסבב שנאסף מוצג עם ההערכה שלו', () => {
     if (!card) return;
 
     const box = card.querySelector('.pending');
-    assert(box, days + ': חסר הסבב הנאסף');
-    assert(box.textContent.indexOf(r.pending.days + ' מתוך ' + days) !== -1,
-      days + ': הכותרת לא מציגה כמה נאספו');
+    assert(box, days + ': חסר החלון המתגלגל');
+    assert(box.textContent.indexOf(days + ' הימים האחרונים') !== -1,
+      days + ': הכותרת שגויה');
 
     const shown = Number(box.querySelector('.pending-result .v').textContent
       .replace(/[^0-9.\-]/g, ''));
-    assert(Math.abs(shown - Math.round(r.pending.base)) <= 1,
-      days + ': מוצג ' + shown + ' מול ' + Math.round(r.pending.base));
+    assert(Math.abs(shown - Math.round(r.rolling.base)) <= 1,
+      days + ': מוצג ' + shown + ' מול ' + Math.round(r.rolling.base));
 
     checked++;
   });
 
-  assert(checked > 0, 'לא נמצא אף סבב נאסף לבדיקה');
+  assert(checked > 0, 'לא נמצא אף חלון מתגלגל');
   App.setState({ tab: 'home' });
 });
 
-test('ההערכה הזמנית מוחלשת מול הסבב המלא', () => {
+test('החלון המתגלגל באותו אורך, ולכן באותו דיוק', () => {
+  window.Parts.WINDOWS.forEach((days) => {
+    const r = Metrics.dayAligned(Store.getEntries(), Store.getSettings(),
+      { days: days, endDate: Dates.today() });
+    if (!r.ok || !r.rolling) return;
+
+    assert(r.rolling.days === days, days + ': אורך שונה');
+    assert(Math.abs(r.rolling.ci95 - r.ci95) < 1e-6,
+      days + ': דיוק שונה — ' + Math.round(r.rolling.ci95) + ' מול ' + Math.round(r.ci95));
+    assert(Dates.diffDays(r.rolling.from, r.rolling.to) === days - 1,
+      days + ': טווח שגוי');
+  });
+});
+
+test('החלון הקודם מוצג להשוואה', () => {
   App.setState({ date: Dates.today(), tab: 'balance' });
 
   const card = [...doc.querySelectorAll('#view .card')]
     .find((c) => c.querySelector('.pending'));
   if (!card) { App.setState({ tab: 'home' }); return; }
 
-  // המספר הסופי בולט, הזמני לא
-  const finalSize = card.querySelector('.bal-result .v');
-  const pendingSize = card.querySelector('.pending-result .v');
-  assert(finalSize && pendingSize, 'חסר אחד המספרים');
-  assert(finalSize.className !== pendingSize.className ||
-    finalSize.parentNode.className !== pendingSize.parentNode.className,
-    'שני המספרים נראים זהים');
+  const title = card.querySelector('h3').textContent;
+  const days = window.Parts.WINDOWS.find((d) => window.Parts.windowLabel(d) === title);
+  const r = Metrics.dayAligned(Store.getEntries(), Store.getSettings(),
+    { days: days, endDate: Dates.today() });
+
+  if (r.rolling && r.rolling.previous) {
+    const note = card.querySelector('.pending-note').textContent;
+    assert(note.indexOf('שלפניהם') !== -1, 'אין השוואה לחלון הקודם');
+    // החלון הקודם נגמר יום לפני שהנוכחי מתחיל
+    assert(r.rolling.previous.to === Dates.addDays(r.rolling.from, -1),
+      'החלונות אינם רצופים');
+  }
 
   App.setState({ tab: 'home' });
+});
+
+test('בטבלה יש עמודת סבב מלא ועמודת אחרונים', () => {
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7, stepsMode: 'off' });
+
+  const table = [...doc.querySelectorAll('#view table.t')]
+    .find((t) => t.textContent.indexOf('אחרונים') !== -1);
+  assert(table, 'הטבלה חסרה');
+
+  const heads = [...table.querySelectorAll('th')].map((h) => h.textContent);
+  assert(heads.indexOf('סבב מלא') !== -1, 'חסרה עמודת הסבב המלא');
+  assert(heads.indexOf('אחרונים') !== -1, 'חסרה עמודת האחרונים');
+
+  const rows = [...table.querySelectorAll('tbody tr')];
+  window.Parts.WINDOWS.forEach((days, i) => {
+    const r = Metrics.dayAligned(Store.getEntries(), Store.getSettings(),
+      { days: days, endDate: Dates.today() });
+    if (!r.ok || !r.rolling || r.rolling.sameAsBlock) return;
+
+    const cell = rows[i].children[6];
+    const shown = Number((cell.querySelector('.num') || {}).textContent
+      ? cell.querySelector('.num').textContent.replace(/[^0-9.\-]/g, '') : NaN);
+    assert(Math.abs(shown - Math.round(r.rolling.base)) <= 1,
+      days + ': מוצג ' + shown + ' מול ' + Math.round(r.rolling.base));
+  });
+
+  App.setState({ basis: 'adaptive', tab: 'home' });
 });
 
 test('כל אורכי החלון זמינים ומגיעים ממקור אחד', () => {
@@ -1121,7 +1171,7 @@ test('טבלת החישוב מציגה שורה לכל אורך', () => {
   App.setState({ date: Dates.today(), tab: 'calc', basis: 7 });
 
   const table = [...doc.querySelectorAll('#view table.t')]
-    .find((t) => t.textContent.indexOf('תחזוקה') !== -1);
+    .find((t) => t.textContent.indexOf('סבב מלא') !== -1);
   assert(table, 'הטבלה חסרה');
 
   const rows = [...table.querySelectorAll('tbody tr')];
@@ -1147,7 +1197,7 @@ test('טאב החישוב הוא טבלה אחת, בלי כרטיס שלבים',
   // והטבלה עצמה נשארה
   const text = doc.getElementById('view').textContent;
   assert(text.indexOf('י.פ') !== -1 && text.indexOf('י.ס') !== -1, 'הטבלה חסרה');
-  assert(text.indexOf('הסבב הבא') !== -1, 'עמודת הסבב הנאסף חסרה');
+  assert(text.indexOf('אחרונים') !== -1, 'עמודת החלון המתגלגל חסרה');
 
   App.setState({ tab: 'home' });
 });
@@ -1172,42 +1222,11 @@ test('בורר הצעדים עדיין משנה את הטבלה', () => {
   App.setState({ stepsMode: 'off', tab: 'home' });
 });
 
-test('הטבלה מציגה את הסבב הנאסף עם המספר שנגזר ממנו', () => {
-  App.setState({ date: Dates.today(), tab: 'calc', basis: 7, stepsMode: 'off' });
-
-  const table = [...doc.querySelectorAll('#view table.t')]
-    .find((t) => t.textContent.indexOf('הסבב הבא') !== -1);
-  assert(table, 'הטבלה חסרה');
-
-  const rows = [...table.querySelectorAll('tbody tr')];
-  let checked = 0;
-
-  window.Parts.WINDOWS.forEach((days, i) => {
-    const r = Metrics.dayAligned(Store.getEntries(), Store.getSettings(),
-      { days: days, endDate: Dates.today() });
-    if (!r.ok || !r.pending) return;
-
-    const cell = rows[i].querySelector('.pending-cell');
-    assert(cell, days + ': חסרה עמודת הסבב הבא');
-
-    const shown = Number(cell.querySelector('.num').textContent.replace(/[^0-9.\-]/g, ''));
-    assert(Math.abs(shown - Math.round(r.pending.base)) <= 1,
-      days + ': מוצג ' + shown + ' מול ' + Math.round(r.pending.base));
-    assert(cell.textContent.indexOf(r.pending.days + '/' + days) !== -1,
-      days + ': לא מוצג כמה ימים נאספו');
-
-    checked++;
-  });
-
-  assert(checked > 0, 'לא נמצא אף סבב נאסף');
-  App.setState({ basis: 'adaptive', tab: 'home' });
-});
-
 test('טבלת כל אורכי החלון מסמנת את הנבחר', () => {
   App.setState({ date: Dates.today(), tab: 'calc', basis: 10 });
 
   const table = [...doc.querySelectorAll('#view table.t')]
-    .find((t) => t.textContent.indexOf('תחזוקה') !== -1);
+    .find((t) => t.textContent.indexOf('סבב מלא') !== -1);
   assert(table, 'הטבלה חסרה');
 
   const marked = [...table.querySelectorAll('tbody tr')]

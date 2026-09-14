@@ -54,14 +54,19 @@
       var noisy = r.ci95 > 600;
       var isActive = String(days) === String(active);
 
-      // הסבב שנאסף, אם יש
-      var next = r.pending
-        ? '<span class="num">' + Fmt.n(withSteps ? r.pending.tdee : r.pending.base, 0) +
-          '</span><span class="sub">' + r.pending.days + '/' + days + ' ימים</span>'
-        : r.openDays
-          ? '<span class="flat">' + r.openDays + '/' + days + '</span>' +
-            '<span class="sub">אין שקילה סוגרת</span>'
-          : '<span class="flat">—</span><span class="sub">נסגר בדיוק</span>';
+      /**
+       * החלון המתגלגל: אותו אורך, נגמר ביום האחרון שאפשר לסגור.
+       * הוא באותה רמת דיוק כמו הסבב המעוגן ועדכני יותר ממנו,
+       * בניגוד לסבב חלקי שרק מגדיל את הרעש.
+       */
+      var roll = r.rolling;
+      var next = roll
+        ? (roll.sameAsBlock
+            ? '<span class="flat">זהה</span><span class="sub">אותה תקופה</span>'
+            : '<span class="num">' + Fmt.n(withSteps ? roll.tdee : roll.base, 0) +
+              '</span><span class="sub">' + P.esc(Dates.short(roll.from) + '–' +
+              Dates.short(roll.to)) + '</span>')
+        : '<span class="flat">—</span><span class="sub">אין שקילה סוגרת</span>';
 
       return '<tr' + (isActive ? ' class="now"' : '') + '>' +
         '<td class="n">' + days + (isActive ? ' ✓' : '') + '</td>' +
@@ -79,12 +84,12 @@
     return P.card('כל אורכי החלון', 'אותו חישוב בדיוק, על תקופות שונות',
       P.table([
         { label: 'ימים', n: true }, { label: 'תקופה', n: true },
-        'י.פ', 'י.ס', 'קלוריות', 'תחזוקה', 'הסבב הבא'
+        'י.פ', 'י.ס', 'קלוריות', 'סבב מלא', 'אחרונים'
       ], [rows],
-      { hint: 'הסבבים נספרים מיום האוכל הראשון קדימה, ומוצג האחרון שהושלם. ' +
-        'העמודה האחרונה היא הסבב שעדיין נאסף: המספר שנגזר ממה שכבר יש בו, ' +
-        'ולצידו כמה ימים מתוך החלון. הוא רועש יותר מהמספר שמשמאלו, ' +
-        'ויתייצב ככל שהסבב יתקדם.' }));
+      { hint: '"סבב מלא" נספר מיום האוכל הראשון קדימה — היסטוריה מסודרת. ' +
+        '"אחרונים" הוא חלון באותו אורך שנגמר ביום האחרון שאפשר לסגור, ' +
+        'כלומר מה קורה עכשיו. שניהם באותו אורך ולכן באותה רמת דיוק. ' +
+        'כשהם מסכימים אפשר להאמין למספר.' }));
   }
 
   function render(state) {

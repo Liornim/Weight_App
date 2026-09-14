@@ -2102,6 +2102,93 @@
     var ci95 = (1.96 * Math.sqrt(2) * noise * kcalPerKg) / days;
 
     /**
+     * חלון מתגלגל באותו אורך, שנגמר ביום האחרון שאפשר לסגור.
+     *
+     * הסבב המעוגן הוא היסטוריה מסודרת; החלון המתגלגל עונה על
+     * "מה קורה עכשיו". שניהם באותו אורך ולכן באותה רמת דיוק —
+     * בניגוד לסבב חלקי, שמציג את אותו רעש בהגדלה רק משום שהמכנה
+     * שלו קטן יותר.
+     */
+    var rolling = null;
+    if (opts.anchored !== false) {
+      var rollTo = lastClosable;
+      var rollFrom = Dates.addDays(rollTo, -(days - 1));
+      var rollOpen = byDate[rollFrom];
+      var rollClose = byDate[Dates.addDays(rollTo, 1)];
+
+      var rollMeals = [];
+      for (var rd = rollFrom; rd <= rollTo; rd = Dates.addDays(rd, 1)) {
+        var rday = byDate[rd];
+        if (rday && Fmt_isNum(rday.kcal)) rollMeals.push(rday);
+      }
+
+      if (rollMeals.length && rollOpen && Fmt_isNum(rollOpen.weightKg) &&
+          rollClose && Fmt_isNum(rollClose.weightKg)) {
+        var rollDelta = rollClose.weightKg - rollOpen.weightKg;
+        var rollFromWeight = (-rollDelta * kcalPerKg) / days;
+        var rollKcal = Stats.mean(rollMeals.map(function (e) { return e.kcal; }));
+        var rollStepsList = rollMeals.filter(function (e) { return Fmt_isNum(e.steps); })
+          .map(function (e) { return e.steps; });
+        var rollSteps = rollStepsList.length ? Stats.mean(rollStepsList) : null;
+        var rollStepKcal = rollSteps === null ? 0 : rollSteps * kcalPerStep;
+        var rollTdee = rollKcal + rollFromWeight;
+
+        // החלון שקדם לו, לאותו אורך — כדי לראות לאן זה זז
+        var prevTo = Dates.addDays(rollFrom, -1);
+        var prevFrom = Dates.addDays(prevTo, -(days - 1));
+        var prevOpen = byDate[prevFrom];
+        var prevMeals = [];
+        for (var qd = prevFrom; qd <= prevTo; qd = Dates.addDays(qd, 1)) {
+          var qday = byDate[qd];
+          if (qday && Fmt_isNum(qday.kcal)) prevMeals.push(qday);
+        }
+
+        var previous = null;
+        if (prevMeals.length && prevOpen && Fmt_isNum(prevOpen.weightKg)) {
+          var prevDelta = rollOpen.weightKg - prevOpen.weightKg;
+          var prevFromWeight = (-prevDelta * kcalPerKg) / days;
+          var prevKcal = Stats.mean(prevMeals.map(function (e) { return e.kcal; }));
+          var prevStepsList = prevMeals.filter(function (e) { return Fmt_isNum(e.steps); })
+            .map(function (e) { return e.steps; });
+          var prevStepKcal = prevStepsList.length
+            ? Stats.mean(prevStepsList) * kcalPerStep : 0;
+          var prevTdee = prevKcal + prevFromWeight;
+
+          previous = {
+            from: prevFrom, to: prevTo,
+            startWeight: prevOpen.weightKg, endWeight: rollOpen.weightKg,
+            deltaKg: prevDelta, fromWeight: prevFromWeight,
+            meanKcal: prevKcal, loggedDays: prevMeals.length,
+            stepKcal: prevStepKcal,
+            tdee: prevTdee, base: prevTdee - prevStepKcal
+          };
+        }
+
+        rolling = {
+          days: days,
+          from: rollFrom,
+          to: rollTo,
+          startDate: rollFrom,
+          endDate: Dates.addDays(rollTo, 1),
+          startWeight: rollOpen.weightKg,
+          endWeight: rollClose.weightKg,
+          deltaKg: rollDelta,
+          fromWeight: rollFromWeight,
+          meanKcal: rollKcal,
+          loggedDays: rollMeals.length,
+          meanSteps: rollSteps,
+          stepKcal: rollStepKcal,
+          tdee: rollTdee,
+          base: rollTdee - rollStepKcal,
+          ci95: (1.96 * Math.sqrt(2) * weightNoiseSd(entries) * kcalPerKg) / days,
+          previous: previous,
+          // האם הוא חופף לסבב המעוגן
+          sameAsBlock: rollFrom === foodFrom
+        };
+      }
+    }
+
+    /**
      * הערכה ביניים לסבב שעדיין נאסף.
      *
      * אותו חישוב בדיוק, על הימים שכבר יש. היא אינה תחליף לסבב מלא —
@@ -2157,6 +2244,7 @@
     return {
       ok: true,
       days: days,
+      rolling: rolling,
       pending: pending,
       anchored: opts.anchored !== false,
       anchor: foodDays[0],

@@ -2571,6 +2571,56 @@ test('סבב שעדיין נאסף אינו מוצג', () => {
   assert(r.openDays === 3, 'נאספו לסבב הבא: ' + r.openDays);
 });
 
+test('החלון המתגלגל באותו אורך ובאותו דיוק כמו הסבב', () => {
+  const entries = buildSeries('2026-01-01', 30, (i) => ({
+    weightKg: 90 - 0.04 * i, kcal: 2400, steps: 8000
+  }));
+  entries.push({ date: '2026-01-31', weightKg: 88.8 });
+
+  const r = Metrics.dayAligned(entries, { kcalPerKg: 7700 },
+    { days: 7, endDate: '2026-01-31' });
+
+  assert(r.rolling, 'חסר החלון המתגלגל');
+  assert(r.rolling.days === 7, 'אורך שונה');
+  close(r.rolling.ci95, r.ci95, 1e-9, 'הדיוק אמור להיות זהה');
+
+  // נגמר ביום האחרון שאפשר לסגור
+  assert(r.rolling.to === '2026-01-30', 'הסיום: ' + r.rolling.to);
+  assert(r.rolling.endDate === '2026-01-31', 'השקילה הסוגרת');
+});
+
+test('החלון הקודם צמוד לנוכחי ובאותו אורך', () => {
+  const entries = buildSeries('2026-01-01', 30, (i) => ({
+    weightKg: 90 - 0.04 * i, kcal: 2400 + (i % 2 ? 300 : -300)
+  }));
+  entries.push({ date: '2026-01-31', weightKg: 88.8 });
+
+  const r = Metrics.dayAligned(entries, { kcalPerKg: 7700 },
+    { days: 5, endDate: '2026-01-31' });
+
+  const prev = r.rolling.previous;
+  assert(prev, 'חסר החלון הקודם');
+  assert(prev.to === Dates.addDays(r.rolling.from, -1), 'אינם רצופים');
+  assert(Dates.diffDays(prev.from, prev.to) === 4, 'אורך שונה');
+
+  // שקילת הסגירה של הקודם היא שקילת הפתיחה של הנוכחי
+  close(prev.endWeight, r.rolling.startWeight, 1e-9, 'הקצה המשותף');
+});
+
+test('כשהסבב המעוגן נגמר בדיוק, המתגלגל זהה לו', () => {
+  // 28 ימי אוכל, חלון 7: הסבב הרביעי נגמר ביום האחרון
+  const entries = buildSeries('2026-01-01', 28, (i) => ({
+    weightKg: 90 - 0.04 * i, kcal: 2400
+  }));
+  entries.push({ date: '2026-01-29', weightKg: 88.9 });
+
+  const r = Metrics.dayAligned(entries, { kcalPerKg: 7700 },
+    { days: 7, endDate: '2026-01-29' });
+
+  assert(r.rolling.sameAsBlock, 'היה צריך להיות זהה');
+  close(r.rolling.base, r.base, 1e-9, 'אותה תקופה, אותו מספר');
+});
+
 test('הסבב שנאסף מקבל הערכה על מה שכבר יש', () => {
   // 10 ימי אוכל, חלון 7: סבב מלא אחד ועוד 3 ימים
   const entries = buildSeries('2026-01-01', 10, (i) => ({

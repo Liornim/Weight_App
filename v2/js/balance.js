@@ -31,33 +31,40 @@
    * "8 מתוך 14" לבדו לא אומר כלום. המספר שמתלווה אליו אומר לאן זה
    * הולך — ומופיע מוחלש, כי הוא נשען על פחות ימים ולכן רועש יותר.
    */
-  function pendingBlock(r, withSteps) {
-    var p = r.pending;
+  function rollingBlock(r, withSteps) {
+    var p = r.rolling;
     var value = withSteps ? p.tdee : p.base;
-    var wide = p.ci95 > 600;
+    var prev = p.previous ? (withSteps ? p.previous.tdee : p.previous.base) : null;
+    var move = prev === null ? null : value - prev;
 
     return '<div class="pending">' +
-      '<div class="pending-head">הסבב הבא · ' + p.days + ' מתוך ' + p.of + ' ימים</div>' +
+      '<div class="pending-head">' + p.days + ' הימים האחרונים · ' +
+        P.esc(Dates.short(p.from) + '–' + Dates.short(p.to)) + '</div>' +
       '<div class="bal-line"><span class="bal-label">י.פ</span>' +
         '<span class="bal-when">' + P.esc(Dates.short(p.startDate)) + '</span>' +
         '<span class="bal-value num">' + Fmt.n(p.startWeight, 1) + '</span></div>' +
       '<div class="bal-line"><span class="bal-label">קלוריות</span>' +
-        '<span class="bal-when">' + P.esc(Dates.short(p.from) + '–' + Dates.short(p.to)) +
-        '</span><span class="bal-value num">' + Fmt.n(p.meanKcal, 0) + '</span></div>' +
+        '<span class="bal-when">ממוצע ליום</span>' +
+        '<span class="bal-value num">' + Fmt.n(p.meanKcal, 0) + '</span></div>' +
       '<div class="bal-line"><span class="bal-label">י.ס</span>' +
         '<span class="bal-when">' + P.esc(Dates.short(p.endDate)) + '</span>' +
         '<span class="bal-value num">' + Fmt.n(p.endWeight, 1) + '</span></div>' +
       '<div class="pending-result">' +
-        '<span class="k">צפוי</span>' +
+        '<span class="k">תחזוקה</span>' +
         '<span class="v num">' + Fmt.n(value, 0) + '</span>' +
         '<span class="s">± ' + Fmt.n(p.ci95, 0) + '</span>' +
       '</div>' +
       '<p class="pending-note">' +
-        (wide
-          ? 'לפי ' + p.days + ' ימים בלבד, ולכן הטווח רחב. המספר יתייצב ' +
-            'ככל שהסבב יתקדם.'
-          : 'לפי ' + p.days + ' מתוך ' + p.of + ' הימים. עוד ' + (p.of - p.days) +
-            ' ימים והסבב ייסגר.') +
+        (p.sameAsBlock
+          ? 'התקופה הזו זהה לסבב שמעליה.'
+          : 'אותו אורך חלון, נגמר ביום האחרון שאפשר לסגור — ולכן באותה ' +
+            'רמת דיוק ועדכני יותר.') +
+        (move === null ? ''
+          : ' לעומת ' + p.days + ' הימים שלפניהם (' +
+            Fmt.n(prev, 0) + '): ' +
+            (Math.abs(move) < 50 ? 'כמעט ללא שינוי.'
+              : move > 0 ? 'עלייה של ' + Fmt.n(move, 0) + '.'
+              : 'ירידה של ' + Fmt.n(-move, 0) + '.')) +
       '</p>' +
     '</div>';
   }
@@ -144,11 +151,11 @@
           'רישום אוכל, ולכן הממוצע נשען על פחות ימים מהחלון.')
         : '') +
 
-      (r.pending ? pendingBlock(r, withSteps) : '') +
+      (r.rolling ? rollingBlock(r, withSteps) : '') +
 
-      (r.openDays && !r.pending
+      (r.openDays
         ? P.hint('הסבב הבא כבר התחיל — ' + r.openDays + ' מתוך ' + days +
-          ' ימים — ויוצג כאן כשיושלם.')
+          ' ימים — ויוצג כסבב מלא כשיושלם.')
         : ''));
   }
 
