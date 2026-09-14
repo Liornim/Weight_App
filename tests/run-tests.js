@@ -2571,6 +2571,58 @@ test('סבב שעדיין נאסף אינו מוצג', () => {
   assert(r.openDays === 3, 'נאספו לסבב הבא: ' + r.openDays);
 });
 
+test('הסבב שנאסף מקבל הערכה על מה שכבר יש', () => {
+  // 10 ימי אוכל, חלון 7: סבב מלא אחד ועוד 3 ימים
+  const entries = buildSeries('2026-01-01', 10, (i) => ({
+    weightKg: 90 - 0.05 * i, kcal: 2400, steps: 8000
+  }));
+  entries.push({ date: '2026-01-11', weightKg: 89.5 });
+
+  const r = Metrics.dayAligned(entries, { kcalPerKg: 7700, kcalPerStep: 0.04 },
+    { days: 7, endDate: '2026-01-11' });
+
+  assert(r.pending, 'חסרה הערכת ביניים');
+  assert(r.pending.days === 3 && r.pending.of === 7,
+    r.pending.days + ' מתוך ' + r.pending.of);
+  assert(r.pending.from === '2026-01-08' && r.pending.to === '2026-01-10',
+    'הטווח: ' + r.pending.from + '–' + r.pending.to);
+  assert(r.pending.startDate === '2026-01-08' && r.pending.endDate === '2026-01-11',
+    'השקילות: ' + r.pending.startDate + ' → ' + r.pending.endDate);
+
+  // אותו חישוב בדיוק, על הימים שכבר יש
+  close(r.pending.fromWeight,
+    (-(r.pending.endWeight - r.pending.startWeight) * 7700) / 3, 1e-9, 'מהמשקל');
+  close(r.pending.tdee, r.pending.meanKcal + r.pending.fromWeight, 1e-9, 'השריפה');
+});
+
+test('הערכת הביניים רועשת יותר ככל שנאספו פחות ימים', () => {
+  const entries = buildSeries('2026-01-01', 12, (i) => ({
+    weightKg: 90 - 0.05 * i + (i % 3 === 0 ? 0.3 : -0.15), kcal: 2400
+  }));
+  entries.push({ date: '2026-01-13', weightKg: 89.4 });
+
+  const r = Metrics.dayAligned(entries, { kcalPerKg: 7700 },
+    { days: 7, endDate: '2026-01-13' });
+
+  assert(r.pending, 'חסרה הערכת ביניים');
+  assert(r.pending.ci95 > r.ci95,
+    'הרווח של החלקי ' + Math.round(r.pending.ci95) +
+    ' אינו רחב מזה של המלא ' + Math.round(r.ci95));
+});
+
+test('בלי שקילה סוגרת לסבב הפתוח אין הערכה', () => {
+  // אין שקילה ביום שאחרי היום האחרון שנאסף
+  const entries = buildSeries('2026-01-01', 9, (i) => ({
+    weightKg: 90 - 0.05 * i, kcal: 2400
+  }));
+
+  const r = Metrics.dayAligned(entries, { kcalPerKg: 7700 },
+    { days: 7, endDate: '2026-01-09' });
+
+  assert(r.ok, 'צריך לעבוד');
+  assert(r.pending === null || r.pending.days <= 2, 'הערכה בלי סגירה');
+});
+
 test('בלי סבב מלא אחד מדווחת הסיבה', () => {
   const entries = buildSeries('2026-01-01', 5, (i) => ({
     weightKg: 90, kcal: 2400

@@ -1036,6 +1036,56 @@ test('תחזוקה לא סבירה מסומנת ומוסברת', () => {
   App.setState({ tab: 'home' });
 });
 
+
+test('הסבב שנאסף מוצג עם ההערכה שלו', () => {
+  App.setState({ date: Dates.today(), tab: 'balance', stepsMode: 'off' });
+
+  let checked = 0;
+  window.Parts.WINDOWS.forEach((days) => {
+    const r = Metrics.dayAligned(Store.getEntries(), Store.getSettings(),
+      { days: days, endDate: Dates.today() });
+    if (!r.ok || !r.pending) return;
+
+    const card = [...doc.querySelectorAll('#view .card')]
+      .find((c) => (c.querySelector('h3') || {}).textContent ===
+        window.Parts.windowLabel(days));
+    if (!card) return;
+
+    const box = card.querySelector('.pending');
+    assert(box, days + ': חסר הסבב הנאסף');
+    assert(box.textContent.indexOf(r.pending.days + ' מתוך ' + days) !== -1,
+      days + ': הכותרת לא מציגה כמה נאספו');
+
+    const shown = Number(box.querySelector('.pending-result .v').textContent
+      .replace(/[^0-9.\-]/g, ''));
+    assert(Math.abs(shown - Math.round(r.pending.base)) <= 1,
+      days + ': מוצג ' + shown + ' מול ' + Math.round(r.pending.base));
+
+    checked++;
+  });
+
+  assert(checked > 0, 'לא נמצא אף סבב נאסף לבדיקה');
+  App.setState({ tab: 'home' });
+});
+
+test('ההערכה הזמנית מוחלשת מול הסבב המלא', () => {
+  App.setState({ date: Dates.today(), tab: 'balance' });
+
+  const card = [...doc.querySelectorAll('#view .card')]
+    .find((c) => c.querySelector('.pending'));
+  if (!card) { App.setState({ tab: 'home' }); return; }
+
+  // המספר הסופי בולט, הזמני לא
+  const finalSize = card.querySelector('.bal-result .v');
+  const pendingSize = card.querySelector('.pending-result .v');
+  assert(finalSize && pendingSize, 'חסר אחד המספרים');
+  assert(finalSize.className !== pendingSize.className ||
+    finalSize.parentNode.className !== pendingSize.parentNode.className,
+    'שני המספרים נראים זהים');
+
+  App.setState({ tab: 'home' });
+});
+
 test('כל אורכי החלון זמינים ומגיעים ממקור אחד', () => {
   const expected = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 21, 28];
   assert(window.Parts.WINDOWS.join() === expected.join(),

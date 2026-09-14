@@ -2101,9 +2101,63 @@
     var noise = weightNoiseSd(entries);
     var ci95 = (1.96 * Math.sqrt(2) * noise * kcalPerKg) / days;
 
+    /**
+     * הערכה ביניים לסבב שעדיין נאסף.
+     *
+     * אותו חישוב בדיוק, על הימים שכבר יש. היא אינה תחליף לסבב מלא —
+     * ככל שנאספו פחות ימים הרעש גדול יותר — אבל היא עונה על השאלה
+     * "לאן זה הולך" במקום להשאיר את השורה ריקה עד שהסבב ייסגר.
+     */
+    var pending = null;
+    if (openDays > 0) {
+      var pendFrom = Dates.addDays(foodTo, 1);
+      var pendTo = Dates.addDays(pendFrom, openDays - 1);
+      var pendClose = byDate[Dates.addDays(pendTo, 1)];
+      var pendOpen = byDate[pendFrom];
+
+      var pendMeals = [];
+      for (var pd = pendFrom; pd <= pendTo; pd = Dates.addDays(pd, 1)) {
+        var pday = byDate[pd];
+        if (pday && Fmt_isNum(pday.kcal)) pendMeals.push(pday);
+      }
+
+      if (pendMeals.length && pendOpen && Fmt_isNum(pendOpen.weightKg) &&
+          pendClose && Fmt_isNum(pendClose.weightKg)) {
+        var pendDelta = pendClose.weightKg - pendOpen.weightKg;
+        var pendFromWeight = (-pendDelta * kcalPerKg) / openDays;
+        var pendKcal = Stats.mean(pendMeals.map(function (e) { return e.kcal; }));
+        var pendStepsList = pendMeals.filter(function (e) { return Fmt_isNum(e.steps); })
+          .map(function (e) { return e.steps; });
+        var pendSteps = pendStepsList.length ? Stats.mean(pendStepsList) : null;
+        var pendStepKcal = pendSteps === null ? 0 : pendSteps * kcalPerStep;
+        var pendTdee = pendKcal + pendFromWeight;
+
+        pending = {
+          days: openDays,
+          of: days,
+          from: pendFrom,
+          to: pendTo,
+          startDate: pendFrom,
+          endDate: Dates.addDays(pendTo, 1),
+          startWeight: pendOpen.weightKg,
+          endWeight: pendClose.weightKg,
+          deltaKg: pendDelta,
+          fromWeight: pendFromWeight,
+          meanKcal: pendKcal,
+          loggedDays: pendMeals.length,
+          meanSteps: pendSteps,
+          stepKcal: pendStepKcal,
+          tdee: pendTdee,
+          base: pendTdee - pendStepKcal,
+          ci95: (1.96 * Math.sqrt(2) * weightNoiseSd(entries) * kcalPerKg) / openDays
+        };
+      }
+    }
+
     return {
       ok: true,
       days: days,
+      pending: pending,
       anchored: opts.anchored !== false,
       anchor: foodDays[0],
       blockIndex: blockIndex,
