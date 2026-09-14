@@ -1136,79 +1136,40 @@ test('טבלת החישוב מציגה שורה לכל אורך', () => {
   App.setState({ basis: 'adaptive', tab: 'home' });
 });
 
-test('טאב החישוב מציג את כל השלבים עם מספרים', () => {
-  App.setState({ date: Dates.today(), tab: 'calc', basis: 7, stepsMode: 'off' });
+test('טאב החישוב הוא טבלה אחת, בלי כרטיס שלבים', () => {
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7 });
 
+  assert(!doc.querySelector('[data-align]'), 'נשאר בורר שיטות מדידה');
+  assert(!doc.querySelector('#view .step'), 'נשאר כרטיס שלבים');
+  assert(doc.getElementById('view').textContent.indexOf('איך הגענו למספר') === -1,
+    'הכותרת עדיין מופיעה');
+
+  // והטבלה עצמה נשארה
   const text = doc.getElementById('view').textContent;
-  assert(text.indexOf('איך הגענו למספר') !== -1, 'הכרטיס חסר');
-
-  const steps = [...doc.querySelectorAll('#view .step')];
-  assert(steps.length === 5, 'ציפיתי לחמישה שלבים, יש ' + steps.length);
-
-  ['שתי שקילות', 'תרגום לקלוריות', 'ההוצאה', 'ההליכה', 'הגירעון']
-    .forEach((title) => assert(text.indexOf(title) !== -1, 'חסר שלב: ' + title));
-
-  // כל שלב מסתיים בתוצאה מספרית
-  steps.forEach((step, i) => {
-    const result = step.querySelector('.step-result');
-    assert(result && /\d/.test(result.textContent),
-      'שלב ' + (i + 1) + ' בלי תוצאה מספרית');
-  });
+  assert(text.indexOf('י.פ') !== -1 && text.indexOf('י.ס') !== -1, 'הטבלה חסרה');
+  assert(text.indexOf('הסבב הבא') !== -1, 'עמודת הסבב הנאסף חסרה');
 
   App.setState({ tab: 'home' });
 });
 
-test('המודל המיושר תואם את המנוע', () => {
-  App.setState({ date: Dates.today(), tab: 'calc', basis: 7,
-    stepsMode: 'off', align: 'aligned' });
-
-  const r = Metrics.dayAligned(Store.getEntries(), Store.getSettings(),
-    { days: 7, endDate: Dates.today() });
-  if (!r.ok) { App.setState({ tab: 'home' }); return; }
-
-  const shown = Number(doc.querySelector('#view .final .v').textContent.replace(/[^\d]/g, ''));
-  const rate = Math.abs(Store.getSettings().goal.ratePerWeekKg || 0);
-  const deficit = (rate * (Store.getSettings().kcalPerKg || 7700)) / 7;
-
-  assert(Math.abs(shown - Math.round(r.base - deficit)) <= 1,
-    'מוצג ' + shown + ' מול ' + Math.round(r.base - deficit));
-
-  App.setState({ tab: 'home' });
-});
-
-test('בחירת "עם צעדים" משנה גם את שרשרת החישוב', () => {
+test('בורר הצעדים עדיין משנה את הטבלה', () => {
   App.setState({ date: Dates.today(), tab: 'calc', basis: 7, stepsMode: 'off' });
-  const without = doc.querySelector('#view .final .v').textContent;
 
+  const valuesNow = () => [...doc.querySelectorAll('#view table.t tbody tr')]
+    .map((tr) => (tr.children[5] || {}).textContent || '').join('|');
+
+  const without = valuesNow();
   doc.querySelector('[data-steps="on"]').dispatchEvent(
     new window.Event('click', { bubbles: true }));
-  const withSteps = doc.querySelector('#view .final .v').textContent;
+  const withSteps = valuesNow();
 
   const r = Metrics.dayAligned(Store.getEntries(), Store.getSettings(),
     { days: 7, endDate: Dates.today() });
-
   if (r.ok && r.stepKcal > 0) {
-    assert(withSteps !== without, 'היעד לא השתנה');
-    const diff = Number(withSteps.replace(/[^0-9.\-]/g, '')) -
-      Number(without.replace(/[^0-9.\-]/g, ''));
-    assert(Math.abs(diff - Math.round(r.stepKcal)) <= 2,
-      'ההפרש ' + diff + ' אינו קלוריות ההליכה ' + Math.round(r.stepKcal));
+    assert(withSteps !== without, 'הטבלה לא הגיבה לבורר');
   }
 
   App.setState({ stepsMode: 'off', tab: 'home' });
-});
-
-test('המודל המיושר הוא היחיד, ואין בורר שיטות', () => {
-  App.setState({ date: Dates.today(), tab: 'calc', basis: 7 });
-  assert(!doc.querySelector('[data-align]'), 'נשאר בורר שיטות מדידה');
-
-  // הכרטיס והטבלה מציגים את אותו מודל
-  const text = doc.getElementById('view').textContent;
-  assert(text.indexOf('שתי שקילות') !== -1, 'הכרטיס אינו במודל המיושר');
-  assert(text.indexOf('י.פ') !== -1 && text.indexOf('י.ס') !== -1,
-    'הטבלה אינה במודל המיושר');
-
-  App.setState({ tab: 'home' });
 });
 
 test('הטבלה מציגה את הסבב הנאסף עם המספר שנגזר ממנו', () => {
@@ -1262,7 +1223,7 @@ test('במצב מסתגל מוצג חלון שבוע עם הסבר', () => {
   App.setState({ date: Dates.today(), tab: 'calc', basis: 'adaptive' });
 
   const text = doc.getElementById('view').textContent;
-  assert(text.indexOf('אין לו טבלה') !== -1, 'לא הוסבר למה');
+  assert(text.indexOf('אין לו סבבים') !== -1, 'לא הוסבר למה');
   assert(window.CalcTab.windowOf({ basis: 'adaptive' }) === 7, 'לא נבחר שבוע');
 
   App.setState({ tab: 'home' });

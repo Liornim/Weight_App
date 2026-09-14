@@ -27,91 +27,6 @@
   }
 
   /**
-   * שרשרת החישוב במודל המיושר: שקילת פתיחה, ימי אוכל, שקילת סגירה.
-   */
-  function alignedDerivation(entries, settings, state, days) {
-    var r = Metrics.dayAligned(entries, settings, { days: days, endDate: state.date });
-
-    if (!r.ok) {
-      var why = r.reason === 'no-closing-weigh-in'
-        ? 'צריך שקילה בבוקר שאחרי היום האחרון שנרשם בו אוכל, כדי לסגור אותו.'
-        : r.reason === 'no-opening-weigh-in'
-          ? 'חסרה שקילה ב' + Dates.short(r.needDate) + ', הבוקר שפותח את החלון.'
-          : 'אין מספיק ימים עם רישום אוכל.';
-      return P.card('איך הגענו למספר', null, P.empty(why));
-    }
-
-    var rate = Math.abs(settings.goal.ratePerWeekKg || 0);
-    var deficit = (rate * r.kcalPerKg) / 7;
-    var withSteps = state.stepsMode === 'on';
-    var target = (withSteps ? r.tdee : r.base) - deficit;
-
-    var step = function (number, title, body, result) {
-      return '<div class="step">' +
-        '<div class="step-head"><span class="step-num">' + number + '</span>' +
-          '<span class="step-title">' + P.esc(title) + '</span></div>' +
-        '<div class="step-body">' + body + '</div>' +
-        (result ? '<div class="step-result num">' + result + '</div>' : '') +
-      '</div>';
-    };
-
-    var calc = function (text) {
-      return '<div class="calc num">' + P.esc(text) + '</div>';
-    };
-
-    return P.card('איך הגענו למספר',
-      'חלון של ' + days + ' ימי אוכל · ' + Dates.short(r.foodFrom) + '–' +
-      Dates.short(r.foodTo),
-
-      step(1, 'שתי שקילות שסוגרות את ימי האוכל',
-        '<p>המשקל של הבוקר סוגר את היום שלפניו, ולכן ל-' + days + ' ימי אוכל ' +
-        'דרושות ' + (days + 1) + ' שקילות.</p>' +
-        calc(Dates.short(r.startDate) + ' בוקר   ' + Fmt.n(r.startWeight, 1) + '\n' +
-             '  ' + r.loggedDays + ' ימי אוכל\n' +
-             Dates.short(r.endDate) + ' בוקר   ' + Fmt.n(r.endWeight, 1)),
-        Fmt.signed(r.deltaKg, 2) + ' ק״ג') +
-
-      step(2, 'תרגום לקלוריות',
-        '<p>כל קילוגרם הוא ' + Fmt.n(r.kcalPerKg, 0) + ' קלוריות, והשינוי נפרס ' +
-        'על ' + days + ' ימי האוכל.</p>' +
-        calc(Fmt.n(Math.abs(r.deltaKg), 2) + ' × ' + Fmt.n(r.kcalPerKg, 0) +
-             ' ÷ ' + days + ' = ' + Fmt.n(Math.abs(r.fromWeight), 0)),
-        Fmt.signed(r.fromWeight, 0) + ' קק״ל ליום') +
-
-      step(3, 'ההוצאה',
-        '<p>ממוצע של ' + r.loggedDays + ' ימי אוכל, ועוד מה שהמשקל מראה.</p>' +
-        calc('קלוריות ממוצעות  ' + Fmt.n(r.meanKcal, 0) + '\n' +
-             'מהשינוי במשקל    ' + Fmt.signed(r.fromWeight, 0)),
-        Fmt.n(r.tdee, 0) + ' קק״ל') +
-
-      step(4, 'ההליכה',
-        (r.meanSteps === null
-          ? '<p>אין רישום צעדים בימים האלה.</p>'
-          : '<p>' + Fmt.numHtml(r.meanSteps, 0) + ' צעדים ביום.</p>' +
-            calc(Fmt.n(r.meanSteps, 0) + ' × ' + Fmt.n(r.kcalPerStep, 3) +
-                 ' = ' + Fmt.n(r.stepKcal, 0))) +
-        '<p>' + (withSteps ? 'נספרת ביעד.' : 'אינה נספרת, ולכן מגדילה את הגירעון.') +
-        '</p>',
-        (withSteps ? Fmt.n(r.tdee, 0) : Fmt.n(r.base, 0)) + ' קק״ל') +
-
-      step(5, 'הגירעון',
-        '<p>' + Fmt.n(rate, 2) + ' ק״ג בשבוע, פרוס על שבעה ימים.</p>' +
-        calc(Fmt.n(rate, 2) + ' × ' + Fmt.n(r.kcalPerKg, 0) + ' ÷ 7 = ' +
-             Fmt.n(deficit, 0)),
-        '−' + Fmt.n(deficit, 0) + ' קק״ל') +
-
-      '<div class="final">' +
-        '<span class="k">היעד</span>' +
-        '<span class="v num">' + Fmt.n(target, 0) + '</span>' +
-        '<span class="s">קלוריות ליום</span>' +
-      '</div>' +
-
-      P.hint('שתי שקילות הקצה נושאות את מלוא רעש השקילה, ולכן הרווח כאן ' +
-        'רחב מבהשוואת ממוצעים: ±' + Fmt.n(r.ci95, 0) + ' קלוריות. ' +
-        'בתמורה, כל קלוריה נמדדת מול השינוי שהיא עצמה גרמה.'));
-  }
-
-  /**
    * אותו חישוב לכל אורכי החלון, בטבלה אחת.
    *
    * לצד הסבב המלא מוצג גם הסבב שעדיין נאסף והמספר שנגזר ממנו —
@@ -175,13 +90,12 @@
   function render(state) {
     var entries = Store.getEntries();
     var settings = Store.getSettings();
-    var days = windowOf(state);
 
     var note = state.basis === 'adaptive'
       ? P.card(null, null,
-          P.hint('החישוב המסתגל מעדכן את ההערכה בכל שקילה ואין לו טבלה ' +
-            'שאפשר לעקוב אחריה שלב־שלב. מוצג כאן חלון של שבוע במקומו; ' +
-            'בחירת חלון מספרי למעלה תציג אותו.'))
+          P.hint('החישוב המסתגל מעדכן את ההערכה בכל שקילה ואין לו סבבים ' +
+            'שאפשר לעקוב אחריהם. הטבלה מסמנת חלון של שבוע במקומו; ' +
+            'בחירת חלון מספרי למעלה תסמן אותו.'))
       : '';
 
     // הבחירה משנה את שלב 4 ואת היעד, ולכן היא צריכה להיות כאן
@@ -196,7 +110,6 @@
         note: 'המשקל של הבוקר סוגר את היום שלפניו.'
       }) +
       note +
-      alignedDerivation(entries, settings, state, days) +
       comparison(entries, settings, state));
   }
 
