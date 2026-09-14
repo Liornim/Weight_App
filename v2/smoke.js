@@ -1240,6 +1240,37 @@ test('בחירת "עם צעדים" משנה גם את שרשרת החישוב', 
   App.setState({ stepsMode: 'off', align: 'aligned', tab: 'home' });
 });
 
+test('הטבלה מציגה את הסבב הנאסף עם המספר שנגזר ממנו', () => {
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7, stepsMode: 'off' });
+
+  const table = [...doc.querySelectorAll('#view table.t')]
+    .find((t) => t.textContent.indexOf('הסבב הבא') !== -1);
+  assert(table, 'הטבלה חסרה');
+
+  const rows = [...table.querySelectorAll('tbody tr')];
+  let checked = 0;
+
+  window.Parts.WINDOWS.forEach((days, i) => {
+    const r = Metrics.dayAligned(Store.getEntries(), Store.getSettings(),
+      { days: days, endDate: Dates.today() });
+    if (!r.ok || !r.pending) return;
+
+    const cell = rows[i].querySelector('.pending-cell');
+    assert(cell, days + ': חסרה עמודת הסבב הבא');
+
+    const shown = Number(cell.querySelector('.num').textContent.replace(/[^0-9.\-]/g, ''));
+    assert(Math.abs(shown - Math.round(r.pending.base)) <= 1,
+      days + ': מוצג ' + shown + ' מול ' + Math.round(r.pending.base));
+    assert(cell.textContent.indexOf(r.pending.days + '/' + days) !== -1,
+      days + ': לא מוצג כמה ימים נאספו');
+
+    checked++;
+  });
+
+  assert(checked > 0, 'לא נמצא אף סבב נאסף');
+  App.setState({ basis: 'adaptive', tab: 'home' });
+});
+
 test('טבלת כל אורכי החלון מסמנת את הנבחר', () => {
   App.setState({ date: Dates.today(), tab: 'calc', basis: 10 });
 
@@ -1309,8 +1340,9 @@ test('כל אורכי החלון מגיעים לכיסוי מלא אחרי הע�
 });
 
 test('העצירה מוסברת במסך', () => {
+  // ההסבר שייך למודל הסבבים, שבו החישוב נעצר ביום שנסגר
   Store.upsert({ date: Dates.today(), weightKg: 88.4, kcal: '' });
-  App.setState({ date: Dates.today(), tab: 'calc', basis: 7 });
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7, align: 'blocks' });
 
   const found = window.CalcTab.solidBlock(
     Store.getEntries(), Store.getSettings(), App.state, 7);
@@ -1321,7 +1353,7 @@ test('העצירה מוסברת במסך', () => {
     assert(text.indexOf('נשקל בבוקר') !== -1, 'לא הוסברה הסיבה המבנית');
   }
 
-  App.setState({ basis: 'adaptive', tab: 'home' });
+  App.setState({ basis: 'adaptive', align: 'aligned', tab: 'home' });
 });
 
 test('תמיד נבחר הסבב המלא האחרון, בלי דילוגים', () => {

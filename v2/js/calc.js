@@ -288,54 +288,65 @@
           : 'זה טווח שאפשר לעבוד איתו.')));
   }
 
-  /** אותה שרשרת לכל אורכי החלון, בטבלה אחת */
+  /**
+   * אותו חישוב לכל אורכי החלון, בטבלה אחת.
+   *
+   * לצד הסבב המלא מוצג גם הסבב שעדיין נאסף והמספר שנגזר ממנו —
+   * "8 מתוך 14" לבדו אינו אומר כלום, ואילו המספר שלצידו עונה על
+   * השאלה לאן זה הולך.
+   */
   function comparison(entries, settings, state) {
-    var rows = LENGTHS.map(function (days) {
-      var found = solidBlock(entries, settings, state, days);
-      var row = found.row;
+    var withSteps = state.stepsMode === 'on';
+    var active = windowOf(state);
 
-      if (!row) {
+    var rows = LENGTHS.map(function (days) {
+      var r = Metrics.dayAligned(entries, settings, { days: days, endDate: state.date });
+
+      if (!r.ok) {
+        var why = r.reason === 'no-complete-block'
+          ? 'עוד לא הושלם סבב: ' + r.have + ' מתוך ' + r.need + ' ימים'
+          : r.reason === 'no-closing-weigh-in'
+            ? 'חסרה שקילה סוגרת'
+            : 'אין מספיק נתונים';
         return '<tr><td class="n">' + days + '</td>' +
-          '<td colspan="8" class="flat">צריך ' + (days * 2) + ' ימי שקילה</td></tr>';
+          '<td colspan="6" class="flat">' + P.esc(why) + '</td></tr>';
       }
 
-      var noisy = row.ci95 > 600;
-      var active = String(days) === String(windowOf(state));
+      var value = withSteps ? r.tdee : r.base;
+      var noisy = r.ci95 > 600;
+      var isActive = String(days) === String(active);
 
-      return '<tr' + (active ? ' class="now"' : '') + '>' +
-        '<td class="n">' + days + (active ? ' ✓' : '') + '</td>' +
-        '<td class="date-cell">' + P.esc(Dates.short(row.from) + '–' + Dates.short(row.to)) +
-          '<span class="sub">מול ' + P.esc(Dates.short(row.prevFrom) + '–' +
-            Dates.short(row.prevTo)) +
-          (found.openDays ? ' · הבא: ' + found.openDays + '/' + days : '') +
-          (found.coverage && !found.coverage.full
-            ? ' · ' + found.coverage.have + '/' + found.coverage.total +
-              ' ימים עם אוכל'
-            : '') + '</span></td>' +
-        '<td class="n">' + Fmt.n(row.meanWeight, 2) + '</td>' +
-        '<td class="n">' + Fmt.n(row.prevMeanWeight, 2) + '</td>' +
-        '<td class="n">' + P.delta(-row.deltaKg, 2, 'down') + '</td>' +
-        '<td class="n">' + Fmt.n(row.meanKcal, 0) + '</td>' +
-        '<td class="n">' + Fmt.signed(row.fromWeight, 0) + '</td>' +
-        '<td class="n">−' + Fmt.n(row.fromSteps, 0) + '</td>' +
-        '<td class="n"><strong>' + Fmt.n(row.base, 0) + '</strong>' +
+      // הסבב שנאסף, אם יש
+      var next = r.pending
+        ? '<span class="num">' + Fmt.n(withSteps ? r.pending.tdee : r.pending.base, 0) +
+          '</span><span class="sub">' + r.pending.days + '/' + days + ' ימים</span>'
+        : r.openDays
+          ? '<span class="flat">' + r.openDays + '/' + days + '</span>' +
+            '<span class="sub">אין שקילה סוגרת</span>'
+          : '<span class="flat">—</span><span class="sub">נסגר בדיוק</span>';
+
+      return '<tr' + (isActive ? ' class="now"' : '') + '>' +
+        '<td class="n">' + days + (isActive ? ' ✓' : '') + '</td>' +
+        '<td class="date-cell">' + P.esc(Dates.short(r.foodFrom) + '–' + Dates.short(r.foodTo)) +
+          '<span class="sub">סבב ' + r.blockIndex + '/' + r.blockCount + '</span></td>' +
+        '<td class="n">' + Fmt.n(r.startWeight, 1) + '</td>' +
+        '<td class="n">' + Fmt.n(r.endWeight, 1) + '</td>' +
+        '<td class="n">' + Fmt.n(r.meanKcal, 0) + '</td>' +
+        '<td class="n"><strong>' + Fmt.n(value, 0) + '</strong>' +
           '<span class="sub' + (noisy ? ' warn' : '') + '">±' +
-          Fmt.n(row.ci95, 0) + '</span></td></tr>';
+          Fmt.n(r.ci95, 0) + '</span></td>' +
+        '<td class="n pending-cell">' + next + '</td></tr>';
     }).join('');
 
     return P.card('כל אורכי החלון', 'אותו חישוב בדיוק, על תקופות שונות',
       P.table([
         { label: 'ימים', n: true }, { label: 'תקופה', n: true },
-        'משקל', 'קודם', 'שינוי', 'קלוריות', 'ממשקל', 'מצעדים', 'תחזוקה'
+        'י.פ', 'י.ס', 'קלוריות', 'תחזוקה', 'הסבב הבא'
       ], [rows],
-      { hint: 'הסבבים מעוגנים לשקילה הראשונה ונספרים משם ברצף, ונעצרים ביום ' +
-        'האחרון שנסגרה בו תזונה — המשקל נשקל בבוקר והאוכל נרשם בערב, ' +
-        'ולכן ליום הנוכחי כמעט תמיד יש משקל בלי אוכל. מוצג הסבב האחרון ' +
-        'שהושלם. ' +
-        '"תחזוקה" היא ההוצאה בלי הליכה: קלוריות ממוצעות ועוד מה שהמשקל ' +
-        'מראה, פחות הצעדים. המספר הקטן מתחתיה הוא רוחב אי־הוודאות — ' +
-        'ככל שהחלון קצר יותר הוא גדול יותר, כי אותו רעש שקילה מתחלק ' +
-        'בפחות ימים.' }));
+      { hint: 'הסבבים נספרים מיום האוכל הראשון קדימה, ומוצג האחרון שהושלם. ' +
+        'העמודה האחרונה היא הסבב שעדיין נאסף: המספר שנגזר ממה שכבר יש בו, ' +
+        'ולצידו כמה ימים מתוך החלון. הוא רועש יותר מהמספר שמשמאלו, ' +
+        'ויתייצב ככל שהסבב יתקדם.' }));
   }
 
   function render(state) {
