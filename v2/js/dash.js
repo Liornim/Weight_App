@@ -66,8 +66,13 @@
     };
   }
 
-  /** שורות הבחירה שבראש המסך */
-  function controls(state, entries, date) {
+  /**
+   * שורות הבחירה שבראש המסך.
+   * options.extra מאפשר למסך להוסיף בורר משלו אל תוך הפס הדביק,
+   * כדי שגם הוא יישאר גלוי בזמן גלילה.
+   */
+  function controls(state, entries, date, options) {
+    var extras = options || {};
     var available = Metrics.availableWindows(entries, {
       endDate: date, candidates: [3, 5, 7, 10, 14, 21, 28]
     });
@@ -105,7 +110,9 @@
       P.chips(options, state.basis, 'data-basis') +
       '<label class="pick-label">כמה להיזהר בהערכה</label>' +
       P.chips(CAUTION, state.caution, 'data-caution') +
+      (extras.extra || '') +
       live +
+      (extras.note ? '<p class="pick-note">' + P.esc(extras.note) + '</p>' : '') +
       P.hint('אי אפשר לדעת במדויק כמה הגוף שורף, אז יש טווח. ' +
         '"זהיר" מניח שאתה שורף פחות ממה שנראה, ולכן הוא נותן יעד נמוך יותר ' +
         'ומבטיח שתרד גם אם ההערכה אופטימית. "נדיב" מניח את ההפך.')) + '</div>';

@@ -225,6 +225,17 @@ html, body {
 .pick-live .v { font-size: 22px; font-weight: 600; color: var(--brand); }
 .pick-live .s { font-size: 12px; color: var(--ink-faint); }
 
+.pick-note {
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin: 8px 0 0;
+}
+
+/* במסך נמוך הפס כבר עמוס; ההערה יורדת ראשונה */
+@media (max-height: 720px) {
+  .pick-note { display: none; }
+}
+
 /* טאבים */
 
 .tabs {

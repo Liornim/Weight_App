@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd41',
+    BUILD: 'd42',
     state: {
       date: Dates.today(),
       tab: 'home',         // סיכום או משקל

@@ -197,17 +197,22 @@
     var details = '<div class="rounds">' +
       usable.map(detail).join('') + '</div>';
 
-    var stepsPicker = P.card(null, null,
+    // הבורר נכנס אל תוך פס הבקרה הדביק ולא מתחתיו, כדי שיישאר
+    // גלוי בזמן גלילה בטבלאות — שם בדיוק רוצים להחליף אותו
+    var stepsNote = usable.length && usable[usable.length - 1].stepKcal
+      ? 'ההליכה בחלון הארוך שווה בערך ' +
+        Fmt.n(usable[usable.length - 1].stepKcal, 0) + ' קלוריות ביום.'
+      : 'אין רישום צעדים בימים האלה, ולכן הבחירה לא תשנה דבר.';
+
+    var stepsPicker =
       '<label class="pick-label">איך להתייחס להליכה</label>' +
-      P.chips(STEPS_MODES, state.stepsMode === 'on' ? 'on' : 'off', 'data-steps') +
-      (usable.length && usable[0].stepKcal
-        ? P.hint('ההליכה בחלון הנבחר שווה בערך ' +
-          Fmt.n(usable[usable.length - 1].stepKcal, 0) + ' קלוריות ביום.')
-        : P.hint('אין רישום צעדים בימים האלה, ולכן הבחירה לא תשנה דבר.')));
+      P.chips(STEPS_MODES, state.stepsMode === 'on' ? 'on' : 'off', 'data-steps');
 
     return P.section('יעד מול בפועל',
-      root.Dash.controls(state, entries, state.date) +
-      stepsPicker +
+      root.Dash.controls(state, entries, state.date, {
+        extra: stepsPicker,
+        note: stepsNote
+      }) +
       head + table +
       P.card('פירוט לכל חלון', null, details));
   }

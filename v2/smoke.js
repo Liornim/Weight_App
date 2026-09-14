@@ -724,6 +724,40 @@ test('בחירת "עם צעדים" מזיזה את כל השורות', () => {
   App.setState({ stepsMode: 'off', tab: 'home' });
 });
 
+
+test('בורר הצעדים נמצא בתוך הפס הדביק', () => {
+  App.setState({ date: Dates.today(), tab: 'targets', stepsMode: 'off' });
+
+  const bar = doc.querySelector('.sticky-bar');
+  assert(bar, 'פס הבקרה חסר');
+
+  const picker = doc.querySelector('[data-steps="on"]');
+  assert(picker, 'הבורר חסר');
+  assert(bar.contains(picker), 'הבורר מחוץ לפס, ולכן ייעלם בגלילה');
+
+  assert(bar.querySelector('[data-basis]'), 'בורר החלון לא בפס');
+  assert(bar.querySelector('[data-caution]'), 'בורר הזהירות לא בפס');
+
+  App.setState({ tab: 'home' });
+});
+
+test('הבורר עדיין פועל מתוך הפס', () => {
+  App.setState({ date: Dates.today(), tab: 'targets', stepsMode: 'off' });
+  doc.querySelector('.sticky-bar [data-steps="on"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+  assert(App.state.stepsMode === 'on', 'הלחיצה לא נקלטה');
+
+  const active = doc.querySelector('.sticky-bar [data-steps="on"]');
+  assert(active.getAttribute('aria-pressed') === 'true', 'הבחירה לא מסומנת');
+
+  App.setState({ stepsMode: 'off', tab: 'home' });
+});
+
+test('הבורר אינו מופיע במסכים שאינם יעדים', () => {
+  App.setState({ date: Dates.today(), tab: 'home' });
+  assert(!doc.querySelector('[data-steps]'), 'הבורר הופיע בסיכום');
+});
+
 test('הבחירה משפיעה גם על הפירוט ועל ההסבר', () => {
   App.setState({ date: Dates.today(), tab: 'targets', stepsMode: 'off' });
   let text = doc.getElementById('view').textContent;
