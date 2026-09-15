@@ -33,10 +33,63 @@
     { value: 'high', label: 'נדיב' }
   ];
 
+  /**
+   * ההערכה שמאחורי היעד.
+   *
+   * לחלון מספרי משתמשים באותו מודל שהטבלאות מציגות — מאזן מיושר
+   * ליום עם רגרסיה על השקילות שבטווח. קודם היה כאן מנוע אחר,
+   * ולכן הפס אמר 3,462 בעוד הטבלה אמרה 2,357 על אותו חלון בדיוק.
+   *
+   * במצב "הכל" אין חלון מוגדר, ושם נשאר החישוב המסתגל.
+   */
   function report(entries, settings, date, state) {
-    return Metrics.windowReport(entries, settings, {
-      windowDays: (state && state.basis) || 'adaptive', endDate: date
-    });
+    var basis = (state && state.basis) || 'adaptive';
+
+    if (basis === 'adaptive') {
+      return Metrics.windowReport(entries, settings, {
+        windowDays: 'adaptive', endDate: date
+      });
+    }
+
+    var days = Number(basis);
+    var r = Metrics.dayAligned(entries, settings, { days: days, endDate: date });
+
+    /**
+     * כשאין מספיק שקילות למאזן מיושר — למשל כשחסרה שקילה שסוגרת —
+     * עדיף להציג את ההערכה הישנה מאשר מסך ריק. זה נאמר בשדה method.
+     */
+    if (!r.ok) {
+      var fallback = Metrics.windowReport(entries, settings, {
+        windowDays: days, endDate: date
+      });
+      if (fallback.ok) fallback.method = 'windowReport';
+      return fallback;
+    }
+
+    var kcalPerKg = r.kcalPerKg;
+    var rate = Math.abs((settings.goal || {}).ratePerWeekKg || 0);
+    var deficitPerDay = (rate * kcalPerKg) / 7;
+
+    // ההוצאה שהיעד נגזר ממנה: עם או בלי הליכה, לפי הבחירה
+    var withSteps = state && state.stepsMode === 'on';
+    var spend = withSteps ? r.tdee : r.base;
+
+    return {
+      ok: true,
+      tdee: r.tdee,
+      base: r.base,
+      ci95: r.ci95,
+      target: spend - deficitPerDay,
+      deficitPerDay: deficitPerDay,
+      ratePerWeekKg: (settings.goal || {}).ratePerWeekKg || 0,
+      statsDays: days,
+      meanSteps: r.meanSteps,
+      stepKcal: r.stepKcal,
+      method: r.method,
+      weighIns: r.weighIns,
+      from: r.foodFrom,
+      to: r.foodTo
+    };
   }
 
   /**
@@ -47,17 +100,16 @@
   function adjust(r, caution) {
     if (!r.ok) return r;
     var shift = caution === 'low' ? -r.ci95 : caution === 'high' ? r.ci95 : 0;
-    return {
-      ok: true,
-      base: r.base + shift,
-      tdee: r.tdee + shift,
-      target: r.target + shift,
-      ci95: r.ci95,
-      deficitPerDay: r.deficitPerDay,
-      ratePerWeekKg: r.ratePerWeekKg,
-      statsDays: r.statsDays,
-      windowDays: r.windowDays
-    };
+
+    // בנייה מחדש של האובייקט השמיטה שדות שנוספו מאוחר יותר —
+    // התקופה, השיטה ומספר השקילות — ולכן העתקה ואז דריסה
+    var out = {};
+    Object.keys(r).forEach(function (key) { out[key] = r[key]; });
+
+    out.base = r.base + shift;
+    out.tdee = r.tdee + shift;
+    out.target = r.target + shift;
+    return out;
   }
 
   /**
@@ -86,16 +138,19 @@
 
     // היעד שנוצר מהבחירות מוצג כאן עצמו, כדי שהשינוי יהיה מיידי
     // ולא ידרוש גלילה למקום אחר
-    var picked = adjust(
-      Metrics.windowReport(entries, Store.getSettings(), {
-        windowDays: state.basis, endDate: date
-      }), state.caution);
+    var picked = adjust(report(entries, Store.getSettings(), date, state), state.caution);
+
+    // "שורף" מוצג לפי אותה בחירה שמייצרת את היעד, אחרת שני
+    // המספרים בשורה אחת מתארים דברים שונים
+    var spend = state.stepsMode === 'on' ? picked.tdee : picked.base;
 
     var live = picked.ok
       ? '<div class="pick-live">' +
           '<span class="k">היעד לפי הבחירה</span>' +
           '<span class="v num">' + Fmt.n(picked.target, 0) + '</span>' +
-          '<span class="s">קלוריות ליום · שורף ' + Fmt.n(picked.tdee, 0) + '</span>' +
+          '<span class="s">קלוריות ליום · שורף ' + Fmt.n(spend, 0) +
+            (picked.from ? ' · ' + Dates.short(picked.from) + '–' +
+              Dates.short(picked.to) : '') + '</span>' +
         '</div>'
       : '<div class="pick-live"><span class="k">אין מספיק נתונים לחלון הזה</span></div>';
 

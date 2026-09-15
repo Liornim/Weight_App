@@ -52,21 +52,39 @@ const { App, Store, Metrics, Dates, Fmt } = window;
 
 // נתונים מלאכותיים: ירידה אמיתית עם רעש שקילה
 const noise = (i, amp) => Math.sin(i * 2.399963) * amp;
-for (let i = 0; i < 40; i++) {
-  const date = Dates.addDays(Dates.today(), -(39 - i));
-  Store.upsert({
-    date,
-    weightKg: Number((90 - 0.05 * i + noise(i, 0.4)).toFixed(1)),
-    bodyFatKg: Number((24 - 0.04 * i + noise(i * 0.7, 0.3)).toFixed(1)),
-    muscleKg: Number((36 + noise(i * 1.3, 0.2)).toFixed(1)),
-    waterKg: Number((48 + noise(i * 1.1, 0.4)).toFixed(1)),
-    kcal: 2300 + Math.round(noise(i * 1.7, 450)),
-    proteinG: 165,
-    carbG: 200,
-    fatG: 95,
-    steps: 9000
+
+/**
+ * בניית הנתונים מחדש.
+ *
+ * כמה בדיקות מנקות את האחסון כדי לבנות תרחיש משלהן, ובלי שחזור
+ * הן משאירות את הבדיקות שאחריהן בלי נתונים — כישלון שנראה כמו
+ * באג בקוד ואינו.
+ */
+function seed() {
+  Store.clearAll();
+  for (let i = 0; i < 40; i++) {
+    const date = Dates.addDays(Dates.today(), -(39 - i));
+    Store.upsert({
+      date,
+      weightKg: Number((90 - 0.05 * i + noise(i, 0.4)).toFixed(1)),
+      bodyFatKg: Number((24 - 0.04 * i + noise(i * 0.7, 0.3)).toFixed(1)),
+      muscleKg: Number((36 + noise(i * 1.3, 0.2)).toFixed(1)),
+      waterKg: Number((48 + noise(i * 1.1, 0.4)).toFixed(1)),
+      kcal: 2300 + Math.round(noise(i * 1.7, 450)),
+      proteinG: 165,
+      carbG: 200,
+      fatG: 95,
+      steps: 9000
+    });
+  }
+  Store.updateSettings({
+    profile: { heightCm: 180, birthDate: '1990-05-20', sex: 'male' },
+    goal: { ratePerWeekKg: -0.5, targetWeightKg: 82 },
+    targets: { proteinG: 170 }
   });
 }
+
+seed();
 Store.updateSettings({
   profile: { heightCm: 180, birthDate: '1990-05-20', sex: 'male' },
   goal: { ratePerWeekKg: -0.5, targetWeightKg: 82 },
@@ -235,7 +253,9 @@ test('שינוי קצב הירידה מזיז את היעד היומי', () => {
     const hints = [...doc.querySelectorAll('#view .hint')].map((el) => el.textContent);
     const hint = hints.find((t) => t.indexOf('היעד היומי שלך') !== -1);
     assert(hint, 'לא נמצא היעד');
-    return Number(hint.match(/היעד היומי שלך הוא ([\d,]+)/)[1].replace(/,/g, ''));
+    const m = hint.match(/היעד היומי שלך הוא (-?[\d,]+)/);
+    assert(m, 'לא חולץ מספר: ' + hint.slice(0, 90));
+    return Number(m[1].replace(/,/g, ''));
   };
   const slider = doc.querySelector('#rate');
 
@@ -610,6 +630,59 @@ test('טאב היעדים מציג פער לכל אורך חלון', () => {
 });
 
 
+
+
+test('הפס והטבלה מראים את אותו מספר', () => {
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7,
+    stepsMode: 'off', caution: 'mid' });
+
+  const bar = doc.querySelector('.pick-live .s').textContent;
+  const inBar = Number((bar.match(/שורף\s*([\d,]+)/) || [])[1]
+    ? bar.match(/שורף\s*([\d,]+)/)[1].replace(/,/g, '') : NaN);
+
+  const r = Metrics.dayAligned(Store.getEntries(), Store.getSettings(),
+    { days: 7, endDate: Dates.today() });
+  if (!r.ok) { App.setState({ tab: 'home' }); return; }
+
+  assert(Math.abs(inBar - Math.round(r.base)) <= 1,
+    'בפס ' + inBar + ' מול המנוע ' + Math.round(r.base));
+
+  // ואותו מספר בטבלה
+  const rows = [...doc.querySelectorAll('#view table.t tbody tr')];
+  const i = window.Parts.WINDOWS.indexOf(7);
+  const cell = rows[i].children[5].textContent.replace(/,/g, '');
+  const inTable = Number((cell.match(/^\s*(-?\d+)/) || [])[1]);
+
+  assert(Math.abs(inTable - Math.round(r.base)) <= 1,
+    'בטבלה ' + inTable + ' מול המנוע ' + Math.round(r.base));
+
+  App.setState({ basis: 'adaptive', tab: 'home' });
+});
+
+test('"שורף" בפס עוקב אחרי בחירת הצעדים', () => {
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7, stepsMode: 'off' });
+  const readBar = () => {
+    const t = doc.querySelector('.pick-live .s').textContent;
+    const m = t.match(/שורף\s*([\d,]+)/);
+    return m ? Number(m[1].replace(/,/g, '')) : NaN;
+  };
+
+  const without = readBar();
+  doc.querySelector('[data-steps="on"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+  const withSteps = readBar();
+
+  const r = Metrics.dayAligned(Store.getEntries(), Store.getSettings(),
+    { days: 7, endDate: Dates.today() });
+  if (r.ok && r.stepKcal > 0) {
+    assert(withSteps > without,
+      '"עם צעדים" אמור להגדיל את השריפה: ' + withSteps + ' מול ' + without);
+    assert(Math.abs((withSteps - without) - Math.round(r.stepKcal)) <= 2,
+      'ההפרש ' + (withSteps - without) + ' אינו קלוריות ההליכה');
+  }
+
+  App.setState({ stepsMode: 'off', basis: 'adaptive', tab: 'home' });
+});
 
 test('פס הבחירה מציג את היעד שנוצר ממנו', () => {
   App.setState({ date: Dates.today(), tab: 'targets', basis: 'adaptive', caution: 'mid' });
@@ -1162,6 +1235,7 @@ test('טווח ישן מוסבר במקום להישאר תעלומה', () => {
   assert(text.indexOf('אין שקילה') !== -1, 'לא נאמר מה חוסם');
   assert(text.indexOf('שקילה אחרונה') !== -1, 'לא מוצגות נקודות הקצה');
 
+  seed();
   App.setState({ tab: 'home' });
 });
 
@@ -1176,7 +1250,60 @@ test('כשהטווח עדכני אין הודעת אבחון', () => {
   assert(doc.getElementById('view').textContent.indexOf('הטווח נעצר') === -1,
     'הודעת אבחון מיותרת');
 
+  seed();
   App.setState({ tab: 'home' });
+});
+
+
+test('הפס והטבלה מציגים את אותו מספר', () => {
+  // שני מנועים שונים לאותה שאלה נתנו 3,462 בפס מול 2,357 בטבלה
+  window.Parts.WINDOWS.forEach((days) => {
+    const state = { basis: days, caution: 'mid', stepsMode: 'off',
+      date: Dates.today() };
+
+    const bar = window.Dash.adjust(
+      window.Dash.report(Store.getEntries(), Store.getSettings(), Dates.today(), state),
+      'mid');
+    const table = Metrics.dayAligned(Store.getEntries(), Store.getSettings(),
+      { days: days, endDate: Dates.today() });
+
+    if (!bar.ok || !table.ok) return;
+
+    assert(Math.abs(bar.base - table.base) < 0.01,
+      days + ' ימים: הפס ' + Math.round(bar.base) +
+      ' מול הטבלה ' + Math.round(table.base));
+    assert(bar.from === table.foodFrom && bar.to === table.foodTo,
+      days + ' ימים: תקופות שונות');
+  });
+});
+
+test('"שורף" בפס משתנה עם בורר ההליכה', () => {
+  const at = (mode) => window.Dash.report(Store.getEntries(), Store.getSettings(),
+    Dates.today(), { basis: 7, stepsMode: mode, date: Dates.today() });
+
+  const off = at('off');
+  const on = at('on');
+  if (!off.ok || !off.stepKcal) return;
+
+  // היעד גדל בדיוק בקלוריות ההליכה
+  assert(Math.abs((on.target - off.target) - off.stepKcal) < 0.01,
+    'ההפרש ' + Math.round(on.target - off.target) +
+    ' אינו ההליכה ' + Math.round(off.stepKcal));
+});
+
+test('הפס מציג את התקופה שהוא מודד', () => {
+  App.setState({ date: Dates.today(), tab: 'calc', basis: 7 });
+  const live = doc.querySelector('.pick-live .s');
+  assert(live, 'שורת הפירוט חסרה');
+
+  const r = Metrics.dayAligned(Store.getEntries(), Store.getSettings(),
+    { days: 7, endDate: Dates.today() });
+  if (r.ok) {
+    assert(live.textContent.indexOf(window.Dates.short(r.foodTo)) !== -1,
+      'התקופה לא מוצגת: ' + live.textContent);
+  }
+
+  App.setState({ basis: 'adaptive', tab: 'home' });
 });
 
 test('כל אורכי החלון זמינים ומגיעים ממקור אחד', () => {
@@ -1452,7 +1579,9 @@ test('בחירת זהירות מזיזה את היעד לשני הכיוונים
     const hint = [...doc.querySelectorAll('#view .hint')]
       .map((el) => el.textContent)
       .find((t) => t.indexOf('היעד היומי שלך') !== -1);
-    return Number(hint.match(/היעד היומי שלך הוא ([\d,]+)/)[1].replace(/,/g, ''));
+    const m = hint.match(/היעד היומי שלך הוא (-?[\d,]+)/);
+    assert(m, 'לא חולץ מספר: ' + hint.slice(0, 90));
+    return Number(m[1].replace(/,/g, ''));
   };
 
   const middle = target();
@@ -1477,12 +1606,15 @@ test('בחירת זהירות מזיזה את היעד לשני הכיוונים
 });
 
 test('בחירת בסיס החישוב משנה את היעד', () => {
-  App.setState({ date: Dates.today(), basis: 'adaptive', caution: 'mid' });
+  // הרמז חי במסך הסיכום, ולכן הטאב מצוין במפורש
+  App.setState({ date: Dates.today(), tab: 'home', basis: 'adaptive', caution: 'mid' });
   const target = () => {
     const hint = [...doc.querySelectorAll('#view .hint')]
       .map((el) => el.textContent)
       .find((t) => t.indexOf('היעד היומי שלך') !== -1);
-    return Number(hint.match(/היעד היומי שלך הוא ([\d,]+)/)[1].replace(/,/g, ''));
+    const m = hint.match(/היעד היומי שלך הוא (-?[\d,]+)/);
+    assert(m, 'לא חולץ מספר מהרמז: ' + hint.slice(0, 90));
+    return Number(m[1].replace(/,/g, ''));
   };
 
   const all = target();
