@@ -64,8 +64,8 @@
         ? (roll.sameAsBlock
             ? '<span class="flat">זהה</span><span class="sub">אותה תקופה</span>'
             : '<span class="num">' + Fmt.n(withSteps ? roll.tdee : roll.base, 0) +
-              '</span><span class="sub">' + P.esc(Dates.short(roll.from) + '–' +
-              Dates.short(roll.to)) + '</span>')
+              '</span><span class="sub">' + P.esc(Dates.short(roll.foodFrom) + '–' +
+              Dates.short(roll.foodTo)) + '</span>')
         : '<span class="flat">—</span><span class="sub">אין שקילה סוגרת</span>';
 
       return '<tr' + (isActive ? ' class="now"' : '') + '>' +
@@ -77,7 +77,8 @@
         '<td class="n">' + Fmt.n(r.meanKcal, 0) + '</td>' +
         '<td class="n"><strong>' + Fmt.n(value, 0) + '</strong>' +
           '<span class="sub' + (noisy ? ' warn' : '') + '">±' +
-          Fmt.n(r.ci95, 0) + '</span></td>' +
+          Fmt.n(r.ci95, 0) + '</span>' +
+          '<span class="sub">' + r.weighIns + ' שקילות</span></td>' +
         '<td class="n pending-cell">' + next + '</td></tr>';
     }).join('');
 

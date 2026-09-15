@@ -2585,7 +2585,7 @@ test('החלון המתגלגל באותו אורך ובאותו דיוק כמו
   close(r.rolling.ci95, r.ci95, 1e-9, 'הדיוק אמור להיות זהה');
 
   // נגמר ביום האחרון שאפשר לסגור
-  assert(r.rolling.to === '2026-01-30', 'הסיום: ' + r.rolling.to);
+  assert(r.rolling.foodTo === '2026-01-30', 'הסיום: ' + r.rolling.foodTo);
   assert(r.rolling.endDate === '2026-01-31', 'השקילה הסוגרת');
 });
 
@@ -2600,8 +2600,8 @@ test('החלון הקודם צמוד לנוכחי ובאותו אורך', () => 
 
   const prev = r.rolling.previous;
   assert(prev, 'חסר החלון הקודם');
-  assert(prev.to === Dates.addDays(r.rolling.from, -1), 'אינם רצופים');
-  assert(Dates.diffDays(prev.from, prev.to) === 4, 'אורך שונה');
+  assert(prev.foodTo === Dates.addDays(r.rolling.foodFrom, -1), 'אינם רצופים');
+  assert(Dates.diffDays(prev.foodFrom, prev.foodTo) === 4, 'אורך שונה');
 
   // שקילת הסגירה של הקודם היא שקילת הפתיחה של הנוכחי
   close(prev.endWeight, r.rolling.startWeight, 1e-9, 'הקצה המשותף');
@@ -2698,6 +2698,70 @@ test('מצב מתגלגל עדיין זמין במפורש', () => {
 
   assert(rolling.foodTo === '2026-01-30', 'המתגלגל נגמר ביום האחרון שאפשר לסגור');
   assert(rolling.anchored === false, 'הסימון');
+});
+
+test('השינוי במשקל נמדד ברגרסיה על כל השקילות', () => {
+  const entries = buildSeries('2026-01-01', 14, (i) => ({
+    weightKg: 90 - 0.05 * i, kcal: 2400
+  }));
+  entries.push({ date: '2026-01-15', weightKg: 89.3 });
+
+  const r = Metrics.dayAligned(entries, { kcalPerKg: 7700 },
+    { days: 14, endDate: '2026-01-15', anchored: false });
+
+  assert(r.method === 'regression', 'השיטה: ' + r.method);
+  assert(r.weighIns === 15, 'ציפיתי ל-15 שקילות, יש ' + r.weighIns);
+
+  // בסדרה ישרה הרגרסיה והקצוות מסכימים
+  close(r.deltaKg, r.edgeDelta, 0.02, 'ישר: ' + r.deltaKg + ' מול ' + r.edgeDelta);
+});
+
+test('רעש בקצוות לא מזיז את הרגרסיה', () => {
+  // מגמה ישרה, אבל שקילת הפתיחה נמוכה בקילו והסגירה גבוהה בקילו
+  const entries = buildSeries('2026-01-01', 14, (i) => ({
+    weightKg: 90 - 0.05 * i, kcal: 2400
+  }));
+  entries[0].weightKg = 89.0;
+  entries.push({ date: '2026-01-15', weightKg: 90.3 });
+
+  const r = Metrics.dayAligned(entries, { kcalPerKg: 7700 },
+    { days: 14, endDate: '2026-01-15', anchored: false });
+
+  // הקצוות מראים עלייה של 1.3, הרגרסיה רואה את המגמה האמיתית
+  assert(r.edgeDelta > 1, 'הקצוות: ' + r.edgeDelta);
+  assert(r.deltaKg < 0, 'הרגרסיה היתה צריכה לראות ירידה: ' + r.deltaKg);
+  assert(Math.abs(r.deltaKg) < 1, 'הרגרסיה הושפעה מדי: ' + r.deltaKg);
+});
+
+test('הרגרסיה מצמצמת את רוחב אי־הוודאות', () => {
+  const noisy = buildSeries('2026-01-01', 20, (i) => ({
+    weightKg: 90 - 0.04 * i + Math.sin(i * 2.1) * 0.6, kcal: 2400
+  }));
+  noisy.push({ date: '2026-01-21', weightKg: 89.2 });
+
+  const r = Metrics.dayAligned(noisy, { kcalPerKg: 7700 },
+    { days: 20, endDate: '2026-01-21', anchored: false });
+
+  // אותו חישוב בשתי נקודות היה נותן רוחב גדול בהרבה
+  const noise = Metrics.weightNoiseSd(noisy);
+  const edgeCi = (1.96 * Math.sqrt(2) * noise * 7700) / 20;
+
+  assert(r.method === 'regression', 'השיטה');
+  assert(r.ci95 < edgeCi,
+    'הרגרסיה ' + Math.round(r.ci95) + ' אינה צרה מהקצוות ' + Math.round(edgeCi));
+});
+
+test('פחות משלוש שקילות חוזר לשתי נקודות הקצה', () => {
+  const entries = [
+    { date: '2026-01-01', weightKg: 90, kcal: 2400 },
+    { date: '2026-01-02', kcal: 2400 },
+    { date: '2026-01-03', weightKg: 89.8 }
+  ];
+  const r = Metrics.dayAligned(entries, { kcalPerKg: 7700 },
+    { days: 2, endDate: '2026-01-03', anchored: false });
+
+  assert(r.method === 'edges', 'השיטה: ' + r.method);
+  close(r.deltaKg, r.edgeDelta, 1e-9, 'אותו חישוב');
 });
 
 test('הדוגמה של יום אחד', () => {

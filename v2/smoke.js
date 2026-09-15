@@ -1081,7 +1081,7 @@ test('החלון המתגלגל באותו אורך, ולכן באותו דיו�
     assert(r.rolling.days === days, days + ': אורך שונה');
     assert(Math.abs(r.rolling.ci95 - r.ci95) < 1e-6,
       days + ': דיוק שונה — ' + Math.round(r.rolling.ci95) + ' מול ' + Math.round(r.ci95));
-    assert(Dates.diffDays(r.rolling.from, r.rolling.to) === days - 1,
+    assert(Dates.diffDays(r.rolling.foodFrom, r.rolling.foodTo) === days - 1,
       days + ': טווח שגוי');
   });
 });
@@ -1102,7 +1102,7 @@ test('החלון הקודם מוצג להשוואה', () => {
     const note = card.querySelector('.pending-note').textContent;
     assert(note.indexOf('שלפניהם') !== -1, 'אין השוואה לחלון הקודם');
     // החלון הקודם נגמר יום לפני שהנוכחי מתחיל
-    assert(r.rolling.previous.to === Dates.addDays(r.rolling.from, -1),
+    assert(r.rolling.previous.foodTo === Dates.addDays(r.rolling.foodFrom, -1),
       'החלונות אינם רצופים');
   }
 

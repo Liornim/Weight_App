@@ -39,7 +39,7 @@
 
     return '<div class="pending">' +
       '<div class="pending-head">' + p.days + ' הימים האחרונים · ' +
-        P.esc(Dates.short(p.from) + '–' + Dates.short(p.to)) + '</div>' +
+        P.esc(Dates.short(p.foodFrom) + '–' + Dates.short(p.foodTo)) + '</div>' +
       '<div class="bal-line"><span class="bal-label">י.פ</span>' +
         '<span class="bal-when">' + P.esc(Dates.short(p.startDate)) + '</span>' +
         '<span class="bal-value num">' + Fmt.n(p.startWeight, 1) + '</span></div>' +
