@@ -1072,15 +1072,21 @@ test('החלון המתגלגל מוצג לצד הסבב המלא', () => {
   App.setState({ tab: 'home' });
 });
 
-test('החלון המתגלגל באותו אורך, ולכן באותו דיוק', () => {
+test('החלון המתגלגל באותו אורך ובאותה שיטה', () => {
   window.Parts.WINDOWS.forEach((days) => {
     const r = Metrics.dayAligned(Store.getEntries(), Store.getSettings(),
       { days: days, endDate: Dates.today() });
     if (!r.ok || !r.rolling) return;
 
     assert(r.rolling.days === days, days + ': אורך שונה');
-    assert(Math.abs(r.rolling.ci95 - r.ci95) < 1e-6,
-      days + ': דיוק שונה — ' + Math.round(r.rolling.ci95) + ' מול ' + Math.round(r.ci95));
+
+    /**
+     * מאז המעבר לרגרסיה שני החלונות אינם חייבים לתת אותו רוחב:
+     * הם מכסים תקופות שונות, ולכן השאריות בהן שונות. מה שכן חייב
+     * להתקיים הוא שהם נמדדים באותה שיטה ועל אותו מספר ימים.
+     */
+    assert(r.rolling.method === r.method,
+      days + ': שיטות שונות — ' + r.rolling.method + ' מול ' + r.method);
     assert(Dates.diffDays(r.rolling.foodFrom, r.rolling.foodTo) === days - 1,
       days + ': טווח שגוי');
   });
