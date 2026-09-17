@@ -748,6 +748,7 @@
   }
 
   var TABS = [
+    { value: 'main', label: 'ראשי' },
     { value: 'home', label: 'סיכום' },
     { value: 'entry', label: 'הזנה' },
     { value: 'weight', label: 'משקל' },
@@ -780,6 +781,7 @@
         : state.tab === 'targets' ? root.TargetsTab.render(state)
         : state.tab === 'calc' ? root.CalcTab.render(state)
         : state.tab === 'balance' ? root.BalanceTab.render(state)
+        : state.tab === 'main' ? root.MainTab.render(state)
         : root.EntryTab.render(state);
 
       container.innerHTML =

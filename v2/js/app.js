@@ -11,10 +11,10 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd58',
+    BUILD: 'd59',
     state: {
       date: Dates.today(),
-      tab: 'home',         // סיכום או משקל
+      tab: 'main',         // הדף שנפתח ראשון
       asOf: 0,             // עד מתי למדוד: היום, שבוע שעבר, שבועיים
       basis: 'adaptive',   // על סמך כמה זמן לחשב
       caution: 'mid',      // זהיר / אמצע / נדיב

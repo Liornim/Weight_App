@@ -90,13 +90,13 @@ Store.updateSettings({
   goal: { ratePerWeekKg: -0.5, targetWeightKg: 82 },
   targets: { proteinG: 170 }
 });
-App.setState({ date: Dates.today() });
+App.setState({ date: Dates.today(), tab: 'home' });
 
 // ---------------------------------------------------------------
 
 test('כל המקטעים מוצגים בלי שגיאות', () => {
   errors.length = 0;
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'home' });
   const text = doc.getElementById('view').textContent;
   ['ירדת עד עכשיו', 'כמה לאכול היום', 'מה קרה למשקל', 'שומן ושריר', 'מה אכלתי', 'הגדרות']
     .forEach((label) => assert(text.includes(label), 'חסר מקטע: ' + label));
@@ -121,7 +121,7 @@ test('כל קובץ מקומי נושא חותמת גרסה בכתובת', () =>
 });
 
 test('מספר הגרסה מוצג בכותרת', () => {
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'home' });
   const stamp = doc.querySelector('.top .stamp');
   assert(stamp, 'חותמת הכותרת חסרה');
   assert(stamp.textContent.includes(App.BUILD),
@@ -163,7 +163,7 @@ test('חריגה מוצגת כמספר החריגה ולא כאפס', () => {
   const before = Metrics.windowReport(Store.getEntries(), Store.getSettings(),
     { windowDays: 'adaptive', endDate: Dates.today() });
   Store.upsert({ date: Dates.today(), kcal: Math.round(before.target + 600) });
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'home' });
 
   // הרישום עצמו מזיז מעט את ההערכה, ולכן משווים מול המצב שאחריו
   const after = Metrics.windowReport(Store.getEntries(), Store.getSettings(),
@@ -182,7 +182,7 @@ test('חריגה מוצגת כמספר החריגה ולא כאפס', () => {
 
 test('המספר של היום תואם את המנוע', () => {
   Store.upsert({ date: Dates.today(), kcal: '' });
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'home' });
 
   const report = Metrics.windowReport(Store.getEntries(), Store.getSettings(),
     { windowDays: 'adaptive', endDate: Dates.today() });
@@ -194,7 +194,7 @@ test('המספר של היום תואם את המנוע', () => {
 });
 
 test('טבלת השבועות מדברת בשמות ולא במספרים טכניים', () => {
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'home' });
   const section = [...doc.querySelectorAll('#view .section')]
     .find((s) => s.querySelector('h2').textContent === 'מה קרה למשקל');
   assert(section, 'המקטע חסר');
@@ -216,7 +216,7 @@ test('טבלת השבועות מדברת בשמות ולא במספרים טכנ
 });
 
 test('אין מונחים טכניים בשום מקום במסך', () => {
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'home' });
   const text = doc.getElementById('view').textContent;
   // "זהיר" ו"נדיב" הם שמות בחירה שהמשתמש ביקש, ולכן מותרים
   // "מעריכים" הם שני ה-AI שמתווכחים, ולכן מותר. הבדיקה מחפשת
@@ -228,7 +228,7 @@ test('אין מונחים טכניים בשום מקום במסך', () => {
 });
 
 test('כל כרטיס עם מספרים נפתח במשפט או בכותרת', () => {
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'home' });
   [...doc.querySelectorAll('#view .card')].forEach((card) => {
     if (!card.querySelector('table.t')) return;
     const hasLead = card.querySelector('.lead') || card.querySelector('h3');
@@ -272,7 +272,7 @@ test('שינוי קצב הירידה מזיז את היעד היומי', () => {
 });
 
 test('שני הגרפים מצוירים', () => {
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'home' });
   ['chart-weight', 'chart-kcal'].forEach((id) => {
     const host = doc.getElementById(id);
     assert(host, 'חסר מיכל ' + id);
@@ -283,7 +283,7 @@ test('שני הגרפים מצוירים', () => {
 });
 
 test('פיצול המאקרו מסתכם תמיד ל-100 אחוז', () => {
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'home' });
   const total = () => [...doc.querySelectorAll('.split-seg')]
     .reduce((sum, el) => sum + Number(el.style.width.replace('%', '')), 0);
 
@@ -293,7 +293,7 @@ test('פיצול המאקרו מסתכם תמיד ל-100 אחוז', () => {
   Store.getEntries().slice(-5).forEach((e) => {
     Store.upsert({ date: e.date, kcal: 1200, proteinG: 200, carbG: 200, fatG: 100 });
   });
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'home' });
   assert(Math.abs(total() - 100) < 1.5, 'הפס חרג: ' + total().toFixed(1) + '%');
 
   const card = [...doc.querySelectorAll('#view .card')]
@@ -312,7 +312,7 @@ test('אין נתון שמוצג פעמיים באותו מסך', () => {
 
 
 test('הירידה בכותרת היא ההפרש בין חצאי התקופה', () => {
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'home' });
   const d = Metrics.dashboard(Store.getEntries(), Store.getSettings(), { endDate: Dates.today() });
 
   assert(d.halves, 'חסר פירוק לחצאים');
@@ -402,7 +402,7 @@ test('מדדי גוף ותזונה נשמרים בנפרד', () => {
   assert(after.weightKg === 87.2, 'המשקל לא עודכן');
   assert(after.kcal === 2100, 'הקלוריות נמחקו בשמירת גוף');
 
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'home' });
 });
 
 test('שתי הקבוצות מופרדות בכרטיסים', () => {
@@ -493,7 +493,7 @@ test('העלאת תמונה מופיעה רק עם מפתח, הדבקה תמיד
 
 test('אפשר להעלות מהגלריה וגם לצלם', () => {
   Store.updateSettings({ aiKeyA: 'AQ.Ab8RN6Ky_test' });
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'entry' });
 
   const camera = doc.querySelector('#photo-camera');
   const gallery = doc.querySelector('#photo');
@@ -1419,6 +1419,78 @@ test('במצב מסתגל מוצג חלון שבוע עם הסבר', () => {
 });
 
 
+
+test('הדף הראשי הוא הראשון ומציג משקל, שומן ושריר', () => {
+  App.setState({ date: Dates.today(), tab: 'main' });
+
+  const text = doc.getElementById('view').textContent;
+  assert(text.indexOf('הרכב הגוף') !== -1, 'כותרת המקטע חסרה');
+
+  const table = [...doc.querySelectorAll('#view table.t')]
+    .find((t) => t.textContent.indexOf('אחוז שומן') !== -1);
+  assert(table, 'הטבלה חסרה');
+
+  const heads = [...table.querySelectorAll('th')].map((h) => h.textContent);
+  ['משקל', 'שומן', 'שריר', 'אחוז שומן'].forEach((name) => {
+    assert(heads.indexOf(name) !== -1, 'חסרה עמודה: ' + name);
+  });
+
+  const rows = [...table.querySelectorAll('tbody tr')];
+  assert(rows.length === window.MainTab.LENGTHS.length,
+    'ציפיתי ל-' + window.MainTab.LENGTHS.length + ' שורות, יש ' + rows.length);
+
+  window.MainTab.LENGTHS.forEach((days, i) => {
+    assert(rows[i].children[0].textContent.indexOf(String(days)) === 0,
+      'שורה ' + i + ' אינה של ' + days + ' ימים');
+  });
+});
+
+test('הערכים בטבלה תואמים את המנוע', () => {
+  App.setState({ date: Dates.today(), tab: 'main' });
+
+  const table = [...doc.querySelectorAll('#view table.t')]
+    .find((t) => t.textContent.indexOf('אחוז שומן') !== -1);
+  const rows = [...table.querySelectorAll('tbody tr')];
+
+  let checked = 0;
+  window.MainTab.LENGTHS.forEach((days, i) => {
+    const r = Metrics.composition(Store.getEntries(),
+      { days: days, endDate: Dates.today() });
+    if (!r.ok || !Fmt.isNum(r.fields.weightKg.change)) return;
+
+    const shown = Number(rows[i].children[2].textContent
+      .replace(/[^0-9.\-−]/g, '').replace('−', '-').split('.').slice(0, 2).join('.'));
+    assert(Math.abs(shown - r.fields.weightKg.change) < 0.02,
+      days + ': מוצג ' + shown + ' מול ' + r.fields.weightKg.change.toFixed(2));
+    checked++;
+  });
+
+  assert(checked > 0, 'לא נבדקה אף שורה');
+});
+
+test('אחוז השומן מחושב מהיחס ולא מההפרש', () => {
+  const r = Metrics.composition(Store.getEntries(),
+    { days: 14, endDate: Dates.today() });
+  if (!r.ok || !r.fatShare || !Fmt.isNum(r.fatShare.now)) return;
+
+  const f = r.fields;
+  const expected = (f.bodyFatKg.mean / f.weightKg.mean) * 100;
+  assert(Math.abs(r.fatShare.now - expected) < 1e-9,
+    'האחוז: ' + r.fatShare.now + ' מול ' + expected);
+});
+
+test('חלון בלי שני סבבים מלאים מדווח ולא מחושב', () => {
+  const short = [];
+  for (let i = 0; i < 10; i++) {
+    short.push({ date: Dates.addDays('2026-01-01', i), weightKg: 90 - 0.05 * i });
+  }
+  const r = Metrics.composition(short, { days: 21, endDate: '2026-01-10' });
+
+  assert(!r.ok, 'היה צריך להיכשל');
+  assert(r.reason === 'need-two-blocks', 'הסיבה: ' + r.reason);
+  assert(r.need === 42, 'צריך ' + r.need);
+});
+
 test('טאב המשקל מציג את כל אורכי החלון', () => {
   App.setState({ date: Dates.today(), tab: 'home' });
   const tab = doc.querySelector('[data-tab="weight"]');
@@ -1490,7 +1562,7 @@ test('שבוע אחרון חריג מסומן בכותרת', () => {
   for (let i = 6; i >= 0; i--) {
     Store.upsert({ date: Dates.addDays(Dates.today(), -i), weightKg: last + 1.2 + 0.2 * (7 - i) });
   }
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'home' });
 
   const d = Metrics.dashboard(Store.getEntries(), Store.getSettings(), { endDate: Dates.today() });
   assert(d.lastWeekEffect < -0.25, 'התרחיש לא יצר שבוע חריג: ' + d.lastWeekEffect);
@@ -1536,7 +1608,7 @@ test('הערת השבוע החריג מופיעה רק במדידה עד היו�
 });
 
 test('שורת השיאים מציגה את הקצוות ואת השקילה האחרונה', () => {
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'home' });
   const peaks = doc.querySelector('.peaks');
   assert(peaks, 'שורת השיאים חסרה');
   ['הכי גבוה', 'הכי נמוך', 'שקילה אחרונה'].forEach((label) =>
@@ -1551,7 +1623,7 @@ test('שורת השיאים מציגה את הקצוות ואת השקילה ה�
 });
 
 test('טבלת הטווחים מציגה 5 ימים, שבוע, שבועיים ושלושה', () => {
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'home' });
   const card = [...doc.querySelectorAll('#view .card')]
     .find((c) => c.textContent.includes('לפי טווחים'));
   assert(card, 'הכרטיס חסר');
@@ -1630,7 +1702,7 @@ test('בחירת בסיס החישוב משנה את היעד', () => {
 });
 
 test('בסיס בלי מספיק ימים מנוטרל ולא נבחר', () => {
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'home' });
   const available = Metrics.availableWindows(Store.getEntries(),
     { endDate: Dates.today(), candidates: [3, 5, 7, 10, 14, 21, 28] });
 
@@ -1645,7 +1717,7 @@ test('בסיס בלי מספיק ימים מנוטרל ולא נבחר', () => {
 test('הלוח עומד גם בלי נתונים', () => {
   errors.length = 0;
   Store.clearAll();
-  App.setState({ date: Dates.today() });
+  App.setState({ date: Dates.today(), tab: 'home' });
   const text = doc.getElementById('view').textContent;
   assert(text.includes('עוד אין נתונים'), 'חסרה הודעת מצב ריק');
   assert(doc.querySelector('#goal-weight'), 'ההגדרות אמורות להישאר זמינות');

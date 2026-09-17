@@ -1984,6 +1984,97 @@
   }
 
   /**
+   * הרכב הגוף לפי חלונות: משקל, שומן ושריר יחד.
+   *
+   * שלושתם נמדדים באותה שקילה ולכן חולקים את אותו רעש, אבל הם
+   * מספרים סיפורים שונים: ירידה במשקל שמלווה בירידה בשריר אינה
+   * אותה ירידה. הצגתם זה לצד זה היא מה שמאפשר להבחין.
+   *
+   * הסבבים מעוגנים לשקילה הראשונה, וכל חלון מושווה לסבב שלפניו.
+   * חלון חלקי בסוף אינו נספר — ממוצע של יומיים מול ממוצע של שבוע
+   * אינו השוואה.
+   */
+  var COMPOSITION_FIELDS = ['weightKg', 'bodyFatKg', 'muscleKg', 'waterKg'];
+
+  function composition(entries, options) {
+    var opts = options || {};
+    var days = Math.max(1, Math.round(num(opts.days) || 7));
+    var endDate = opts.endDate || Dates.today();
+
+    var all = sorted(entries).filter(function (e) { return e.date <= endDate; });
+    var weighed = series(all, 'weightKg');
+    if (weighed.length < 2) return { ok: false, reason: 'no-weigh-ins' };
+
+    var anchor = weighed[0].date;
+    var spanDays = Dates.diffDays(anchor, endDate) + 1;
+    var blocks = Math.floor(spanDays / days);
+
+    if (blocks < 2) {
+      return { ok: false, reason: 'need-two-blocks', have: spanDays, need: days * 2 };
+    }
+
+    var byDate = {};
+    all.forEach(function (e) { byDate[e.date] = e; });
+
+    var meanOver = function (from, to, field) {
+      var values = [];
+      for (var d = from; d <= to; d = Dates.addDays(d, 1)) {
+        var day = byDate[d];
+        if (day && Fmt_isNum(day[field])) values.push(day[field]);
+      }
+      return values.length ? { value: Stats.mean(values), n: values.length } : null;
+    };
+
+    var currentFrom = Dates.addDays(anchor, (blocks - 1) * days);
+    var currentTo = Dates.addDays(currentFrom, days - 1);
+    var prevFrom = Dates.addDays(currentFrom, -days);
+    var prevTo = Dates.addDays(currentFrom, -1);
+
+    var fields = {};
+    COMPOSITION_FIELDS.forEach(function (field) {
+      var now = meanOver(currentFrom, currentTo, field);
+      var before = meanOver(prevFrom, prevTo, field);
+
+      fields[field] = {
+        mean: now ? now.value : null,
+        prevMean: before ? before.value : null,
+        change: (now && before) ? now.value - before.value : null,
+        readings: now ? now.n : 0,
+        prevReadings: before ? before.n : 0
+      };
+    });
+
+    // שומן ושריר כאחוז מהמשקל — משם רואים אם ההרכב באמת השתנה
+    var share = function (field) {
+      var f = fields[field];
+      var w = fields.weightKg;
+      if (!Fmt_isNum(f.mean) || !Fmt_isNum(w.mean) || w.mean === 0) return null;
+      var now = (f.mean / w.mean) * 100;
+      if (!Fmt_isNum(f.prevMean) || !Fmt_isNum(w.prevMean) || w.prevMean === 0) {
+        return { now: now, before: null, change: null };
+      }
+      var before = (f.prevMean / w.prevMean) * 100;
+      return { now: now, before: before, change: now - before };
+    };
+
+    return {
+      ok: true,
+      days: days,
+      anchor: anchor,
+      blockIndex: blocks,
+      blockCount: blocks,
+      from: currentFrom,
+      to: currentTo,
+      prevFrom: prevFrom,
+      prevTo: prevTo,
+      openDays: spanDays - blocks * days,
+      fields: fields,
+      fatShare: share('bodyFatKg'),
+      muscleShare: share('muscleKg')
+    };
+  }
+
+  /**
    * חישוב מיושר-יום: המשקל של הבוקר סוגר את היום שלפניו.
    *
    * מה שאכלת ביום שני מופיע במשקל של בוקר יום שלישי, לא בזה של
@@ -2550,6 +2641,8 @@
     macroSplit: macroSplit,
     targetGaps: targetGaps,
     dayAligned: dayAligned,
+    composition: composition,
+    COMPOSITION_FIELDS: COMPOSITION_FIELDS,
     dayComparison: dayComparison,
     weightBlocks: weightBlocks,
     KCAL_PER_GRAM: KCAL_PER_GRAM,

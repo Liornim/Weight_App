@@ -2525,6 +2525,68 @@ test('בלי כותרות נשמר המיפוי לפי מיקום', () => {
   assert(day.proteinG === 118, 'חלבון במקום הרביעי');
 });
 
+// ---------- הרכב הגוף ----------
+
+test('הרכב הגוף משווה סבב לסבב שלפניו', () => {
+  const entries = buildSeries('2026-01-01', 28, (i) => ({
+    weightKg: 90 - 0.05 * i,
+    bodyFatKg: 23 - 0.04 * i,
+    muscleKg: 35 + 0.005 * i
+  }));
+
+  const r = Metrics.composition(entries, { days: 14, endDate: '2026-01-28' });
+
+  assert(r.ok, 'צריך לעבוד: ' + r.reason);
+  assert(r.from === '2026-01-15' && r.to === '2026-01-28', r.from + '–' + r.to);
+  assert(r.prevFrom === '2026-01-01' && r.prevTo === '2026-01-14', 'הסבב הקודם');
+
+  // ירידה במשקל ובשומן, עלייה בשריר
+  assert(r.fields.weightKg.change < 0, 'משקל');
+  assert(r.fields.bodyFatKg.change < 0, 'שומן');
+  assert(r.fields.muscleKg.change > 0, 'שריר');
+});
+
+test('אחוז השומן נגזר מהיחס בכל סבב בנפרד', () => {
+  const entries = buildSeries('2026-01-01', 20, (i) => ({
+    weightKg: 100 - 0.5 * i, bodyFatKg: 25 - 0.2 * i
+  }));
+
+  const r = Metrics.composition(entries, { days: 10, endDate: '2026-01-20' });
+  const f = r.fields;
+
+  close(r.fatShare.now, (f.bodyFatKg.mean / f.weightKg.mean) * 100, 1e-9, 'נוכחי');
+  close(r.fatShare.before, (f.bodyFatKg.prevMean / f.weightKg.prevMean) * 100, 1e-9, 'קודם');
+  close(r.fatShare.change, r.fatShare.now - r.fatShare.before, 1e-9, 'השינוי');
+});
+
+test('שדה שלא נמדד חוזר ריק ולא כאפס', () => {
+  const entries = buildSeries('2026-01-01', 20, (i) => ({
+    weightKg: 90 - 0.05 * i
+  }));
+
+  const r = Metrics.composition(entries, { days: 10, endDate: '2026-01-20' });
+
+  assert(Fmt_isNum_test(r.fields.weightKg.change), 'המשקל נמדד');
+  assert(r.fields.bodyFatKg.mean === null, 'שומן שלא נמדד');
+  assert(r.fields.bodyFatKg.change === null, 'ולכן אין שינוי');
+  assert(r.fatShare === null, 'ובלי שומן אין אחוז');
+
+  function Fmt_isNum_test(v) { return typeof v === 'number' && isFinite(v); }
+});
+
+test('הסבב החלקי בסוף אינו נספר', () => {
+  // 25 ימים, חלון 10: שני סבבים מלאים ועוד 5 ימים
+  const entries = buildSeries('2026-01-01', 25, (i) => ({
+    weightKg: 90 - 0.05 * i, bodyFatKg: 23
+  }));
+
+  const r = Metrics.composition(entries, { days: 10, endDate: '2026-01-25' });
+
+  assert(r.blockCount === 2, 'סבבים: ' + r.blockCount);
+  assert(r.to === '2026-01-20', 'הסבב האחרון נגמר ב-' + r.to);
+  assert(r.openDays === 5, 'נאספו ' + r.openDays);
+});
+
 // ---------- חישוב מיושר-יום ----------
 
 test('סבבים מעוגנים: כל אורך נגמר בתאריך משלו', () => {
