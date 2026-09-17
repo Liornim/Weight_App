@@ -1996,7 +1996,7 @@
    */
   var COMPOSITION_FIELDS = ['weightKg', 'bodyFatKg', 'muscleKg', 'waterKg'];
 
-  function composition(entries, options) {
+  function compositionWindow(entries, options) {
     var opts = options || {};
     var days = Math.max(1, Math.round(num(opts.days) || 7));
     var endDate = opts.endDate || Dates.today();
@@ -2641,7 +2641,7 @@
     macroSplit: macroSplit,
     targetGaps: targetGaps,
     dayAligned: dayAligned,
-    composition: composition,
+    compositionWindow: compositionWindow,
     COMPOSITION_FIELDS: COMPOSITION_FIELDS,
     dayComparison: dayComparison,
     weightBlocks: weightBlocks,

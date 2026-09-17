@@ -25,7 +25,7 @@
   }
 
   function row(entries, days, endDate, active) {
-    var r = Metrics.composition(entries, { days: days, endDate: endDate });
+    var r = Metrics.compositionWindow(entries, { days: days, endDate: endDate });
 
     if (!r.ok) {
       return '<tr><td class="n">' + days + '</td>' +
@@ -58,7 +58,7 @@
     // החלון הארוך ביותר שיש לו שני סבבים מלאים הוא המייצג
     var best = null;
     LENGTHS.forEach(function (days) {
-      var r = Metrics.composition(entries, { days: days, endDate: endDate });
+      var r = Metrics.compositionWindow(entries, { days: days, endDate: endDate });
       if (r.ok) best = r;
     });
 

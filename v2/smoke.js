@@ -1454,7 +1454,7 @@ test('הערכים בטבלה תואמים את המנוע', () => {
 
   let checked = 0;
   window.MainTab.LENGTHS.forEach((days, i) => {
-    const r = Metrics.composition(Store.getEntries(),
+    const r = Metrics.compositionWindow(Store.getEntries(),
       { days: days, endDate: Dates.today() });
     if (!r.ok || !Fmt.isNum(r.fields.weightKg.change)) return;
 
@@ -1469,7 +1469,7 @@ test('הערכים בטבלה תואמים את המנוע', () => {
 });
 
 test('אחוז השומן מחושב מהיחס ולא מההפרש', () => {
-  const r = Metrics.composition(Store.getEntries(),
+  const r = Metrics.compositionWindow(Store.getEntries(),
     { days: 14, endDate: Dates.today() });
   if (!r.ok || !r.fatShare || !Fmt.isNum(r.fatShare.now)) return;
 
@@ -1484,7 +1484,7 @@ test('חלון בלי שני סבבים מלאים מדווח ולא מחושב'
   for (let i = 0; i < 10; i++) {
     short.push({ date: Dates.addDays('2026-01-01', i), weightKg: 90 - 0.05 * i });
   }
-  const r = Metrics.composition(short, { days: 21, endDate: '2026-01-10' });
+  const r = Metrics.compositionWindow(short, { days: 21, endDate: '2026-01-10' });
 
   assert(!r.ok, 'היה צריך להיכשל');
   assert(r.reason === 'need-two-blocks', 'הסיבה: ' + r.reason);

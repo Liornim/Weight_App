@@ -2534,7 +2534,7 @@ test('הרכב הגוף משווה סבב לסבב שלפניו', () => {
     muscleKg: 35 + 0.005 * i
   }));
 
-  const r = Metrics.composition(entries, { days: 14, endDate: '2026-01-28' });
+  const r = Metrics.compositionWindow(entries, { days: 14, endDate: '2026-01-28' });
 
   assert(r.ok, 'צריך לעבוד: ' + r.reason);
   assert(r.from === '2026-01-15' && r.to === '2026-01-28', r.from + '–' + r.to);
@@ -2551,7 +2551,7 @@ test('אחוז השומן נגזר מהיחס בכל סבב בנפרד', () => {
     weightKg: 100 - 0.5 * i, bodyFatKg: 25 - 0.2 * i
   }));
 
-  const r = Metrics.composition(entries, { days: 10, endDate: '2026-01-20' });
+  const r = Metrics.compositionWindow(entries, { days: 10, endDate: '2026-01-20' });
   const f = r.fields;
 
   close(r.fatShare.now, (f.bodyFatKg.mean / f.weightKg.mean) * 100, 1e-9, 'נוכחי');
@@ -2564,7 +2564,7 @@ test('שדה שלא נמדד חוזר ריק ולא כאפס', () => {
     weightKg: 90 - 0.05 * i
   }));
 
-  const r = Metrics.composition(entries, { days: 10, endDate: '2026-01-20' });
+  const r = Metrics.compositionWindow(entries, { days: 10, endDate: '2026-01-20' });
 
   assert(Fmt_isNum_test(r.fields.weightKg.change), 'המשקל נמדד');
   assert(r.fields.bodyFatKg.mean === null, 'שומן שלא נמדד');
@@ -2580,7 +2580,7 @@ test('הסבב החלקי בסוף אינו נספר', () => {
     weightKg: 90 - 0.05 * i, bodyFatKg: 23
   }));
 
-  const r = Metrics.composition(entries, { days: 10, endDate: '2026-01-25' });
+  const r = Metrics.compositionWindow(entries, { days: 10, endDate: '2026-01-25' });
 
   assert(r.blockCount === 2, 'סבבים: ' + r.blockCount);
   assert(r.to === '2026-01-20', 'הסבב האחרון נגמר ב-' + r.to);
