@@ -1491,6 +1491,80 @@ test('הקריאה מפרטת מה עבר את הרעש ומה לא', () => {
   App.setState({ date: Dates.today(), tab: 'home' });
 });
 
+
+test('מסך המצב עונה על ארבע השאלות', () => {
+  App.setState({ date: Dates.today(), tab: 'status', stepsMode: 'off' });
+
+  const titles = [...doc.querySelectorAll('#view .card h3')].map((h) => h.textContent);
+  ['כמה לאכול היום', 'מול היעד', 'הגוף'].forEach((name) => {
+    assert(titles.indexOf(name) !== -1, 'חסר כרטיס: ' + name);
+  });
+
+  // הסדר: קודם מה לעשות היום, אחר כך מה קרה
+  assert(titles.indexOf('כמה לאכול היום') < titles.indexOf('מול היעד'),
+    'הסדר הפוך');
+});
+
+test('היעד במסך המצב תואם את המנוע', () => {
+  App.setState({ date: Dates.today(), tab: 'status', stepsMode: 'off' });
+
+  const best = window.StatusTab.bestWindow(
+    Store.getEntries(), Store.getSettings(), Dates.today(), App.state);
+  if (!best) return;
+
+  const rate = Math.abs(Store.getSettings().goal.ratePerWeekKg || 0);
+  const deficit = (rate * (Store.getSettings().kcalPerKg || 7700)) / 7;
+  const expected = Math.round(best.data.base - deficit);
+
+  const shown = Number(doc.querySelector('#view .big-number .v')
+    .textContent.replace(/[^0-9.\-]/g, ''));
+
+  assert(Math.abs(shown - expected) <= 1, 'מוצג ' + shown + ' מול ' + expected);
+});
+
+test('הנותר להיום מחושב ממה שכבר נאכל', () => {
+  const day = Dates.today();
+  Store.upsert({ date: day, kcal: 1400 });
+  App.setState({ date: day, tab: 'status', stepsMode: 'off' });
+
+  const lead = doc.querySelector('#view .lead');
+  assert(lead, 'חסרה שורת הנותר');
+  assert(lead.textContent.indexOf('1,400') !== -1, 'לא מוצג מה נאכל');
+  assert(lead.textContent.indexOf('נשאר') !== -1 ||
+    lead.textContent.indexOf('מעל היעד') !== -1, 'לא מוצג הנותר');
+
+  // וכשאין רישום נאמר זאת
+  Store.upsert({ date: day, kcal: '' });
+  App.setState({ date: day, tab: 'status' });
+  assert(doc.getElementById('view').textContent.indexOf('עוד לא רשמת') !== -1,
+    'לא נאמר שאין רישום');
+});
+
+test('החריגה מוצגת ליום, מצטבר ובקילוגרמים', () => {
+  App.setState({ date: Dates.today(), tab: 'status', stepsMode: 'off' });
+
+  const card = [...doc.querySelectorAll('#view .card')]
+    .find((c) => (c.querySelector('h3') || {}).textContent === 'מול היעד');
+  if (!card) return;
+
+  const labels = [...card.querySelectorAll('.tile .k')].map((k) => k.textContent);
+  assert(labels.join() === 'ליום,מצטבר,שווה ערך', 'האריחים: ' + labels.join());
+
+  // המצטבר הוא היומי כפול מספר הימים
+  const gaps = Metrics.targetGaps(Store.getEntries(), Store.getSettings(),
+    { endDate: Dates.today(), windows: window.Parts.WINDOWS });
+  const row = gaps.rows.filter((r) => r.ok).pop();
+  if (!row) return;
+
+  const values = [...card.querySelectorAll('.tile .v')]
+    .map((v) => Number(v.textContent.replace(/[^0-9.\-−]/g, '').replace('−', '-')));
+
+  assert(Math.abs(values[0] - Math.round(row.gapPerDay.kcal)) <= 1,
+    'ליום: ' + values[0]);
+  assert(Math.abs(values[1] - Math.round(row.gapPerDay.kcal * row.loggedDays)) <= 2,
+    'מצטבר: ' + values[1]);
+});
+
 test('הדף הראשי הוא הראשון ומציג משקל, שומן ושריר', () => {
   App.setState({ date: Dates.today(), tab: 'main' });
 
