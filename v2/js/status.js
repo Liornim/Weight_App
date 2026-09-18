@@ -67,43 +67,69 @@
         Fmt.n(rate, 2) + ' ק״ג בשבוע. הטווח הוא ±' + Fmt.n(r.ci95, 0) + '.'));
   }
 
-  /** כמה חרגת, ומה זה שווה בקילוגרמים */
+  /**
+   * כמה חרגת מהיעד.
+   *
+   * זו אינה מדידה עצמאית אלא זהות: היעד עצמו נגזר ממה שאכלת ומהשינוי
+   * במשקל, ולכן
+   *
+   *   פער = אכלתי − (אכלתי + מהמשקל − הליכה − גירעון)
+   *       = גירעון + הליכה − מהמשקל
+   *
+   * מה שאכלת מצטמצם לגמרי, וכל טעות ברישום הקלוריות נבלעת בשני
+   * הצדדים. מה שנשאר הוא הגירעון שתכננת, ועוד ההליכה כשבחרת לא
+   * לספור אותה ביעד, פחות מה שהמשקל מראה בפועל.
+   *
+   * זה נכון רק כששני המספרים מגיעים מאותו חלון ומאותו מנוע. כשהם
+   * הגיעו משניים שונים, נוצר פער מדומה של מאות קלוריות.
+   */
   function driftCard(entries, settings, state, best) {
-    /**
-     * חלון ההשוואה כאן אינו חייב להיות זהה לזה של היעד: targetGaps
-     * דורש שני סבבים ולכן פוסל חלונות ארוכים יותר. נבחר הארוך ביותר
-     * שכן עובד, כי שם הרעש הקטן ביותר.
-     */
-    var gaps = Metrics.targetGaps(entries, settings, {
-      endDate: state.date, windows: P.WINDOWS,
-      withSteps: state.stepsMode === 'on'
-    });
+    if (!best) return '';
 
-    var usable = gaps.rows.filter(function (r) { return r.ok; });
-    if (!usable.length) return '';
+    var r = best.data;
+    var withSteps = state.stepsMode === 'on';
+    var spend = withSteps ? r.tdee : r.base;
 
-    var row = usable[usable.length - 1];
+    var rate = Math.abs((settings.goal || {}).ratePerWeekKg || 0);
+    var deficit = (rate * r.kcalPerKg) / 7;
+    var target = spend - deficit;
 
-    var perDay = row.gapPerDay.kcal;
-    var total = perDay * row.loggedDays;
-    var kg = total / (settings.kcalPerKg || 7700);
+    var perDay = r.meanKcal - target;
+    var total = perDay * r.loggedDays;
+    var kcalPerKg = settings.kcalPerKg || 7700;
+    var kg = total / kcalPerKg;
     var over = perDay > 0;
 
+    // מה המשקל מראה בפועל, בקילוגרמים לשבוע
+    var actualRate = (-r.deltaKg / r.days) * 7;
+
     return P.card('מול היעד',
-      'לפי ' + row.days + ' ימים · ' + row.loggedDays + ' דווחו',
+      'לפי ' + r.days + ' ימים · ' + P.esc(Dates.short(r.foodFrom) + '–' +
+        Dates.short(r.foodTo)),
       P.tiles([
-        P.tile(over ? 'bad' : 'good', 'ליום',
-          Fmt.signed(perDay, 0), 'קלוריות'),
-        P.tile(over ? 'bad' : 'good', 'מצטבר',
-          Fmt.signed(total, 0), 'קלוריות'),
-        P.tile(over ? 'bad' : 'good', 'שווה ערך',
-          Fmt.signed(kg, 2), 'ק״ג')
+        P.tile(over ? 'bad' : 'good', 'ליום', Fmt.signed(perDay, 0), 'קלוריות'),
+        P.tile(over ? 'bad' : 'good', 'מצטבר', Fmt.signed(total, 0), 'קלוריות'),
+        P.tile(over ? 'bad' : 'good', 'שווה ערך', Fmt.signed(kg, 2), 'ק״ג')
       ]) +
-      P.hint(over
-        ? 'בקצב הזה אתה מוסיף ' + Fmt.n(Math.abs(kg), 2) + ' ק״ג על התקופה ' +
-          'במקום לרדת. הפער הוא ' + Fmt.n(perDay, 0) + ' קלוריות ביום.'
-        : 'אתה מתחת ליעד ב-' + Fmt.n(Math.abs(perDay), 0) + ' קלוריות ביום, ' +
-          'כלומר הגירעון בפועל גדול מהמתוכנן.'));
+
+      '<div class="calc num">' +
+        'גירעון מתוכנן   ' + Fmt.n(deficit, 0) + '\n' +
+        (withSteps ? '' : 'הליכה שלא ביעד  ' + Fmt.n(r.stepKcal, 0) + '\n') +
+        'מה שהמשקל מראה  ' + Fmt.n(r.fromWeight, 0) + '\n' +
+        '\n' +
+        Fmt.n(deficit, 0) +
+        (withSteps ? '' : ' + ' + Fmt.n(r.stepKcal, 0)) +
+        ' − ' + Fmt.n(r.fromWeight, 0) + ' = ' + Fmt.n(perDay, 0) +
+      '</div>' +
+
+      P.hint('הפער אינו מדידה נפרדת אלא זהות: מה שאכלת מצטמצם משני ' +
+        'הצדדים, ולכן טעות ברישום הקלוריות אינה משפיעה עליו כלל. ' +
+        'תכננת ' + Fmt.n(rate, 2) + ' ק״ג בשבוע, והמשקל מראה ' +
+        Fmt.n(Math.abs(actualRate), 2) + ' ק״ג בשבוע' +
+        (actualRate < 0 ? ' בעלייה' : '') + '.' +
+        (withSteps ? ''
+          : ' ההליכה מופיעה בפער כי בחרת לא לספור אותה ביעד — ' +
+            'במצב "עם צעדים" הפער יקטן ב-' + Fmt.n(r.stepKcal, 0) + '.')));
   }
 
   /** מה הגוף עושה */

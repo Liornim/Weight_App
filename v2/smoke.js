@@ -1540,6 +1540,64 @@ test('הנותר להיום מחושב ממה שכבר נאכל', () => {
     'לא נאמר שאין רישום');
 });
 
+test('הפער הוא זהות ולא מדידה נפרדת', () => {
+  App.setState({ date: Dates.today(), tab: 'status', stepsMode: 'off' });
+
+  const best = window.StatusTab.bestWindow(
+    Store.getEntries(), Store.getSettings(), Dates.today(), App.state);
+  if (!best) return;
+
+  const r = best.data;
+  const settings = Store.getSettings();
+  const rate = Math.abs(settings.goal.ratePerWeekKg || 0);
+  const deficit = (rate * (settings.kcalPerKg || 7700)) / 7;
+
+  const target = r.base - deficit;
+  const gap = r.meanKcal - target;
+
+  // פער = גירעון + הליכה − מה שהמשקל מראה
+  const identity = deficit + r.stepKcal - r.fromWeight;
+  assert(Math.abs(gap - identity) < 0.01,
+    'הזהות נשברה: ' + gap.toFixed(1) + ' מול ' + identity.toFixed(1));
+
+  // וזה מה שמוצג
+  const card = [...doc.querySelectorAll('#view .card')]
+    .find((c) => (c.querySelector('h3') || {}).textContent === 'מול היעד');
+  const shown = Number(card.querySelector('.tile .v').textContent
+    .replace(/[^0-9.\-−]/g, '').replace('−', '-'));
+  assert(Math.abs(shown - Math.round(gap)) <= 1, 'מוצג ' + shown + ' מול ' + Math.round(gap));
+
+  // והנוסחה מוצגת עם כל רכיביה
+  const calc = card.querySelector('.calc').textContent;
+  assert(calc.indexOf('גירעון מתוכנן') !== -1, 'חסר הגירעון');
+  assert(calc.indexOf('הליכה שלא ביעד') !== -1, 'חסרה ההליכה');
+  assert(calc.indexOf('מה שהמשקל מראה') !== -1, 'חסר רכיב המשקל');
+});
+
+test('"עם צעדים" מקטין את הפער בדיוק בקלוריות ההליכה', () => {
+  App.setState({ date: Dates.today(), tab: 'status', stepsMode: 'off' });
+  const read = () => {
+    const card = [...doc.querySelectorAll('#view .card')]
+      .find((c) => (c.querySelector('h3') || {}).textContent === 'מול היעד');
+    return Number(card.querySelector('.tile .v').textContent
+      .replace(/[^0-9.\-−]/g, '').replace('−', '-'));
+  };
+
+  const without = read();
+  doc.querySelector('[data-steps="on"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+  const withSteps = read();
+
+  const best = window.StatusTab.bestWindow(
+    Store.getEntries(), Store.getSettings(), Dates.today(), App.state);
+  if (best && best.data.stepKcal > 0) {
+    assert(Math.abs((without - withSteps) - Math.round(best.data.stepKcal)) <= 2,
+      'ההפרש ' + (without - withSteps) + ' אינו ' + Math.round(best.data.stepKcal));
+  }
+
+  App.setState({ stepsMode: 'off' });
+});
+
 test('החריגה מוצגת ליום, מצטבר ובקילוגרמים', () => {
   App.setState({ date: Dates.today(), tab: 'status', stepsMode: 'off' });
 
@@ -1550,19 +1608,22 @@ test('החריגה מוצגת ליום, מצטבר ובקילוגרמים', () =
   const labels = [...card.querySelectorAll('.tile .k')].map((k) => k.textContent);
   assert(labels.join() === 'ליום,מצטבר,שווה ערך', 'האריחים: ' + labels.join());
 
-  // המצטבר הוא היומי כפול מספר הימים
-  const gaps = Metrics.targetGaps(Store.getEntries(), Store.getSettings(),
-    { endDate: Dates.today(), windows: window.Parts.WINDOWS });
-  const row = gaps.rows.filter((r) => r.ok).pop();
-  if (!row) return;
-
+  // המצטבר הוא היומי כפול מספר הימים שדווחו
   const values = [...card.querySelectorAll('.tile .v')]
     .map((v) => Number(v.textContent.replace(/[^0-9.\-−]/g, '').replace('−', '-')));
 
-  assert(Math.abs(values[0] - Math.round(row.gapPerDay.kcal)) <= 1,
-    'ליום: ' + values[0]);
-  assert(Math.abs(values[1] - Math.round(row.gapPerDay.kcal * row.loggedDays)) <= 2,
-    'מצטבר: ' + values[1]);
+  const best = window.StatusTab.bestWindow(
+    Store.getEntries(), Store.getSettings(), Dates.today(), App.state);
+  if (!best) return;
+
+  // הערך המוצג מעוגל, ולכן ההשוואה מול המספר המלא
+  const settings = Store.getSettings();
+  const rate = Math.abs(settings.goal.ratePerWeekKg || 0);
+  const deficit = (rate * (settings.kcalPerKg || 7700)) / 7;
+  const exact = best.data.meanKcal - (best.data.base - deficit);
+
+  assert(Math.abs(values[1] - exact * best.data.loggedDays) <= best.data.loggedDays,
+    'המצטבר ' + values[1] + ' אינו ' + Math.round(exact * best.data.loggedDays));
 });
 
 test('הדף הראשי הוא הראשון ומציג משקל, שומן ושריר', () => {
