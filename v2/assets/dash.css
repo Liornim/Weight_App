@@ -764,6 +764,9 @@ table.t th.n, table.t td.n {
 table.t .sub { display: block; font-size: 11px; color: var(--ink-faint); }
 table.t .sub.warn { color: var(--warn); }
 
+/* שינוי שאינו עובר את רעש המדידה */
+table.t td.within-noise { opacity: 0.42; }
+
 /* עמודת הסבב שנאסף — מוחלשת מול המספר הסופי */
 table.t .pending-cell { color: var(--ink-soft); }
 table.t .pending-cell .num { font-size: 13px; }

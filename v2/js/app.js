@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd59',
+    BUILD: 'd60',
     state: {
       date: Dates.today(),
       tab: 'main',         // הדף שנפתח ראשון

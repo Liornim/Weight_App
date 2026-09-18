@@ -1996,6 +1996,26 @@
    */
   var COMPOSITION_FIELDS = ['weightKg', 'bodyFatKg', 'muscleKg', 'waterKg'];
 
+  /**
+   * רעש המדידה של שדה כלשהו, באותה שיטה שבה נמדד רעש המשקל.
+   *
+   * נחוץ במיוחד לשומן ולשריר: מד הביו־אימפדנס מסיק אותם מהתנגדות
+   * חשמלית, שמושפעת ישירות ממאזן הנוזלים — ולכן הרעש בהם גדול
+   * מזה של המשקל, שנמדד ישירות. בלי הסף הזה כל תנודה נראית כשינוי.
+   */
+  function fieldNoiseSd(entries, field, fallback) {
+    var ma = movingAverage(entries, field, { windowDays: 7, minPoints: 3 });
+    var byDate = {};
+    ma.forEach(function (d) { if (d.y !== null) byDate[d.date] = d.y; });
+
+    var residuals = series(entries, field)
+      .filter(function (p) { return byDate[p.date] !== undefined; })
+      .map(function (p) { return p.y - byDate[p.date]; });
+
+    var sd = Stats.stdDev(residuals);
+    return sd === null ? (fallback || 0.4) : Math.max(sd, 0.1);
+  }
+
   function compositionWindow(entries, options) {
     var opts = options || {};
     var days = Math.max(1, Math.round(num(opts.days) || 7));
@@ -2057,12 +2077,38 @@
       return { now: now, before: before, change: now - before };
     };
 
+    /**
+     * האם השינוי גדול מספיק כדי להיחשב אמיתי.
+     *
+     * ההשוואה היא בין שני ממוצעים, ולכן השגיאה של כל אחד היא
+     * הרעש חלקי שורש מספר המדידות, והשגיאה של ההפרש היא סכומן.
+     */
+    var significance = {};
+    COMPOSITION_FIELDS.forEach(function (field) {
+      var f = fields[field];
+      if (!Fmt_isNum(f.change) || !f.readings || !f.prevReadings) {
+        significance[field] = null;
+        return;
+      }
+
+      var noise = fieldNoiseSd(entries, field);
+      var se = noise * Math.sqrt(1 / f.readings + 1 / f.prevReadings);
+      var threshold = 1.96 * se;
+
+      significance[field] = {
+        noise: noise,
+        threshold: threshold,
+        real: Math.abs(f.change) > threshold
+      };
+    });
+
     return {
       ok: true,
       days: days,
       anchor: anchor,
       blockIndex: blocks,
       blockCount: blocks,
+      significance: significance,
       from: currentFrom,
       to: currentTo,
       prevFrom: prevFrom,
@@ -2642,6 +2688,7 @@
     targetGaps: targetGaps,
     dayAligned: dayAligned,
     compositionWindow: compositionWindow,
+    fieldNoiseSd: fieldNoiseSd,
     COMPOSITION_FIELDS: COMPOSITION_FIELDS,
     dayComparison: dayComparison,
     weightBlocks: weightBlocks,

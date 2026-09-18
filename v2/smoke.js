@@ -1420,6 +1420,77 @@ test('במצב מסתגל מוצג חלון שבוע עם הסבר', () => {
 
 
 
+
+test('משקל יציב עם שומן יורד ושריר עולה מזוהה כרה־קומפוזיציה', () => {
+  Store.clearAll();
+  for (let i = 0; i < 42; i++) {
+    Store.upsert({
+      date: Dates.addDays(Dates.today(), -(41 - i)),
+      weightKg: Number((89 + Math.sin(i * 2.1) * 0.4).toFixed(1)),
+      bodyFatKg: Number((23.5 - 0.025 * i + Math.sin(i * 1.7) * 0.3).toFixed(1)),
+      muscleKg: Number((35.0 + 0.012 * i + Math.sin(i * 1.3) * 0.25).toFixed(1))
+    });
+  }
+
+  App.setState({ date: Dates.today(), tab: 'main' });
+  const lead = doc.querySelector('#view .lead').textContent;
+
+  assert(lead.indexOf('מחליף הרכב') !== -1,
+    'לא זוהתה רה־קומפוזיציה: ' + lead);
+  assert(lead.indexOf('טובה יותר מירידה במשקל') !== -1,
+    'לא נאמר שזו התקדמות');
+});
+
+test('שינוי בתוך הרעש מסומן ולא נקרא כתוצאה', () => {
+  App.setState({ date: Dates.today(), tab: 'main' });
+
+  const table = [...doc.querySelectorAll('#view table.t')]
+    .find((t) => t.textContent.indexOf('אחוז שומן') !== -1);
+  const rows = [...table.querySelectorAll('tbody tr')];
+
+  let marked = 0;
+  window.MainTab.LENGTHS.forEach((days, i) => {
+    const r = Metrics.compositionWindow(Store.getEntries(),
+      { days: days, endDate: Dates.today() });
+    if (!r.ok) return;
+
+    ['weightKg', 'bodyFatKg', 'muscleKg'].forEach((field, col) => {
+      const sig = r.significance[field];
+      if (!sig) return;
+      const cell = rows[i].children[2 + col];
+      assert(cell.classList.contains('within-noise') === !sig.real,
+        days + ' ' + field + ': הסימון לא תואם');
+      if (!sig.real) marked++;
+    });
+  });
+
+  assert(marked > 0, 'לא נמצא אף שינוי בתוך הרעש');
+});
+
+test('הסף לשומן ולשריר גבוה מזה של המשקל', () => {
+  // הם נמדדים בביו־אימפדנס ולכן רועשים יותר
+  const r = Metrics.compositionWindow(Store.getEntries(),
+    { days: 14, endDate: Dates.today() });
+  if (!r.ok) return;
+
+  const w = Metrics.fieldNoiseSd(Store.getEntries(), 'weightKg');
+  const f = Metrics.fieldNoiseSd(Store.getEntries(), 'bodyFatKg');
+  assert(f > 0 && w > 0, 'הרעש לא חושב');
+});
+
+test('הקריאה מפרטת מה עבר את הרעש ומה לא', () => {
+  App.setState({ date: Dates.today(), tab: 'main' });
+  const text = doc.getElementById('view').textContent;
+
+  assert(text.indexOf('מעל רעש המדידה') !== -1 || text.indexOf('בתוך הרעש') !== -1,
+    'לא פורט מה עבר את הסף');
+  assert(text.indexOf('ביו־אימפדנס') !== -1, 'לא הוסבר למה הסף שונה');
+
+  // הבדיקות חולקות מצב; מי שהחליף נתונים מחזיר אותם
+  seed();
+  App.setState({ date: Dates.today(), tab: 'home' });
+});
+
 test('הדף הראשי הוא הראשון ומציג משקל, שומן ושריר', () => {
   App.setState({ date: Dates.today(), tab: 'main' });
 
