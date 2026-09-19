@@ -1902,7 +1902,7 @@ test('"בפועל" הוא ממוצע מול ממוצע ולא שקילה בוד�
     .find((c) => (c.querySelector('h3') || {}).textContent === 'איפה אני עומד');
   const heads = [...card.querySelectorAll('th')].map((h) => h.textContent);
 
-  assert(heads.indexOf('צפוי ק״ג') !== -1, 'חסרה עמודת הצפוי');
+  assert(heads.indexOf('צפוי') !== -1, 'חסרה עמודת הצפוי');
   assert(heads.indexOf('בפועל') !== -1, 'חסרה עמודת הבפועל');
 
   const rows = [...card.querySelectorAll('tbody tr')];
