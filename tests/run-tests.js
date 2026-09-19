@@ -2565,6 +2565,85 @@ test('חלוקה לחצי מעוגנת לסוף', () => {
   assert(r.rows[0].days === r.rows[1].days, 'המקטעים אינם שווים');
 });
 
+test('התאמת התחזוקה מוצאת ערך שמסביר את כל החלונות', () => {
+  // סדרה עקבית: אכל 2,700, שרף 2,500, ירד בקצב הצפוי
+  const entries = [];
+  let weight = 90;
+  for (let i = 0; i < 60; i++) {
+    entries.push({
+      date: Dates.addDays('2026-01-01', i),
+      weightKg: Number(weight.toFixed(3)),
+      kcal: 2700, steps: 0
+    });
+    weight += 200 / 7700;   // עודף של 200 ליום
+  }
+
+  const r = Metrics.fitMaintenance(entries,
+    { endDate: '2026-03-01', kcalPerStep: 0 });
+
+  assert(r.ok, 'צריך לעבוד: ' + r.reason);
+  assert(Math.abs(r.maintenance - 2500) <= 30,
+    'מצא ' + r.maintenance + ' במקום 2,500');
+  assert(r.meanError < 0.05, 'שגיאה גדולה מדי: ' + r.meanError);
+});
+
+test('הטווח השקול רחב כשהנתונים רועשים', () => {
+  const noisy = [];
+  for (let i = 0; i < 60; i++) {
+    noisy.push({
+      date: Dates.addDays('2026-01-01', i),
+      weightKg: 90 + Math.sin(i * 2.1) * 0.8,
+      kcal: 2400 + Math.sin(i * 1.7) * 900,
+      steps: 9000
+    });
+  }
+  const r = Metrics.fitMaintenance(noisy, { endDate: '2026-03-01' });
+
+  assert(r.ok, 'צריך לעבוד');
+
+  // הטווח השקול תמיד מכיל את הערך הנבחר, וברעש השגיאה גדולה
+  assert(r.low <= r.maintenance && r.maintenance <= r.high,
+    'הערך הנבחר מחוץ לטווח');
+  assert(r.meanError > 0.2,
+    'בנתונים רועשים השגיאה אמורה להיות גדולה: ' + r.meanError.toFixed(2));
+});
+
+test('ההליכה נכנסת להתאמה', () => {
+  // אותה צריכה, אבל הליכה גדולה — התחזוקה שתימצא נמוכה יותר
+  const build = (steps) => {
+    const out = [];
+    let w = 90;
+    for (let i = 0; i < 60; i++) {
+      out.push({ date: Dates.addDays('2026-01-01', i),
+        weightKg: Number(w.toFixed(3)), kcal: 2700, steps: steps });
+      w += 200 / 7700;
+    }
+    return out;
+  };
+
+  const still = Metrics.fitMaintenance(build(0),
+    { endDate: '2026-03-01', kcalPerStep: 0.045 });
+  const walking = Metrics.fitMaintenance(build(10000),
+    { endDate: '2026-03-01', kcalPerStep: 0.045 });
+
+  assert(walking.maintenance < still.maintenance,
+    'הליכה אמורה להקטין את התחזיות: ' + walking.maintenance +
+    ' מול ' + still.maintenance);
+  assert(Math.abs((still.maintenance - walking.maintenance) - 450) <= 30,
+    'ההפרש ' + (still.maintenance - walking.maintenance) + ' אינו 450');
+});
+
+test('בלי מספיק ימים ההתאמה מדווחת ולא מנחשת', () => {
+  const short = [];
+  for (let i = 0; i < 15; i++) {
+    short.push({ date: Dates.addDays('2026-01-01', i), weightKg: 90, kcal: 2400 });
+  }
+  const r = Metrics.fitMaintenance(short, { endDate: '2026-01-15' });
+
+  assert(!r.ok, 'היה צריך להיכשל');
+  assert(r.reason === 'too-short', 'הסיבה: ' + r.reason);
+});
+
 test('עיגון לתחילת המעקב מתחיל ביום הראשון', () => {
   const entries = buildSeries('2026-01-01', 40, (i) => ({
     weightKg: 90 - 0.02 * i, kcal: 2400, steps: 9000

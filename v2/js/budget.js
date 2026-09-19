@@ -28,7 +28,8 @@
     { value: 3, label: 'שליש' },
     { value: 4, label: 'רבע' },
     { value: 'd10', label: '10 ימים' },
-    { value: 'd21', label: '21 ימים' }
+    { value: 'd21', label: '21 ימים' },
+    { value: 'fit', label: 'מותאם לכולם' }
   ];
 
   var LENGTHS = [3, 5, 7, 10, 14, 21, 28];
@@ -68,6 +69,10 @@
   function partsOf(state) {
     var n = Number(state.splitParts);
     return (n === 2 || n === 3 || n === 4) ? n : 2;
+  }
+
+  function isFit(state) {
+    return state.splitParts === 'fit';
   }
 
   /** אורך קבוע למקטע, או 0 לחלוקה לחלקים */
@@ -155,7 +160,8 @@
     }).join('');
 
     return P.card('מול מה אני נמדד', 'כל מקטע מושווה לזה שלפניו',
-      P.chips(SPLITS, sizeOf(state) ? 'd' + sizeOf(state) : partsOf(state),
+      P.chips(SPLITS,
+        isFit(state) ? 'fit' : sizeOf(state) ? 'd' + sizeOf(state) : partsOf(state),
         'data-split') +
       '<label class="pick-label">מאיפה לספור</label>' +
       P.chips(ANCHORS, anchorOf(state), 'data-anchor') +
@@ -167,6 +173,49 @@
           '"עד היום" מסיים את המקטע האחרון היום; "מתחילת המעקב" סופר ' +
           'מהשקילה הראשונה, ואז המקטע האחרון עשוי לצאת חלקי ומסומן ככזה. ' +
           'ברירת המחדל היא המקטע המלא האחרון.' }));
+  }
+
+  /**
+   * המצב המותאם: תחזוקה אחת שמסבירה את כל החלונות.
+   *
+   * כל מקטע בודד נותן תשובה אחרת, ואין סיבה עקרונית להעדיף אחד.
+   * כאן נסרק טווח שלם ונבחר הערך שמקטין את השגיאה הממוצעת על פני
+   * כל החלונות — כלומר המספר שהכי פחות סותר את מה שקרה בפועל.
+   */
+  function fitCard(fit, state) {
+    var rows = fit.cases.map(function (c) {
+      var big = Math.abs(c.error) > 0.5;
+      return '<tr>' +
+        '<td class="n">' + c.days + '</td>' +
+        '<td class="date-cell">' + P.esc(Dates.short(c.from) + '–' + Dates.short(c.to)) +
+        '</td>' +
+        '<td class="n">' + Fmt.n(c.kcal, 0) + '</td>' +
+        '<td class="n">' + Fmt.n(c.budget, 0) + '</td>' +
+        '<td class="n">' + Fmt.signed(c.predicted, 2) + '</td>' +
+        '<td class="n">' + P.delta(c.actual, 2, 'down') + '</td>' +
+        '<td class="n' + (big ? ' warn' : '') + '">' +
+          Fmt.signed(c.error, 2) + '</td></tr>';
+    }).join('');
+
+    return P.card('מותאם לכל החלונות',
+      fit.cases.length + ' חלונות · 10, 14, 21 ו-27 ימים',
+      '<div class="big-number">' +
+        '<span class="v num">' + Fmt.n(fit.maintenance, 0) + '</span>' +
+        '<span class="u">תחזוקה בלי הליכה</span>' +
+      '</div>' +
+
+      P.hint('טווח שקול: ' + Fmt.n(fit.low, 0) + '–' + Fmt.n(fit.high, 0) +
+        '. כל ערך בטווח הזה מסביר את הנתונים כמעט באותה מידה, ולכן ' +
+        'הדיוק האמיתי כאן הוא בעשרות קלוריות ולא ביחידות.') +
+
+      P.table(
+        [{ label: 'ימים', n: true }, { label: 'תקופה', n: true },
+          'אכל', 'תקציב', 'צפוי', 'בפועל', 'שגיאה'],
+        [rows],
+        { hint: 'השגיאה הממוצעת היא ' + Fmt.n(fit.meanError, 2) + ' ק״ג ' +
+          'והגדולה ביותר ' + Fmt.n(fit.worstError, 2) + '. הן מתקזזות בין ' +
+          'החלונות, אבל אינן קטנות — זה הכי טוב שהנתונים מאפשרים, ' +
+          'לא הכי טוב שאפשר.' }));
   }
 
   /** התקציב עצמו, עם המאקרו */
@@ -380,13 +429,31 @@
     var entries = Store.getEntries();
     var settings = Store.getSettings();
 
+    var fitted = isFit(state)
+      ? Metrics.fitMaintenance(entries, {
+          endDate: state.date,
+          kcalPerKg: settings.kcalPerKg, kcalPerStep: settings.kcalPerStep
+        })
+      : null;
+
+    if (fitted && !fitted.ok) {
+      return P.section('תקציב',
+        P.card(null, null,
+          P.empty('צריך לפחות ' + fitted.need + ' ימים להתאמה, יש ' +
+            fitted.have + '.')));
+    }
+
     var options = splitOptions(state);
     options.endDate = state.date;
     options.anchor = anchorOf(state);
     options.kcalPerKg = settings.kcalPerKg;
     options.kcalPerStep = settings.kcalPerStep;
 
-    var split = Metrics.periodSplit(entries, options);
+    // גם במצב המותאם דרושים המקטעים, לצורך ההליכה הרגילה
+    var split = Metrics.periodSplit(entries,
+      fitted ? { parts: 2, endDate: state.date,
+        kcalPerKg: settings.kcalPerKg, kcalPerStep: settings.kcalPerStep }
+      : options);
 
     if (!split.ok) {
       return P.section('תקציב',
@@ -398,6 +465,14 @@
     }
 
     var chosen = chosenRow(split, state);
+
+    /**
+     * במצב המותאם התחזוקה מגיעה מההתאמה, וההליכה הרגילה עדיין
+     * מהמקטע האחרון — היא מתארת הרגלים, לא חישוב.
+     */
+    if (fitted) {
+      chosen = Object.assign({}, chosen, { maintenance: fitted.maintenance });
+    }
 
     var rate = Math.abs((settings.goal || {}).ratePerWeekKg || 0);
     var deficit = (rate * (settings.kcalPerKg || 7700)) / 7;
@@ -420,7 +495,10 @@
 
     return P.section('תקציב',
       trackCard(entries, state) +
-      splitCard(split, chosen, state) +
+      (fitted
+        ? P.card('מול מה אני נמדד', 'התחזוקה מותאמת לכל החלונות יחד',
+            P.chips(SPLITS, 'fit', 'data-split')) + fitCard(fitted, state)
+        : splitCard(split, chosen, state)) +
       budgetCard(chosen, settings, state) +
       walkCard(split, chosen, settings) +
       standingCard(entries, budget, macros, state, baseSteps, perStep));

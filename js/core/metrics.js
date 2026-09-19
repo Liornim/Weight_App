@@ -2137,6 +2137,119 @@
   }
 
   /**
+   * התחזוקה שמתאימה לכל החלונות יחד.
+   *
+   * כל מקטע בודד נותן תשובה אחרת — על נתונים אמיתיים ראינו טווח של
+   * 1,845 עד 2,745 — כי כל אחד נשען על שתי תקופות קצרות. במקום
+   * לבחור אחד מהם, כאן נסרק טווח שלם של ערכים ונבחר זה שמקטין את
+   * השגיאה הממוצעת על פני כל החלונות בבת אחת.
+   *
+   * זו אינה מדידה נוספת אלא התאמה: אותם נתונים, שאלה אחרת. במקום
+   * "מה התחזוקה לפי המקטע הזה" — "איזו תחזוקה מסבירה הכי טוב את כל
+   * מה שקרה".
+   */
+  function fitMaintenance(entries, options) {
+    var opts = options || {};
+    var endDate = opts.endDate || Dates.today();
+    var lengths = opts.lengths || [10, 14, 21, 27];
+
+    var kcalPerKg = num(opts.kcalPerKg) || DEFAULT_KCAL_PER_KG;
+    var perStep = num(opts.kcalPerStep);
+    if (perStep === null) perStep = DEFAULT_KCAL_PER_STEP;
+
+    var all = sorted(entries).filter(function (e) { return e.date <= endDate; });
+    if (all.length < 20) {
+      return { ok: false, reason: 'too-short', have: all.length, need: 20 };
+    }
+
+    var stat = function (days, field) {
+      var values = days.filter(function (e) { return Fmt_isNum(e[field]); })
+        .map(function (e) { return e[field]; });
+      return values.length ? Stats.mean(values) : null;
+    };
+
+    // כל זוג מקטעים רצופים, בכל אורך, מעוגן לסוף
+    var cases = [];
+    lengths.forEach(function (len) {
+      for (var i = all.length - len; i - len >= 0; i -= len) {
+        var cur = all.slice(i, i + len);
+        var before = all.slice(i - len, i);
+
+        var now = stat(cur, 'weightKg');
+        var was = stat(before, 'weightKg');
+        var kcal = stat(cur, 'kcal');
+        if (now === null || was === null || kcal === null) continue;
+
+        cases.push({
+          days: len,
+          from: cur[0].date,
+          to: cur[cur.length - 1].date,
+          change: now - was,
+          kcal: kcal,
+          steps: stat(cur, 'steps') || 0
+        });
+      }
+    });
+
+    if (cases.length < 3) return { ok: false, reason: 'no-comparison' };
+
+    /**
+     * סריקה על טווח רחב. הצעד גס בכוונה — המינימום שטוח, ודיוק של
+     * עשר קלוריות היה מדמה ודאות שאינה קיימת.
+     */
+    var best = null;
+    for (var m = 1600; m <= 3400; m += 10) {
+      var sum = 0;
+      var worst = 0;
+      cases.forEach(function (c) {
+        var budget = m + c.steps * perStep;
+        var predicted = ((c.kcal - budget) * c.days) / kcalPerKg;
+        var error = Math.abs(c.change - predicted);
+        sum += error;
+        if (error > worst) worst = error;
+      });
+
+      var avg = sum / cases.length;
+      if (!best || avg < best.avg) best = { value: m, avg: avg, worst: worst };
+    }
+
+    // כמה רחב התחום שבו השגיאה כמעט זהה — זו מידת הביטחון האמיתית
+    var tolerance = best.avg * 1.05;
+    var low = best.value;
+    var high = best.value;
+    for (var v = 1600; v <= 3400; v += 10) {
+      var total = 0;
+      cases.forEach(function (c) {
+        var budget = v + c.steps * perStep;
+        total += Math.abs(c.change - ((c.kcal - budget) * c.days) / kcalPerKg);
+      });
+      if (total / cases.length <= tolerance) {
+        if (v < low) low = v;
+        if (v > high) high = v;
+      }
+    }
+
+    return {
+      ok: true,
+      maintenance: best.value,
+      meanError: best.avg,
+      worstError: best.worst,
+      low: low,
+      high: high,
+      cases: cases.map(function (c) {
+        var budget = best.value + c.steps * perStep;
+        var predicted = ((c.kcal - budget) * c.days) / kcalPerKg;
+        return {
+          days: c.days, from: c.from, to: c.to,
+          kcal: c.kcal, steps: c.steps, budget: budget,
+          predicted: predicted, actual: c.change,
+          error: c.change - predicted
+        };
+      })
+    };
+  }
+
+  /**
    * הרכב הגוף לפי חלונות: משקל, שומן ושריר יחד.
    *
    * שלושתם נמדדים באותה שקילה ולכן חולקים את אותו רעש, אבל הם
@@ -2842,6 +2955,7 @@
     dayAligned: dayAligned,
     compositionWindow: compositionWindow,
     periodSplit: periodSplit,
+    fitMaintenance: fitMaintenance,
     fieldNoiseSd: fieldNoiseSd,
     COMPOSITION_FIELDS: COMPOSITION_FIELDS,
     dayComparison: dayComparison,

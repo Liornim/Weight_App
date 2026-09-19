@@ -586,6 +586,62 @@ test('אורך קבוע דורש שני מקטעים שלמים', () => {
   assert(r.need === 20, 'צריך ' + r.need + ' במקום 20');
 });
 
+test('מצב "מותאם לכולם" נותן תחזוקה אחת לכל החלונות', () => {
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2, splitRow: null });
+
+  const chip = doc.querySelector('[data-split="fit"]');
+  assert(chip, 'חסר הצ׳יפ');
+
+  chip.dispatchEvent(new window.Event('click', { bubbles: true }));
+  assert(App.state.splitParts === 'fit', 'הבחירה לא נשמרה');
+
+  const card = [...doc.querySelectorAll('#view .card')]
+    .find((c) => (c.querySelector('h3') || {}).textContent === 'מותאם לכל החלונות');
+  assert(card, 'הכרטיס חסר');
+
+  const fit = Metrics.fitMaintenance(Store.getEntries(), {
+    endDate: Dates.today(),
+    kcalPerKg: Store.getSettings().kcalPerKg,
+    kcalPerStep: Store.getSettings().kcalPerStep
+  });
+  if (!fit.ok) { App.setState({ splitParts: 2, tab: 'home' }); return; }
+
+  const shown = Number(card.querySelector('.big-number .v')
+    .textContent.replace(/[^0-9]/g, ''));
+  assert(shown === fit.maintenance, 'מוצג ' + shown + ' מול ' + fit.maintenance);
+
+  // כל חלון מופיע בטבלה
+  const rows = [...card.querySelectorAll('tbody tr')];
+  assert(rows.length === fit.cases.length,
+    'שורות: ' + rows.length + ' מול ' + fit.cases.length);
+
+  // והטווח השקול מוצג
+  assert(card.textContent.indexOf('טווח שקול') !== -1, 'הטווח לא מוצג');
+
+  App.setState({ splitParts: 2, tab: 'home' });
+});
+
+test('התקציב במצב המותאם נגזר מהתחזוקה שנמצאה', () => {
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 'fit',
+    splitRow: null, budgetWalk: 'on' });
+
+  const fit = Metrics.fitMaintenance(Store.getEntries(), {
+    endDate: Dates.today(),
+    kcalPerKg: Store.getSettings().kcalPerKg,
+    kcalPerStep: Store.getSettings().kcalPerStep
+  });
+  if (!fit.ok) { App.setState({ splitParts: 2, tab: 'home' }); return; }
+
+  const card = [...doc.querySelectorAll('#view .card')]
+    .find((c) => (c.querySelector('h3') || {}).textContent === 'התקציב');
+  const calc = card.querySelector('.calc').textContent;
+
+  assert(calc.indexOf(Fmt.n(fit.maintenance, 0)) !== -1,
+    'התחזוקה בחישוב אינה זו שנמצאה');
+
+  App.setState({ splitParts: 2, tab: 'home' });
+});
+
 test('טאב התקציב מציג את שלושת החלקים', () => {
   App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2, splitRow: null });
 
