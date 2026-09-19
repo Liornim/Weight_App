@@ -2015,11 +2015,34 @@
       return { ok: false, reason: 'too-short', have: all.length, need: parts * 6 };
     }
 
+    /**
+     * שתי דרכי עיגון.
+     *
+     * 'end' — המקטע האחרון נגמר היום. כל מקטע שווה בגודלו, וימים
+     * עודפים בהתחלה נופלים החוצה. זו ברירת המחדל, כי המקטע האחרון
+     * הוא הרלוונטי ביותר.
+     *
+     * 'start' — הספירה מתחילה ביום המדידה הראשון וממשיכה ברצף.
+     * המקטע האחרון עשוי להיות חלקי, והוא מסומן ככזה במקום להיעלם:
+     * מקטע של 12 ימים מתוך 18 עדיין אומר משהו, אבל לא כמו מלא.
+     */
     var size = Math.floor(all.length / parts);
     var blocks = [];
-    for (var i = parts - 1; i >= 0; i--) {
-      var end = all.length - (parts - 1 - i) * size;
-      blocks.unshift(all.slice(Math.max(0, end - size), end));
+
+    if (opts.anchor === 'start') {
+      for (var b = 0; b < parts; b++) {
+        blocks.push(all.slice(b * size, Math.min((b + 1) * size, all.length)));
+      }
+      // הימים שנשארו מעבר לחלוקה השלמה נספחים למקטע האחרון
+      var used = parts * size;
+      if (used < all.length) {
+        blocks[parts - 1] = blocks[parts - 1].concat(all.slice(used));
+      }
+    } else {
+      for (var i = parts - 1; i >= 0; i--) {
+        var end = all.length - (parts - 1 - i) * size;
+        blocks.unshift(all.slice(Math.max(0, end - size), end));
+      }
     }
 
     var stat = function (days, field) {
@@ -2034,6 +2057,8 @@
         from: days[0].date,
         to: days[days.length - 1].date,
         days: days.length,
+        // מקטע קצר מהאחרים אינו מלא, וזה משנה את מידת האמון בו
+        full: days.length >= size,
         weight: stat(days, 'weightKg'),
         kcal: stat(days, 'kcal'),
         steps: stat(days, 'steps'),
@@ -2063,12 +2088,25 @@
     var usable = rows.filter(function (r) { return Fmt_isNum(r.maintenance); });
     if (!usable.length) return { ok: false, reason: 'no-comparison' };
 
+    /**
+     * ברירת המחדל היא המקטע המלא האחרון.
+     *
+     * במצב 'start' המקטע האחרון עשוי להיות חלקי — למשל 12 ימים
+     * מתוך 18 — ותחזוקה שנגזרת ממנו רועשת יותר. הוא עדיין מוצג,
+     * אבל לא נבחר מאליו.
+     */
+    var complete = usable.filter(function (r) { return r.full; });
+    var chosen = complete.length
+      ? complete[complete.length - 1]
+      : usable[usable.length - 1];
+
     return {
       ok: true,
       parts: parts,
+      anchor: opts.anchor === 'start' ? 'start' : 'end',
+      size: size,
       rows: rows,
-      // ברירת המחדל היא המקטע האחרון, העדכני ביותר
-      selected: usable[usable.length - 1],
+      selected: chosen,
       others: usable.map(function (r) { return r.maintenance; })
     };
   }

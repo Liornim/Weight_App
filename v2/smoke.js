@@ -1600,6 +1600,94 @@ test('אפשר לפתוח את כל הימים', () => {
   App.setState({ dataAll: false, tab: 'home' });
 });
 
+
+test('אפשר לבדוק תקציב בלי צעדים', () => {
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2,
+    splitRow: null, splitAnchor: 'end', budgetWalk: 'on' });
+
+  const read = () => Number(doc.querySelector('#view .big-number .v')
+    .textContent.replace(/[^0-9.\-]/g, ''));
+
+  const withWalk = read();
+  doc.querySelector('[data-walk="off"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+  assert(App.state.budgetWalk === 'off', 'הבחירה לא נשמרה');
+
+  const without = read();
+
+  const split = Metrics.periodSplit(Store.getEntries(), {
+    parts: 2, endDate: Dates.today(), anchor: 'end',
+    kcalPerStep: Store.getSettings().kcalPerStep
+  });
+  if (split.ok && split.selected.stepKcal > 0) {
+    assert(withWalk > without, 'עם צעדים אמור להיות גבוה יותר');
+    assert(Math.abs((withWalk - without) - Math.round(split.selected.stepKcal)) <= 2,
+      'ההפרש ' + (withWalk - without) + ' אינו קלוריות ההליכה');
+  }
+
+  // וההסבר מתחלף
+  assert(doc.getElementById('view').textContent.indexOf('אינה נספרת') !== -1,
+    'לא הוסבר שההליכה לא נספרת');
+
+  App.setState({ budgetWalk: 'on', tab: 'home' });
+});
+
+test('אפשר לספור מתחילת המעקב', () => {
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 3,
+    splitRow: null, splitAnchor: 'end' });
+
+  const entries = Store.getEntries();
+  const fromEnd = Metrics.periodSplit(entries,
+    { parts: 3, endDate: Dates.today(), anchor: 'end' });
+
+  doc.querySelector('[data-anchor="start"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+  assert(App.state.splitAnchor === 'start', 'הבחירה לא נשמרה');
+
+  const fromStart = Metrics.periodSplit(entries,
+    { parts: 3, endDate: Dates.today(), anchor: 'start' });
+
+  // מתחילת המעקב: המקטע הראשון מתחיל ביום הראשון
+  assert(fromStart.rows[0].from === entries[0].date,
+    'לא מתחיל ביום הראשון: ' + fromStart.rows[0].from);
+  assert(fromStart.anchor === 'start', 'הסימון');
+
+  // עד היום: המקטע האחרון נגמר ביום האחרון
+  assert(fromEnd.rows[fromEnd.rows.length - 1].to ===
+    entries[entries.length - 1].date, 'לא נגמר ביום האחרון');
+
+  App.setState({ splitAnchor: 'end', splitParts: 2, tab: 'home' });
+});
+
+test('מקטע חלקי מסומן ואינו נבחר מאליו', () => {
+  // סדרה שלא מתחלקת שווה בשווה
+  Store.clearAll();
+  for (let i = 0; i < 47; i++) {
+    Store.upsert({
+      date: Dates.addDays(Dates.today(), -(46 - i)),
+      weightKg: Number((89 - 0.01 * i).toFixed(1)),
+      kcal: 2500, steps: 9000
+    });
+  }
+
+  const split = Metrics.periodSplit(Store.getEntries(),
+    { parts: 4, endDate: Dates.today(), anchor: 'start' });
+
+  const partial = split.rows.filter((r) => !r.full);
+  if (partial.length) {
+    // הנבחר חייב להיות מלא, כל עוד יש כזה
+    assert(split.selected.full, 'נבחר מקטע חלקי למרות שיש מלא');
+
+    App.setState({ date: Dates.today(), tab: 'budget', splitParts: 4,
+      splitRow: null, splitAnchor: 'start' });
+    assert(doc.getElementById('view').textContent.indexOf('חלקי') !== -1,
+      'המקטע החלקי לא סומן');
+  }
+
+  seed();
+  App.setState({ splitAnchor: 'end', splitParts: 2, tab: 'home' });
+});
+
 test('טאב התקציב מציג את שלושת החלקים', () => {
   App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2, splitRow: null });
 

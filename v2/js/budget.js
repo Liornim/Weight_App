@@ -24,9 +24,28 @@
 
   var LENGTHS = [3, 5, 7, 10, 14, 21, 28];
 
+  var ANCHORS = [
+    { value: 'end', label: 'עד היום' },
+    { value: 'start', label: 'מתחילת המעקב' }
+  ];
+
+  var WALK_MODES = [
+    { value: 'on', label: 'עם צעדים' },
+    { value: 'off', label: 'בלי צעדים' }
+  ];
+
   function partsOf(state) {
     var n = Number(state.splitParts);
     return (n === 2 || n === 3 || n === 4) ? n : 2;
+  }
+
+  function anchorOf(state) {
+    return state.splitAnchor === 'start' ? 'start' : 'end';
+  }
+
+  /** האם ההליכה נכללת בתקציב */
+  function withWalk(state) {
+    return state.budgetWalk !== 'off';
   }
 
   /** המקטע שנבחר; ברירת המחדל היא האחרון */
@@ -49,7 +68,8 @@
         ' data-split-row="' + r.index + '">' +
         '<td class="n">' + r.index + (active ? ' ✓' : '') + '</td>' +
         '<td class="date-cell">' + P.esc(Dates.short(r.from) + '–' + Dates.short(r.to)) +
-          '<span class="sub">' + r.days + ' ימים</span></td>' +
+          '<span class="sub' + (r.full ? '' : ' warn') + '">' + r.days + ' ימים' +
+          (r.full ? '' : ' · חלקי') + '</span></td>' +
         '<td class="n">' + (Fmt.isNum(r.weight) ? Fmt.n(r.weight, 2) : '—') + '</td>' +
         '<td class="n">' + (Fmt.isNum(r.change) ? P.delta(r.change, 2, 'down') : '—') + '</td>' +
         '<td class="n">' + (Fmt.isNum(r.kcal) ? Fmt.n(r.kcal, 0) : '—') + '</td>' +
@@ -61,13 +81,16 @@
 
     return P.card('מול מה אני נמדד', 'כל מקטע מושווה לזה שלפניו',
       P.chips(SPLITS, partsOf(state), 'data-split') +
+      '<label class="pick-label">מאיפה לספור</label>' +
+      P.chips(ANCHORS, anchorOf(state), 'data-anchor') +
       P.table(
         [{ label: '#', n: true }, { label: 'תקופה', n: true },
           'משקל', 'שינוי', 'אכלת', 'צעדים', 'תחזוקה'],
         [rows],
-        { hint: 'אפשר ללחוץ על שורה כדי למדוד מולה. ברירת המחדל היא המקטע ' +
-          'האחרון, העדכני ביותר — אבל גם הרועש ביותר, ולכן שווה להשוות ' +
-          'למקטעים האחרים ולחלוקות אחרות.' }));
+        { hint: 'אפשר ללחוץ על שורה כדי למדוד מולה. ' +
+          '"עד היום" מסיים את המקטע האחרון היום; "מתחילת המעקב" סופר ' +
+          'מהשקילה הראשונה, ואז המקטע האחרון עשוי לצאת חלקי ומסומן ככזה. ' +
+          'ברירת המחדל היא המקטע המלא האחרון.' }));
   }
 
   /** התקציב עצמו, עם המאקרו */
@@ -76,8 +99,15 @@
     var kcalPerKg = settings.kcalPerKg || 7700;
     var deficit = (rate * kcalPerKg) / 7;
 
-    // ההליכה של המקטע הנבחר, כדי שהתקציב יהיה מספר אחד
-    var stepKcal = chosen.stepKcal || 0;
+    /**
+     * ההליכה נכללת או לא, לפי הבחירה.
+     *
+     * "בלי צעדים" הוא התקציב השמרני: אוכלים לפי מה שהגוף שורף
+     * במנוחה, וההליכה כולה הופכת לתוספת לגירעון. "עם צעדים" מוסיף
+     * את ההליכה הממוצעת של המקטע הנבחר, כדי שהתקציב יישאר מספר אחד.
+     */
+    var walk = withWalk(state);
+    var stepKcal = walk ? (chosen.stepKcal || 0) : 0;
     var budget = chosen.maintenance - deficit + stepKcal;
 
     var targets = settings.targets || {};
@@ -92,11 +122,15 @@
     };
 
     return P.card('התקציב', null,
+      P.chips(WALK_MODES, walk ? 'on' : 'off', 'data-walk') +
+
       '<div class="calc num">' +
         'תחזוקה        ' + Fmt.n(chosen.maintenance, 0) + '\n' +
         'גירעון        −' + Fmt.n(deficit, 0) +
           '  (' + Fmt.n(rate, 2) + ' ק״ג בשבוע)\n' +
-        'הליכה         +' + Fmt.n(stepKcal, 0) + '\n' +
+        (walk
+          ? 'הליכה         +' + Fmt.n(chosen.stepKcal || 0, 0) + '\n'
+          : 'הליכה         אינה נספרת\n') +
       '</div>' +
 
       '<div class="big-number">' +
@@ -114,8 +148,11 @@
             '<td class="n">' + pct(carbs, 4) + '%</td></tr>'
         ]) +
 
-      P.hint('ההליכה נלקחת מהמקטע הנבחר ולכן התקציב אחיד בכל השורות. ' +
-        'ביום שתלך הרבה יותר או פחות, הפער שלמטה ישקף את זה.'));
+      P.hint(walk
+        ? 'ההליכה נלקחת מהמקטע הנבחר ולכן התקציב אחיד בכל השורות. ' +
+          'ביום שתלך הרבה יותר או פחות, הפער שלמטה ישקף את זה.'
+        : 'ההליכה אינה נספרת בתקציב, ולכן כל צעד שתלך מגדיל את הגירעון ' +
+          'בפועל. זה התקציב השמרני מבין השניים.'));
   }
 
   /** איפה אני עומד מול התקציב */
@@ -188,7 +225,7 @@
     var settings = Store.getSettings();
 
     var split = Metrics.periodSplit(entries, {
-      parts: partsOf(state), endDate: state.date,
+      parts: partsOf(state), endDate: state.date, anchor: anchorOf(state),
       kcalPerKg: settings.kcalPerKg, kcalPerStep: settings.kcalPerStep
     });
 
@@ -204,7 +241,8 @@
 
     var rate = Math.abs((settings.goal || {}).ratePerWeekKg || 0);
     var deficit = (rate * (settings.kcalPerKg || 7700)) / 7;
-    var budget = chosen.maintenance - deficit + (chosen.stepKcal || 0);
+    var budget = chosen.maintenance - deficit +
+      (withWalk(state) ? (chosen.stepKcal || 0) : 0);
 
     var targets = settings.targets || {};
     var protein = Fmt.isNum(targets.proteinG) ? targets.proteinG : 170;
@@ -222,5 +260,8 @@
       standingCard(entries, budget, macros, state));
   }
 
-  root.BudgetTab = { render: render, SPLITS: SPLITS, LENGTHS: LENGTHS, partsOf: partsOf };
+  root.BudgetTab = {
+    render: render, SPLITS: SPLITS, ANCHORS: ANCHORS, LENGTHS: LENGTHS,
+    partsOf: partsOf, anchorOf: anchorOf, withWalk: withWalk
+  };
 })(typeof window !== 'undefined' ? window : globalThis);

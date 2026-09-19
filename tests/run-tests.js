@@ -2565,6 +2565,50 @@ test('חלוקה לחצי מעוגנת לסוף', () => {
   assert(r.rows[0].days === r.rows[1].days, 'המקטעים אינם שווים');
 });
 
+test('עיגון לתחילת המעקב מתחיל ביום הראשון', () => {
+  const entries = buildSeries('2026-01-01', 40, (i) => ({
+    weightKg: 90 - 0.02 * i, kcal: 2400, steps: 9000
+  }));
+
+  const start = Metrics.periodSplit(entries,
+    { parts: 3, endDate: '2026-02-09', anchor: 'start' });
+  const end = Metrics.periodSplit(entries,
+    { parts: 3, endDate: '2026-02-09', anchor: 'end' });
+
+  assert(start.rows[0].from === '2026-01-01', 'לא מתחיל ביום הראשון');
+  assert(end.rows[end.rows.length - 1].to === '2026-02-09',
+    'לא נגמר ביום האחרון');
+  assert(start.anchor === 'start' && end.anchor === 'end', 'הסימון');
+});
+
+test('מקטע חלקי מסומן ואינו נבחר כל עוד יש מלא', () => {
+  // 47 ימים ל-4 מקטעים: 11 בכל אחד, והשארית נספחת לאחרון
+  const entries = buildSeries('2026-01-01', 47, (i) => ({
+    weightKg: 90 - 0.02 * i, kcal: 2400, steps: 9000
+  }));
+  const r = Metrics.periodSplit(entries,
+    { parts: 4, endDate: '2026-02-16', anchor: 'start' });
+
+  assert(r.size === 11, 'גודל המקטע: ' + r.size);
+  assert(r.rows[3].days === 14, 'השארית לא נספחה: ' + r.rows[3].days);
+  assert(r.rows.every(function (x) { return x.full; }), 'סומן חלקי בלי סיבה');
+  assert(r.selected.full, 'נבחר מקטע חלקי');
+});
+
+test('בלי מקטע מלא נבחר מה שיש', () => {
+  const entries = buildSeries('2026-01-01', 30, (i) => ({
+    weightKg: 90, kcal: 2400
+  }));
+  // המקטע האחרון יקוצץ ידנית כדי לייצר מצב חלקי
+  const r = Metrics.periodSplit(entries.slice(0, 25),
+    { parts: 2, endDate: '2026-01-25', anchor: 'start' });
+
+  assert(r.ok, 'צריך לעבוד');
+  assert(Fmt_ok(r.selected.maintenance), 'אין תחזוקה');
+
+  function Fmt_ok(v) { return typeof v === 'number' && isFinite(v); }
+});
+
 test('התחזוקה נגזרת מהשוואת ממוצעי המשקל', () => {
   const entries = buildSeries('2026-01-01', 40, (i) => ({
     weightKg: 90 - 0.025 * i, kcal: 2400, steps: 0
