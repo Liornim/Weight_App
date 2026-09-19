@@ -551,6 +551,60 @@ test('טאב התקציב מציג את שלושת החלקים', () => {
   });
 });
 
+
+test('ההליכה הרגילה מוצגת במספר ולא כהנחה', () => {
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2,
+    splitRow: null, splitAnchor: 'end', budgetWalk: 'on' });
+
+  const split = Metrics.periodSplit(Store.getEntries(), {
+    parts: 2, endDate: Dates.today(),
+    kcalPerStep: Store.getSettings().kcalPerStep
+  });
+  if (!split.ok || !split.selected.steps) return;
+
+  const text = doc.getElementById('view').textContent;
+  assert(text.indexOf('הליכה רגילה') !== -1, 'לא נקראת בשמה');
+
+  // המספר עצמו מופיע, לא רק הקלוריות
+  const steps = Fmt.n(split.selected.steps, 0);
+  assert(text.indexOf(steps) !== -1, 'מספר הצעדים ' + steps + ' לא מוצג');
+  assert(text.indexOf('לא הנחה') !== -1, 'לא נאמר שזו מדידה');
+});
+
+test('כרטיס ההליכה מראה כל מקטע ומסמן את הנבחר', () => {
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 3,
+    splitRow: null, splitAnchor: 'end' });
+
+  const card = [...doc.querySelectorAll('#view .card')]
+    .find((c) => (c.querySelector('h3') || {}).textContent === 'ההליכה הרגילה');
+  assert(card, 'הכרטיס חסר');
+
+  const heads = [...card.querySelectorAll('th')].map((h) => h.textContent);
+  ['צעדים', 'קק״ל', 'תחזוקה'].forEach((name) => {
+    assert(heads.indexOf(name) !== -1, 'חסרה עמודה: ' + name);
+  });
+
+  const marked = [...card.querySelectorAll('tbody tr')]
+    .filter((tr) => tr.textContent.indexOf('הנבחר') !== -1);
+  assert(marked.length === 1, 'סומנו ' + marked.length + ' שורות');
+
+  // הקלוריות תואמות את הצעדים
+  const split = Metrics.periodSplit(Store.getEntries(), {
+    parts: 3, endDate: Dates.today(),
+    kcalPerStep: Store.getSettings().kcalPerStep
+  });
+  const perStep = Store.getSettings().kcalPerStep || 0.045;
+
+  [...card.querySelectorAll('tbody tr')].forEach((tr, i) => {
+    const steps = Number(tr.children[1].textContent.replace(/[^0-9]/g, ''));
+    const kcal = Number(tr.children[2].textContent.replace(/[^0-9]/g, ''));
+    assert(Math.abs(kcal - steps * perStep) <= 1,
+      'שורה ' + i + ': ' + kcal + ' אינו ' + Math.round(steps * perStep));
+  });
+
+  App.setState({ splitParts: 2, tab: 'home' });
+});
+
 test('הצפי מפוצל לתזונה ולצעדים, והם מסתכמים', () => {
   App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2,
     splitRow: null, splitAnchor: 'end', budgetWalk: 'on' });

@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd70',
+    BUILD: 'd71',
     state: {
       date: Dates.today(),
       tab: 'budget',       // ארבעה טאבים: תקציב, הזנה, משקל, נתונים

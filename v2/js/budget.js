@@ -52,8 +52,8 @@
   ];
 
   var WALK_MODES = [
-    { value: 'on', label: 'עם צעדים' },
-    { value: 'off', label: 'בלי צעדים' }
+    { value: 'on', label: 'עם הליכה רגילה' },
+    { value: 'off', label: 'בלי הליכה' }
   ];
 
   function partsOf(state) {
@@ -156,11 +156,15 @@
     /**
      * ההליכה נכללת או לא, לפי הבחירה.
      *
-     * "בלי צעדים" הוא התקציב השמרני: אוכלים לפי מה שהגוף שורף
-     * במנוחה, וההליכה כולה הופכת לתוספת לגירעון. "עם צעדים" מוסיף
-     * את ההליכה הממוצעת של המקטע הנבחר, כדי שהתקציב יישאר מספר אחד.
+     * "עם הליכה רגילה" מוסיף את ההליכה הממוצעת של המקטע הנבחר —
+     * מספר שנמדד מהנתונים, לא הנחה. הוא מוצג במפורש, כדי שיהיה
+     * ברור מה "רגילה" אומרת וכדי שאפשר יהיה לעקוב אחריו.
+     *
+     * "בלי הליכה" הוא התקציב לפני שזזים: כל צעד מגדיל את הגירעון
+     * בפועל.
      */
     var walk = withWalk(state);
+    var usual = chosen.steps || 0;
     var stepKcal = walk ? (chosen.stepKcal || 0) : 0;
     var budget = chosen.maintenance - deficit + stepKcal;
 
@@ -183,7 +187,8 @@
         'גירעון        −' + Fmt.n(deficit, 0) +
           '  (' + Fmt.n(rate, 2) + ' ק״ג בשבוע)\n' +
         (walk
-          ? 'הליכה         +' + Fmt.n(chosen.stepKcal || 0, 0) + '\n'
+          ? 'הליכה רגילה   +' + Fmt.n(chosen.stepKcal || 0, 0) +
+            '  (' + Fmt.n(usual, 0) + ' צעדים)\n'
           : 'הליכה         אינה נספרת\n') +
       '</div>' +
 
@@ -203,10 +208,56 @@
         ]) +
 
       P.hint(walk
-        ? 'ההליכה נלקחת מהמקטע הנבחר ולכן התקציב אחיד בכל השורות. ' +
-          'ביום שתלך הרבה יותר או פחות, הפער שלמטה ישקף את זה.'
+        ? '"הליכה רגילה" היא ' + Fmt.n(usual, 0) + ' צעדים — הממוצע שלך ' +
+          'במקטע ' + P.esc(Dates.short(chosen.from) + '–' + Dates.short(chosen.to)) +
+          ', לא הנחה. ביום שתלך יותר או פחות מזה, הטבלה שלמטה תראה ' +
+          'את ההפרש בעמודת "מצעדים".'
         : 'ההליכה אינה נספרת בתקציב, ולכן כל צעד שתלך מגדיל את הגירעון ' +
-          'בפועל. זה התקציב השמרני מבין השניים.'));
+          'בפועל. זה התקציב שלפני שזזים.'));
+  }
+
+  /**
+   * ההליכה הרגילה — מה היא, והאם היא זזה.
+   *
+   * "רגילה" אינו מספר קבוע: הוא הממוצע של המקטע הנבחר, והוא משתנה
+   * ככל שההרגלים משתנים. הצגת כל המקטעים זה לצד זה מראה אם ההליכה
+   * יציבה או במגמה — וזה משנה את התחזוקה, כי היא נמדדת בניכוי
+   * ההליכה של אותו מקטע.
+   */
+  function walkCard(split, chosen, settings) {
+    var perStep = Fmt.isNum(settings.kcalPerStep) ? settings.kcalPerStep : 0.045;
+
+    var rows = split.rows.map(function (r) {
+      if (!Fmt.isNum(r.steps)) return '';
+      var active = r === chosen;
+      var kcal = r.steps * perStep;
+
+      return '<tr' + (active ? ' class="now"' : '') + '>' +
+        '<td class="date-cell">' + P.esc(Dates.short(r.from) + '–' + Dates.short(r.to)) +
+          (active ? '<span class="sub">הנבחר</span>' : '') + '</td>' +
+        '<td class="n">' + Fmt.n(r.steps, 0) + '</td>' +
+        '<td class="n">' + Fmt.n(kcal, 0) + '</td>' +
+        '<td class="n">' + (Fmt.isNum(r.maintenance) ? Fmt.n(r.maintenance, 0) : '—') +
+        '</td></tr>';
+    }).join('');
+
+    var withSteps = split.rows.filter(function (r) { return Fmt.isNum(r.steps); });
+    var first = withSteps.length ? withSteps[0].steps : null;
+    var last = withSteps.length ? withSteps[withSteps.length - 1].steps : null;
+    var drift = (first === null || last === null) ? null : last - first;
+
+    return P.card('ההליכה הרגילה', 'הממוצע בכל מקטע',
+      P.table(
+        [{ label: 'תקופה', n: true }, 'צעדים', 'קק״ל', 'תחזוקה'],
+        [rows],
+        { hint: 'התחזוקה נמדדת בניכוי ההליכה של אותו מקטע, ולכן שינוי ' +
+          'בהרגלי ההליכה מזיז אותה. ' +
+          (drift === null ? ''
+            : Math.abs(drift) < 500
+              ? 'ההליכה שלך יציבה לאורך התקופה.'
+              : drift > 0
+                ? 'ההליכה עלתה ב-' + Fmt.n(drift, 0) + ' צעדים מתחילת המעקב.'
+                : 'ההליכה ירדה ב-' + Fmt.n(-drift, 0) + ' צעדים מתחילת המעקב.') }));
   }
 
   /**
@@ -292,11 +343,15 @@
         [{ label: 'ימים', n: true }, 'אכלת', 'פער', 'חלבון', 'שומן', 'פחמ׳',
           'צעדים', 'מתזונה', 'מצעדים', 'צפוי', 'בפועל'],
         [rows],
-        { hint: '"מתזונה" הוא מה שהפער באוכל אמור לעשות למשקל, ו"מצעדים" ' +
-          'הוא מה שההליכה מעבר לבסיס (' + Fmt.n(baseSteps, 0) + ' צעדים) ' +
-          'מוסיפה או מורידה. שניהם יחד הם "צפוי", ו"בפועל" הוא מה שקרה — ' +
-          'ממוצע החלון מול ממוצע החלון שלפניו. כשהצפוי והבפועל רחוקים ' +
-          'לאורך כל השורות, התקציב עצמו צריך בדיקה.' }));
+        { hint: (baseSteps
+            ? '"מצעדים" מודד את ההפרש מההליכה הרגילה, ' +
+              Fmt.n(baseSteps, 0) + ' צעדים — הלכת יותר מזה והוא מוריד, ' +
+              'פחות מזה והוא מוסיף. '
+            : '"מצעדים" הוא מלוא תרומת ההליכה, ולכן תמיד מוריד. ') +
+          '"מתזונה" הוא מה שהפער באוכל אמור לעשות למשקל. שניהם יחד הם ' +
+          '"צפוי", ו"בפועל" הוא מה שקרה — ממוצע החלון מול ממוצע החלון ' +
+          'שלפניו. כשהצפוי והבפועל רחוקים לאורך כל השורות, התקציב עצמו ' +
+          'צריך בדיקה.' }));
   }
 
   function render(state) {
@@ -341,6 +396,7 @@
       trackCard(entries, state) +
       splitCard(split, chosen, state) +
       budgetCard(chosen, settings, state) +
+      walkCard(split, chosen, settings) +
       standingCard(entries, budget, macros, state, baseSteps, perStep));
   }
 
