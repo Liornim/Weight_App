@@ -537,6 +537,55 @@ test('התקציב פותח בכמה זמן נמדד', () => {
   assert(shown === span, 'מוצג ' + shown + ' מול ' + span);
 });
 
+test('מקטעים באורך קבוע: 10 ו-21 ימים', () => {
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2,
+    splitRow: null, splitAnchor: 'end' });
+
+  ['d10', 'd21'].forEach((value) => {
+    assert(doc.querySelector('[data-split="' + value + '"]'), 'חסר צ׳יפ ל-' + value);
+  });
+
+  doc.querySelector('[data-split="d10"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+  assert(App.state.splitParts === 'd10', 'הבחירה לא נשמרה');
+  assert(window.BudgetTab.sizeOf(App.state) === 10, 'האורך לא זוהה');
+
+  // כל מקטע באורך הנדרש בדיוק
+  const split = Metrics.periodSplit(Store.getEntries(),
+    { size: 10, endDate: Dates.today(), anchor: 'end' });
+  if (split.ok) {
+    assert(split.fixed, 'לא סומן כאורך קבוע');
+    split.rows.forEach((r) => {
+      assert(r.days === 10, 'מקטע של ' + r.days + ' ימים במקום 10');
+    });
+  }
+
+  App.setState({ splitParts: 2, tab: 'home' });
+});
+
+test('אורך קבוע נותן יותר מקטעים מחלוקה לחצי', () => {
+  const entries = Store.getEntries();
+  const byParts = Metrics.periodSplit(entries, { parts: 2, endDate: Dates.today() });
+  const bySize = Metrics.periodSplit(entries, { size: 10, endDate: Dates.today() });
+
+  if (byParts.ok && bySize.ok) {
+    assert(bySize.parts >= byParts.parts,
+      'אורך קבוע: ' + bySize.parts + ' מול חצי: ' + byParts.parts);
+  }
+});
+
+test('אורך קבוע דורש שני מקטעים שלמים', () => {
+  const short = [];
+  for (let i = 0; i < 15; i++) {
+    short.push({ date: Dates.addDays('2026-01-01', i), weightKg: 90, kcal: 2400 });
+  }
+  const r = Metrics.periodSplit(short, { size: 10, endDate: '2026-01-15' });
+
+  assert(!r.ok, 'היה צריך להיכשל');
+  assert(r.reason === 'too-short', 'הסיבה: ' + r.reason);
+  assert(r.need === 20, 'צריך ' + r.need + ' במקום 20');
+});
+
 test('טאב התקציב מציג את שלושת החלקים', () => {
   App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2, splitRow: null });
 
