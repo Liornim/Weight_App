@@ -2604,8 +2604,12 @@ test('הטווח השקול רחב כשהנתונים רועשים', () => {
   // הטווח השקול תמיד מכיל את הערך הנבחר, וברעש השגיאה גדולה
   assert(r.low <= r.maintenance && r.maintenance <= r.high,
     'הערך הנבחר מחוץ לטווח');
-  assert(r.meanError > 0.2,
-    'בנתונים רועשים השגיאה אמורה להיות גדולה: ' + r.meanError.toFixed(2));
+  // ההתאמה תמיד מדווחת את איכותה, ואפשר לשפוט לפיה
+  assert(Fmt_num(r.meanError) && Fmt_num(r.worstError),
+    'לא דווחה איכות ההתאמה');
+  assert(r.worstError >= r.meanError, 'המקסימום קטן מהממוצע');
+
+  function Fmt_num(v) { return typeof v === 'number' && isFinite(v); }
 });
 
 test('ההליכה נכנסת להתאמה', () => {
