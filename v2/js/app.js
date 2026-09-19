@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd74',
+    BUILD: 'd75',
     state: {
       date: Dates.today(),
       tab: 'budget',       // ארבעה טאבים: תקציב, הזנה, משקל, נתונים
@@ -21,6 +21,7 @@
       splitAnchor: 'end',  // עד היום או מתחילת המעקב
       budgetWalk: 'on',    // האם ההליכה נכללת בתקציב
       budgetWindows: 'few', // אילו אורכי חלון מוצגים בטבלה
+      activityLevel: 'sedentary', // מקדם הפעילות בחישוב לפי נוסחה
       asOf: 0,             // עד מתי למדוד: היום, שבוע שעבר, שבועיים
       basis: 'adaptive',   // על סמך כמה זמן לחשב
       caution: 'mid',      // זהיר / אמצע / נדיב
@@ -113,6 +114,12 @@
         });
       });
 
+    view.querySelectorAll('[data-activity]').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        App.setState({ activityLevel: chip.dataset.activity });
+      });
+    });
+
     view.querySelectorAll('[data-windows]').forEach(function (chip) {
       chip.addEventListener('click', function () {
         App.setState({ budgetWindows: chip.dataset.windows });
@@ -139,7 +146,8 @@
         // 'fit', 'manual' ו-'d10' הם מחרוזות; מספר הוא חלוקה לחלקים
         var value = chip.dataset.split;
         var parsed = (value === 'fit' || value === 'manual' ||
-          value.indexOf('d') === 0) ? value : Number(value);
+          value === 'formula' || value.indexOf('d') === 0)
+          ? value : Number(value);
         App.setState({ splitParts: parsed, splitRow: null });
       });
     });

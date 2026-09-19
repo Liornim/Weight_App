@@ -30,7 +30,8 @@
     { value: 'd10', label: '10 ימים' },
     { value: 'd21', label: '21 ימים' },
     { value: 'fit', label: 'מותאם לכולם' },
-    { value: 'manual', label: 'ידני' }
+    { value: 'manual', label: 'ידני' },
+    { value: 'formula', label: 'לפי נוסחה' }
   ];
 
   var LENGTHS = [3, 5, 7, 10, 14, 21, 28];
@@ -78,6 +79,10 @@
 
   function isManual(state) {
     return state.splitParts === 'manual';
+  }
+
+  function isFormula(state) {
+    return state.splitParts === 'formula';
   }
 
   /**
@@ -242,6 +247,42 @@
           'והגדולה ביותר ' + Fmt.n(fit.worstError, 2) + '. הן מתקזזות בין ' +
           'החלונות, אבל אינן קטנות — זה הכי טוב שהנתונים מאפשרים, ' +
           'לא הכי טוב שאפשר.' }));
+  }
+
+  /**
+   * תחזוקה לפי נוסחה — גיל, מין, גובה ומשקל בלבד.
+   *
+   * זו נקודת ייחוס ולא מדידה. הערך שלה הוא דווקא בהשוואה: אם מה
+   * שנמדד מהנתונים רחוק מכאן ב-500 קלוריות, אחד מהשניים שגוי —
+   * וכנראה הרישום התזונתי.
+   */
+  function formulaCard(f, state) {
+    var levels = f.levels.map(function (l) {
+      return { value: l.value, label: l.label };
+    });
+
+    var sex = f.sex === 'female' ? 'אישה' : 'גבר';
+
+    return P.card('מול מה אני נמדד', 'Mifflin-St Jeor, הסטנדרט המקובל',
+      P.chips(SPLITS, 'formula', 'data-split') +
+
+      '<div class="calc num">' +
+        'משקל   ' + Fmt.n(f.weight, 1) + ' ק״ג  (ממוצע ' + f.weighIns + ' שקילות)\n' +
+        'גובה   ' + Fmt.n(f.heightCm, 0) + ' ס״מ\n' +
+        'גיל    ' + Fmt.n(f.age, 0) + '  · ' + sex + '\n' +
+        '\n' +
+        'BMR    ' + Fmt.n(f.bmr, 0) + '  (שריפה במנוחה מוחלטת)\n' +
+        '× ' + Fmt.n(f.factor, 3) + '  =  ' + Fmt.n(f.maintenance, 0) +
+      '</div>' +
+
+      '<label class="pick-label">אימונים מובנים בשבוע</label>' +
+      P.chips(levels, f.activity, 'data-activity') +
+
+      P.hint('המקדם מתייחס לאימונים בלבד; ההליכה היומית נוספת בנפרד ' +
+        'בכרטיס התקציב. ' +
+        'זו הערכה ולא מדידה — שני אנשים באותו גיל, מין ומשקל יכולים ' +
+        'להיבדל ב-300 קלוריות ומעלה. השווה אותה למה שנמדד מהנתונים שלך: ' +
+        'פער גדול מרמז שמשהו ברישום אינו מדויק.'));
   }
 
   /** הזנה ידנית של תחזוקה וצעדים */
@@ -478,6 +519,24 @@
 
     var manual = isManual(state) ? manualValues(settings, state) : null;
 
+    var formula = isFormula(state)
+      ? Metrics.formulaMaintenance(entries, settings, {
+          endDate: state.date, activity: state.activityLevel
+        })
+      : null;
+
+    if (formula && !formula.ok) {
+      return P.section('תקציב',
+        P.card(null, null,
+          P.chips(SPLITS, 'formula', 'data-split') +
+          P.empty(formula.reason === 'no-weight'
+            ? 'צריך לפחות שקילה אחת.'
+            : 'חסרים פרטים בהגדרות: ' +
+              [formula.needAge ? 'תאריך לידה' : null,
+                formula.needHeight ? 'גובה' : null]
+                .filter(Boolean).join(' ו') + '.')));
+    }
+
     var fitted = isFit(state)
       ? Metrics.fitMaintenance(entries, {
           endDate: state.date,
@@ -500,7 +559,7 @@
 
     // גם במצבים שאינם חלוקה דרושים המקטעים, לצורך ההליכה הרגילה
     var split = Metrics.periodSplit(entries,
-      (fitted || manual) ? { parts: 2, endDate: state.date,
+      (fitted || manual || formula) ? { parts: 2, endDate: state.date,
         kcalPerKg: settings.kcalPerKg, kcalPerStep: settings.kcalPerStep }
       : options);
 
@@ -521,6 +580,10 @@
      */
     if (fitted) {
       chosen = Object.assign({}, chosen, { maintenance: fitted.maintenance });
+    }
+
+    if (formula) {
+      chosen = Object.assign({}, chosen, { maintenance: formula.maintenance });
     }
 
     if (manual) {
@@ -554,14 +617,16 @@
 
     return P.section('תקציב',
       trackCard(entries, state) +
-      (manual
+      (formula
+        ? formulaCard(formula, state)
+        : manual
         ? manualCard(manual, settings)
         : fitted
           ? P.card('מול מה אני נמדד', 'התחזוקה מותאמת לכל החלונות יחד',
               P.chips(SPLITS, 'fit', 'data-split')) + fitCard(fitted, state)
           : splitCard(split, chosen, state)) +
       budgetCard(chosen, settings, state) +
-      (manual ? '' : walkCard(split, chosen, settings)) +
+      ((manual || formula) ? '' : walkCard(split, chosen, settings)) +
       standingCard(entries, budget, macros, state, baseSteps, perStep));
   }
 
@@ -570,6 +635,6 @@
     WINDOW_SETS: WINDOW_SETS, lengthsOf: lengthsOf,
     partsOf: partsOf, sizeOf: sizeOf, splitOptions: splitOptions,
     anchorOf: anchorOf, withWalk: withWalk,
-    isManual: isManual, manualValues: manualValues
+    isManual: isManual, manualValues: manualValues, isFormula: isFormula
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -2565,6 +2565,79 @@ test('חלוקה לחצי מעוגנת לסוף', () => {
   assert(r.rows[0].days === r.rows[1].days, 'המקטעים אינם שווים');
 });
 
+test('נוסחת Mifflin-St Jeor על ערכים ידועים', () => {
+  const entries = buildSeries('2026-01-01', 10, () => ({ weightKg: 80 }));
+  const settings = { profile: { heightCm: 180, sex: 'male', ageYears: 30 } };
+
+  const r = Metrics.formulaMaintenance(entries, settings,
+    { endDate: '2026-01-10', activity: 'sedentary' });
+
+  // 10×80 + 6.25×180 − 5×30 + 5 = 1,780
+  assert(r.ok, 'צריך לעבוד: ' + r.reason);
+  close(r.bmr, 1780, 1, 'BMR');
+  close(r.maintenance, 1780 * 1.2, 1, 'תחזוקה');
+});
+
+test('הנוסחה מבחינה בין גבר לאישה', () => {
+  const entries = buildSeries('2026-01-01', 10, () => ({ weightKg: 70 }));
+  const base = { heightCm: 165, ageYears: 30 };
+
+  const male = Metrics.formulaMaintenance(entries,
+    { profile: Object.assign({ sex: 'male' }, base) }, { endDate: '2026-01-10' });
+  const female = Metrics.formulaMaintenance(entries,
+    { profile: Object.assign({ sex: 'female' }, base) }, { endDate: '2026-01-10' });
+
+  // ההפרש בנוסחה הוא 166 קלוריות ב-BMR
+  close(male.bmr - female.bmr, 166, 1, 'ההפרש בין המינים');
+});
+
+test('מקדם הפעילות מכפיל את ה-BMR', () => {
+  const entries = buildSeries('2026-01-01', 10, () => ({ weightKg: 80 }));
+  const settings = { profile: { heightCm: 180, sex: 'male', ageYears: 30 } };
+
+  const low = Metrics.formulaMaintenance(entries, settings,
+    { endDate: '2026-01-10', activity: 'sedentary' });
+  const high = Metrics.formulaMaintenance(entries, settings,
+    { endDate: '2026-01-10', activity: 'athlete' });
+
+  close(high.maintenance / low.maintenance, 1.9 / 1.2, 1e-9, 'היחס');
+  assert(low.bmr === high.bmr, 'ה-BMR אמור להיות זהה');
+});
+
+test('המשקל נלקח כממוצע ולא כשקילה בודדת', () => {
+  const entries = buildSeries('2026-01-01', 10, (i) => ({
+    weightKg: i === 9 ? 95 : 80    // שקילה אחרונה חריגה
+  }));
+  const settings = { profile: { heightCm: 180, sex: 'male', ageYears: 30 } };
+
+  const r = Metrics.formulaMaintenance(entries, settings, { endDate: '2026-01-10' });
+
+  assert(r.weight < 85, 'השקילה החריגה השפיעה מדי: ' + r.weight.toFixed(1));
+  assert(r.weighIns === 7, 'ציפיתי לשבע שקילות, יש ' + r.weighIns);
+});
+
+test('בלי גיל או גובה הנוסחה מדווחת מה חסר', () => {
+  const entries = buildSeries('2026-01-01', 10, () => ({ weightKg: 80 }));
+
+  const noAge = Metrics.formulaMaintenance(entries,
+    { profile: { heightCm: 180, sex: 'male' } }, { endDate: '2026-01-10' });
+  assert(!noAge.ok && noAge.needAge, 'לא דווח שחסר גיל');
+
+  const noHeight = Metrics.formulaMaintenance(entries,
+    { profile: { ageYears: 30, sex: 'male' } }, { endDate: '2026-01-10' });
+  assert(!noHeight.ok && noHeight.needHeight, 'לא דווח שחסר גובה');
+});
+
+test('הגיל מחושב מתאריך לידה כשאין גיל מפורש', () => {
+  const entries = buildSeries('2026-01-01', 10, () => ({ weightKg: 80 }));
+  const r = Metrics.formulaMaintenance(entries,
+    { profile: { heightCm: 180, sex: 'male', birthDate: '1996-01-01' } },
+    { endDate: '2026-01-10' });
+
+  assert(r.ok, 'צריך לעבוד');
+  close(r.age, 30, 0.1, 'הגיל');
+});
+
 test('התאמת התחזוקה מוצאת ערך שמסביר את כל החלונות', () => {
   // סדרה עקבית: אכל 2,700, שרף 2,500, ירד בקצב הצפוי
   const entries = [];

@@ -707,6 +707,71 @@ test('ערך לא תקין בשדה הידני אינו נשמר', () => {
   App.setState({ splitParts: 2, tab: 'home' });
 });
 
+test('מצב "לפי נוסחה" מציג את החישוב ואת הפרטים', () => {
+  Store.updateSettings({
+    profile: { heightCm: 180, sex: 'male', birthDate: '1978-08-29' }
+  });
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 'formula',
+    activityLevel: 'light', budgetWalk: 'on' });
+
+  const text = doc.getElementById('view').textContent;
+  ['BMR', 'משקל', 'גובה', 'גיל'].forEach((name) => {
+    assert(text.indexOf(name) !== -1, 'חסר: ' + name);
+  });
+
+  const f = Metrics.formulaMaintenance(Store.getEntries(), Store.getSettings(),
+    { endDate: Dates.today(), activity: 'light' });
+  assert(f.ok, 'המנוע נכשל: ' + f.reason);
+
+  assert(text.indexOf(Fmt.n(f.bmr, 0)) !== -1, 'ה-BMR לא מוצג');
+
+  // התקציב נגזר מהתחזוקה שהנוסחה נתנה
+  const card = [...doc.querySelectorAll('#view .card')]
+    .find((c) => (c.querySelector('h3') || {}).textContent === 'התקציב');
+  assert(card.querySelector('.calc').textContent.indexOf(Fmt.n(f.maintenance, 0)) !== -1,
+    'התחזוקה בחישוב אינה זו של הנוסחה');
+
+  App.setState({ splitParts: 2, tab: 'home' });
+});
+
+test('מקדם הפעילות משנה את התחזוקה', () => {
+  Store.updateSettings({
+    profile: { heightCm: 180, sex: 'male', birthDate: '1978-08-29' }
+  });
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 'formula',
+    activityLevel: 'sedentary' });
+
+  const read = () => Number(doc.querySelector('#view .big-number .v')
+    .textContent.replace(/[^0-9.\-]/g, ''));
+  const low = read();
+
+  const chip = doc.querySelector('[data-activity="athlete"]');
+  assert(chip, 'חסר צ׳יפ לרמת הפעילות');
+  chip.dispatchEvent(new window.Event('click', { bubbles: true }));
+  assert(App.state.activityLevel === 'athlete', 'הבחירה לא נשמרה');
+
+  const high = read();
+  assert(high > low, 'רמה גבוהה אמורה להעלות: ' + high + ' מול ' + low);
+
+  App.setState({ activityLevel: 'sedentary', splitParts: 2, tab: 'home' });
+});
+
+test('בלי פרטי פרופיל נאמר מה חסר', () => {
+  const saved = Store.getSettings().profile;
+  Store.updateSettings({ profile: { sex: 'male' } });
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 'formula' });
+
+  const text = doc.getElementById('view').textContent;
+  assert(text.indexOf('חסרים פרטים') !== -1, 'לא דווח על חוסר');
+  assert(text.indexOf('גובה') !== -1, 'לא נאמר שחסר גובה');
+
+  // והצ׳יפים עדיין שם, כדי שאפשר יהיה לצאת
+  assert(doc.querySelector('[data-split="2"]'), 'אין דרך לחזור');
+
+  Store.updateSettings({ profile: saved });
+  App.setState({ splitParts: 2, tab: 'home' });
+});
+
 test('טאב התקציב מציג את שלושת החלקים', () => {
   App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2, splitRow: null });
 

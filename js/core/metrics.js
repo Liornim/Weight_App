@@ -2250,6 +2250,84 @@
   }
 
   /**
+   * תחזוקה לפי נוסחת ספרות, מגיל מין ומשקל בלבד.
+   *
+   * Mifflin-St Jeor הוא הסטנדרט המקובל מאז 1990, והוא מדויק יותר
+   * מ-Harris-Benedict הישן יותר. הוא מחזיר BMR — מה שהגוף שורף
+   * במנוחה מוחלטת — ומכפילים אותו במקדם פעילות.
+   *
+   * זו הערכה ולא מדידה: שני אנשים באותו גיל, מין ומשקל יכולים
+   * להיבדל ב-300 קלוריות ומעלה. השימוש העיקרי הוא נקודת ייחוס —
+   * אם מה שנמדד מהנתונים רחוק מאוד מכאן, שווה לבדוק את הנתונים.
+   *
+   * מקדמי הפעילות הם המקובלים בספרות, והם מתייחסים לאימונים
+   * מובנים; ההליכה היומית מטופלת בנפרד ולכן ברירת המחדל כאן היא
+   * הנמוכה.
+   */
+  var ACTIVITY_LEVELS = [
+    { value: 'sedentary', factor: 1.2, label: 'ללא אימונים' },
+    { value: 'light', factor: 1.375, label: 'קל — 1 עד 3 בשבוע' },
+    { value: 'moderate', factor: 1.55, label: 'בינוני — 3 עד 5' },
+    { value: 'active', factor: 1.725, label: 'גבוה — 6 עד 7' },
+    { value: 'athlete', factor: 1.9, label: 'אתלטי — פעמיים ביום' }
+  ];
+
+  function formulaMaintenance(entries, settings, options) {
+    var opts = options || {};
+    var endDate = opts.endDate || Dates.today();
+    var profile = (settings || {}).profile || {};
+
+    // המשקל הנוכחי: ממוצע השקילות האחרונות, לא שקילה בודדת
+    var weighed = series(sorted(entries).filter(function (e) {
+      return e.date <= endDate;
+    }), 'weightKg');
+
+    if (!weighed.length) return { ok: false, reason: 'no-weight' };
+
+    var recent = weighed.slice(-7).map(function (p) { return p.y; });
+    var weight = Stats.mean(recent);
+
+    var age = Fmt_isNum(profile.ageYears)
+      ? profile.ageYears
+      : ageFromBirthDate(profile.birthDate, endDate);
+
+    if (age === null || !Fmt_isNum(profile.heightCm)) {
+      return {
+        ok: false, reason: 'no-profile',
+        needAge: age === null,
+        needHeight: !Fmt_isNum(profile.heightCm)
+      };
+    }
+
+    var bmr = bmrMifflin({ heightCm: profile.heightCm, ageYears: age,
+      sex: profile.sex }, weight);
+    if (bmr === null) return { ok: false, reason: 'no-profile' };
+
+    var chosen = ACTIVITY_LEVELS.filter(function (l) {
+      return l.value === opts.activity;
+    })[0] || ACTIVITY_LEVELS[0];
+
+    /**
+     * המקדם מוחל על ה-BMR, וההליכה נוספת בנפרד. מקדם 1.2 כבר כולל
+     * פעילות יומיומית בסיסית, ולכן שילוב שלו עם הליכה מלאה מעט
+     * כופל — אבל הכיוון ההפוך, להתעלם מההליכה, שגוי הרבה יותר.
+     */
+    return {
+      ok: true,
+      bmr: bmr,
+      factor: chosen.factor,
+      activity: chosen.value,
+      maintenance: bmr * chosen.factor,
+      weight: weight,
+      weighIns: recent.length,
+      age: age,
+      heightCm: profile.heightCm,
+      sex: profile.sex || 'male',
+      levels: ACTIVITY_LEVELS
+    };
+  }
+
+  /**
    * הרכב הגוף לפי חלונות: משקל, שומן ושריר יחד.
    *
    * שלושתם נמדדים באותה שקילה ולכן חולקים את אותו רעש, אבל הם
@@ -2956,6 +3034,8 @@
     compositionWindow: compositionWindow,
     periodSplit: periodSplit,
     fitMaintenance: fitMaintenance,
+    formulaMaintenance: formulaMaintenance,
+    ACTIVITY_LEVELS: ACTIVITY_LEVELS,
     fieldNoiseSd: fieldNoiseSd,
     COMPOSITION_FIELDS: COMPOSITION_FIELDS,
     dayComparison: dayComparison,
