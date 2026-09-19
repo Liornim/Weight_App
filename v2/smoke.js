@@ -1831,6 +1831,70 @@ test('יעדי המאקרו מוצגים ומסתכמים לתקציב', () => {
   App.setState({ tab: 'home' });
 });
 
+
+test('הצפי מפוצל לתזונה ולצעדים, והם מסתכמים', () => {
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2,
+    splitRow: null, splitAnchor: 'end', budgetWalk: 'on' });
+
+  const card = [...doc.querySelectorAll('#view .card')]
+    .find((c) => (c.querySelector('h3') || {}).textContent === 'איפה אני עומד');
+  const heads = [...card.querySelectorAll('th')].map((h) => h.textContent);
+
+  ['צעדים', 'מתזונה', 'מצעדים', 'צפוי'].forEach((name) => {
+    assert(heads.indexOf(name) !== -1, 'חסרה עמודה: ' + name);
+  });
+
+  const num = (cell) => Number(cell.textContent.replace(/[^0-9.\-−]/g, '')
+    .replace('−', '-').split('-').slice(0, 2).join('-'));
+
+  [...card.querySelectorAll('tbody tr')].forEach((tr) => {
+    if (tr.children.length < 11) return;
+    const food = num(tr.children[7]);
+    const walk = num(tr.children[8]);
+    const total = num(tr.children[9]);
+    assert(Math.abs((food + walk) - total) < 0.02,
+      'הסכום לא נסגר: ' + food + ' + ' + walk + ' ≠ ' + total);
+  });
+});
+
+test('הצעדים מוצגים בפועל ומול הבסיס', () => {
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2,
+    splitRow: null, budgetWalk: 'on' });
+
+  const card = [...doc.querySelectorAll('#view .card')]
+    .find((c) => (c.querySelector('h3') || {}).textContent === 'איפה אני עומד');
+  const row = card.querySelector('tbody tr');
+  if (!row || row.children.length < 11) return;
+
+  const cell = row.children[6];
+  assert(/\d/.test(cell.textContent), 'הצעדים לא מוצגים');
+  assert(cell.querySelector('.sub'), 'חסר ההפרש מהבסיס');
+
+  // הבסיס עצמו מוזכר בהסבר
+  assert(card.textContent.indexOf('מעבר לבסיס') !== -1, 'הבסיס לא מוסבר');
+});
+
+test('בלי צעדים, כל ההליכה נספרת בעמודה שלה', () => {
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2,
+    splitRow: null, budgetWalk: 'off' });
+
+  const card = [...doc.querySelectorAll('#view .card')]
+    .find((c) => (c.querySelector('h3') || {}).textContent === 'איפה אני עומד');
+
+  // הבסיס אפס, ולכן ההפרש שווה לצעדים עצמם
+  assert(card.textContent.indexOf('מעבר לבסיס (0 צעדים)') !== -1,
+    'הבסיס אינו אפס במצב בלי צעדים');
+
+  const row = card.querySelector('tbody tr');
+  if (row && row.children.length >= 11) {
+    const walk = Number(row.children[8].textContent
+      .replace(/[^0-9.\-−]/g, '').replace('−', '-'));
+    assert(walk <= 0, 'הליכה אמורה להוריד משקל, לא להוסיף: ' + walk);
+  }
+
+  App.setState({ budgetWalk: 'on', tab: 'home' });
+});
+
 test('"בפועל" הוא ממוצע מול ממוצע ולא שקילה בודדת', () => {
   App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2, splitRow: null });
 

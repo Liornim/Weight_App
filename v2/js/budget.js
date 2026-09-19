@@ -187,8 +187,18 @@
           'בפועל. זה התקציב השמרני מבין השניים.'));
   }
 
-  /** איפה אני עומד מול התקציב */
-  function standingCard(entries, budget, macros, state) {
+  /**
+   * איפה אני עומד מול התקציב.
+   *
+   * הצפי מפוצל לשני מקורות, כי הם שני דברים שונים שאפשר לשנות
+   * בנפרד: מה שאכלת מול התקציב, ומה שהלכת מעבר למה שכבר בתוכו.
+   *
+   * במצב "עם צעדים" התקציב כבר מכיל את ההליכה הממוצעת של המקטע
+   * הנבחר, ולכן עמודת הצעדים מודדת רק את ההפרש ממנה — הלכת יותר
+   * מהרגיל או פחות. במצב "בלי צעדים" הבסיס הוא אפס, וכל ההליכה
+   * נספרת שם.
+   */
+  function standingCard(entries, budget, macros, state, baseSteps, perStep) {
     var byDate = {};
     entries.forEach(function (e) { byDate[e.date] = e; });
 
@@ -208,11 +218,18 @@
       var kcal = mean(from, to, 'kcal');
       if (kcal === null) {
         return '<tr><td class="n">' + days + '</td>' +
-          '<td colspan="7" class="flat">אין רישום</td></tr>';
+          '<td colspan="10" class="flat">אין רישום</td></tr>';
       }
 
       var gap = kcal - budget;
-      var predicted = (gap * days) / 7700;
+      var fromFood = (gap * days) / 7700;
+
+      // ההליכה מעבר למה שכבר מגולם בתקציב
+      var steps = mean(from, to, 'steps');
+      var extraSteps = steps === null ? 0 : (steps - baseSteps) * perStep;
+      var fromWalk = (-extraSteps * days) / 7700;
+
+      var predicted = fromFood + fromWalk;
 
       // בפועל: ממוצע החלון מול ממוצע החלון שלפניו
       var prevTo = Dates.addDays(from, -1);
@@ -236,7 +253,12 @@
         macro('proteinG', macros.protein) +
         macro('fatG', macros.fat) +
         macro('carbG', macros.carbs) +
-        '<td class="n">' + Fmt.signed(predicted, 2) + '</td>' +
+        '<td class="n">' + (steps === null ? '—' : Fmt.n(steps, 0)) +
+          (steps === null ? '' : '<span class="sub">' +
+            Fmt.signed(steps - baseSteps, 0) + '</span>') + '</td>' +
+        '<td class="n">' + Fmt.signed(fromFood, 2) + '</td>' +
+        '<td class="n">' + Fmt.signed(fromWalk, 2) + '</td>' +
+        '<td class="n"><strong>' + Fmt.signed(predicted, 2) + '</strong></td>' +
         '<td class="n">' + (actual === null ? '—' : P.delta(actual, 2, 'down')) +
         '</td></tr>';
     }).join('');
@@ -244,12 +266,13 @@
     return P.card('איפה אני עומד', 'כל אורך חלון מול אותו תקציב',
       P.table(
         [{ label: 'ימים', n: true }, 'אכלת', 'פער', 'חלבון', 'שומן', 'פחמ׳',
-          'צפוי ק״ג', 'בפועל'],
+          'צעדים', 'מתזונה', 'מצעדים', 'צפוי', 'בפועל'],
         [rows],
-        { hint: '"פער" הוא כמה אכלת מעל התקציב או מתחתיו. "צפוי" הוא מה ' +
-          'שהפער המצטבר אמור לעשות למשקל, ו"בפועל" הוא מה שקרה — ממוצע ' +
-          'החלון מול ממוצע החלון שלפניו. כשהשניים רחוקים לאורך כל השורות, ' +
-          'התקציב עצמו צריך בדיקה.' }));
+        { hint: '"מתזונה" הוא מה שהפער באוכל אמור לעשות למשקל, ו"מצעדים" ' +
+          'הוא מה שההליכה מעבר לבסיס (' + Fmt.n(baseSteps, 0) + ' צעדים) ' +
+          'מוסיפה או מורידה. שניהם יחד הם "צפוי", ו"בפועל" הוא מה שקרה — ' +
+          'ממוצע החלון מול ממוצע החלון שלפניו. כשהצפוי והבפועל רחוקים ' +
+          'לאורך כל השורות, התקציב עצמו צריך בדיקה.' }));
   }
 
   function render(state) {
@@ -286,11 +309,15 @@
       carbs: Math.max((budget - protein * 4 - fat * 9) / 4, 0)
     };
 
+    // הבסיס שהתקציב כבר מגלם: במצב "בלי צעדים" אין כזה
+    var perStep = Fmt.isNum(settings.kcalPerStep) ? settings.kcalPerStep : 0.045;
+    var baseSteps = withWalk(state) ? (chosen.steps || 0) : 0;
+
     return P.section('תקציב',
       trackCard(entries, state) +
       splitCard(split, chosen, state) +
       budgetCard(chosen, settings, state) +
-      standingCard(entries, budget, macros, state));
+      standingCard(entries, budget, macros, state, baseSteps, perStep));
   }
 
   root.BudgetTab = {
