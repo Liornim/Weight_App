@@ -757,8 +757,11 @@ test('מקדם הפעילות משנה את התחזוקה', () => {
 });
 
 test('בלי פרטי פרופיל נאמר מה חסר', () => {
+  // ההגדרות ממוזגות, ולכן צריך לאפס במפורש ולא רק להשמיט
   const saved = Store.getSettings().profile;
-  Store.updateSettings({ profile: { sex: 'male' } });
+  Store.updateSettings({
+    profile: { sex: 'male', heightCm: null, birthDate: null, ageYears: null }
+  });
   App.setState({ date: Dates.today(), tab: 'budget', splitParts: 'formula' });
 
   const text = doc.getElementById('view').textContent;
