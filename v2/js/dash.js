@@ -756,7 +756,8 @@
     { value: 'weight', label: 'משקל' },
     { value: 'targets', label: 'יעדים' },
     { value: 'calc', label: 'החישוב' },
-    { value: 'balance', label: 'מאזן' }
+    { value: 'balance', label: 'מאזן' },
+    { value: 'data', label: 'נתונים' }
   ];
 
   function tabs(active) {
@@ -786,6 +787,7 @@
         : state.tab === 'main' ? root.MainTab.render(state)
         : state.tab === 'status' ? root.StatusTab.render(state)
         : state.tab === 'budget' ? root.BudgetTab.render(state)
+        : state.tab === 'data' ? root.DataTab.render(state)
         : root.EntryTab.render(state);
 
       container.innerHTML =

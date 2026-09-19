@@ -1493,6 +1493,86 @@ test('הקריאה מפרטת מה עבר את הרעש ומה לא', () => {
 
 
 
+
+test('טאב הנתונים אומר עד מתי הנתונים עדכניים', () => {
+  App.setState({ date: Dates.today(), tab: 'data', dataAll: false });
+
+  const text = doc.getElementById('view').textContent;
+  assert(text.indexOf('עדכני עד') !== -1, 'חסר האריח הראשי');
+  assert(text.indexOf('שקילה אחרונה') !== -1, 'חסרה השקילה האחרונה');
+  assert(text.indexOf('רישום אוכל אחרון') !== -1, 'חסר האוכל האחרון');
+
+  // התאריכים תואמים את מה שבאמת יש
+  const entries = Store.getEntries();
+  const weighed = entries.filter((e) => Fmt.isNum(e.weightKg));
+  const eaten = entries.filter((e) => Fmt.isNum(e.kcal));
+
+  if (weighed.length) {
+    assert(text.indexOf(Dates.short(weighed[weighed.length - 1].date)) !== -1,
+      'השקילה האחרונה לא מוצגת');
+  }
+  if (eaten.length) {
+    assert(text.indexOf(Dates.short(eaten[eaten.length - 1].date)) !== -1,
+      'האוכל האחרון לא מוצג');
+  }
+});
+
+test('הטבלה מציגה את הנתונים הגולמיים מהחדש לישן', () => {
+  App.setState({ date: Dates.today(), tab: 'data', dataAll: false });
+
+  const table = [...doc.querySelectorAll('#view table.t')]
+    .find((t) => t.textContent.indexOf('נוזלים') !== -1);
+  assert(table, 'הטבלה חסרה');
+
+  const heads = [...table.querySelectorAll('th')].map((h) => h.textContent);
+  ['תאריך', 'משקל', 'קלוריות', 'צעדים'].forEach((name) => {
+    assert(heads.indexOf(name) !== -1, 'חסרה עמודה: ' + name);
+  });
+
+  const rows = [...table.querySelectorAll('tbody tr')];
+  assert(rows.length > 0, 'אין שורות');
+  assert(rows.length <= window.DataTab.PAGE, 'יותר משורה אחת לעמוד');
+
+  // מהחדש לישן
+  const entries = Store.getEntries();
+  assert(rows[0].children[0].textContent.indexOf(
+    Dates.short(entries[entries.length - 1].date)) !== -1,
+    'השורה הראשונה אינה היום האחרון');
+});
+
+test('יום חסר מסומן', () => {
+  const day = Dates.today();
+  Store.upsert({ date: day, weightKg: 88.4, kcal: '' });
+  App.setState({ date: day, tab: 'data', dataAll: false });
+
+  const table = [...doc.querySelectorAll('#view table.t')]
+    .find((t) => t.textContent.indexOf('נוזלים') !== -1);
+  const first = table.querySelector('tbody tr');
+
+  assert(first.classList.contains('within-noise'),
+    'יום בלי אוכל לא סומן');
+});
+
+test('אפשר לפתוח את כל הימים', () => {
+  App.setState({ date: Dates.today(), tab: 'data', dataAll: false });
+
+  const button = doc.getElementById('data-all');
+  const entries = Store.getEntries();
+  if (entries.length <= window.DataTab.PAGE) return;
+
+  assert(button, 'כפתור ההרחבה חסר');
+  button.dispatchEvent(new window.Event('click', { bubbles: true }));
+  assert(App.state.dataAll === true, 'הבחירה לא נשמרה');
+
+  const rows = [...doc.querySelectorAll('#view table.t')]
+    .find((t) => t.textContent.indexOf('נוזלים') !== -1)
+    .querySelectorAll('tbody tr');
+  assert(rows.length === entries.length,
+    'מוצגות ' + rows.length + ' מתוך ' + entries.length);
+
+  App.setState({ dataAll: false, tab: 'home' });
+});
+
 test('טאב התקציב מציג את שלושת החלקים', () => {
   App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2, splitRow: null });
 

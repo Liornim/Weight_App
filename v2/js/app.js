@@ -11,12 +11,13 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd64',
+    BUILD: 'd65',
     state: {
       date: Dates.today(),
       tab: 'budget',       // הדף שנפתח ראשון
       splitParts: 2,       // חצי, שליש או רבע
       splitRow: null,      // המקטע שנבחר; ריק = האחרון
+      dataAll: false,      // האם להציג את כל הימים בטאב הנתונים
       asOf: 0,             // עד מתי למדוד: היום, שבוע שעבר, שבועיים
       basis: 'adaptive',   // על סמך כמה זמן לחשב
       caution: 'mid',      // זהיר / אמצע / נדיב
@@ -74,6 +75,13 @@
         App.setState({ basis: raw === 'adaptive' ? 'adaptive' : Number(raw) });
       });
     });
+
+    var dataAll = view.querySelector('#data-all');
+    if (dataAll) {
+      dataAll.addEventListener('click', function () {
+        App.setState({ dataAll: true });
+      });
+    }
 
     view.querySelectorAll('[data-split]').forEach(function (chip) {
       chip.addEventListener('click', function () {
