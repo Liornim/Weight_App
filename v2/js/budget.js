@@ -60,6 +60,38 @@
     return split.selected;
   }
 
+  /**
+   * שורת הכותרת: כמה זמן נמדד, וממתי.
+   *
+   * אורך המעקב הוא מה שקובע כמה אפשר לסמוך על המספרים שמתחת —
+   * חלוקה לרבע על חודש נותנת מקטעים של שבוע, וכאלה נבלעים ברעש.
+   */
+  function trackCard(entries, state) {
+    if (!entries.length) return '';
+
+    var first = entries[0].date;
+    var last = entries[entries.length - 1].date;
+    var span = Dates.diffDays(first, last) + 1;
+
+    var weighed = entries.filter(function (e) { return Fmt.isNum(e.weightKg); }).length;
+    var eaten = entries.filter(function (e) { return Fmt.isNum(e.kcal); }).length;
+
+    // גודל המקטע בחלוקה הנוכחית — זה מה שבאמת קובע את הרעש
+    var size = Math.floor(entries.length / partsOf(state));
+
+    return P.card(null, null,
+      P.tiles([
+        P.tile('', 'ימים במעקב', span, Dates.short(first) + ' ואילך'),
+        P.tile('', 'שקילות', weighed, 'ימי אוכל ' + eaten),
+        P.tile(size < 14 ? 'warn' : 'good', 'מקטע', size + ' ימים',
+          'בחלוקה הנוכחית')
+      ]) +
+      (size < 14
+        ? P.hint('מקטע של ' + size + ' ימים קצר יחסית לתנודה היומית שלך, ' +
+          'ולכן התחזוקה שנגזרת ממנו רועשת. חלוקה גסה יותר תיתן מספר יציב יותר.')
+        : ''));
+  }
+
   /** טבלת המקטעים — מאיפה המספר מגיע */
   function splitCard(split, chosen, state) {
     var rows = split.rows.map(function (r) {
@@ -255,6 +287,7 @@
     };
 
     return P.section('תקציב',
+      trackCard(entries, state) +
       splitCard(split, chosen, state) +
       budgetCard(chosen, settings, state) +
       standingCard(entries, budget, macros, state));

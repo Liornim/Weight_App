@@ -1688,6 +1688,44 @@ test('מקטע חלקי מסומן ואינו נבחר מאליו', () => {
   App.setState({ splitAnchor: 'end', splitParts: 2, tab: 'home' });
 });
 
+
+test('התקציב פותח בכמה זמן נמדד', () => {
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2, splitRow: null });
+
+  const first = doc.querySelector('#view .card');
+  const labels = [...first.querySelectorAll('.tile .k')].map((k) => k.textContent);
+  assert(labels.join() === 'ימים במעקב,שקילות,מקטע', 'האריחים: ' + labels.join());
+
+  const entries = Store.getEntries();
+  const span = Dates.diffDays(entries[0].date, entries[entries.length - 1].date) + 1;
+  const shown = Number(first.querySelector('.tile .v').textContent.replace(/[^0-9]/g, ''));
+  assert(shown === span, 'מוצג ' + shown + ' מול ' + span);
+});
+
+test('גודל המקטע משתנה עם החלוקה ומסומן כשהוא קצר', () => {
+  const read = () => {
+    const tiles = [...doc.querySelectorAll('#view .card .tile')];
+    const tile = tiles.find((t) => t.querySelector('.k').textContent === 'מקטע');
+    return Number(tile.querySelector('.v').textContent.replace(/[^0-9]/g, ''));
+  };
+
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2, splitRow: null });
+  const half = read();
+
+  doc.querySelector('[data-split="4"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+  const quarter = read();
+
+  assert(quarter < half, 'רבע אמור לתת מקטע קטן יותר: ' + quarter + ' מול ' + half);
+
+  // אזהרה מופיעה רק כשהמקטע קצר
+  const warned = doc.getElementById('view').textContent.indexOf('קצר יחסית') !== -1;
+  assert(warned === (quarter < 14),
+    'האזהרה ' + warned + ' במקטע של ' + quarter + ' ימים');
+
+  App.setState({ splitParts: 2, tab: 'home' });
+});
+
 test('טאב התקציב מציג את שלושת החלקים', () => {
   App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2, splitRow: null });
 
