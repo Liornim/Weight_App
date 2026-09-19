@@ -263,6 +263,15 @@
 
     var sex = f.sex === 'female' ? 'אישה' : 'גבר';
 
+    // כל רמה עם טווח הצעדים שהיא מתארת, כעזר לבחירה
+    var guide = f.levels.map(function (l) {
+      var active = l.value === f.activity;
+      return '<tr' + (active ? ' class="now"' : '') + '>' +
+        '<td>' + P.esc(l.label) + (active ? ' ✓' : '') + '</td>' +
+        '<td class="sub">' + P.esc(l.steps) + '</td>' +
+        '<td class="n">' + Fmt.n(f.bmr * l.factor, 0) + '</td></tr>';
+    }).join('');
+
     return P.card('מול מה אני נמדד', 'Mifflin-St Jeor, הסטנדרט המקובל',
       P.chips(SPLITS, 'formula', 'data-split') +
 
@@ -275,13 +284,19 @@
         '× ' + Fmt.n(f.factor, 3) + '  =  ' + Fmt.n(f.maintenance, 0) +
       '</div>' +
 
-      '<label class="pick-label">אימונים מובנים בשבוע</label>' +
+      '<label class="pick-label">רמת הפעילות</label>' +
       P.chips(levels, f.activity, 'data-activity') +
 
-      P.hint('המקדם מתייחס לאימונים בלבד; ההליכה היומית נוספת בנפרד ' +
-        'בכרטיס התקציב. ' +
-        'זו הערכה ולא מדידה — שני אנשים באותו גיל, מין ומשקל יכולים ' +
-        'להיבדל ב-300 קלוריות ומעלה. השווה אותה למה שנמדד מהנתונים שלך: ' +
+      P.table(['רמה', 'מתאר', 'תחזוקה'], [guide],
+        { hint: (Fmt.isNum(f.recentSteps)
+            ? 'בפועל הלכת ' + Fmt.n(f.recentSteps, 0) +
+              ' צעדים ביום בשבועיים האחרונים. '
+            : '') +
+          'המקדם כולל את כל הפעילות היומית, ההליכה בכלל זה — ולכן ' +
+          'הצעדים אינם נוספים עליו כאן. בחר לפי כמה אתה זז בסך הכל.' }) +
+
+      P.hint('זו הערכה ולא מדידה: שני אנשים באותו גיל, מין ומשקל יכולים ' +
+        'להיבדל ב-300 קלוריות ומעלה. השווה אותה למה שנמדד מהנתונים שלך — ' +
         'פער גדול מרמז שמשהו ברישום אינו מדויק.'));
   }
 
@@ -345,10 +360,12 @@
         'תחזוקה        ' + Fmt.n(chosen.maintenance, 0) + '\n' +
         'גירעון        −' + Fmt.n(deficit, 0) +
           '  (' + Fmt.n(rate, 2) + ' ק״ג בשבוע)\n' +
-        (walk
-          ? 'הליכה רגילה   +' + Fmt.n(chosen.stepKcal || 0, 0) +
-            '  (' + Fmt.n(usual, 0) + ' צעדים)\n'
-          : 'הליכה         אינה נספרת\n') +
+        (!walk
+          ? 'הליכה         אינה נספרת\n'
+          : stepKcal
+            ? 'הליכה רגילה   +' + Fmt.n(stepKcal, 0) +
+              '  (' + Fmt.n(usual, 0) + ' צעדים)\n'
+            : 'הליכה         כלולה במקדם\n') +
       '</div>' +
 
       '<div class="big-number">' +
@@ -366,7 +383,10 @@
             '<td class="n">' + pct(carbs, 4) + '%</td></tr>'
         ]) +
 
-      P.hint(walk
+      P.hint(walk && !stepKcal
+        ? 'המקדם שבחרת כולל כבר את ההליכה, ולכן אין מה להוסיף עליו. ' +
+          'כדי להתחשב ביותר או פחות הליכה, שנה את הרמה.'
+        : walk
         ? '"הליכה רגילה" היא ' + Fmt.n(usual, 0) + ' צעדים — הממוצע שלך ' +
           'במקטע ' + P.esc(Dates.short(chosen.from) + '–' + Dates.short(chosen.to)) +
           ', לא הנחה. ביום שתלך יותר או פחות מזה, הטבלה שלמטה תראה ' +
@@ -583,7 +603,10 @@
     }
 
     if (formula) {
-      chosen = Object.assign({}, chosen, { maintenance: formula.maintenance });
+      // המקדם כולל את ההליכה, ולכן היא מאופסת כאן
+      chosen = Object.assign({}, chosen, {
+        maintenance: formula.maintenance, steps: 0, stepKcal: 0
+      });
     }
 
     if (manual) {

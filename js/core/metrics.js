@@ -2260,16 +2260,26 @@
    * להיבדל ב-300 קלוריות ומעלה. השימוש העיקרי הוא נקודת ייחוס —
    * אם מה שנמדד מהנתונים רחוק מאוד מכאן, שווה לבדוק את הנתונים.
    *
-   * מקדמי הפעילות הם המקובלים בספרות, והם מתייחסים לאימונים
-   * מובנים; ההליכה היומית מטופלת בנפרד ולכן ברירת המחדל כאן היא
-   * הנמוכה.
+   * המקדם כולל את כל הפעילות היומית, ההליכה בכלל זה. הוא נמדד
+   * אמפירית — לקחו קבוצות אנשים, מדדו כמה הם שורפים, וחילקו
+   * ב-BMR — ולכן אי אפשר לפרק אותו לרכיבים ואין דרך לנכות ממנו
+   * "את חלק ההליכה". הוספת הצעדים מעליו הייתה ספירה כפולה.
+   *
+   * טווחי הצעדים שלצד כל רמה הם עזר לבחירה, לפי הסיווג המקובל
+   * בספרות: פחות מ-5,000 יושבני, 5,000 עד 7,499 פעילות נמוכה,
+   * ו-7,500 ומעלה פעיל.
    */
   var ACTIVITY_LEVELS = [
-    { value: 'sedentary', factor: 1.2, label: 'ללא אימונים' },
-    { value: 'light', factor: 1.375, label: 'קל — 1 עד 3 בשבוע' },
-    { value: 'moderate', factor: 1.55, label: 'בינוני — 3 עד 5' },
-    { value: 'active', factor: 1.725, label: 'גבוה — 6 עד 7' },
-    { value: 'athlete', factor: 1.9, label: 'אתלטי — פעמיים ביום' }
+    { value: 'sedentary', factor: 1.2, label: 'יושבני',
+      steps: 'עד 5,000 צעדים' },
+    { value: 'light', factor: 1.375, label: 'פעילות קלה',
+      steps: '5,000–7,500, או אימון קל' },
+    { value: 'moderate', factor: 1.55, label: 'בינונית',
+      steps: '7,500–10,000, או 3 אימונים' },
+    { value: 'active', factor: 1.725, label: 'גבוהה',
+      steps: '10,000–14,000, או 6 אימונים' },
+    { value: 'athlete', factor: 1.9, label: 'אתלטית',
+      steps: 'מעל 14,000, או אימון כפול' }
   ];
 
   function formulaMaintenance(entries, settings, options) {
@@ -2308,11 +2318,11 @@
     })[0] || ACTIVITY_LEVELS[0];
 
     /**
-     * המקדם מוחל על ה-BMR, וההליכה נוספת בנפרד. מקדם 1.2 כבר כולל
-     * פעילות יומיומית בסיסית, ולכן שילוב שלו עם הליכה מלאה מעט
-     * כופל — אבל הכיוון ההפוך, להתעלם מההליכה, שגוי הרבה יותר.
+     * התוצאה כוללת הכל, ולכן אסור להוסיף עליה את ההליכה. הדרך
+     * להתחשב בצעדים כאן היא בבחירת המקדם עצמו.
      */
     return {
+      includesWalking: true,
       ok: true,
       bmr: bmr,
       factor: chosen.factor,
@@ -2323,7 +2333,15 @@
       age: age,
       heightCm: profile.heightCm,
       sex: profile.sex || 'male',
-      levels: ACTIVITY_LEVELS
+      levels: ACTIVITY_LEVELS,
+
+      // הצעדים בפועל, כעזר לבחירת המקדם
+      recentSteps: (function () {
+        var walked = sorted(entries).filter(function (e) {
+          return e.date <= endDate && Fmt_isNum(e.steps);
+        }).slice(-14).map(function (e) { return e.steps; });
+        return walked.length ? Stats.mean(walked) : null;
+      })()
     };
   }
 

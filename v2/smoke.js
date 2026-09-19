@@ -745,6 +745,10 @@ test('מקדם הפעילות משנה את התחזוקה', () => {
     .textContent.replace(/[^0-9.\-]/g, ''));
   const low = read();
 
+  // ההליכה אינה נוספת במצב הזה — המקדם כולל אותה
+  assert(doc.getElementById('view').textContent.indexOf('כלולה במקדם') !== -1,
+    'לא נאמר שההליכה כלולה');
+
   const chip = doc.querySelector('[data-activity="athlete"]');
   assert(chip, 'חסר צ׳יפ לרמת הפעילות');
   chip.dispatchEvent(new window.Event('click', { bubbles: true }));

@@ -2565,6 +2565,36 @@ test('חלוקה לחצי מעוגנת לסוף', () => {
   assert(r.rows[0].days === r.rows[1].days, 'המקטעים אינם שווים');
 });
 
+test('הנוסחה כוללת את ההליכה ואינה מוסיפה אותה', () => {
+  const entries = buildSeries('2026-01-01', 20, () => ({
+    weightKg: 80, steps: 12000
+  }));
+  const settings = { profile: { heightCm: 180, sex: 'male', ageYears: 30 } };
+
+  const r = Metrics.formulaMaintenance(entries, settings,
+    { endDate: '2026-01-20', activity: 'sedentary' });
+
+  // התוצאה היא BMR כפול המקדם בלבד, בלי תוספת צעדים
+  close(r.maintenance, r.bmr * 1.2, 1e-9, 'התחזוקה');
+  assert(r.includesWalking === true, 'לא סומן שההליכה כלולה');
+});
+
+test('כל רמה מלווה בטווח צעדים שהיא מתארת', () => {
+  const entries = buildSeries('2026-01-01', 20, () => ({ weightKg: 80, steps: 9000 }));
+  const r = Metrics.formulaMaintenance(entries,
+    { profile: { heightCm: 180, sex: 'male', ageYears: 30 } },
+    { endDate: '2026-01-20' });
+
+  assert(r.levels.length === 5, 'רמות: ' + r.levels.length);
+  r.levels.forEach((l) => {
+    assert(typeof l.steps === 'string' && l.steps.length,
+      'חסר טווח צעדים ל-' + l.value);
+  });
+
+  // והצעדים בפועל מדווחים, כעזר לבחירה
+  close(r.recentSteps, 9000, 1, 'הצעדים בפועל');
+});
+
 test('נוסחת Mifflin-St Jeor על ערכים ידועים', () => {
   const entries = buildSeries('2026-01-01', 10, () => ({ weightKg: 80 }));
   const settings = { profile: { heightCm: 180, sex: 'male', ageYears: 30 } };
