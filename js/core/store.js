@@ -48,6 +48,12 @@
     kcalPerStep: 0.045,
     tdeeMethod: 'kalman', // איזו שיטה מזינה את שאר המסכים
     sync: { url: '', lastSyncAt: null },  // כתובת ה-Apps Script של הגיליון
+
+    /**
+     * ערכים שהמשתמש קובע בעצמו, לבדיקת תרחישים.
+     * משמשים רק כשנבחר המצב הידני; אחרת התחזוקה נמדדת.
+     */
+    manual: { maintenance: 2400, steps: 9000 },
     autoTargetFromTdee: false,
     defaultWindow: 14
   };

@@ -642,6 +642,71 @@ test('התקציב במצב המותאם נגזר מהתחזוקה שנמצאה'
   App.setState({ splitParts: 2, tab: 'home' });
 });
 
+test('מצב ידני: תחזוקה וצעדים שאני קובע', () => {
+  Store.updateSettings({ manual: { maintenance: 2600, steps: 12000 } });
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 'manual',
+    budgetWalk: 'on' });
+
+  const maint = doc.getElementById('manual-maintenance');
+  const steps = doc.getElementById('manual-steps');
+  assert(maint && steps, 'שדות ההזנה חסרים');
+  assert(Number(maint.value) === 2600, 'התחזוקה: ' + maint.value);
+  assert(Number(steps.value) === 12000, 'הצעדים: ' + steps.value);
+
+  // התקציב נגזר מהם ולא ממדידה
+  const perStep = Store.getSettings().kcalPerStep || 0.045;
+  const rate = Math.abs(Store.getSettings().goal.ratePerWeekKg || 0);
+  const deficit = (rate * (Store.getSettings().kcalPerKg || 7700)) / 7;
+  const expected = Math.round(2600 - deficit + 12000 * perStep);
+
+  const shown = Number(doc.querySelector('#view .big-number .v')
+    .textContent.replace(/[^0-9.\-]/g, ''));
+  assert(Math.abs(shown - expected) <= 1, 'מוצג ' + shown + ' מול ' + expected);
+
+  App.setState({ splitParts: 2, tab: 'home' });
+});
+
+test('שינוי בשדה הידני נשמר ומשנה את התקציב', () => {
+  Store.updateSettings({ manual: { maintenance: 2400, steps: 9000 } });
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 'manual' });
+
+  const read = () => Number(doc.querySelector('#view .big-number .v')
+    .textContent.replace(/[^0-9.\-]/g, ''));
+  const before = read();
+
+  const field = doc.getElementById('manual-maintenance');
+  field.value = '2700';
+  field.dispatchEvent(new window.Event('change', { bubbles: true }));
+
+  assert(Store.getSettings().manual.maintenance === 2700, 'לא נשמר');
+  App.setState({ date: Dates.today() });
+  assert(read() - before === 300, 'ההפרש: ' + (read() - before));
+
+  // והצעדים נשמרו כפי שהיו
+  assert(Store.getSettings().manual.steps === 9000, 'הצעדים אבדו');
+
+  Store.updateSettings({ manual: { maintenance: 2400, steps: 9000 } });
+  App.setState({ splitParts: 2, tab: 'home' });
+});
+
+test('ערך לא תקין בשדה הידני אינו נשמר', () => {
+  Store.updateSettings({ manual: { maintenance: 2400, steps: 9000 } });
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 'manual' });
+
+  const field = doc.getElementById('manual-maintenance');
+  field.value = '';
+  field.dispatchEvent(new window.Event('change', { bubbles: true }));
+  assert(Store.getSettings().manual.maintenance === 2400,
+    'ערך ריק דרס את הקיים');
+
+  field.value = '-500';
+  field.dispatchEvent(new window.Event('change', { bubbles: true }));
+  assert(Store.getSettings().manual.maintenance === 2400,
+    'ערך שלילי נשמר');
+
+  App.setState({ splitParts: 2, tab: 'home' });
+});
+
 test('טאב התקציב מציג את שלושת החלקים', () => {
   App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2, splitRow: null });
 

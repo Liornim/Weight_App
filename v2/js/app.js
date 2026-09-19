@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd73',
+    BUILD: 'd74',
     state: {
       date: Dates.today(),
       tab: 'budget',       // ארבעה טאבים: תקציב, הזנה, משקל, נתונים
@@ -86,6 +86,33 @@
       });
     }
 
+    /**
+     * הערכים הידניים נשמרים בהגדרות ולא רק במצב המסך, כדי שיישרדו
+     * רענון. השמירה על change ולא על קלט, כדי שלא לרנדר מחדש
+     * באמצע ההקלדה ולאבד את המיקוד.
+     */
+    [['manual-maintenance', 'maintenance'], ['manual-steps', 'steps']]
+      .forEach(function (pair) {
+        var field = view.querySelector('#' + pair[0]);
+        if (!field) return;
+
+        field.addEventListener('change', function () {
+          // שדה ריק הופך ל-0 בהמרה, ולכן נבדק בנפרד: הוא אינו
+          // "אפס" אלא "לא הוזן", ואסור לו לדרוס ערך קיים
+          var raw = String(field.value).trim();
+          if (!raw) return;
+
+          var value = Number(raw);
+          var min = pair[1] === 'maintenance' ? 1 : 0;
+          if (!isFinite(value) || value < min) return;
+
+          var current = Store.getSettings().manual || {};
+          var next = { maintenance: current.maintenance, steps: current.steps };
+          next[pair[1]] = value;
+          Store.updateSettings({ manual: next });
+        });
+      });
+
     view.querySelectorAll('[data-windows]').forEach(function (chip) {
       chip.addEventListener('click', function () {
         App.setState({ budgetWindows: chip.dataset.windows });
@@ -109,9 +136,10 @@
         // חלוקה חדשה מאפסת את בחירת השורה
         // 'd10' ו-'d21' הם אורך קבוע; מספר הוא חלוקה לחלקים
         // 'fit' ו-'d10' הם מחרוזות; מספר הוא חלוקה לחלקים
+        // 'fit', 'manual' ו-'d10' הם מחרוזות; מספר הוא חלוקה לחלקים
         var value = chip.dataset.split;
-        var parsed = (value === 'fit' || value.indexOf('d') === 0)
-          ? value : Number(value);
+        var parsed = (value === 'fit' || value === 'manual' ||
+          value.indexOf('d') === 0) ? value : Number(value);
         App.setState({ splitParts: parsed, splitRow: null });
       });
     });

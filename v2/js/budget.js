@@ -29,7 +29,8 @@
     { value: 4, label: 'רבע' },
     { value: 'd10', label: '10 ימים' },
     { value: 'd21', label: '21 ימים' },
-    { value: 'fit', label: 'מותאם לכולם' }
+    { value: 'fit', label: 'מותאם לכולם' },
+    { value: 'manual', label: 'ידני' }
   ];
 
   var LENGTHS = [3, 5, 7, 10, 14, 21, 28];
@@ -73,6 +74,29 @@
 
   function isFit(state) {
     return state.splitParts === 'fit';
+  }
+
+  function isManual(state) {
+    return state.splitParts === 'manual';
+  }
+
+  /**
+   * הערכים הידניים.
+   *
+   * כשמזינים תחזוקה או צעדים ידנית, המספר גובר על כל מדידה. זה
+   * שימושי כדי לבדוק תרחיש — "מה אם התחזוקה שלי 2,600" — ולא רק
+   * כדי לעקוף את החישוב.
+   */
+  function manualValues(settings, state) {
+    var saved = settings.manual || {};
+    var maintenance = Fmt.isNum(state.manualMaintenance)
+      ? state.manualMaintenance
+      : (Fmt.isNum(saved.maintenance) ? saved.maintenance : 2400);
+    var steps = Fmt.isNum(state.manualSteps)
+      ? state.manualSteps
+      : (Fmt.isNum(saved.steps) ? saved.steps : 9000);
+
+    return { maintenance: maintenance, steps: steps };
   }
 
   /** אורך קבוע למקטע, או 0 לחלוקה לחלקים */
@@ -161,7 +185,9 @@
 
     return P.card('מול מה אני נמדד', 'כל מקטע מושווה לזה שלפניו',
       P.chips(SPLITS,
-        isFit(state) ? 'fit' : sizeOf(state) ? 'd' + sizeOf(state) : partsOf(state),
+        isManual(state) ? 'manual'
+          : isFit(state) ? 'fit'
+          : sizeOf(state) ? 'd' + sizeOf(state) : partsOf(state),
         'data-split') +
       '<label class="pick-label">מאיפה לספור</label>' +
       P.chips(ANCHORS, anchorOf(state), 'data-anchor') +
@@ -216,6 +242,27 @@
           'והגדולה ביותר ' + Fmt.n(fit.worstError, 2) + '. הן מתקזזות בין ' +
           'החלונות, אבל אינן קטנות — זה הכי טוב שהנתונים מאפשרים, ' +
           'לא הכי טוב שאפשר.' }));
+  }
+
+  /** הזנה ידנית של תחזוקה וצעדים */
+  function manualCard(values, settings) {
+    return P.card('מול מה אני נמדד', 'מספרים שאתה קובע',
+      P.chips(SPLITS, 'manual', 'data-split') +
+
+      '<div class="field"><label for="manual-maintenance">' +
+        'תחזוקה בלי הליכה</label>' +
+        '<input id="manual-maintenance" type="number" inputmode="numeric" ' +
+        'min="800" max="6000" step="10" value="' +
+        P.esc(String(Math.round(values.maintenance))) + '"></div>' +
+
+      '<div class="field"><label for="manual-steps">צעדים ביום</label>' +
+        '<input id="manual-steps" type="number" inputmode="numeric" ' +
+        'min="0" max="40000" step="100" value="' +
+        P.esc(String(Math.round(values.steps))) + '"></div>' +
+
+      P.hint('שני המספרים גוברים על כל מדידה. שימושי כדי לבדוק תרחיש — ' +
+        'מה קורה אם התחזוקה גבוהה ב-200, או אם תלך 12,000 צעדים במקום ' +
+        '9,000 — ולראות איך הטבלה שלמטה מגיבה.'));
   }
 
   /** התקציב עצמו, עם המאקרו */
@@ -429,6 +476,8 @@
     var entries = Store.getEntries();
     var settings = Store.getSettings();
 
+    var manual = isManual(state) ? manualValues(settings, state) : null;
+
     var fitted = isFit(state)
       ? Metrics.fitMaintenance(entries, {
           endDate: state.date,
@@ -449,9 +498,9 @@
     options.kcalPerKg = settings.kcalPerKg;
     options.kcalPerStep = settings.kcalPerStep;
 
-    // גם במצב המותאם דרושים המקטעים, לצורך ההליכה הרגילה
+    // גם במצבים שאינם חלוקה דרושים המקטעים, לצורך ההליכה הרגילה
     var split = Metrics.periodSplit(entries,
-      fitted ? { parts: 2, endDate: state.date,
+      (fitted || manual) ? { parts: 2, endDate: state.date,
         kcalPerKg: settings.kcalPerKg, kcalPerStep: settings.kcalPerStep }
       : options);
 
@@ -472,6 +521,16 @@
      */
     if (fitted) {
       chosen = Object.assign({}, chosen, { maintenance: fitted.maintenance });
+    }
+
+    if (manual) {
+      var perStepManual = Fmt.isNum(settings.kcalPerStep)
+        ? settings.kcalPerStep : 0.045;
+      chosen = Object.assign({}, chosen, {
+        maintenance: manual.maintenance,
+        steps: manual.steps,
+        stepKcal: manual.steps * perStepManual
+      });
     }
 
     var rate = Math.abs((settings.goal || {}).ratePerWeekKg || 0);
@@ -495,12 +554,14 @@
 
     return P.section('תקציב',
       trackCard(entries, state) +
-      (fitted
-        ? P.card('מול מה אני נמדד', 'התחזוקה מותאמת לכל החלונות יחד',
-            P.chips(SPLITS, 'fit', 'data-split')) + fitCard(fitted, state)
-        : splitCard(split, chosen, state)) +
+      (manual
+        ? manualCard(manual, settings)
+        : fitted
+          ? P.card('מול מה אני נמדד', 'התחזוקה מותאמת לכל החלונות יחד',
+              P.chips(SPLITS, 'fit', 'data-split')) + fitCard(fitted, state)
+          : splitCard(split, chosen, state)) +
       budgetCard(chosen, settings, state) +
-      walkCard(split, chosen, settings) +
+      (manual ? '' : walkCard(split, chosen, settings)) +
       standingCard(entries, budget, macros, state, baseSteps, perStep));
   }
 
@@ -508,6 +569,7 @@
     render: render, SPLITS: SPLITS, ANCHORS: ANCHORS, LENGTHS: LENGTHS,
     WINDOW_SETS: WINDOW_SETS, lengthsOf: lengthsOf,
     partsOf: partsOf, sizeOf: sizeOf, splitOptions: splitOptions,
-    anchorOf: anchorOf, withWalk: withWalk
+    anchorOf: anchorOf, withWalk: withWalk,
+    isManual: isManual, manualValues: manualValues
   };
 })(typeof window !== 'undefined' ? window : globalThis);
