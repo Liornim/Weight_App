@@ -33,7 +33,19 @@
     targets: { kcal: null, proteinG: 170, proteinMinG: 160, carbG: null, fatG: null, fiberG: null, steps: null },
     goal: { ratePerWeekKg: null, targetWeightKg: null },   // ratePerWeekKg שלילי = ירידה
     kcalPerKg: Metrics.DEFAULT_KCAL_PER_KG,
-    kcalPerStep: 0.040,   // 25 צעדים לקלוריה, לפי המוסכמה בגיליון
+    /**
+     * 0.045 = 22 צעדים לקלוריה, כ-450 ל-10,000 צעדים.
+     *
+     * היה 0.040 (25 צעדים), שהוא הערך הכללי המקובל. שני מקורות
+     * עצמאיים הצביעו על ערך גבוה יותר: הספרות נותנת 450-470 למי
+     * שמשקלו כ-90 ק"ג, ובנתונים עצמם נמצאה הטיה שיטתית — בתקופות
+     * של הליכה רבה התחזיות פספסו לכיוון אחד, מה שקורה כשמנכים
+     * מעט מדי.
+     *
+     * השינוי צנוע בכוונה: ההטיה שנמדדה הייתה חלשה, ומקדם שנגזר
+     * ממנה לבדה היה יוצא גבוה מכל מה שהספרות תומכת בו.
+     */
+    kcalPerStep: 0.045,
     tdeeMethod: 'kalman', // איזו שיטה מזינה את שאר המסכים
     sync: { url: '', lastSyncAt: null },  // כתובת ה-Apps Script של הגיליון
     autoTargetFromTdee: false,

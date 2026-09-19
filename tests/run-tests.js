@@ -1891,10 +1891,34 @@ test('שחזור טבלת 14 הימים מהגיליון', () => {
   ]);
 });
 
-test('ברירת המחדל של קבוע הצעדים היא 25 צעדים לקלוריה', () => {
-  // בדיקה על אחסון נקי, כדי לא לפגוע בנתוני שאר הבדיקות
-  const fresh = Store.getSettings().kcalPerStep;
-  assert(Math.abs(fresh - 0.04) < 1e-9, 'ציפיתי ל-0.04, קיבלתי ' + fresh);
+test('אין ערך צעדים ישן שנשאר בפינה כלשהי במנוע', () => {
+  // הקבוע היה משוכפל בשמונה מקומות; אחרי שאוחד, שינוי אחד חייב
+  // להגיע לכל החישובים
+  const entries = buildSeries('2026-01-01', 40, (i) => ({
+    weightKg: 90, kcal: 2400, steps: 10000
+  }));
+
+  const settings = { kcalPerKg: 7700 };   // בלי kcalPerStep, כדי לבדוק ברירת מחדל
+
+  const aligned = Metrics.dayAligned(entries, settings,
+    { days: 14, endDate: '2026-02-09', anchored: false });
+  close(aligned.stepKcal, 450, 1, 'dayAligned');
+
+  const split = Metrics.periodSplit(entries, { parts: 2, endDate: '2026-02-09' });
+  close(split.selected.stepKcal, 450, 1, 'periodSplit');
+
+  const report = Metrics.windowReport(entries,
+    { kcalPerKg: 7700, goal: { ratePerWeekKg: 0 } },
+    { windowDays: 14, endDate: '2026-02-09' });
+  if (report.ok) close(report.stepKcal, 450, 1, 'windowReport');
+});
+
+test('ברירת המחדל של קבוע הצעדים היא 22 צעדים לקלוריה', () => {
+  // כ-450 קלוריות ל-10,000 צעדים. היה 0.040 (25 צעדים); שונה אחרי
+  // שהספרות והנתונים הצביעו על ערך גבוה יותר למשקל של כ-90 ק"ג
+  const settings = Store.getSettings();
+  close(settings.kcalPerStep, 0.045, 1e-9, 'הקבוע');
+  close(10000 * settings.kcalPerStep, 450, 1, 'ל-10,000 צעדים');
 });
 
 test('קבוע הצעדים: 25 צעדים לקלוריה', () => {

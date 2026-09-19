@@ -34,6 +34,12 @@
   /** ברירת מחדל: קק״ל לק״ג רקמה מעורבת. שומן טהור ≈ 9400, לכן 7700 שמרני. */
   var DEFAULT_KCAL_PER_KG = 7700;
 
+  /**
+   * 22 צעדים לקלוריה, כ-450 ל-10,000 צעדים.
+   * מקור אחד לכל המנוע, כדי שלא יישאר ערך ישן בפינה כלשהי.
+   */
+  var DEFAULT_KCAL_PER_STEP = 0.045;
+
   function num(v) {
     return typeof v === 'number' && isFinite(v) ? v : null;
   }
@@ -662,7 +668,7 @@
     var kcalPerKg = opts.kcalPerKg || DEFAULT_KCAL_PER_KG;
     var noiseSd = opts.weightNoiseSd || weightNoiseSd(entries);
     var stepCost = num(opts.kcalPerStep);
-    if (stepCost === null) stepCost = 0.040;
+    if (stepCost === null) stepCost = DEFAULT_KCAL_PER_STEP;
 
     var all = sorted(entries).filter(function (e) { return e.date <= endDate; });
     if (!all.length) return { days: n, weightNoiseSd: noiseSd, rows: [] };
@@ -742,7 +748,7 @@
     var opts = options || {};
     var kcalPerStep = num(opts.kcalPerStep);
     if (kcalPerStep === null) kcalPerStep = num((settings || {}).kcalPerStep);
-    if (kcalPerStep === null) kcalPerStep = 0.040;
+    if (kcalPerStep === null) kcalPerStep = DEFAULT_KCAL_PER_STEP;
 
     var tdee = num(opts.tdee);
     var tdeeCi = num(opts.tdeeCi);
@@ -762,8 +768,9 @@
     }
 
     var stepKcal = meanSteps * kcalPerStep;
-    // הטווח המקובל לעלות נטו לצעד הוא 0.025 עד 0.040
-    var stepUncertainty = meanSteps * (0.040 - 0.025) / 2;
+    // הטווח המקובל לעלות נטו לצעד הוא 0.025 עד 0.050,
+    // כלומר 250 עד 500 קלוריות ל-10,000 צעדים
+    var stepUncertainty = meanSteps * (DEFAULT_KCAL_PER_STEP - 0.025) / 2;
     var ci95 = Stats.combineErrors([tdeeCi, stepUncertainty]);
 
     return {
@@ -873,7 +880,7 @@
     var endDate = opts.endDate || Dates.today();
     var kcalPerKg = (settings || {}).kcalPerKg || DEFAULT_KCAL_PER_KG;
     var kcalPerStep = num((settings || {}).kcalPerStep);
-    if (kcalPerStep === null) kcalPerStep = 0.040;
+    if (kcalPerStep === null) kcalPerStep = DEFAULT_KCAL_PER_STEP;
 
     var stepWindow = series(inWindow(entries, endDate, 28), 'steps').map(function (p) { return p.y; });
     var meanSteps = Stats.mean(stepWindow);
@@ -1104,7 +1111,7 @@
     var endDate = opts.endDate || Dates.today();
     var kcalPerKg = (settings || {}).kcalPerKg || DEFAULT_KCAL_PER_KG;
     var kcalPerStep = num((settings || {}).kcalPerStep);
-    if (kcalPerStep === null) kcalPerStep = 0.040;
+    if (kcalPerStep === null) kcalPerStep = DEFAULT_KCAL_PER_STEP;
     var window = opts.windowDays === 'adaptive' ? 'adaptive' : Number(opts.windowDays || 14);
     if (!entries || !entries.length) return { ok: false, windowDays: window, reason: 'insufficient' };
 
@@ -1507,7 +1514,7 @@
   /** תרומת ההליכה הממוצעת, לחישוב ההוצאה בלי צעדים */
   function stepAllowance(entries, settings, endDate) {
     var kcalPerStep = num((settings || {}).kcalPerStep);
-    if (kcalPerStep === null) kcalPerStep = 0.040;
+    if (kcalPerStep === null) kcalPerStep = DEFAULT_KCAL_PER_STEP;
     var steps = series(inWindow(entries, Dates.addDays(endDate, -1), 28), 'steps')
       .map(function (p) { return p.y; });
     var mean = Stats.mean(steps);
@@ -1530,7 +1537,7 @@
     var lengths = opts.lengths || [3, 5, 7, 10, 14];
     var kcalPerKg = opts.kcalPerKg || DEFAULT_KCAL_PER_KG;
     var stepCost = num(opts.kcalPerStep);
-    if (stepCost === null) stepCost = 0.040;
+    if (stepCost === null) stepCost = DEFAULT_KCAL_PER_STEP;
     var noiseSd = opts.weightNoiseSd || weightNoiseSd(entries);
 
     var all = sorted(entries).filter(function (e) { return e.date <= endDate; });
@@ -2001,7 +2008,7 @@
 
     var kcalPerKg = num(opts.kcalPerKg) || DEFAULT_KCAL_PER_KG;
     var perStep = num(opts.kcalPerStep);
-    if (perStep === null) perStep = 0.040;
+    if (perStep === null) perStep = DEFAULT_KCAL_PER_STEP;
 
     var all = sorted(entries).filter(function (e) { return e.date <= endDate; });
     if (all.length < parts * 6) {
@@ -2230,7 +2237,7 @@
 
     var kcalPerKg = num(settings.kcalPerKg) || DEFAULT_KCAL_PER_KG;
     var kcalPerStep = num(settings.kcalPerStep);
-    if (kcalPerStep === null) kcalPerStep = 0.040;
+    if (kcalPerStep === null) kcalPerStep = DEFAULT_KCAL_PER_STEP;
 
     var all = sorted(entries);
     var byDate = {};
@@ -2512,7 +2519,7 @@
     var proteinTarget = num(targets.proteinG);
     if (proteinTarget === null) proteinTarget = num(targets.proteinMinG);
     var kcalPerStep = num(settings.kcalPerStep);
-    if (kcalPerStep === null) kcalPerStep = 0.040;
+    if (kcalPerStep === null) kcalPerStep = DEFAULT_KCAL_PER_STEP;
 
     /**
      * החלון מסתיים ביום האחרון שיש בו רישום אוכל, ולא היום.

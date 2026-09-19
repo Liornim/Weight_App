@@ -1598,8 +1598,11 @@ test('מסך החישוב מציג את כל הסבבים המלאים', () => {
   ['סבב', 'תקופה', 'משקל', 'קודם', 'שינוי', 'קלוריות', 'צעדים', 'ממשקל', 'מצעדים', 'תחזוקה']
     .forEach((h) => assert(headers.indexOf(h) !== -1, 'חסרה עמודה: ' + h));
 
+  // אותו מקור לקבוע הצעדים כמו המסך, אחרת ההשוואה בודקת ברירת מחדל
   const model = window.Metrics.blockWindows(Store.getEntries(),
-    { days: 5, count: 12, endDate: '2026-08-21' });
+    { days: 5, count: 12, endDate: '2026-08-21',
+      kcalPerKg: Store.getSettings().kcalPerKg,
+      kcalPerStep: Store.getSettings().kcalPerStep });
   const rows = [...table.querySelectorAll('tbody tr')];
   assert(rows.length === model.rows.length, 'מספר סבבים לא תואם');
 
