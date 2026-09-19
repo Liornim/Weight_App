@@ -11,15 +11,16 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd69',
+    BUILD: 'd70',
     state: {
       date: Dates.today(),
-      tab: 'budget',       // הדף שנפתח ראשון
+      tab: 'budget',       // ארבעה טאבים: תקציב, הזנה, משקל, נתונים
       splitParts: 2,       // חצי, שליש או רבע
       splitRow: null,      // המקטע שנבחר; ריק = האחרון
       dataAll: false,      // האם להציג את כל הימים בטאב הנתונים
       splitAnchor: 'end',  // עד היום או מתחילת המעקב
       budgetWalk: 'on',    // האם ההליכה נכללת בתקציב
+      budgetWindows: 'few', // אילו אורכי חלון מוצגים בטבלה
       asOf: 0,             // עד מתי למדוד: היום, שבוע שעבר, שבועיים
       basis: 'adaptive',   // על סמך כמה זמן לחשב
       caution: 'mid',      // זהיר / אמצע / נדיב
@@ -84,6 +85,12 @@
         App.setState({ dataAll: true });
       });
     }
+
+    view.querySelectorAll('[data-windows]').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        App.setState({ budgetWindows: chip.dataset.windows });
+      });
+    });
 
     view.querySelectorAll('[data-anchor]').forEach(function (chip) {
       chip.addEventListener('click', function () {

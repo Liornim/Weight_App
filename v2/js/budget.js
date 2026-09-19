@@ -24,6 +24,28 @@
 
   var LENGTHS = [3, 5, 7, 10, 14, 21, 28];
 
+  /**
+   * אילו אורכי חלון להציג.
+   *
+   * "הכל" הוא כל אורך מ-3 עד 28. הוא ארוך מדי לרוב השימושים, ולכן
+   * ברירת המחדל היא קבוצה מייצגת — אבל כשמחפשים משהו ספציפי, הצגת
+   * כולם היא מה שמאפשרת לראות איפה המספרים מתייצבים.
+   */
+  var WINDOW_SETS = [
+    { value: 'few', label: 'עיקריים' },
+    { value: 'short', label: 'קצרים' },
+    { value: 'long', label: 'ארוכים' },
+    { value: 'all', label: 'הכל' }
+  ];
+
+  function lengthsOf(state) {
+    var set = state.budgetWindows;
+    if (set === 'all') return P.WINDOWS;
+    if (set === 'short') return P.WINDOWS.filter(function (d) { return d <= 10; });
+    if (set === 'long') return P.WINDOWS.filter(function (d) { return d >= 10; });
+    return LENGTHS;
+  }
+
   var ANCHORS = [
     { value: 'end', label: 'עד היום' },
     { value: 'start', label: 'מתחילת המעקב' }
@@ -212,7 +234,7 @@
         values.length : null;
     };
 
-    var rows = LENGTHS.map(function (days) {
+    var rows = lengthsOf(state).map(function (days) {
       var to = state.date;
       var from = Dates.addDays(to, -(days - 1));
       var kcal = mean(from, to, 'kcal');
@@ -264,6 +286,8 @@
     }).join('');
 
     return P.card('איפה אני עומד', 'כל אורך חלון מול אותו תקציב',
+      '<label class="pick-label">אילו חלונות להציג</label>' +
+      P.chips(WINDOW_SETS, state.budgetWindows || 'few', 'data-windows') +
       P.table(
         [{ label: 'ימים', n: true }, 'אכלת', 'פער', 'חלבון', 'שומן', 'פחמ׳',
           'צעדים', 'מתזונה', 'מצעדים', 'צפוי', 'בפועל'],
@@ -322,6 +346,7 @@
 
   root.BudgetTab = {
     render: render, SPLITS: SPLITS, ANCHORS: ANCHORS, LENGTHS: LENGTHS,
+    WINDOW_SETS: WINDOW_SETS, lengthsOf: lengthsOf,
     partsOf: partsOf, anchorOf: anchorOf, withWalk: withWalk
   };
 })(typeof window !== 'undefined' ? window : globalThis);

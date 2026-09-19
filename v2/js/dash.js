@@ -263,210 +263,17 @@
 
   // ------------------------------------------------------- כמה לאכול
 
-  function todaySection(state, entries, settings) {
-    var raw = report(entries, settings, state.date, state);
-    var r = adjust(raw, state.caution);
-
-    if (!r.ok) {
-      return P.section('כמה לאכול היום',
-        controls(state, entries, state.date) +
-        P.card(null, null, P.empty('צריך עוד כמה ימים של שקילה ורישום אוכל כדי לחשב.')));
-    }
-
-    var entry = Store.getEntry(state.date) || {};
-    var eaten = Fmt.isNum(entry.kcal) ? entry.kcal : null;
-    var target = r.target;
-    var over = eaten !== null && eaten > target;
-    var left = eaten === null ? target : target - eaten;
-
-    var sentence = eaten === null
-      ? 'עוד לא רשמת אוכל היום.'
-      : over
-        ? 'אכלת ' + Fmt.n(eaten, 0) + ', שזה ' + Fmt.n(eaten - target, 0) + ' יותר מהיעד.'
-        : 'אכלת ' + Fmt.n(eaten, 0) + ' מתוך ' + Fmt.n(target, 0) + '.';
-
-    var ratio = eaten === null ? 0 : Math.min(eaten / target, 1);
-    var meter =
-      '<div class="meter"><div class="meter-track">' +
-        '<div class="meter-fill' + (over ? ' meter-fill--over' : '') + '" style="width:' +
-          (over ? 100 : ratio * 100).toFixed(1) + '%"></div>' +
-      '</div>' +
-      '<div class="meter-legend"><span>' + P.esc(sentence) + '</span></div></div>';
-
-    return P.section('כמה לאכול היום',
-      controls(state, entries, state.date) +
-      P.card(null, null,
-        '<div class="big big--' + (over ? 'bad' : 'brand') + '">' +
-          (over ? Fmt.n(eaten - target, 0) : Fmt.n(Math.max(left, 0), 0)) +
-          ' <small>' + (over ? 'קלוריות מעל היעד' : 'קלוריות נשארו לך') + '</small></div>' +
-        meter +
-        P.hint('היעד היומי שלך הוא ' + Fmt.n(target, 0) + ' קלוריות: הגוף שלך שורף ' +
-          Fmt.n(r.base, 0) + ' ביום, ואתה אוכל ' + Fmt.n(r.deficitPerDay, 0) +
-          ' פחות כדי לרדת ' + Fmt.n(Math.abs(r.ratePerWeekKg), 2) +
-          ' קילו בשבוע. הליכה לא נספרת ביעד — היא תוספת.')));
-  }
 
   // --------------------------------------------------- מה קרה למשקל
 
   var PERIOD_NAMES = ['השבוע', 'שבוע שעבר', 'לפני שבועיים', 'לפני שלושה שבועות'];
 
-  function weightSection(state, entries) {
-    var r = Metrics.weightBlocks(entries, { days: 7, endDate: state.date });
-
-    if (r.rows.length < 2) {
-      return P.section('מה קרה למשקל',
-        P.card(null, null, P.chart('chart-weight', 200)) +
-        P.card(null, null, P.empty('צריך שבועיים של שקילות כדי להשוות.')));
-    }
-
-    var recent = r.rows.slice(-4).reverse();
-    var latest = recent[0];
-
-    var headline;
-    if (!Fmt.isNum(latest.change)) {
-      headline = 'זה השבוע הראשון, אז עוד אין מול מה להשוות.';
-    } else if (latest.change < -0.1) {
-      headline = 'השבוע ירדת ' + Fmt.numHtml(Math.abs(latest.change), 2) + ' קילו.';
-    } else if (latest.change > 0.1) {
-      headline = 'השבוע עלית ' + Fmt.numHtml(latest.change, 2) + ' קילו.';
-    } else {
-      headline = 'השבוע המשקל שלך כמעט לא זז.';
-    }
-
-    var rows = recent.map(function (row, i) {
-      var name = PERIOD_NAMES[i] || 'לפני ' + i + ' שבועות';
-      return '<tr' + (i === 0 ? ' class="now"' : '') + '>' +
-        '<td>' + P.esc(name) +
-          '<span class="sub">' + P.esc(Dates.short(row.from) + '–' + Dates.short(row.to)) +
-          (row.partial ? ' · עוד לא נגמר' : '') + '</span></td>' +
-        '<td class="n">' + Fmt.n(row.mean, 1) + '</td>' +
-        '<td class="n">' + P.delta(row.change, 2, 'down') + '</td></tr>';
-    }).join('');
-
-    var spans = Metrics.rollingWindows(entries, {
-      endDate: state.date, lengths: [5, 7, 14, 21]
-    });
-    var spanNames = { 5: '5 ימים', 7: 'שבוע', 14: 'שבועיים', 21: 'שלושה שבועות' };
-
-    var spanRows = spans.rows.filter(function (row) { return row.ok && row.covered; })
-      .map(function (row) {
-        var change = -row.deltaKg;
-        var word = change < -0.05 ? 'ירדת' : change > 0.05 ? 'עלית' : 'ללא שינוי';
-        return '<tr><td>' + P.esc(spanNames[row.days] || row.days + ' ימים') + '</td>' +
-          '<td>' + P.esc(word) + '</td>' +
-          '<td class="n">' + P.delta(change, 2, 'down') + '</td></tr>';
-      }).join('');
-
-    var spansCard = spanRows
-      ? P.card('לפי טווחים', 'כל טווח מושווה לימים שקדמו לו מיד',
-          P.table([{ label: 'טווח', n: false }, { label: 'מה קרה', n: false }, 'שינוי'],
-            [spanRows],
-            { hint: 'הטווחים חופפים ביניהם, ולכן טבעי שהם לא מספרים בדיוק אותו סיפור. ' +
-              'ככל שהטווח ארוך יותר, המספר אמין יותר.' }))
-      : '';
-
-    return P.section('מה קרה למשקל',
-      P.card(null, null, P.chart('chart-weight', 200)) +
-      P.card(null, null,
-        '<p class="lead">' + headline + '</p>' +
-        P.table([{ label: 'תקופה', n: false }, 'משקל ממוצע', 'שינוי'], [rows],
-          { hint: 'המספר הוא ממוצע של שבוע ולא שקילה אחת, כי שקילה בודדת קופצת ' +
-            'בחצי קילו בגלל מלח, שתייה ושעת השקילה.' })) +
-      spansCard);
-  }
 
   // ------------------------------------------------ שומן ושריר
 
-  function bodySection(state, entries) {
-    var r = Metrics.bodyChangeSummary(entries, { endDate: state.date, windows: [7, 14] });
-    var usable = r.rows.filter(function (row) { return row.ok; });
-    if (!usable.length) return '';
-
-    var longest = usable[usable.length - 1];
-    var fat = longest.fields.bodyFatKg.change;
-    var weight = longest.fields.weightKg.change;
-
-    var headline;
-    if (Fmt.isNum(fat) && Fmt.isNum(weight) && weight < -0.1 && fat < 0) {
-      var share = Math.min((fat / weight) * 100, 100);
-      headline = 'ב-' + longest.days + ' הימים האחרונים ירדת ' +
-        Fmt.numHtml(Math.abs(weight), 2) + ' קילו, ומתוכם ' +
-        Fmt.numHtml(share, 0) + '% שומן.';
-    } else if (Fmt.isNum(fat)) {
-      headline = 'ב-' + longest.days + ' הימים האחרונים השומן ' +
-        (fat < 0 ? 'ירד ב-' : 'עלה ב-') + Fmt.numHtml(Math.abs(fat), 2) + ' קילו.';
-    } else {
-      headline = 'אין מספיק מדידות שומן להשוואה.';
-    }
-
-    var rows = usable.map(function (row) {
-      return '<tr><td>' + row.days + ' הימים האחרונים</td>' +
-        '<td class="n">' + P.delta(row.fields.bodyFatKg.change, 2, 'down') + '</td>' +
-        '<td class="n">' + P.delta(row.fields.muscleKg.change, 2, 'up') + '</td></tr>';
-    }).join('');
-
-    return P.section('שומן ושריר',
-      P.card(null, null,
-        '<p class="lead">' + headline + '</p>' +
-        P.table([{ label: 'תקופה', n: false }, 'שומן', 'שריר'], [rows],
-          { hint: 'המשקל הביתי מודד שומן בעקיפין ולכן פחות מדויק מהמשקל עצמו. ' +
-            'הכיוון אמין, הספרה השנייה פחות.' })));
-  }
 
   // ------------------------------------------------------ מה אכלתי
 
-  function foodSection(state, entries, settings) {
-    var macro = Metrics.macroSplit(entries, { endDate: state.date, windowDays: 14 });
-    if (!macro.ok) return '';
-
-    var r = adjust(report(entries, settings, state.date, state), state.caution);
-    var target = r.ok ? r.target : null;
-    var labels = { proteinG: 'חלבון', carbG: 'פחמימות', fatG: 'שומן' };
-    var colors = { proteinG: COLORS.brand, carbG: COLORS.violet, fatG: COLORS.warn };
-
-    var explained = macro.parts.reduce(function (sum, p) { return sum + p.kcal; }, 0);
-    var shareOf = function (p) { return explained ? p.kcal / explained : 0; };
-
-    var segments = macro.parts.filter(function (p) { return p.kcal > 0; }).map(function (p) {
-      return '<div class="split-seg" style="width:' + (shareOf(p) * 100).toFixed(1) +
-        '%;background:' + colors[p.field] + '"></div>';
-    }).join('');
-
-    var legend = macro.parts.map(function (p) {
-      return '<span class="split-key"><i style="background:' + colors[p.field] + '"></i>' +
-        P.esc(labels[p.field]) + ' ' + Fmt.n(shareOf(p) * 100, 0) + '%</span>';
-    }).join('');
-
-    var protein = macro.parts.find(function (p) { return p.field === 'proteinG'; });
-    var proteinTarget = settings.targets.proteinG;
-
-    var mismatch = Math.abs(macro.unexplainedShare) > 0.05
-      ? P.hint('שים לב: החלבון, הפחמימות והשומן שרשמת מסתכמים ל' +
-          (macro.unexplained > 0 ? 'פחות' : 'יותר') + ' קלוריות ממה שרשמת בפועל, ' +
-          'בפער של ' + Fmt.n(Math.abs(macro.unexplainedShare) * 100, 0) + '%. ' +
-          'בדרך כלל זה ימים שנרשמו בלי כל הפרטים.')
-      : '';
-
-    var headline = 'בשבועיים האחרונים אכלת בממוצע ' + Fmt.numHtml(macro.kcalPerDay, 0) +
-      ' קלוריות ביום' +
-      (Fmt.isNum(target) ? ', כשהיעד הוא ' + Fmt.numHtml(target, 0) + '.' : '.');
-
-    return P.section('מה אכלתי',
-      P.card(null, null,
-        '<p class="lead">' + headline + '</p>' +
-        P.chart('chart-kcal', 170)) +
-      P.card('מאיפה מגיעות הקלוריות', null,
-        '<div class="split">' + segments + '</div>' +
-        '<div class="split-keys">' + legend + '</div>' +
-        mismatch +
-        P.tiles([
-          P.tile(Fmt.isNum(proteinTarget) && protein.gramsPerDay >= proteinTarget ? 'good' : 'warn',
-            'חלבון ביום', Fmt.n(protein.gramsPerDay, 0) + ' גר׳',
-            Fmt.isNum(proteinTarget) ? 'היעד ' + Fmt.n(proteinTarget, 0) : ''),
-          P.tile('', 'קלוריות ביום', Fmt.n(macro.kcalPerDay, 0), 'בממוצע')
-        ]) +
-        P.hint('חלבון שומר על השריר בזמן ירידה במשקל ומשאיר תחושת שובע לאורך זמן.')));
-  }
 
   // ------------------------------------------------- צילום
 
@@ -747,16 +554,20 @@
     }
   }
 
+  /**
+   * ארבעה טאבים.
+   *
+   * היו עשרה, וחציים ענו על אותה שאלה בדרכים שונות: התקציב, המצב,
+   * היעדים והחישוב כולם הציגו "כמה לאכול ואיפה אני עומד". ריבוי
+   * מסכים שמראים את אותו דבר אינו בחירה אלא בלבול — במיוחד כשהם
+   * מחשבים אותו מעט אחרת.
+   *
+   * ההגדרות נשארות בתחתית כל מסך ולא בטאב משלהן.
+   */
   var TABS = [
     { value: 'budget', label: 'תקציב' },
-    { value: 'status', label: 'המצב' },
-    { value: 'main', label: 'ראשי' },
-    { value: 'home', label: 'סיכום' },
     { value: 'entry', label: 'הזנה' },
     { value: 'weight', label: 'משקל' },
-    { value: 'targets', label: 'יעדים' },
-    { value: 'calc', label: 'החישוב' },
-    { value: 'balance', label: 'מאזן' },
     { value: 'data', label: 'נתונים' }
   ];
 
@@ -779,32 +590,18 @@
       return;
     }
 
-    if (state.tab !== 'home') {
-      var panel = state.tab === 'weight' ? root.WeightTab.render(state)
-        : state.tab === 'targets' ? root.TargetsTab.render(state)
-        : state.tab === 'calc' ? root.CalcTab.render(state)
-        : state.tab === 'balance' ? root.BalanceTab.render(state)
-        : state.tab === 'main' ? root.MainTab.render(state)
-        : state.tab === 'status' ? root.StatusTab.render(state)
-        : state.tab === 'budget' ? root.BudgetTab.render(state)
-        : state.tab === 'data' ? root.DataTab.render(state)
-        : root.EntryTab.render(state);
-
-      container.innerHTML =
-        top(state, entries, settings) + tabs(state.tab) + panel;
-      return;
-    }
+    var panel = state.tab === 'weight' ? root.WeightTab.render(state)
+      : state.tab === 'entry' ? root.EntryTab.render(state)
+      : state.tab === 'data' ? root.DataTab.render(state)
+      : root.BudgetTab.render(state);
 
     container.innerHTML =
       top(state, entries, settings) +
-      tabs('home') +
-      todaySection(state, entries, settings) +
-      weightSection(state, entries) +
-      bodySection(state, entries) +
-      foodSection(state, entries, settings) +
+      tabs(state.tab) +
+      panel +
       settingsSection(state, entries, settings);
 
-    drawCharts(state, entries, settings);
+    if (state.tab === 'weight') drawCharts(state, entries, settings);
   }
 
   root.Dash = {
