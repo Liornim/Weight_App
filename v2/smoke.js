@@ -775,6 +775,57 @@ test('בלי פרטי פרופיל נאמר מה חסר', () => {
   App.setState({ splitParts: 2, tab: 'home' });
 });
 
+test('פרטי הפרופיל ניתנים להזנה ונשמרים', () => {
+  App.setState({ date: Dates.today(), tab: 'budget', settingsOpen: true });
+
+  const height = doc.getElementById('profile-height');
+  const birth = doc.getElementById('profile-birth');
+  assert(height && birth, 'שדות הפרופיל חסרים');
+  assert(doc.querySelector('[data-sex="male"]'), 'בורר המין חסר');
+
+  height.value = '180';
+  height.dispatchEvent(new window.Event('change', { bubbles: true }));
+  birth.value = '1979-08-29';
+  birth.dispatchEvent(new window.Event('change', { bubbles: true }));
+  doc.querySelector('[data-sex="male"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+
+  const p = Store.getSettings().profile;
+  assert(p.heightCm === 180, 'הגובה: ' + p.heightCm);
+  assert(p.birthDate === '1979-08-29', 'תאריך הלידה: ' + p.birthDate);
+  assert(p.sex === 'male', 'המין: ' + p.sex);
+});
+
+test('אחרי מילוי הפרופיל הנוסחה עובדת', () => {
+  Store.updateSettings({
+    profile: { heightCm: 180, birthDate: '1979-08-29', sex: 'male' }
+  });
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 'formula',
+    activityLevel: 'sedentary' });
+
+  const text = doc.getElementById('view').textContent;
+  assert(text.indexOf('חסרים פרטים') === -1, 'עדיין מדווח על חוסר');
+  assert(text.indexOf('BMR') !== -1, 'החישוב לא מוצג');
+
+  App.setState({ splitParts: 2, tab: 'home' });
+});
+
+test('שדה פרופיל ריק מנקה ואינו נשמר כאפס', () => {
+  Store.updateSettings({ profile: { heightCm: 180 } });
+  App.setState({ date: Dates.today(), tab: 'budget', settingsOpen: true });
+
+  const height = doc.getElementById('profile-height');
+  height.value = '';
+  height.dispatchEvent(new window.Event('change', { bubbles: true }));
+
+  assert(Store.getSettings().profile.heightCm === null,
+    'הערך: ' + Store.getSettings().profile.heightCm);
+
+  Store.updateSettings({
+    profile: { heightCm: 180, birthDate: '1979-08-29', sex: 'male' }
+  });
+});
+
 test('טאב התקציב מציג את שלושת החלקים', () => {
   App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2, splitRow: null });
 

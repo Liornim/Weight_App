@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd75',
+    BUILD: 'd76',
     state: {
       date: Dates.today(),
       tab: 'budget',       // ארבעה טאבים: תקציב, הזנה, משקל, נתונים
@@ -113,6 +113,32 @@
           Store.updateSettings({ manual: next });
         });
       });
+
+    view.querySelectorAll('[data-profile]').forEach(function (field) {
+      field.addEventListener('change', function () {
+        var key = field.dataset.profile;
+        var raw = String(field.value).trim();
+
+        // שדה ריק מנקה את הערך, ואינו נשמר כאפס
+        var value = !raw ? null
+          : key === 'heightCm' ? Number(raw)
+          : raw;
+
+        if (key === 'heightCm' && value !== null &&
+            (!isFinite(value) || value <= 0)) return;
+
+        var next = {};
+        next[key] = value;
+        Store.updateSettings({ profile: next });
+        App.toast('נשמר');
+      });
+    });
+
+    view.querySelectorAll('[data-sex]').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        Store.updateSettings({ profile: { sex: chip.dataset.sex } });
+      });
+    });
 
     view.querySelectorAll('[data-activity]').forEach(function (chip) {
       chip.addEventListener('click', function () {

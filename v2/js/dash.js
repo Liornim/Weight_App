@@ -377,7 +377,37 @@
     var Providers = root.Providers;
     var rate = Fmt.isNum(settings.goal.ratePerWeekKg) ? Math.abs(settings.goal.ratePerWeekKg) : 0;
 
+    var profile = settings.profile || {};
+
+    /**
+     * פרטי הפרופיל.
+     *
+     * עד עכשיו הם היו קיימים במבנה הנתונים אך לא בטופס, ולכן חישוב
+     * שדורש אותם — כמו נוסחת התחזוקה — נכשל בלי שתהיה דרך לתקן.
+     */
     var body =
+      '<div class="section-label">עליי</div>' +
+
+      '<div class="field"><label for="profile-height">גובה בסנטימטרים</label>' +
+        '<input id="profile-height" data-profile="heightCm" type="number" ' +
+        'inputmode="numeric" min="120" max="230" step="1" value="' +
+        P.esc(Fmt.isNum(profile.heightCm) ? String(profile.heightCm) : '') + '"></div>' +
+
+      '<div class="field"><label for="profile-birth">תאריך לידה</label>' +
+        '<input id="profile-birth" data-profile="birthDate" type="date" value="' +
+        P.esc(profile.birthDate || '') + '"></div>' +
+
+      '<label class="pick-label">מין</label>' +
+      P.chips([
+        { value: 'male', label: 'זכר' },
+        { value: 'female', label: 'נקבה' }
+      ], profile.sex === 'female' ? 'female' : 'male', 'data-sex') +
+
+      P.hint('משמשים לחישוב התחזוקה לפי נוסחה, ולהערכת הרכב הגוף. ' +
+        'הם נשמרים במכשיר בלבד.') +
+
+      '<div class="section-label">היעד</div>' +
+
       '<div class="field"><label for="goal-weight">לאיזה משקל אתה מכוון</label>' +
         '<input id="goal-weight" type="number" step="0.1" value="' +
         (Fmt.isNum(settings.goal.targetWeightKg) ? settings.goal.targetWeightKg : '') + '"></div>' +
