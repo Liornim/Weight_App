@@ -1984,6 +1984,89 @@
   }
 
   /**
+   * חלוקת התקופה למקטעים שווים, מעוגנים לסוף.
+   *
+   * חצי, שליש או רבע: כל מקטע מושווה לזה שלפניו, ומהשוואת ממוצע
+   * המשקל שלהם נגזרת התחזוקה. העיגון הוא לסוף ולא להתחלה, כדי
+   * שהמקטע האחרון — הרלוונטי ביותר — יסתיים תמיד היום.
+   *
+   * זו השיטה היחידה שהחזיקה מים על נתונים אמיתיים: חלונות קצרים
+   * נבלעים בתנודה היומית, וממוצע של שבועיים ומעלה מול ממוצע דומה
+   * הוא מה שמשאיר אות.
+   */
+  function periodSplit(entries, options) {
+    var opts = options || {};
+    var parts = Math.max(2, Math.min(4, Math.round(num(opts.parts) || 2)));
+    var endDate = opts.endDate || Dates.today();
+
+    var kcalPerKg = num(opts.kcalPerKg) || DEFAULT_KCAL_PER_KG;
+    var perStep = num(opts.kcalPerStep);
+    if (perStep === null) perStep = 0.040;
+
+    var all = sorted(entries).filter(function (e) { return e.date <= endDate; });
+    if (all.length < parts * 6) {
+      return { ok: false, reason: 'too-short', have: all.length, need: parts * 6 };
+    }
+
+    var size = Math.floor(all.length / parts);
+    var blocks = [];
+    for (var i = parts - 1; i >= 0; i--) {
+      var end = all.length - (parts - 1 - i) * size;
+      blocks.unshift(all.slice(Math.max(0, end - size), end));
+    }
+
+    var stat = function (days, field) {
+      var values = days.filter(function (e) { return Fmt_isNum(e[field]); })
+        .map(function (e) { return e[field]; });
+      return values.length ? Stats.mean(values) : null;
+    };
+
+    var rows = blocks.map(function (days, index) {
+      return {
+        index: index + 1,
+        from: days[0].date,
+        to: days[days.length - 1].date,
+        days: days.length,
+        weight: stat(days, 'weightKg'),
+        kcal: stat(days, 'kcal'),
+        steps: stat(days, 'steps'),
+        protein: stat(days, 'proteinG'),
+        fat: stat(days, 'fatG'),
+        carbs: stat(days, 'carbG')
+      };
+    });
+
+    rows.forEach(function (row, index) {
+      if (!index) { row.change = null; row.maintenance = null; return; }
+
+      var before = rows[index - 1];
+      if (!Fmt_isNum(row.weight) || !Fmt_isNum(before.weight) || !Fmt_isNum(row.kcal)) {
+        row.change = null;
+        row.maintenance = null;
+        return;
+      }
+
+      row.change = row.weight - before.weight;
+      row.fromWeight = (-row.change * kcalPerKg) / row.days;
+      row.stepKcal = Fmt_isNum(row.steps) ? row.steps * perStep : 0;
+      row.burn = row.kcal + row.fromWeight;
+      row.maintenance = row.burn - row.stepKcal;
+    });
+
+    var usable = rows.filter(function (r) { return Fmt_isNum(r.maintenance); });
+    if (!usable.length) return { ok: false, reason: 'no-comparison' };
+
+    return {
+      ok: true,
+      parts: parts,
+      rows: rows,
+      // ברירת המחדל היא המקטע האחרון, העדכני ביותר
+      selected: usable[usable.length - 1],
+      others: usable.map(function (r) { return r.maintenance; })
+    };
+  }
+
+  /**
    * הרכב הגוף לפי חלונות: משקל, שומן ושריר יחד.
    *
    * שלושתם נמדדים באותה שקילה ולכן חולקים את אותו רעש, אבל הם
@@ -2688,6 +2771,7 @@
     targetGaps: targetGaps,
     dayAligned: dayAligned,
     compositionWindow: compositionWindow,
+    periodSplit: periodSplit,
     fieldNoiseSd: fieldNoiseSd,
     COMPOSITION_FIELDS: COMPOSITION_FIELDS,
     dayComparison: dayComparison,

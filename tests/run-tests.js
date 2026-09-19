@@ -2525,6 +2525,66 @@ test('בלי כותרות נשמר המיפוי לפי מיקום', () => {
   assert(day.proteinG === 118, 'חלבון במקום הרביעי');
 });
 
+// ---------- חלוקת התקופה ----------
+
+test('חלוקה לחצי מעוגנת לסוף', () => {
+  const entries = buildSeries('2026-01-01', 40, (i) => ({
+    weightKg: 90 - 0.02 * i, kcal: 2400, steps: 9000
+  }));
+  const r = Metrics.periodSplit(entries, { parts: 2, endDate: '2026-02-09' });
+
+  assert(r.ok, 'צריך לעבוד: ' + r.reason);
+  assert(r.rows.length === 2, 'מקטעים: ' + r.rows.length);
+
+  // המקטע האחרון נגמר ביום האחרון
+  assert(r.rows[1].to === '2026-02-09', 'הסיום: ' + r.rows[1].to);
+  assert(r.rows[0].days === r.rows[1].days, 'המקטעים אינם שווים');
+});
+
+test('התחזוקה נגזרת מהשוואת ממוצעי המשקל', () => {
+  const entries = buildSeries('2026-01-01', 40, (i) => ({
+    weightKg: 90 - 0.025 * i, kcal: 2400, steps: 0
+  }));
+  const r = Metrics.periodSplit(entries, { parts: 2, endDate: '2026-02-09' });
+  const row = r.rows[1];
+
+  close(row.change, row.weight - r.rows[0].weight, 1e-9, 'השינוי');
+  close(row.fromWeight, (-row.change * 7700) / row.days, 1e-9, 'מהמשקל');
+  close(row.maintenance, row.kcal + row.fromWeight, 1e-9, 'בלי צעדים');
+});
+
+test('ההליכה יורדת מהתחזוקה', () => {
+  const entries = buildSeries('2026-01-01', 40, (i) => ({
+    weightKg: 90, kcal: 2400, steps: 10000
+  }));
+  const r = Metrics.periodSplit(entries, { parts: 2, endDate: '2026-02-09',
+    kcalPerStep: 0.04 });
+
+  close(r.rows[1].stepKcal, 400, 1e-9, 'קלוריות ההליכה');
+  close(r.rows[1].maintenance, 2400 - 400, 1e-9, 'תחזוקה');
+});
+
+test('ברירת המחדל היא המקטע האחרון', () => {
+  const entries = buildSeries('2026-01-01', 45, (i) => ({
+    weightKg: 90 - 0.02 * i, kcal: 2400, steps: 9000
+  }));
+  const r = Metrics.periodSplit(entries, { parts: 3, endDate: '2026-02-14' });
+
+  assert(r.selected === r.rows[2], 'לא נבחר האחרון');
+  assert(r.others.length === 2, 'מדידות: ' + r.others.length);
+});
+
+test('חלוקה לרבע דורשת יותר ימים', () => {
+  // הסף הוא שישה ימים למקטע, כלומר 24 לרבע
+  const enough = buildSeries('2026-01-01', 24, () => ({ weightKg: 90, kcal: 2400 }));
+  const r = Metrics.periodSplit(enough, { parts: 4, endDate: '2026-01-24' });
+  assert(r.ok, 'עם 24 ימים אפשר: ' + r.reason);
+
+  const tiny = buildSeries('2026-01-01', 10, () => ({ weightKg: 90, kcal: 2400 }));
+  const t = Metrics.periodSplit(tiny, { parts: 4, endDate: '2026-01-10' });
+  assert(!t.ok && t.reason === 'too-short', 'היה צריך להיכשל');
+});
+
 // ---------- הרכב הגוף ----------
 
 test('הרכב הגוף משווה סבב לסבב שלפניו', () => {

@@ -11,10 +11,12 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd62',
+    BUILD: 'd63',
     state: {
       date: Dates.today(),
-      tab: 'status',       // הדף שנפתח ראשון
+      tab: 'budget',       // הדף שנפתח ראשון
+      splitParts: 2,       // חצי, שליש או רבע
+      splitRow: null,      // המקטע שנבחר; ריק = האחרון
       asOf: 0,             // עד מתי למדוד: היום, שבוע שעבר, שבועיים
       basis: 'adaptive',   // על סמך כמה זמן לחשב
       caution: 'mid',      // זהיר / אמצע / נדיב
@@ -70,6 +72,19 @@
       chip.addEventListener('click', function () {
         var raw = chip.dataset.basis;
         App.setState({ basis: raw === 'adaptive' ? 'adaptive' : Number(raw) });
+      });
+    });
+
+    view.querySelectorAll('[data-split]').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        // חלוקה חדשה מאפסת את בחירת השורה
+        App.setState({ splitParts: Number(chip.dataset.split), splitRow: null });
+      });
+    });
+
+    view.querySelectorAll('[data-split-row]').forEach(function (row) {
+      row.addEventListener('click', function () {
+        App.setState({ splitRow: row.dataset.splitRow });
       });
     });
 

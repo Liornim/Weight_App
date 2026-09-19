@@ -748,6 +748,7 @@
   }
 
   var TABS = [
+    { value: 'budget', label: 'תקציב' },
     { value: 'status', label: 'המצב' },
     { value: 'main', label: 'ראשי' },
     { value: 'home', label: 'סיכום' },
@@ -784,6 +785,7 @@
         : state.tab === 'balance' ? root.BalanceTab.render(state)
         : state.tab === 'main' ? root.MainTab.render(state)
         : state.tab === 'status' ? root.StatusTab.render(state)
+        : state.tab === 'budget' ? root.BudgetTab.render(state)
         : root.EntryTab.render(state);
 
       container.innerHTML =

@@ -1492,6 +1492,129 @@ test('הקריאה מפרטת מה עבר את הרעש ומה לא', () => {
 });
 
 
+
+test('טאב התקציב מציג את שלושת החלקים', () => {
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2, splitRow: null });
+
+  const titles = [...doc.querySelectorAll('#view .card h3')].map((h) => h.textContent);
+  ['מול מה אני נמדד', 'התקציב', 'איפה אני עומד'].forEach((name) => {
+    assert(titles.indexOf(name) !== -1, 'חסר כרטיס: ' + name);
+  });
+
+  // הצ׳יפים לחצי, שליש ורבע
+  [2, 3, 4].forEach((n) => {
+    assert(doc.querySelector('[data-split="' + n + '"]'), 'חסר צ׳יפ ל-' + n);
+  });
+});
+
+test('בחירת חלוקה משנה את התקציב', () => {
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2, splitRow: null });
+  const read = () => Number(doc.querySelector('#view .big-number .v')
+    .textContent.replace(/[^0-9.\-]/g, ''));
+
+  const half = read();
+  doc.querySelector('[data-split="3"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+  assert(App.state.splitParts === 3, 'הבחירה לא נשמרה');
+  assert(App.state.splitRow === null, 'בחירת השורה לא אופסה');
+
+  const third = read();
+  const a = Metrics.periodSplit(Store.getEntries(),
+    { parts: 2, endDate: Dates.today() });
+  const b = Metrics.periodSplit(Store.getEntries(),
+    { parts: 3, endDate: Dates.today() });
+
+  if (a.ok && b.ok &&
+      Math.round(a.selected.maintenance) !== Math.round(b.selected.maintenance)) {
+    assert(half !== third, 'התקציב לא השתנה');
+  }
+
+  App.setState({ splitParts: 2, tab: 'home' });
+});
+
+test('המקטע האחרון נבחר, ואפשר לבחור אחר', () => {
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 3, splitRow: null });
+
+  const marked = [...doc.querySelectorAll('#view tr[data-split-row]')]
+    .filter((tr) => tr.textContent.indexOf('✓') !== -1);
+  assert(marked.length === 1, 'סומנו ' + marked.length + ' שורות');
+  assert(marked[0].dataset.splitRow === '3', 'לא סומן האחרון');
+
+  // לחיצה על שורה אחרת מעבירה אליה
+  const other = [...doc.querySelectorAll('#view tr[data-split-row]')]
+    .find((tr) => tr.dataset.splitRow === '2');
+  other.dispatchEvent(new window.Event('click', { bubbles: true }));
+  assert(App.state.splitRow === '2', 'הבחירה לא נשמרה');
+
+  const nowMarked = [...doc.querySelectorAll('#view tr[data-split-row]')]
+    .filter((tr) => tr.textContent.indexOf('✓') !== -1);
+  assert(nowMarked[0].dataset.splitRow === '2', 'הסימון לא עבר');
+
+  App.setState({ splitRow: null, tab: 'home' });
+});
+
+test('התקציב תואם את החישוב: תחזוקה פחות גירעון ועוד הליכה', () => {
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2, splitRow: null });
+
+  const split = Metrics.periodSplit(Store.getEntries(), {
+    parts: 2, endDate: Dates.today(),
+    kcalPerKg: Store.getSettings().kcalPerKg,
+    kcalPerStep: Store.getSettings().kcalPerStep
+  });
+  if (!split.ok) return;
+
+  const row = split.selected;
+  const rate = Math.abs(Store.getSettings().goal.ratePerWeekKg || 0);
+  const deficit = (rate * (Store.getSettings().kcalPerKg || 7700)) / 7;
+  const expected = Math.round(row.maintenance - deficit + (row.stepKcal || 0));
+
+  const shown = Number(doc.querySelector('#view .big-number .v')
+    .textContent.replace(/[^0-9.\-]/g, ''));
+  assert(Math.abs(shown - expected) <= 1, 'מוצג ' + shown + ' מול ' + expected);
+
+  App.setState({ tab: 'home' });
+});
+
+test('יעדי המאקרו מוצגים ומסתכמים לתקציב', () => {
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2, splitRow: null });
+
+  const text = doc.getElementById('view').textContent;
+  ['חלבון', 'שומן', 'פחמימות'].forEach((name) => {
+    assert(text.indexOf(name) !== -1, 'חסר מאקרו: ' + name);
+  });
+
+  const card = [...doc.querySelectorAll('#view .card')]
+    .find((c) => (c.querySelector('h3') || {}).textContent === 'התקציב');
+  const budget = Number(card.querySelector('.big-number .v')
+    .textContent.replace(/[^0-9.\-]/g, ''));
+
+  const grams = [...card.querySelectorAll('table.t tbody tr')]
+    .map((tr) => Number(tr.children[1].textContent.replace(/[^0-9.\-]/g, '')));
+
+  const sum = grams[0] * 4 + grams[1] * 9 + grams[2] * 4;
+  assert(Math.abs(sum - budget) < 20,
+    'המאקרו מסתכם ל-' + Math.round(sum) + ' מול תקציב ' + budget);
+
+  App.setState({ tab: 'home' });
+});
+
+test('"בפועל" הוא ממוצע מול ממוצע ולא שקילה בודדת', () => {
+  App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2, splitRow: null });
+
+  const card = [...doc.querySelectorAll('#view .card')]
+    .find((c) => (c.querySelector('h3') || {}).textContent === 'איפה אני עומד');
+  const heads = [...card.querySelectorAll('th')].map((h) => h.textContent);
+
+  assert(heads.indexOf('צפוי ק״ג') !== -1, 'חסרה עמודת הצפוי');
+  assert(heads.indexOf('בפועל') !== -1, 'חסרה עמודת הבפועל');
+
+  const rows = [...card.querySelectorAll('tbody tr')];
+  assert(rows.length === window.BudgetTab.LENGTHS.length,
+    'שורות: ' + rows.length);
+
+  App.setState({ tab: 'home' });
+});
+
 test('מסך המצב עונה על ארבע השאלות', () => {
   App.setState({ date: Dates.today(), tab: 'status', stepsMode: 'off' });
 

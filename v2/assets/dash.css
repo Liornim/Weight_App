@@ -726,6 +726,11 @@ textarea:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
 
 .pending-note { font-size: 12px; line-height: 1.6; color: var(--ink-faint); margin: 8px 0 0; }
 
+/* שורה שאפשר לבחור */
+
+table.t tr[data-split-row] { cursor: pointer; }
+table.t tr[data-split-row]:hover td { background: var(--paper); }
+
 /* מסך המצב */
 
 .big-number {
