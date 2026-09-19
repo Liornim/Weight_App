@@ -16,10 +16,19 @@
   var Fmt = root.Fmt, Dates = root.Dates, Metrics = root.Metrics,
       Store = root.Store, P = root.Parts;
 
+  /**
+   * שתי משפחות של מקטעים.
+   *
+   * חצי, שליש ורבע גדלים ככל שהמעקב מתארך — חצי תמיד יהיה חצי.
+   * 10 ו-21 ימים קבועים באורכם ומספרם גדל, וזה מה שמאפשר להשוות
+   * בין תקופות רחוקות ולראות אם התחזוקה עצמה זזה.
+   */
   var SPLITS = [
     { value: 2, label: 'חצי' },
     { value: 3, label: 'שליש' },
-    { value: 4, label: 'רבע' }
+    { value: 4, label: 'רבע' },
+    { value: 'd10', label: '10 ימים' },
+    { value: 'd21', label: '21 ימים' }
   ];
 
   var LENGTHS = [3, 5, 7, 10, 14, 21, 28];
@@ -61,6 +70,18 @@
     return (n === 2 || n === 3 || n === 4) ? n : 2;
   }
 
+  /** אורך קבוע למקטע, או 0 לחלוקה לחלקים */
+  function sizeOf(state) {
+    var v = String(state.splitParts || '');
+    return v.indexOf('d') === 0 ? Number(v.slice(1)) : 0;
+  }
+
+  /** האפשרויות מועברות למנוע בצורה שהוא מבין */
+  function splitOptions(state) {
+    var size = sizeOf(state);
+    return size ? { size: size } : { parts: partsOf(state) };
+  }
+
   function anchorOf(state) {
     return state.splitAnchor === 'start' ? 'start' : 'end';
   }
@@ -99,7 +120,7 @@
     var eaten = entries.filter(function (e) { return Fmt.isNum(e.kcal); }).length;
 
     // גודל המקטע בחלוקה הנוכחית — זה מה שבאמת קובע את הרעש
-    var size = Math.floor(entries.length / partsOf(state));
+    var size = sizeOf(state) || Math.floor(entries.length / partsOf(state));
 
     return P.card(null, null,
       P.tiles([
@@ -134,7 +155,8 @@
     }).join('');
 
     return P.card('מול מה אני נמדד', 'כל מקטע מושווה לזה שלפניו',
-      P.chips(SPLITS, partsOf(state), 'data-split') +
+      P.chips(SPLITS, sizeOf(state) ? 'd' + sizeOf(state) : partsOf(state),
+        'data-split') +
       '<label class="pick-label">מאיפה לספור</label>' +
       P.chips(ANCHORS, anchorOf(state), 'data-anchor') +
       P.table(
@@ -358,16 +380,20 @@
     var entries = Store.getEntries();
     var settings = Store.getSettings();
 
-    var split = Metrics.periodSplit(entries, {
-      parts: partsOf(state), endDate: state.date, anchor: anchorOf(state),
-      kcalPerKg: settings.kcalPerKg, kcalPerStep: settings.kcalPerStep
-    });
+    var options = splitOptions(state);
+    options.endDate = state.date;
+    options.anchor = anchorOf(state);
+    options.kcalPerKg = settings.kcalPerKg;
+    options.kcalPerStep = settings.kcalPerStep;
+
+    var split = Metrics.periodSplit(entries, options);
 
     if (!split.ok) {
       return P.section('תקציב',
         P.card(null, null,
           P.empty(split.reason === 'too-short'
-            ? 'צריך לפחות ' + split.need + ' ימים לחלוקה הזו, יש ' + split.have + '.'
+            ? 'צריך לפחות ' + split.need + ' ימים לחלוקה הזו, יש ' + split.have + '. ' +
+              'מקטעים באורך קבוע דורשים שניים שלמים לפחות.'
             : 'אין מספיק נתונים להשוואה בין המקטעים.')));
     }
 
@@ -403,6 +429,7 @@
   root.BudgetTab = {
     render: render, SPLITS: SPLITS, ANCHORS: ANCHORS, LENGTHS: LENGTHS,
     WINDOW_SETS: WINDOW_SETS, lengthsOf: lengthsOf,
-    partsOf: partsOf, anchorOf: anchorOf, withWalk: withWalk
+    partsOf: partsOf, sizeOf: sizeOf, splitOptions: splitOptions,
+    anchorOf: anchorOf, withWalk: withWalk
   };
 })(typeof window !== 'undefined' ? window : globalThis);

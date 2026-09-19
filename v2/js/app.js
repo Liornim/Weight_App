@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd71',
+    BUILD: 'd72',
     state: {
       date: Dates.today(),
       tab: 'budget',       // ארבעה טאבים: תקציב, הזנה, משקל, נתונים
@@ -107,7 +107,12 @@
     view.querySelectorAll('[data-split]').forEach(function (chip) {
       chip.addEventListener('click', function () {
         // חלוקה חדשה מאפסת את בחירת השורה
-        App.setState({ splitParts: Number(chip.dataset.split), splitRow: null });
+        // 'd10' ו-'d21' הם אורך קבוע; מספר הוא חלוקה לחלקים
+        var value = chip.dataset.split;
+        App.setState({
+          splitParts: value.indexOf('d') === 0 ? value : Number(value),
+          splitRow: null
+        });
       });
     });
 

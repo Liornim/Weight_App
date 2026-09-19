@@ -2003,17 +2003,38 @@
    */
   function periodSplit(entries, options) {
     var opts = options || {};
-    var parts = Math.max(2, Math.min(4, Math.round(num(opts.parts) || 2)));
     var endDate = opts.endDate || Dates.today();
+
+    /**
+     * שתי דרכים להגדיר את המקטעים.
+     *
+     * parts — חלוקה של התקופה למספר קבוע של חלקים, שגדלים ככל
+     * שהמעקב מתארך. חצי תמיד יהיה חצי.
+     *
+     * size — מקטעים באורך קבוע, שמספרם גדל. עשרה ימים תמיד יהיו
+     * עשרה ימים, וזה מה שמאפשר להשוות בין תקופות רחוקות.
+     */
+    var fixed = Math.round(num(opts.size) || 0);
+    var parts = fixed > 0
+      ? 0
+      : Math.max(2, Math.min(4, Math.round(num(opts.parts) || 2)));
 
     var kcalPerKg = num(opts.kcalPerKg) || DEFAULT_KCAL_PER_KG;
     var perStep = num(opts.kcalPerStep);
     if (perStep === null) perStep = DEFAULT_KCAL_PER_STEP;
 
     var all = sorted(entries).filter(function (e) { return e.date <= endDate; });
-    if (all.length < parts * 6) {
+
+    if (fixed > 0) {
+      parts = Math.floor(all.length / fixed);
+      if (parts < 2) {
+        return { ok: false, reason: 'too-short', have: all.length, need: fixed * 2 };
+      }
+    } else if (all.length < parts * 6) {
       return { ok: false, reason: 'too-short', have: all.length, need: parts * 6 };
     }
+
+    var size = fixed > 0 ? fixed : Math.floor(all.length / parts);
 
     /**
      * שתי דרכי עיגון.
@@ -2026,16 +2047,19 @@
      * המקטע האחרון עשוי להיות חלקי, והוא מסומן ככזה במקום להיעלם:
      * מקטע של 12 ימים מתוך 18 עדיין אומר משהו, אבל לא כמו מלא.
      */
-    var size = Math.floor(all.length / parts);
     var blocks = [];
 
     if (opts.anchor === 'start') {
       for (var b = 0; b < parts; b++) {
         blocks.push(all.slice(b * size, Math.min((b + 1) * size, all.length)));
       }
-      // הימים שנשארו מעבר לחלוקה השלמה נספחים למקטע האחרון
+      /**
+       * הימים שנשארו נספחים למקטע האחרון — אבל רק בחלוקה לחלקים.
+       * במקטעים באורך קבוע זה היה מקלקל את כל העניין: מקטע של
+       * עשרה ימים חייב להיות עשרה ימים.
+       */
       var used = parts * size;
-      if (used < all.length) {
+      if (used < all.length && !fixed) {
         blocks[parts - 1] = blocks[parts - 1].concat(all.slice(used));
       }
     } else {
@@ -2103,6 +2127,7 @@
     return {
       ok: true,
       parts: parts,
+      fixed: fixed > 0,
       anchor: opts.anchor === 'start' ? 'start' : 'end',
       size: size,
       rows: rows,
