@@ -31,6 +31,19 @@
     var lastWeighed = weighed.length ? weighed[weighed.length - 1].date : null;
     var lastEaten = eaten.length ? eaten[eaten.length - 1].date : null;
 
+    /**
+     * היום הפתוח.
+     *
+     * המשקל נשקל בבוקר, והתזונה של אותו יום נרשמת רק למחרת. לכן
+     * ליום האחרון כמעט תמיד יש משקל בלי אוכל — זה מבנה, לא חוסר,
+     * ואין טעם לסמן אותו כבעיה.
+     *
+     * הוא נחשב פתוח רק אם הוא באמת היום האחרון וטרם נסגר; יום ישן
+     * שחסר בו אוכל הוא כן חוסר אמיתי.
+     */
+    var open = (lastWeighed && lastEaten && lastWeighed > lastEaten &&
+      Dates.diffDays(lastWeighed, state.date) <= 1) ? lastWeighed : null;
+
     // ימים בתוך הטווח שאין בהם כלום
     var have = {};
     entries.forEach(function (e) { have[e.date] = true; });
@@ -52,20 +65,29 @@
         (age === 0 ? ' (היום)' : age === 1 ? ' (אתמול)' : ' (לפני ' + age + ' ימים)');
     };
 
-    var weighAge = stale(lastWeighed);
-    var eatAge = stale(lastEaten);
-    var behind = Math.max(weighAge === null ? 0 : weighAge, eatAge === null ? 0 : eatAge);
+    // מה שקובע אם הנתונים עדכניים הוא היום האחרון שנסגר,
+    // כלומר שיש בו גם משקל וגם אוכל
+    var closed = lastEaten;
+    var behind = closed === null ? null : stale(closed);
+
+    // ביום פתוח, פיגור של יום הוא המצב הרגיל ולא איחור
+    var late = behind === null ? 0 : Math.max(0, behind - (open ? 1 : 0));
 
     return P.card('הנתונים', Dates.short(first) + '–' + Dates.short(last),
       P.tiles([
-        P.tile(behind > 2 ? 'warn' : 'good', 'עדכני עד',
-          Dates.short(lastEaten && lastWeighed
-            ? (lastEaten < lastWeighed ? lastEaten : lastWeighed)
-            : (lastWeighed || lastEaten)),
-          behind === 0 ? 'היום' : 'לפני ' + behind + ' ימים'),
+        P.tile(late > 1 ? 'warn' : 'good', 'נסגר עד',
+          closed ? Dates.short(closed) : '—',
+          behind === 0 ? 'היום' : behind === 1 ? 'אתמול'
+            : 'לפני ' + behind + ' ימים'),
         P.tile('', 'שקילות', weighed.length, 'מתוך ' + span + ' ימים'),
         P.tile('', 'ימי אוכל', eaten.length, 'מתוך ' + span + ' ימים')
       ]) +
+
+      (open
+        ? P.hint('היום ' + Dates.short(open) + ' פתוח: נשקלת בבוקר, ' +
+          'והאוכל שלו ייכנס מחר. זה המצב הרגיל — המשקל של הבוקר סוגר ' +
+          'את היום שלפניו, ולכן החישובים נעצרים ב' + Dates.short(closed) + '.')
+        : '') +
 
       '<div class="calc num">' +
         ageLine('שקילה אחרונה', lastWeighed) + '\n' +
@@ -84,6 +106,9 @@
 
   /** הטבלה הגולמית, כפי שנמשכה */
   function table(entries, state) {
+    var eaten = entries.filter(function (e) { return Fmt.isNum(e.kcal); });
+    var lastEaten = eaten.length ? eaten[eaten.length - 1].date : null;
+
     var shown = entries.slice().reverse();
     var limit = state.dataAll ? shown.length : PAGE;
     var page = shown.slice(0, limit);
@@ -95,11 +120,16 @@
     };
 
     var rows = page.map(function (e) {
-      // יום שחסר בו אחד מהשניים מסומן, כי הוא זה שמפיל חישובים
-      var partial = !Fmt.isNum(e.weightKg) || !Fmt.isNum(e.kcal);
+      var noFood = !Fmt.isNum(e.kcal);
+      var noWeight = !Fmt.isNum(e.weightKg);
+
+      // יום פתוח: נשקל, והאוכל שלו ייכנס מחר. אינו חוסר.
+      var pending = noFood && !noWeight && lastEaten && e.date > lastEaten;
+      var partial = (noFood || noWeight) && !pending;
 
       return '<tr' + (partial ? ' class="within-noise"' : '') + '>' +
-        '<td class="date-cell">' + P.esc(Dates.short(e.date)) + '</td>' +
+        '<td class="date-cell">' + P.esc(Dates.short(e.date)) +
+          (pending ? '<span class="sub">פתוח</span>' : '') + '</td>' +
         cell(e.weightKg, 1) + cell(e.bodyFatKg, 1) + cell(e.muscleKg, 1) +
         cell(e.waterKg, 1) +
         cell(e.kcal, 0) + cell(e.proteinG, 0) + cell(e.carbG, 0) +
@@ -117,9 +147,9 @@
         ['תאריך', 'משקל', 'שומן', 'שריר', 'נוזלים',
           'קלוריות', 'חלבון', 'פחמ׳', 'שומן', 'סיבים', 'צעדים'],
         [rows],
-        { hint: 'שורה בהירה היא יום שחסר בו משקל או אוכל. אלה הימים ' +
-          'שמפילים חישובים, כי חלון שכולל אותם נשען על פחות נתונים ' +
-          'ממה שאורכו מבטיח.' }) +
+        { hint: '"פתוח" הוא היום שנשקלת בו הבוקר ושהאוכל שלו ייכנס מחר — ' +
+          'זה המצב הרגיל ולא חוסר. שורה בהירה היא יום ישן שבאמת חסר בו ' +
+          'משקל או אוכל, ואלה הימים שמפילים חישובים.' }) +
       more);
   }
 

@@ -1498,7 +1498,7 @@ test('טאב הנתונים אומר עד מתי הנתונים עדכניים',
   App.setState({ date: Dates.today(), tab: 'data', dataAll: false });
 
   const text = doc.getElementById('view').textContent;
-  assert(text.indexOf('עדכני עד') !== -1, 'חסר האריח הראשי');
+  assert(text.indexOf('נסגר עד') !== -1, 'חסר האריח הראשי');
   assert(text.indexOf('שקילה אחרונה') !== -1, 'חסרה השקילה האחרונה');
   assert(text.indexOf('רישום אוכל אחרון') !== -1, 'חסר האוכל האחרון');
 
@@ -1540,7 +1540,8 @@ test('הטבלה מציגה את הנתונים הגולמיים מהחדש לי
     'השורה הראשונה אינה היום האחרון');
 });
 
-test('יום חסר מסומן', () => {
+test('היום הפתוח אינו נחשב חסר', () => {
+  // נשקל בבוקר, האוכל ייכנס מחר — המצב הרגיל
   const day = Dates.today();
   Store.upsert({ date: day, weightKg: 88.4, kcal: '' });
   App.setState({ date: day, tab: 'data', dataAll: false });
@@ -1549,8 +1550,34 @@ test('יום חסר מסומן', () => {
     .find((t) => t.textContent.indexOf('נוזלים') !== -1);
   const first = table.querySelector('tbody tr');
 
-  assert(first.classList.contains('within-noise'),
-    'יום בלי אוכל לא סומן');
+  assert(!first.classList.contains('within-noise'),
+    'היום הפתוח סומן כחסר');
+  assert(first.textContent.indexOf('פתוח') !== -1, 'לא סומן כפתוח');
+
+  // וההסבר מופיע
+  const text = doc.getElementById('view').textContent;
+  assert(text.indexOf('פתוח: נשקלת בבוקר') !== -1, 'לא הוסבר המבנה');
+  assert(text.indexOf('נסגר עד') !== -1, 'האריח לא מדבר על סגירה');
+});
+
+test('יום ישן שחסר בו אוכל כן מסומן', () => {
+  // חוסר אמיתי, בניגוד ליום הפתוח
+  const gap = Dates.addDays(Dates.today(), -5);
+  Store.upsert({ date: gap, weightKg: 88.6, kcal: '' });
+  App.setState({ date: Dates.today(), tab: 'data', dataAll: true });
+
+  const table = [...doc.querySelectorAll('#view table.t')]
+    .find((t) => t.textContent.indexOf('נוזלים') !== -1);
+  const row = [...table.querySelectorAll('tbody tr')]
+    .find((tr) => tr.textContent.indexOf(Dates.short(gap)) === 0);
+
+  if (row) {
+    assert(row.classList.contains('within-noise'),
+      'יום ישן בלי אוכל לא סומן');
+    assert(row.textContent.indexOf('פתוח') === -1, 'סומן בטעות כפתוח');
+  }
+
+  App.setState({ dataAll: false, tab: 'home' });
 });
 
 test('אפשר לפתוח את כל הימים', () => {
