@@ -898,9 +898,11 @@ test('פס הבחירה אטום ויושב מתחת לטאבים', () => {
   const fs = require('fs');
   const css = fs.readFileSync(__dirname + '/assets/dash.css', 'utf8');
 
+  // ההערות מוסרות: הן מזכירות ערכים כדי להסביר אותם, וקריאה
+  // שלהן כאילו היו כללים הופכת כל הסבר לכשל
   const rulesOf = (selector) => {
     const block = css.slice(css.indexOf(selector + ' {'));
-    return block.slice(0, block.indexOf('}'));
+    return block.slice(0, block.indexOf('}')).replace(/\/\*[\s\S]*?\*\//g, '');
   };
 
   const pick = rulesOf('.sticky-pick');
