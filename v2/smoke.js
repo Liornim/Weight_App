@@ -830,6 +830,74 @@ test('שדה פרופיל ריק מנקה ואינו נשמר כאפס', () => {
   });
 });
 
+test('טאב המשקל מציג גם שומן וגם שריר', () => {
+  App.setState({ date: Dates.today(), tab: 'weight', weightMetric: 'weightKg' });
+
+  ['weightKg', 'bodyFatKg', 'muscleKg'].forEach((m) => {
+    assert(doc.querySelector('[data-metric="' + m + '"]'), 'חסר צ׳יפ ל-' + m);
+  });
+
+  const title = () => doc.querySelector('#view h2').textContent;
+  assert(title().indexOf('משקל') === 0, 'הכותרת: ' + title());
+
+  doc.querySelector('[data-metric="bodyFatKg"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+  assert(App.state.weightMetric === 'bodyFatKg', 'הבחירה לא נשמרה');
+  assert(title().indexOf('שומן') === 0, 'הכותרת: ' + title());
+
+  doc.querySelector('[data-metric="muscleKg"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+  assert(title().indexOf('שריר') === 0, 'הכותרת: ' + title());
+
+  App.setState({ weightMetric: 'weightKg', tab: 'home' });
+});
+
+test('המספרים בטבלה משתנים עם המדד', () => {
+  const read = () => {
+    const card = doc.querySelector('#view .card + .card');
+    const cell = card.querySelector('tbody tr td.n');
+    return Number(cell.textContent.replace(/[^0-9.]/g, ''));
+  };
+
+  App.setState({ date: Dates.today(), tab: 'weight', weightMetric: 'weightKg' });
+  const weight = read();
+
+  App.setState({ weightMetric: 'muscleKg' });
+  const muscle = read();
+
+  assert(weight !== muscle, 'אותו מספר לשני מדדים: ' + weight);
+  assert(muscle < weight, 'השריר אמור להיות קטן מהמשקל');
+
+  App.setState({ weightMetric: 'weightKg', tab: 'home' });
+});
+
+test('בשריר עלייה נחשבת טובה ובשומן ירידה', () => {
+  // אותו שינוי חיובי, צבע הפוך
+  App.setState({ date: Dates.today(), tab: 'weight', weightMetric: 'muscleKg' });
+  const metric = window.WeightTab.metricOf(App.state);
+  assert(metric.good === 'up', 'השריר: ' + metric.good);
+
+  App.setState({ weightMetric: 'bodyFatKg' });
+  assert(window.WeightTab.metricOf(App.state).good === 'down', 'השומן');
+
+  App.setState({ weightMetric: 'weightKg', tab: 'home' });
+});
+
+test('הבורר מוקפא בכל מצבי התקציב', () => {
+  [2, 'd10', 'fit', 'manual'].forEach((value) => {
+    App.setState({ date: Dates.today(), tab: 'budget', splitParts: value,
+      splitRow: null });
+    const sticky = doc.querySelector('#view .sticky-pick');
+    assert(sticky, 'לא מוקפא במצב ' + value);
+    assert(sticky.querySelector('[data-split]'), 'הצ׳יפים אינם בתוך ההקפאה');
+  });
+
+  App.setState({ date: Dates.today(), tab: 'weight' });
+  assert(doc.querySelector('#view .sticky-pick'), 'לא מוקפא בטאב המשקל');
+
+  App.setState({ splitParts: 2, tab: 'home' });
+});
+
 test('טאב התקציב מציג את שלושת החלקים', () => {
   App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2, splitRow: null });
 

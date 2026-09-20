@@ -189,6 +189,7 @@
     }).join('');
 
     return P.card('מול מה אני נמדד', 'כל מקטע מושווה לזה שלפניו',
+      '<div class="sticky-pick">' +
       P.chips(SPLITS,
         isManual(state) ? 'manual'
           : isFit(state) ? 'fit'
@@ -196,6 +197,7 @@
         'data-split') +
       '<label class="pick-label">מאיפה לספור</label>' +
       P.chips(ANCHORS, anchorOf(state), 'data-anchor') +
+      '</div>' +
       P.table(
         [{ label: '#', n: true }, { label: 'תקופה', n: true },
           'משקל', 'שינוי', 'אכלת', 'צעדים', 'תחזוקה'],
@@ -273,7 +275,8 @@
     }).join('');
 
     return P.card('מול מה אני נמדד', 'Mifflin-St Jeor, הסטנדרט המקובל',
-      P.chips(SPLITS, 'formula', 'data-split') +
+      '<div class="sticky-pick">' +
+      P.chips(SPLITS, 'formula', 'data-split') + '</div>' +
 
       '<div class="calc num">' +
         'משקל   ' + Fmt.n(f.weight, 1) + ' ק״ג  (ממוצע ' + f.weighIns + ' שקילות)\n' +
@@ -303,7 +306,8 @@
   /** הזנה ידנית של תחזוקה וצעדים */
   function manualCard(values, settings) {
     return P.card('מול מה אני נמדד', 'מספרים שאתה קובע',
-      P.chips(SPLITS, 'manual', 'data-split') +
+      '<div class="sticky-pick">' +
+      P.chips(SPLITS, 'manual', 'data-split') + '</div>' +
 
       '<div class="field"><label for="manual-maintenance">' +
         'תחזוקה בלי הליכה</label>' +
@@ -646,7 +650,9 @@
         ? manualCard(manual, settings)
         : fitted
           ? P.card('מול מה אני נמדד', 'התחזוקה מותאמת לכל החלונות יחד',
-              P.chips(SPLITS, 'fit', 'data-split')) + fitCard(fitted, state)
+              '<div class="sticky-pick">' +
+              P.chips(SPLITS, 'fit', 'data-split') + '</div>') +
+            fitCard(fitted, state)
           : splitCard(split, chosen, state)) +
       budgetCard(chosen, settings, state) +
       ((manual || formula) ? '' : walkCard(split, chosen, settings)) +

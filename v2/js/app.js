@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd76',
+    BUILD: 'd77',
     state: {
       date: Dates.today(),
       tab: 'budget',       // ארבעה טאבים: תקציב, הזנה, משקל, נתונים
@@ -22,6 +22,7 @@
       budgetWalk: 'on',    // האם ההליכה נכללת בתקציב
       budgetWindows: 'few', // אילו אורכי חלון מוצגים בטבלה
       activityLevel: 'sedentary', // מקדם הפעילות בחישוב לפי נוסחה
+      weightMetric: 'weightKg', // משקל, שומן או שריר בטאב המשקל
       asOf: 0,             // עד מתי למדוד: היום, שבוע שעבר, שבועיים
       basis: 'adaptive',   // על סמך כמה זמן לחשב
       caution: 'mid',      // זהיר / אמצע / נדיב
@@ -137,6 +138,12 @@
     view.querySelectorAll('[data-sex]').forEach(function (chip) {
       chip.addEventListener('click', function () {
         Store.updateSettings({ profile: { sex: chip.dataset.sex } });
+      });
+    });
+
+    view.querySelectorAll('[data-metric]').forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        App.setState({ weightMetric: chip.dataset.metric });
       });
     });
 

@@ -17,6 +17,24 @@
   var LENGTHS = P.WINDOWS;
   var SHOW = 4;
 
+  /**
+   * שלושת המדדים, באותה טבלה בדיוק.
+   *
+   * good קובע איזה כיוון נחשב טוב: במשקל ובשומן ירידה, בשריר עלייה.
+   * זה משנה רק את הצבע, לא את החישוב.
+   */
+  var METRICS = [
+    { value: 'weightKg', label: 'משקל', good: 'down', unit: 'ק״ג' },
+    { value: 'bodyFatKg', label: 'שומן', good: 'down', unit: 'ק״ג' },
+    { value: 'muscleKg', label: 'שריר', good: 'up', unit: 'ק״ג' }
+  ];
+
+  function metricOf(state) {
+    return METRICS.filter(function (m) {
+      return m.value === state.weightMetric;
+    })[0] || METRICS[0];
+  }
+
   /** מחשב את סיכום החלונות המלאים האחרונים */
   function summarise(blocks) {
     var complete = blocks.filter(function (row) { return !row.partial; });
@@ -44,8 +62,9 @@
     };
   }
 
-  function windowCard(entries, date, days) {
-    var r = Metrics.weightBlocks(entries, { days: days, endDate: date });
+  function windowCard(entries, date, days, metric) {
+    var r = Metrics.weightBlocks(entries,
+      { days: days, endDate: date, field: metric.value });
     if (r.rows.length < 2) return '';
 
     var recent = r.rows.slice(-SHOW - 1).slice(-SHOW).reverse();
@@ -56,20 +75,21 @@
           '<span class="sub">' + row.days + ' ימים' +
           (row.partial ? ' · עדיין פתוח' : '') + '</span></td>' +
         '<td class="n">' + Fmt.n(row.mean, 2) + '</td>' +
-        '<td class="n">' + P.delta(row.change, 2, 'down') + '</td></tr>';
+        '<td class="n">' + P.delta(row.change, 2, metric.good) + '</td></tr>';
     }).join('');
 
     var summary = summarise(r.rows);
     var foot = summary
       ? '<div class="wsum">' +
-          '<div><span class="k">ממוצע משקל</span><span class="v num">' +
+          '<div><span class="k">ממוצע ' + P.esc(metric.label) +
+            '</span><span class="v num">' +
             Fmt.n(summary.meanWeight, 2) + '</span></div>' +
           '<div><span class="k">שינוי לחלון</span><span class="v num">' +
-            P.delta(summary.perWindow, 2, 'down') + '</span></div>' +
+            P.delta(summary.perWindow, 2, metric.good) + '</span></div>' +
           '<div><span class="k">שינוי ליום</span><span class="v num">' +
-            P.delta(summary.perDay, 3, 'down') + '</span></div>' +
+            P.delta(summary.perDay, 3, metric.good) + '</span></div>' +
           '<div><span class="k">שינוי כולל</span><span class="v num">' +
-            P.delta(summary.total, 2, 'down') + '</span></div>' +
+            P.delta(summary.total, 2, metric.good) + '</span></div>' +
         '</div>' +
         P.hint('הסיכום מבוסס על ' + summary.count + ' חלונות מלאים, ' +
           Dates.short(summary.from) + '–' + Dates.short(summary.to) +
@@ -87,11 +107,12 @@
    * שמחמיא ביותר. החלון הארוך ביותר שיש לו לפחות שלושה חלונות
    * מלאים הוא זה שהרעש בו הקטן ביותר, ולכן הוא מייצג.
    */
-  function recommend(entries, date) {
+  function recommend(entries, date, field) {
     var best = null;
 
     LENGTHS.forEach(function (days) {
-      var r = Metrics.weightBlocks(entries, { days: days, endDate: date });
+      var r = Metrics.weightBlocks(entries,
+        { days: days, endDate: date, field: field || 'weightKg' });
       var complete = r.rows.filter(function (row) { return !row.partial; });
       if (complete.length < 3) return;
       var summary = summarise(r.rows);
@@ -106,37 +127,57 @@
     var settings = Store.getSettings();
     var date = state.date;
 
+    var metric = metricOf(state);
+
     var d = Metrics.dashboard(entries, settings, { endDate: date });
     if (!d.ok) {
       return P.section('משקל', P.card(null, null, P.empty('עוד אין מספיק שקילות.')));
     }
 
-    var pick = recommend(entries, date);
+    var pick = recommend(entries, date, metric.value);
+
+    // הערך הנוכחי של המדד הנבחר, כממוצע ולא כמדידה בודדת
+    var latest = Metrics.weightBlocks(entries,
+      { days: 7, endDate: date, field: metric.value });
+    var complete = latest.rows.filter(function (row) { return !row.partial; });
+    var current = complete.length ? complete[complete.length - 1].mean : null;
 
     var head = P.card(null, null,
+      '<div class="sticky-pick">' +
+        P.chips(METRICS, metric.value, 'data-metric') +
+      '</div>' +
       P.tiles([
         P.tile('', 'ימים במעקב', d.spanDays, Dates.short(d.firstDate) + ' ואילך'),
-        P.tile('good', 'ירדת', Fmt.n(d.totalLoss, 1) + ' ק״ג', 'חצי ראשון מול שני'),
-        P.tile('', 'משקל היום', Fmt.n(d.currentWeight, 1), 'ממוצע ולא שקילה')
+        P.tile('', metric.label + ' היום',
+          current === null ? '—' : Fmt.n(current, 1),
+          'ממוצע שבוע, לא מדידה'),
+        P.tile('good', 'ירדת במשקל', Fmt.n(d.totalLoss, 1) + ' ק״ג',
+          'חצי ראשון מול שני')
       ]) +
       (pick
         ? '<p class="lead" style="margin-top:14px">לפי חלונות של ' + pick.days +
-          ' ימים — הארוך ביותר שיש לו מספיק נתונים — אתה ' +
+          ' ימים — הארוך ביותר שיש לו מספיק נתונים — ה' + metric.label + ' ' +
           (pick.summary.perDay < -0.005 ? 'יורד ' : pick.summary.perDay > 0.005 ? 'עולה ' : 'יציב, ') +
           (Math.abs(pick.summary.perDay) > 0.005
             ? Fmt.numHtml(Math.abs(pick.summary.perDay * 7), 2) + ' ק״ג בשבוע.'
             : 'בלי שינוי משמעותי.') + '</p>'
         : '') +
-      P.hint('כל חלון מסכם את המשקל הממוצע בתקופה שלו ומשווה לתקופה שלפניה. ' +
+      P.hint('כל חלון מסכם את הממוצע בתקופה שלו ומשווה לתקופה שלפניה. ' +
         'חלון קצר מגיב מהר אבל רועש; ארוך יציב אבל איטי. ' +
-        'כשכולם מצביעים לאותו כיוון — זה אמיתי.'));
+        'כשכולם מצביעים לאותו כיוון — זה אמיתי.' +
+        (metric.value === 'weightKg' ? ''
+          : ' השומן והשריר מוסקים ממדידת התנגדות אחת ולכן רועשים ' +
+            'מהמשקל; כאן דרושים חלונות ארוכים עוד יותר.')));
 
     var cards = LENGTHS.map(function (days) {
-      return windowCard(entries, date, days);
+      return windowCard(entries, date, days, metric);
     }).filter(Boolean).join('');
 
-    return P.section('משקל לפי חלונות', head + cards);
+    return P.section(metric.label + ' לפי חלונות', head + cards);
   }
 
-  root.WeightTab = { render: render, summarise: summarise, recommend: recommend, LENGTHS: LENGTHS };
+  root.WeightTab = {
+    render: render, summarise: summarise, recommend: recommend,
+    LENGTHS: LENGTHS, METRICS: METRICS, metricOf: metricOf
+  };
 })(typeof window !== 'undefined' ? window : globalThis);
