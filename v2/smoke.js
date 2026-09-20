@@ -894,6 +894,26 @@ test('פס הבחירה יושב מחוץ לכרטיסים', () => {
   App.setState({ splitParts: 2, tab: 'home' });
 });
 
+test('פס הבחירה אטום ואינו נשבר לשתי שורות', () => {
+  const fs = require('fs');
+  const css = fs.readFileSync(__dirname + '/assets/dash.css', 'utf8');
+
+  const block = css.slice(css.indexOf('.sticky-pick {'));
+  const rules = block.slice(0, block.indexOf('}'));
+
+  // רקע חצי שקוף מאפשר לטבלה להיראות מבעד לפס
+  assert(rules.indexOf('transparent') === -1,
+    'הרקע אינו אטום — התוכן ייראה מבעדו');
+  assert(rules.indexOf('background:') !== -1, 'אין רקע כלל');
+
+  // והצ׳יפים נגללים במקום להישבר
+  const chips = css.slice(css.indexOf('.sticky-pick .chips {'));
+  const chipRules = chips.slice(0, chips.indexOf('}'));
+  assert(chipRules.indexOf('nowrap') !== -1,
+    'הצ׳יפים נשברים לשורות ואז חלקם יוצא מההקפאה');
+  assert(chipRules.indexOf('overflow-x') !== -1, 'אין גלילה צדית');
+});
+
 test('טאב התקציב מציג את שלושת החלקים', () => {
   App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2, splitRow: null });
 

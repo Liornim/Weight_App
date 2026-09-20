@@ -739,11 +739,38 @@ textarea:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
   top: 0;
   z-index: 15;
   margin: 0 -4px 12px;
-  padding: 8px 4px;
-  background: linear-gradient(var(--paper) 82%, transparent);
+  padding: 10px 4px;
+
+  /**
+   * רקע אטום לכל הגובה.
+   *
+   * מעבר הדרגתי לשקיפות נראה טוב כשהתוכן שורה אחת, אבל הצ׳יפים
+   * נשברים לשתיים על מסך צר — והשורה התחתונה יושבת אז על האזור
+   * השקוף, כך שהטבלה נראית מבעדה. האטימות חשובה מהמעבר.
+   */
+  background: var(--paper);
+  box-shadow: 0 6px 10px -8px rgba(0, 0, 0, 0.28);
 }
 
 .sticky-pick .chips { margin-bottom: 0; }
+
+/**
+ * הצ׳יפים אינם נשברים אלא נגללים לצדדים.
+ *
+ * שבע אפשרויות אינן נכנסות לרוחב מסך של טלפון. שורה אחת שנגללת
+ * שומרת על גובה קבוע ועל כך שהכל באותו מישור — ושבירה לשתי שורות
+ * הייתה מה שקלקל את ההקפאה.
+ */
+.sticky-pick .chips {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 2px;
+}
+
+.sticky-pick .chips::-webkit-scrollbar { display: none; }
+.sticky-pick .chip { flex: 0 0 auto; }
 
 /* שורה שאפשר לבחור */
 
