@@ -894,24 +894,36 @@ test('פס הבחירה יושב מחוץ לכרטיסים', () => {
   App.setState({ splitParts: 2, tab: 'home' });
 });
 
-test('פס הבחירה אטום ואינו נשבר לשתי שורות', () => {
+test('פס הבחירה אטום ויושב מתחת לטאבים', () => {
   const fs = require('fs');
   const css = fs.readFileSync(__dirname + '/assets/dash.css', 'utf8');
 
-  const block = css.slice(css.indexOf('.sticky-pick {'));
-  const rules = block.slice(0, block.indexOf('}'));
+  const rulesOf = (selector) => {
+    const block = css.slice(css.indexOf(selector + ' {'));
+    return block.slice(0, block.indexOf('}'));
+  };
+
+  const pick = rulesOf('.sticky-pick');
+  const tabs = rulesOf('.tabs');
 
   // רקע חצי שקוף מאפשר לטבלה להיראות מבעד לפס
-  assert(rules.indexOf('transparent') === -1,
-    'הרקע אינו אטום — התוכן ייראה מבעדו');
-  assert(rules.indexOf('background:') !== -1, 'אין רקע כלל');
+  assert(pick.indexOf('transparent') === -1, 'הרקע אינו אטום');
 
-  // והצ׳יפים נגללים במקום להישבר
-  const chips = css.slice(css.indexOf('.sticky-pick .chips {'));
-  const chipRules = chips.slice(0, chips.indexOf('}'));
-  assert(chipRules.indexOf('nowrap') !== -1,
-    'הצ׳יפים נשברים לשורות ואז חלקם יוצא מההקפאה');
-  assert(chipRules.indexOf('overflow-x') !== -1, 'אין גלילה צדית');
+  /**
+   * שני פסים מוקפאים באותו top פשוט מסתירים זה את זה. הטאבים
+   * למעלה, ולכן הפס חייב להתחיל מתחתיהם.
+   */
+  assert(tabs.indexOf('position: sticky') !== -1, 'הטאבים אינם מוקפאים');
+  assert(pick.indexOf('top: 0') === -1,
+    'הפס נדבק לאותו מקום כמו הטאבים ונעלם מאחוריהם');
+  assert(pick.indexOf('top: var(--tabs-h)') !== -1,
+    'הפס אינו נסמך על גובה הטאבים');
+  assert(css.indexOf('--tabs-h:') !== -1, 'הגובה אינו מוגדר');
+
+  // והטאבים מעל, אחרת הם ייעלמו מאחורי הפס
+  const zTabs = Number((tabs.match(/z-index:\s*(\d+)/) || [])[1]);
+  const zPick = Number((pick.match(/z-index:\s*(\d+)/) || [])[1]);
+  assert(zTabs > zPick, 'סדר השכבות הפוך: ' + zTabs + ' מול ' + zPick);
 });
 
 test('טאב התקציב מציג את שלושת החלקים', () => {

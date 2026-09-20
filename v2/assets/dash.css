@@ -238,6 +238,8 @@ html, body {
 
 /* טאבים */
 
+:root { --tabs-h: 54px; }   /* גובה סרגל הטאבים, שהפסים מתחתיו נסמכים עליו */
+
 .tabs {
   position: sticky;
   top: 0;
@@ -736,7 +738,15 @@ textarea:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
 
 .sticky-pick {
   position: sticky;
-  top: 0;
+
+  /**
+   * מתחת לסרגל הטאבים, לא מתחתיו.
+   *
+   * הטאבים כבר מוקפאים ב-top: 0 עם z-index גבוה יותר, ולכן פס
+   * שנדבק לאותו מקום פשוט נעלם מאחוריהם — וזה נראה כאילו הוא
+   * אינו מוקפא כלל.
+   */
+  top: var(--tabs-h);
   z-index: 15;
   margin: 0 -4px 12px;
   padding: 10px 4px;
@@ -746,30 +756,13 @@ textarea:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
    *
    * מעבר הדרגתי לשקיפות נראה טוב כשהתוכן שורה אחת, אבל הצ׳יפים
    * נשברים לשתיים על מסך צר — והשורה התחתונה יושבת אז על האזור
-   * השקוף, כך שהטבלה נראית מבעדה. האטימות חשובה מהמעבר.
+   * השקוף, כך שהטבלה נראית מבעדה.
    */
   background: var(--paper);
   box-shadow: 0 6px 10px -8px rgba(0, 0, 0, 0.28);
 }
 
-/**
- * הצ׳יפים אינם נשברים אלא נגללים לצדדים.
- *
- * שבע אפשרויות אינן נכנסות לרוחב מסך של טלפון. שורה אחת שנגללת
- * שומרת על גובה קבוע ועל כך שהכל באותו מישור — ושבירה לשתי שורות
- * הייתה מה שקלקל את ההקפאה.
- */
-.sticky-pick .chips {
-  margin-bottom: 0;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-  padding-bottom: 2px;
-}
-
-.sticky-pick .chips::-webkit-scrollbar { display: none; }
-.sticky-pick .chip { flex: 0 0 auto; }
+.sticky-pick .chips { margin-bottom: 0; }
 
 /* שורה שאפשר לבחור */
 
