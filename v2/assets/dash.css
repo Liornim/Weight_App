@@ -727,25 +727,23 @@ textarea:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
 .pending-note { font-size: 12px; line-height: 1.6; color: var(--ink-faint); margin: 8px 0 0; }
 
 /**
- * בורר שנשאר גלוי בזמן גלילה בתוך הכרטיס שלו.
+ * פס הבחירה, מחוץ לכרטיסים.
  *
  * הבחירה היא ההקשר של כל מה שמתחת — בלי לראות איזו חלוקה נבחרה,
- * המספרים בטבלה הארוכה חסרי משמעות. שונה מ-sticky-bar, שנדבק
- * לראש המסך כולו; כאן ההיצמדות היא לראש הכרטיס.
+ * המספרים בטבלה הארוכה חסרי משמעות. בתוך כרטיס sticky מחזיק רק
+ * כל עוד הכרטיס על המסך, ולכן הפס יושב ברמת המקטע.
  */
 
 .sticky-pick {
   position: sticky;
   top: 0;
-  z-index: 5;
-  margin: -14px -14px 12px;
-  padding: 12px 14px 10px;
-  background: var(--card);
-  border-bottom: 1px solid var(--rule);
+  z-index: 15;
+  margin: 0 -4px 12px;
+  padding: 8px 4px;
+  background: linear-gradient(var(--paper) 82%, transparent);
 }
 
 .sticky-pick .chips { margin-bottom: 0; }
-.sticky-pick .chips + .pick-label { margin-top: 10px; }
 
 /* שורה שאפשר לבחור */
 

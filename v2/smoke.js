@@ -830,74 +830,6 @@ test('שדה פרופיל ריק מנקה ואינו נשמר כאפס', () => {
   });
 });
 
-test('טאב המשקל מציג גם שומן וגם שריר', () => {
-  App.setState({ date: Dates.today(), tab: 'weight', weightMetric: 'weightKg' });
-
-  ['weightKg', 'bodyFatKg', 'muscleKg'].forEach((m) => {
-    assert(doc.querySelector('[data-metric="' + m + '"]'), 'חסר צ׳יפ ל-' + m);
-  });
-
-  const title = () => doc.querySelector('#view h2').textContent;
-  assert(title().indexOf('משקל') === 0, 'הכותרת: ' + title());
-
-  doc.querySelector('[data-metric="bodyFatKg"]').dispatchEvent(
-    new window.Event('click', { bubbles: true }));
-  assert(App.state.weightMetric === 'bodyFatKg', 'הבחירה לא נשמרה');
-  assert(title().indexOf('שומן') === 0, 'הכותרת: ' + title());
-
-  doc.querySelector('[data-metric="muscleKg"]').dispatchEvent(
-    new window.Event('click', { bubbles: true }));
-  assert(title().indexOf('שריר') === 0, 'הכותרת: ' + title());
-
-  App.setState({ weightMetric: 'weightKg', tab: 'home' });
-});
-
-test('המספרים בטבלה משתנים עם המדד', () => {
-  const read = () => {
-    const card = doc.querySelector('#view .card + .card');
-    const cell = card.querySelector('tbody tr td.n');
-    return Number(cell.textContent.replace(/[^0-9.]/g, ''));
-  };
-
-  App.setState({ date: Dates.today(), tab: 'weight', weightMetric: 'weightKg' });
-  const weight = read();
-
-  App.setState({ weightMetric: 'muscleKg' });
-  const muscle = read();
-
-  assert(weight !== muscle, 'אותו מספר לשני מדדים: ' + weight);
-  assert(muscle < weight, 'השריר אמור להיות קטן מהמשקל');
-
-  App.setState({ weightMetric: 'weightKg', tab: 'home' });
-});
-
-test('בשריר עלייה נחשבת טובה ובשומן ירידה', () => {
-  // אותו שינוי חיובי, צבע הפוך
-  App.setState({ date: Dates.today(), tab: 'weight', weightMetric: 'muscleKg' });
-  const metric = window.WeightTab.metricOf(App.state);
-  assert(metric.good === 'up', 'השריר: ' + metric.good);
-
-  App.setState({ weightMetric: 'bodyFatKg' });
-  assert(window.WeightTab.metricOf(App.state).good === 'down', 'השומן');
-
-  App.setState({ weightMetric: 'weightKg', tab: 'home' });
-});
-
-test('הבורר מוקפא בכל מצבי התקציב', () => {
-  [2, 'd10', 'fit', 'manual'].forEach((value) => {
-    App.setState({ date: Dates.today(), tab: 'budget', splitParts: value,
-      splitRow: null });
-    const sticky = doc.querySelector('#view .sticky-pick');
-    assert(sticky, 'לא מוקפא במצב ' + value);
-    assert(sticky.querySelector('[data-split]'), 'הצ׳יפים אינם בתוך ההקפאה');
-  });
-
-  App.setState({ date: Dates.today(), tab: 'weight' });
-  assert(doc.querySelector('#view .sticky-pick'), 'לא מוקפא בטאב המשקל');
-
-  App.setState({ splitParts: 2, tab: 'home' });
-});
-
 test('כלל ה-CSS להקפאה קיים בפועל', () => {
   // ה-HTML לבדו אינו מספיק: בלי הכלל, הבורר נגלל כרגיל
   const fs = require('fs');
@@ -910,6 +842,56 @@ test('כלל ה-CSS להקפאה קיים בפועל', () => {
   assert(rules.indexOf('position: sticky') !== -1, 'חסר position: sticky');
   assert(rules.indexOf('top:') !== -1, 'חסר top');
   assert(rules.indexOf('z-index') !== -1, 'חסר z-index');
+});
+
+test('שלושת המדדים באותה שורה בטבלה', () => {
+  App.setState({ date: Dates.today(), tab: 'weight' });
+
+  const card = [...doc.querySelectorAll('#view .card')]
+    .find((c) => (c.querySelector('h3') || {}).textContent === 'כל 7 ימים');
+  assert(card, 'כרטיס השבוע חסר');
+
+  const heads = [...card.querySelectorAll('th')].map((h) => h.textContent);
+  assert(heads.join() === 'תקופה,משקל,שינוי,שומן,שינוי,שריר,שינוי',
+    'הכותרות: ' + heads.join());
+
+  // כל שורה מכסה את אותה תקופה בשלושת המדדים
+  const row = card.querySelector('tbody tr');
+  assert(row.children.length === 7, 'תאים: ' + row.children.length);
+
+  const weight = Number(row.children[1].textContent.replace(/[^0-9.]/g, ''));
+  const fat = Number(row.children[3].textContent.replace(/[^0-9.]/g, ''));
+  const muscle = Number(row.children[5].textContent.replace(/[^0-9.]/g, ''));
+
+  assert(fat < weight && muscle < weight, 'הערכים לא הגיוניים');
+  assert(fat !== muscle, 'שומן ושריר זהים');
+});
+
+test('אין יותר בורר מדד — הכל ביחד', () => {
+  App.setState({ date: Dates.today(), tab: 'weight' });
+  assert(!doc.querySelector('[data-metric]'), 'הבורר עדיין שם');
+
+  const title = doc.querySelector('#view h2').textContent;
+  assert(title.indexOf('שומן') !== -1 && title.indexOf('שריר') !== -1,
+    'הכותרת: ' + title);
+});
+
+test('פס הבחירה יושב מחוץ לכרטיסים', () => {
+  // בתוך כרטיס, sticky מחזיק רק כל עוד הכרטיס על המסך
+  [2, 'd10', 'fit', 'manual'].forEach((value) => {
+    App.setState({ date: Dates.today(), tab: 'budget', splitParts: value,
+      splitRow: null });
+
+    const bar = doc.querySelector('#view .sticky-pick');
+    assert(bar, 'הפס חסר במצב ' + value);
+    assert(!bar.closest('.card'), 'הפס בתוך כרטיס במצב ' + value);
+    assert(bar.parentElement.classList.contains('section'),
+      'ההורה אינו המקטע: ' + bar.parentElement.tagName);
+    assert(bar.querySelectorAll('[data-split]').length === window.BudgetTab.SPLITS.length,
+      'חסרים צ׳יפים במצב ' + value);
+  });
+
+  App.setState({ splitParts: 2, tab: 'home' });
 });
 
 test('טאב התקציב מציג את שלושת החלקים', () => {

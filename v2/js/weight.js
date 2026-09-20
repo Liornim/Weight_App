@@ -35,6 +35,48 @@
     })[0] || METRICS[0];
   }
 
+  /**
+   * שורות של שלושת המדדים יחד, לפי תקופה.
+   *
+   * הם נמדדים באותה שקילה ולכן שייכים לאותה שורה: ירידה במשקל בלי
+   * ירידה בשומן היא סיפור אחר מירידה בשניהם, ובטבלאות נפרדות אי
+   * אפשר לראות את זה.
+   */
+  function combinedRows(entries, date, days) {
+    var byMetric = {};
+    METRICS.forEach(function (m) {
+      byMetric[m.value] = Metrics.weightBlocks(entries,
+        { days: days, endDate: date, field: m.value });
+    });
+
+    var base = byMetric.weightKg;
+    if (!base || base.rows.length < 2) return null;
+
+    var recent = base.rows.slice(-SHOW - 1).slice(-SHOW).reverse();
+
+    return recent.map(function (row) {
+      var cells = METRICS.map(function (m) {
+        // אותה תקופה בדיוק, בכל אחד מהמדדים
+        var match = (byMetric[m.value].rows || []).filter(function (r) {
+          return r.from === row.from && r.to === row.to;
+        })[0];
+
+        if (!match || !Fmt.isNum(match.mean)) {
+          return '<td class="n flat">—</td><td class="n flat">—</td>';
+        }
+
+        return '<td class="n">' + Fmt.n(match.mean, 2) + '</td>' +
+          '<td class="n">' + P.delta(match.change, 2, m.good) + '</td>';
+      }).join('');
+
+      return '<tr' + (row.partial ? ' class="partial"' : '') + '>' +
+        '<td>' + P.esc(Dates.short(row.from) + '–' + Dates.short(row.to)) +
+          '<span class="sub">' + row.days + ' ימים' +
+          (row.partial ? ' · עדיין פתוח' : '') + '</span></td>' +
+        cells + '</tr>';
+    }).join('');
+  }
+
   /** מחשב את סיכום החלונות המלאים האחרונים */
   function summarise(blocks) {
     var complete = blocks.filter(function (row) { return !row.partial; });
@@ -62,34 +104,22 @@
     };
   }
 
-  function windowCard(entries, date, days, metric) {
-    var r = Metrics.weightBlocks(entries,
-      { days: days, endDate: date, field: metric.value });
-    if (r.rows.length < 2) return '';
+  function windowCard(entries, date, days) {
+    var rows = combinedRows(entries, date, days);
+    if (!rows) return '';
 
-    var recent = r.rows.slice(-SHOW - 1).slice(-SHOW).reverse();
-
-    var rows = recent.map(function (row) {
-      return '<tr' + (row.partial ? ' class="partial"' : '') + '>' +
-        '<td>' + P.esc(Dates.short(row.from) + '–' + Dates.short(row.to)) +
-          '<span class="sub">' + row.days + ' ימים' +
-          (row.partial ? ' · עדיין פתוח' : '') + '</span></td>' +
-        '<td class="n">' + Fmt.n(row.mean, 2) + '</td>' +
-        '<td class="n">' + P.delta(row.change, 2, metric.good) + '</td></tr>';
-    }).join('');
-
+    var r = Metrics.weightBlocks(entries, { days: days, endDate: date });
     var summary = summarise(r.rows);
     var foot = summary
       ? '<div class="wsum">' +
-          '<div><span class="k">ממוצע ' + P.esc(metric.label) +
-            '</span><span class="v num">' +
+          '<div><span class="k">ממוצע משקל</span><span class="v num">' +
             Fmt.n(summary.meanWeight, 2) + '</span></div>' +
           '<div><span class="k">שינוי לחלון</span><span class="v num">' +
-            P.delta(summary.perWindow, 2, metric.good) + '</span></div>' +
+            P.delta(summary.perWindow, 2, 'down') + '</span></div>' +
           '<div><span class="k">שינוי ליום</span><span class="v num">' +
-            P.delta(summary.perDay, 3, metric.good) + '</span></div>' +
+            P.delta(summary.perDay, 3, 'down') + '</span></div>' +
           '<div><span class="k">שינוי כולל</span><span class="v num">' +
-            P.delta(summary.total, 2, metric.good) + '</span></div>' +
+            P.delta(summary.total, 2, 'down') + '</span></div>' +
         '</div>' +
         P.hint('הסיכום מבוסס על ' + summary.count + ' חלונות מלאים, ' +
           Dates.short(summary.from) + '–' + Dates.short(summary.to) +
@@ -97,7 +127,10 @@
       : P.hint('צריך שני חלונות מלאים כדי לסכם.');
 
     return P.card('כל ' + days + ' ימים', null,
-      P.table([{ label: 'תקופה', n: false }, 'ממוצע', 'שינוי'], [rows]) + foot);
+      P.table(
+        [{ label: 'תקופה', n: false },
+          'משקל', 'שינוי', 'שומן', 'שינוי', 'שריר', 'שינוי'],
+        [rows]) + foot);
   }
 
   /**
@@ -127,36 +160,34 @@
     var settings = Store.getSettings();
     var date = state.date;
 
-    var metric = metricOf(state);
-
     var d = Metrics.dashboard(entries, settings, { endDate: date });
     if (!d.ok) {
       return P.section('משקל', P.card(null, null, P.empty('עוד אין מספיק שקילות.')));
     }
 
-    var pick = recommend(entries, date, metric.value);
+    var pick = recommend(entries, date);
 
-    // הערך הנוכחי של המדד הנבחר, כממוצע ולא כמדידה בודדת
-    var latest = Metrics.weightBlocks(entries,
-      { days: 7, endDate: date, field: metric.value });
-    var complete = latest.rows.filter(function (row) { return !row.partial; });
-    var current = complete.length ? complete[complete.length - 1].mean : null;
+    // הערך הנוכחי של כל מדד, כממוצע שבוע ולא כמדידה בודדת
+    var current = function (field) {
+      var r = Metrics.weightBlocks(entries,
+        { days: 7, endDate: date, field: field });
+      var complete = r.rows.filter(function (row) { return !row.partial; });
+      return complete.length ? complete[complete.length - 1].mean : null;
+    };
+
+    var tile = function (m) {
+      var value = current(m.value);
+      return P.tile('', m.label, value === null ? '—' : Fmt.n(value, 1),
+        'ממוצע שבוע');
+    };
 
     var head = P.card(null, null,
-      '<div class="sticky-pick">' +
-        P.chips(METRICS, metric.value, 'data-metric') +
-      '</div>' +
-      P.tiles([
-        P.tile('', 'ימים במעקב', d.spanDays, Dates.short(d.firstDate) + ' ואילך'),
-        P.tile('', metric.label + ' היום',
-          current === null ? '—' : Fmt.n(current, 1),
-          'ממוצע שבוע, לא מדידה'),
-        P.tile('good', 'ירדת במשקל', Fmt.n(d.totalLoss, 1) + ' ק״ג',
-          'חצי ראשון מול שני')
-      ]) +
+      P.tiles(METRICS.map(tile)) +
+      P.hint('ימים במעקב: ' + d.spanDays + ', מ-' + Dates.short(d.firstDate) +
+        '. הערכים הם ממוצע שבוע ולא מדידה בודדת.') +
       (pick
         ? '<p class="lead" style="margin-top:14px">לפי חלונות של ' + pick.days +
-          ' ימים — הארוך ביותר שיש לו מספיק נתונים — ה' + metric.label + ' ' +
+          ' ימים — הארוך ביותר שיש לו מספיק נתונים — המשקל ' +
           (pick.summary.perDay < -0.005 ? 'יורד ' : pick.summary.perDay > 0.005 ? 'עולה ' : 'יציב, ') +
           (Math.abs(pick.summary.perDay) > 0.005
             ? Fmt.numHtml(Math.abs(pick.summary.perDay * 7), 2) + ' ק״ג בשבוע.'
@@ -164,16 +195,15 @@
         : '') +
       P.hint('כל חלון מסכם את הממוצע בתקופה שלו ומשווה לתקופה שלפניה. ' +
         'חלון קצר מגיב מהר אבל רועש; ארוך יציב אבל איטי. ' +
-        'כשכולם מצביעים לאותו כיוון — זה אמיתי.' +
-        (metric.value === 'weightKg' ? ''
-          : ' השומן והשריר מוסקים ממדידת התנגדות אחת ולכן רועשים ' +
-            'מהמשקל; כאן דרושים חלונות ארוכים עוד יותר.')));
+        'כשכולם מצביעים לאותו כיוון — זה אמיתי. ' +
+        'השומן והשריר מוסקים ממדידת התנגדות אחת ולכן רועשים מהמשקל ' +
+        'ותלויים זה בזה; שינוי קטן בהם אינו אומר הרבה.'));
 
     var cards = LENGTHS.map(function (days) {
-      return windowCard(entries, date, days, metric);
+      return windowCard(entries, date, days);
     }).filter(Boolean).join('');
 
-    return P.section(metric.label + ' לפי חלונות', head + cards);
+    return P.section('משקל, שומן ושריר לפי חלונות', head + cards);
   }
 
   root.WeightTab = {

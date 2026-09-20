@@ -189,15 +189,8 @@
     }).join('');
 
     return P.card('מול מה אני נמדד', 'כל מקטע מושווה לזה שלפניו',
-      '<div class="sticky-pick">' +
-      P.chips(SPLITS,
-        isManual(state) ? 'manual'
-          : isFit(state) ? 'fit'
-          : sizeOf(state) ? 'd' + sizeOf(state) : partsOf(state),
-        'data-split') +
       '<label class="pick-label">מאיפה לספור</label>' +
       P.chips(ANCHORS, anchorOf(state), 'data-anchor') +
-      '</div>' +
       P.table(
         [{ label: '#', n: true }, { label: 'תקופה', n: true },
           'משקל', 'שינוי', 'אכלת', 'צעדים', 'תחזוקה'],
@@ -275,8 +268,6 @@
     }).join('');
 
     return P.card('מול מה אני נמדד', 'Mifflin-St Jeor, הסטנדרט המקובל',
-      '<div class="sticky-pick">' +
-      P.chips(SPLITS, 'formula', 'data-split') + '</div>' +
 
       '<div class="calc num">' +
         'משקל   ' + Fmt.n(f.weight, 1) + ' ק״ג  (ממוצע ' + f.weighIns + ' שקילות)\n' +
@@ -306,8 +297,6 @@
   /** הזנה ידנית של תחזוקה וצעדים */
   function manualCard(values, settings) {
     return P.card('מול מה אני נמדד', 'מספרים שאתה קובע',
-      '<div class="sticky-pick">' +
-      P.chips(SPLITS, 'manual', 'data-split') + '</div>' +
 
       '<div class="field"><label for="manual-maintenance">' +
         'תחזוקה בלי הליכה</label>' +
@@ -551,8 +540,9 @@
 
     if (formula && !formula.ok) {
       return P.section('תקציב',
+        '<div class="sticky-pick">' +
+          P.chips(SPLITS, 'formula', 'data-split') + '</div>' +
         P.card(null, null,
-          P.chips(SPLITS, 'formula', 'data-split') +
           P.empty(formula.reason === 'no-weight'
             ? 'צריך לפחות שקילה אחת.'
             : 'חסרים פרטים בהגדרות: ' +
@@ -642,17 +632,31 @@
     var perStep = Fmt.isNum(settings.kcalPerStep) ? settings.kcalPerStep : 0.045;
     var baseSteps = withWalk(state) ? (chosen.steps || 0) : 0;
 
+    /**
+     * פס הבחירה יושב מחוץ לכרטיסים.
+     *
+     * בתוך כרטיס, sticky מחזיק רק כל עוד הכרטיס על המסך — וברגע
+     * שגוללים אל הטבלה הארוכה הוא נעלם, בדיוק כשהוא נחוץ. כפס
+     * עליון של המקטע כולו הוא נשאר לאורך כל הגלילה.
+     */
+    var bar = '<div class="sticky-pick">' +
+      P.chips(SPLITS,
+        isManual(state) ? 'manual'
+          : isFormula(state) ? 'formula'
+          : isFit(state) ? 'fit'
+          : sizeOf(state) ? 'd' + sizeOf(state) : partsOf(state),
+        'data-split') +
+      '</div>';
+
     return P.section('תקציב',
+      bar +
       trackCard(entries, state) +
       (formula
         ? formulaCard(formula, state)
         : manual
         ? manualCard(manual, settings)
         : fitted
-          ? P.card('מול מה אני נמדד', 'התחזוקה מותאמת לכל החלונות יחד',
-              '<div class="sticky-pick">' +
-              P.chips(SPLITS, 'fit', 'data-split') + '</div>') +
-            fitCard(fitted, state)
+          ? fitCard(fitted, state)
           : splitCard(split, chosen, state)) +
       budgetCard(chosen, settings, state) +
       ((manual || formula) ? '' : walkCard(split, chosen, settings)) +
