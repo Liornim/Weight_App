@@ -898,6 +898,20 @@ test('הבורר מוקפא בכל מצבי התקציב', () => {
   App.setState({ splitParts: 2, tab: 'home' });
 });
 
+test('כלל ה-CSS להקפאה קיים בפועל', () => {
+  // ה-HTML לבדו אינו מספיק: בלי הכלל, הבורר נגלל כרגיל
+  const fs = require('fs');
+  const css = fs.readFileSync(__dirname + '/assets/dash.css', 'utf8');
+
+  assert(css.indexOf('.sticky-pick') !== -1, 'אין כלל ל-sticky-pick');
+
+  const block = css.slice(css.indexOf('.sticky-pick {'));
+  const rules = block.slice(0, block.indexOf('}'));
+  assert(rules.indexOf('position: sticky') !== -1, 'חסר position: sticky');
+  assert(rules.indexOf('top:') !== -1, 'חסר top');
+  assert(rules.indexOf('z-index') !== -1, 'חסר z-index');
+});
+
 test('טאב התקציב מציג את שלושת החלקים', () => {
   App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2, splitRow: null });
 
