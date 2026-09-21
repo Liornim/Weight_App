@@ -185,95 +185,7 @@ test('אין נתון שמוצג פעמיים באותו מסך', () => {
 
 
 
-test('הדבקת שורה ממלאת את הטופס', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  const input = doc.querySelector('#paste-line');
-  assert(input, 'שדה ההדבקה חסר');
 
-  input.value = '1671 118 126 24 12';
-  doc.querySelector('#paste-apply').dispatchEvent(new window.Event('click', { bubbles: true }));
-
-  const value = (field) => Number(doc.querySelector('[data-field="' + field + '"]').value);
-  assert(value('kcal') === 1671, 'קלוריות: ' + value('kcal'));
-  assert(value('proteinG') === 118, 'חלבון');
-  assert(value('carbG') === 126, 'פחמימות');
-  assert(value('fatG') === 24, 'שומן');
-  assert(value('fiberG') === 12, 'סיבים');
-
-  const note = doc.querySelector('#paste-result').textContent;
-  assert(note.includes('נקלט'), 'לא דווח מה נקלט');
-  assert(note.includes('לא נמצא'), 'לא דווח שהצעדים חסרים');
-});
-
-test('הדבקה במילים ממלאת רק את מה שנכתב', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  const input = doc.querySelector('#paste-line');
-  input.value = 'קלוריות 2000, חלבון 150';
-  doc.querySelector('#paste-apply').dispatchEvent(new window.Event('click', { bubbles: true }));
-
-  assert(Number(doc.querySelector('[data-field="kcal"]').value) === 2000, 'קלוריות');
-  assert(Number(doc.querySelector('[data-field="proteinG"]').value) === 150, 'חלבון');
-});
-
-test('הדבקה ריקה מדווחת ולא מוחקת', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  doc.querySelector('[data-field="kcal"]').value = '1900';
-  doc.querySelector('#paste-line').value = '';
-  doc.querySelector('#paste-apply').dispatchEvent(new window.Event('click', { bubbles: true }));
-
-  assert(doc.querySelector('#paste-result').textContent.includes('ריק'), 'לא דווח');
-  assert(doc.querySelector('[data-field="kcal"]').value === '1900', 'הערך נמחק');
-});
-
-test('העלאת תמונה מופיעה רק עם מפתח, הדבקה תמיד', () => {
-  Store.updateSettings({ aiKeyA: '', aiKeyB: '' });
-  App.setState({ date: Dates.today(), tab: 'entry' });
-
-  assert(doc.querySelector('#paste-line'), 'שדה ההדבקה אמור להיות זמין תמיד');
-  assert(doc.querySelector('#copy-prompt'), 'כפתור העתקת ההוראה חסר');
-  assert(!doc.querySelector('#photo'), 'שדה התמונה לא אמור להופיע בלי מפתח');
-
-  Store.updateSettings({ aiKeyA: 'AIzaTEST' });
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  assert(doc.querySelector('#photo'), 'שדה התמונה חסר למרות שיש מפתח');
-
-  const card = [...doc.querySelectorAll('#view .card')]
-    .find((c) => c.textContent.includes('העלאת תמונה'));
-  assert(card.textContent.includes('Gemini'), 'הספק לא מזוהה: ' + card.textContent.slice(0, 60));
-  assert(card.textContent.includes('מעריך פעמיים'), 'לא צוין שזה מפתח יחיד');
-
-  Store.updateSettings({ aiKeyB: 'sk-or-TEST' });
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  const both = [...doc.querySelectorAll('#view .card')]
-    .find((c) => c.textContent.includes('העלאת תמונה'));
-  assert(both.textContent.includes('ויכוח בין Gemini ל-OpenRouter') ||
-    (both.textContent.includes('Gemini') && both.textContent.includes('OpenRouter')),
-    'לא צוין הוויכוח בין השניים: ' + both.textContent.slice(0, 80));
-
-  Store.updateSettings({ aiKeyA: '', aiKeyB: '' });
-});
-
-
-
-test('אפשר להעלות מהגלריה וגם לצלם', () => {
-  Store.updateSettings({ aiKeyA: 'AQ.Ab8RN6Ky_test' });
-  App.setState({ date: Dates.today(), tab: 'entry' });
-
-  const camera = doc.querySelector('#photo-camera');
-  const gallery = doc.querySelector('#photo');
-  assert(camera, 'כפתור הצילום חסר');
-  assert(gallery, 'כפתור הגלריה חסר');
-
-  // הצילום מבקש את המצלמה, הגלריה לא
-  assert(camera.getAttribute('capture') === 'environment', 'הצילום לא פותח מצלמה');
-  assert(!gallery.hasAttribute('capture'), 'הגלריה לא אמורה לפתוח מצלמה');
-  assert(gallery.getAttribute('accept') === 'image/*', 'הגלריה מוגבלת לתמונות');
-
-  // שניהם מחוברים לאותו מנגנון
-  assert(doc.querySelectorAll('.photo-input').length === 2, 'ציפיתי לשני שדות');
-
-  Store.updateSettings({ aiKeyA: '' });
-});
 
 test('פענוח תשובת המודל עמיד לעטיפות', () => {
   const E = window.Estimate;
@@ -865,22 +777,76 @@ test('פס הבחירה אטום ויושב מתחת לטאבים', () => {
   assert(zTabs > zPick, 'סדר השכבות הפוך: ' + zTabs + ' מול ' + zPick);
 });
 
-test('ההזנה סוגרת יום אחד: אוכל שלו ושקילת הבוקר שאחריו', () => {
+test('הזנה מהירה: רשימה אחת, אתמול כברירת מחדל', () => {
   App.setState({ tab: 'entry', entryDay: null });
 
   const yesterday = Dates.addDays(Dates.today(), -1);
   const title = doc.querySelector('.day-title').textContent;
-  assert(title.indexOf(Dates.short(yesterday)) !== -1,
-    'ברירת המחדל אינה אתמול: ' + title);
-  assert(title.indexOf(Dates.short(Dates.today())) !== -1,
-    'שקילת הבוקר אינה של היום');
+  assert(title.indexOf(Dates.short(yesterday)) !== -1, 'ברירת המחדל: ' + title);
 
-  const heads = [...doc.querySelectorAll('#view .card h3')].map((h) => h.textContent);
-  assert(heads.some((h) => h === 'אוכל של ' + Dates.short(yesterday)), 'כרטיס האוכל');
-  assert(heads.some((h) => h === 'שקילת בוקר ' + Dates.short(Dates.today())), 'כרטיס השקילה');
+  const inputs = [...doc.querySelectorAll('.quick-input')];
+  assert(inputs.length === 10, 'שדות: ' + inputs.length);
+  assert(inputs.slice(0, 6).every((el) => el.dataset.date === yesterday),
+    'שדות האוכל אינם של אתמול');
+  assert(inputs.slice(6).every((el) => el.dataset.date === Dates.today()),
+    'שדות השקילה אינם של הבוקר');
 
-  // כפתור שמירה אחד בלבד
-  assert(doc.querySelectorAll('[data-save]').length === 1, 'יותר מכפתור שמירה אחד');
+  // מקלדת מספרים, ו"הבא" בכל שדה חוץ מהאחרון
+  assert(inputs.every((el) => el.getAttribute('inputmode') === 'decimal'), 'מקלדת');
+  assert(inputs.slice(0, -1).every((el) => el.getAttribute('enterkeyhint') === 'next'),
+    'חסר "הבא"');
+  assert(inputs[inputs.length - 1].getAttribute('enterkeyhint') === 'done', 'השדה האחרון');
+
+  // בלי כרטיסים נוספים שמסיחים
+  assert(!doc.querySelector('tr[data-day]'), 'רשימת הימים עדיין שם');
+});
+
+test('כל ערך נשמר במכשיר כשיוצאים מהשדה, בלי לחכות לכפתור', () => {
+  const day = Dates.addDays(Dates.today(), -2);
+  App.setState({ tab: 'entry', entryDay: day });
+
+  const kcal = doc.querySelector('[data-field="kcal"]');
+  kcal.value = '2468';
+  kcal.dispatchEvent(new window.Event('change', { bubbles: true }));
+
+  assert(Store.getEntry(day).kcal === 2468, 'לא נשמר עם היציאה מהשדה');
+
+  App.setState({ entryDay: null });
+});
+
+test('שמירה בשדה אינה בונה את המסך מחדש', () => {
+  // אחרת השדה הבא נעלם והמקלדת נסגרת
+  App.setState({ tab: 'entry', entryDay: null });
+
+  const first = doc.querySelector('[data-field="kcal"]');
+  first.value = '2100';
+  first.dispatchEvent(new window.Event('change', { bubbles: true }));
+
+  assert(doc.querySelector('[data-field="kcal"]') === first,
+    'המסך נבנה מחדש והשדה הוחלף');
+});
+
+test('"הבא" במקלדת עובר לשדה הבא', () => {
+  App.setState({ tab: 'entry', entryDay: null });
+  const inputs = [...doc.querySelectorAll('.quick-input')];
+
+  inputs[0].focus();
+  inputs[0].value = '2200';
+  inputs[0].dispatchEvent(new window.Event('change', { bubbles: true }));
+  inputs[0].dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+  assert(doc.activeElement === inputs[1],
+    'הפוקוס על ' + (doc.activeElement.dataset || {}).field);
+});
+
+test('פסיק עשרוני מתקבל', () => {
+  App.setState({ tab: 'entry', entryDay: null });
+  const water = doc.querySelector('[data-field="waterKg"]');
+  water.value = '49,1';
+  water.dispatchEvent(new window.Event('change', { bubbles: true }));
+
+  assert(Store.getEntry(Dates.today()).waterKg === 49.1,
+    'נשמר: ' + Store.getEntry(Dates.today()).waterKg);
 });
 
 test('שמירה כותבת כל קבוצה לתאריך שלה', () => {
@@ -917,22 +883,6 @@ test('ניווט בין ימים, בלי לעבור לבוקר שעוד לא ה�
   App.setState({ entryDay: null });
 });
 
-test('לחיצה על יום ברשימה פותחת אותו לעריכה', () => {
-  const day = Dates.addDays(Dates.today(), -5);
-  Store.upsert({ date: day, kcal: 2111 });
-  App.setState({ tab: 'entry', entryDay: null });
-
-  const row = doc.querySelector('tr[data-day="' + day + '"]');
-  assert(row, 'היום לא ברשימה');
-  row.dispatchEvent(new window.Event('click', { bubbles: true }));
-
-  assert(App.state.entryDay === day, 'היום לא נבחר');
-  assert(doc.querySelector('[data-field="kcal"]').value === '2111',
-    'הטופס לא התמלא בערכי היום');
-
-  App.setState({ entryDay: null });
-});
-
 test('שמירה בלי שינוי אינה יוצרת רשומה ריקה', () => {
   // רחוק מספיק כדי שלא יחפוף לנתוני הבדיקה
   const day = Dates.addDays(Dates.today(), -120);
@@ -948,18 +898,6 @@ test('שמירה בלי שינוי אינה יוצרת רשומה ריקה', () 
   assert(!Store.getEntry(morning), 'נוצרה רשומה ריקה לבוקר');
 
   App.setState({ entryDay: null });
-});
-
-test('סימון מצב הגיליון מוצג לכל יום', () => {
-  const day = Dates.addDays(Dates.today(), -2);
-  Store.upsert({ date: day, kcal: 2200 });
-  const log = Object.assign({}, Store.getSettings().syncLog || {});
-  log[day + ':food'] = 'duplicate';
-  Store.updateSettings({ syncLog: log });
-
-  App.setState({ tab: 'entry', entryDay: null });
-  const row = doc.querySelector('tr[data-day="' + day + '"]');
-  assert(row.textContent.indexOf('כפול') !== -1, 'הכפילות לא סומנה');
 });
 
 test('טאב התקציב מציג את שלושת החלקים', () => {
@@ -1237,95 +1175,7 @@ test('אין נתון שמוצג פעמיים באותו מסך', () => {
 
 
 
-test('הדבקת שורה ממלאת את הטופס', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  const input = doc.querySelector('#paste-line');
-  assert(input, 'שדה ההדבקה חסר');
 
-  input.value = '1671 118 126 24 12';
-  doc.querySelector('#paste-apply').dispatchEvent(new window.Event('click', { bubbles: true }));
-
-  const value = (field) => Number(doc.querySelector('[data-field="' + field + '"]').value);
-  assert(value('kcal') === 1671, 'קלוריות: ' + value('kcal'));
-  assert(value('proteinG') === 118, 'חלבון');
-  assert(value('carbG') === 126, 'פחמימות');
-  assert(value('fatG') === 24, 'שומן');
-  assert(value('fiberG') === 12, 'סיבים');
-
-  const note = doc.querySelector('#paste-result').textContent;
-  assert(note.includes('נקלט'), 'לא דווח מה נקלט');
-  assert(note.includes('לא נמצא'), 'לא דווח שהצעדים חסרים');
-});
-
-test('הדבקה במילים ממלאת רק את מה שנכתב', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  const input = doc.querySelector('#paste-line');
-  input.value = 'קלוריות 2000, חלבון 150';
-  doc.querySelector('#paste-apply').dispatchEvent(new window.Event('click', { bubbles: true }));
-
-  assert(Number(doc.querySelector('[data-field="kcal"]').value) === 2000, 'קלוריות');
-  assert(Number(doc.querySelector('[data-field="proteinG"]').value) === 150, 'חלבון');
-});
-
-test('הדבקה ריקה מדווחת ולא מוחקת', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  doc.querySelector('[data-field="kcal"]').value = '1900';
-  doc.querySelector('#paste-line').value = '';
-  doc.querySelector('#paste-apply').dispatchEvent(new window.Event('click', { bubbles: true }));
-
-  assert(doc.querySelector('#paste-result').textContent.includes('ריק'), 'לא דווח');
-  assert(doc.querySelector('[data-field="kcal"]').value === '1900', 'הערך נמחק');
-});
-
-test('העלאת תמונה מופיעה רק עם מפתח, הדבקה תמיד', () => {
-  Store.updateSettings({ aiKeyA: '', aiKeyB: '' });
-  App.setState({ date: Dates.today(), tab: 'entry' });
-
-  assert(doc.querySelector('#paste-line'), 'שדה ההדבקה אמור להיות זמין תמיד');
-  assert(doc.querySelector('#copy-prompt'), 'כפתור העתקת ההוראה חסר');
-  assert(!doc.querySelector('#photo'), 'שדה התמונה לא אמור להופיע בלי מפתח');
-
-  Store.updateSettings({ aiKeyA: 'AIzaTEST' });
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  assert(doc.querySelector('#photo'), 'שדה התמונה חסר למרות שיש מפתח');
-
-  const card = [...doc.querySelectorAll('#view .card')]
-    .find((c) => c.textContent.includes('העלאת תמונה'));
-  assert(card.textContent.includes('Gemini'), 'הספק לא מזוהה: ' + card.textContent.slice(0, 60));
-  assert(card.textContent.includes('מעריך פעמיים'), 'לא צוין שזה מפתח יחיד');
-
-  Store.updateSettings({ aiKeyB: 'sk-or-TEST' });
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  const both = [...doc.querySelectorAll('#view .card')]
-    .find((c) => c.textContent.includes('העלאת תמונה'));
-  assert(both.textContent.includes('ויכוח בין Gemini ל-OpenRouter') ||
-    (both.textContent.includes('Gemini') && both.textContent.includes('OpenRouter')),
-    'לא צוין הוויכוח בין השניים: ' + both.textContent.slice(0, 80));
-
-  Store.updateSettings({ aiKeyA: '', aiKeyB: '' });
-});
-
-
-
-test('אפשר להעלות מהגלריה וגם לצלם', () => {
-  Store.updateSettings({ aiKeyA: 'AQ.Ab8RN6Ky_test' });
-  App.setState({ date: Dates.today(), tab: 'entry' });
-
-  const camera = doc.querySelector('#photo-camera');
-  const gallery = doc.querySelector('#photo');
-  assert(camera, 'כפתור הצילום חסר');
-  assert(gallery, 'כפתור הגלריה חסר');
-
-  // הצילום מבקש את המצלמה, הגלריה לא
-  assert(camera.getAttribute('capture') === 'environment', 'הצילום לא פותח מצלמה');
-  assert(!gallery.hasAttribute('capture'), 'הגלריה לא אמורה לפתוח מצלמה');
-  assert(gallery.getAttribute('accept') === 'image/*', 'הגלריה מוגבלת לתמונות');
-
-  // שניהם מחוברים לאותו מנגנון
-  assert(doc.querySelectorAll('.photo-input').length === 2, 'ציפיתי לשני שדות');
-
-  Store.updateSettings({ aiKeyA: '' });
-});
 
 test('פענוח תשובת המודל עמיד לעטיפות', () => {
   const E = window.Estimate;
@@ -1747,95 +1597,7 @@ test('אין נתון שמוצג פעמיים באותו מסך', () => {
 
 
 
-test('הדבקת שורה ממלאת את הטופס', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  const input = doc.querySelector('#paste-line');
-  assert(input, 'שדה ההדבקה חסר');
 
-  input.value = '1671 118 126 24 12';
-  doc.querySelector('#paste-apply').dispatchEvent(new window.Event('click', { bubbles: true }));
-
-  const value = (field) => Number(doc.querySelector('[data-field="' + field + '"]').value);
-  assert(value('kcal') === 1671, 'קלוריות: ' + value('kcal'));
-  assert(value('proteinG') === 118, 'חלבון');
-  assert(value('carbG') === 126, 'פחמימות');
-  assert(value('fatG') === 24, 'שומן');
-  assert(value('fiberG') === 12, 'סיבים');
-
-  const note = doc.querySelector('#paste-result').textContent;
-  assert(note.includes('נקלט'), 'לא דווח מה נקלט');
-  assert(note.includes('לא נמצא'), 'לא דווח שהצעדים חסרים');
-});
-
-test('הדבקה במילים ממלאת רק את מה שנכתב', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  const input = doc.querySelector('#paste-line');
-  input.value = 'קלוריות 2000, חלבון 150';
-  doc.querySelector('#paste-apply').dispatchEvent(new window.Event('click', { bubbles: true }));
-
-  assert(Number(doc.querySelector('[data-field="kcal"]').value) === 2000, 'קלוריות');
-  assert(Number(doc.querySelector('[data-field="proteinG"]').value) === 150, 'חלבון');
-});
-
-test('הדבקה ריקה מדווחת ולא מוחקת', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  doc.querySelector('[data-field="kcal"]').value = '1900';
-  doc.querySelector('#paste-line').value = '';
-  doc.querySelector('#paste-apply').dispatchEvent(new window.Event('click', { bubbles: true }));
-
-  assert(doc.querySelector('#paste-result').textContent.includes('ריק'), 'לא דווח');
-  assert(doc.querySelector('[data-field="kcal"]').value === '1900', 'הערך נמחק');
-});
-
-test('העלאת תמונה מופיעה רק עם מפתח, הדבקה תמיד', () => {
-  Store.updateSettings({ aiKeyA: '', aiKeyB: '' });
-  App.setState({ date: Dates.today(), tab: 'entry' });
-
-  assert(doc.querySelector('#paste-line'), 'שדה ההדבקה אמור להיות זמין תמיד');
-  assert(doc.querySelector('#copy-prompt'), 'כפתור העתקת ההוראה חסר');
-  assert(!doc.querySelector('#photo'), 'שדה התמונה לא אמור להופיע בלי מפתח');
-
-  Store.updateSettings({ aiKeyA: 'AIzaTEST' });
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  assert(doc.querySelector('#photo'), 'שדה התמונה חסר למרות שיש מפתח');
-
-  const card = [...doc.querySelectorAll('#view .card')]
-    .find((c) => c.textContent.includes('העלאת תמונה'));
-  assert(card.textContent.includes('Gemini'), 'הספק לא מזוהה: ' + card.textContent.slice(0, 60));
-  assert(card.textContent.includes('מעריך פעמיים'), 'לא צוין שזה מפתח יחיד');
-
-  Store.updateSettings({ aiKeyB: 'sk-or-TEST' });
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  const both = [...doc.querySelectorAll('#view .card')]
-    .find((c) => c.textContent.includes('העלאת תמונה'));
-  assert(both.textContent.includes('ויכוח בין Gemini ל-OpenRouter') ||
-    (both.textContent.includes('Gemini') && both.textContent.includes('OpenRouter')),
-    'לא צוין הוויכוח בין השניים: ' + both.textContent.slice(0, 80));
-
-  Store.updateSettings({ aiKeyA: '', aiKeyB: '' });
-});
-
-
-
-test('אפשר להעלות מהגלריה וגם לצלם', () => {
-  Store.updateSettings({ aiKeyA: 'AQ.Ab8RN6Ky_test' });
-  App.setState({ date: Dates.today(), tab: 'entry' });
-
-  const camera = doc.querySelector('#photo-camera');
-  const gallery = doc.querySelector('#photo');
-  assert(camera, 'כפתור הצילום חסר');
-  assert(gallery, 'כפתור הגלריה חסר');
-
-  // הצילום מבקש את המצלמה, הגלריה לא
-  assert(camera.getAttribute('capture') === 'environment', 'הצילום לא פותח מצלמה');
-  assert(!gallery.hasAttribute('capture'), 'הגלריה לא אמורה לפתוח מצלמה');
-  assert(gallery.getAttribute('accept') === 'image/*', 'הגלריה מוגבלת לתמונות');
-
-  // שניהם מחוברים לאותו מנגנון
-  assert(doc.querySelectorAll('.photo-input').length === 2, 'ציפיתי לשני שדות');
-
-  Store.updateSettings({ aiKeyA: '' });
-});
 
 test('פענוח תשובת המודל עמיד לעטיפות', () => {
   const E = window.Estimate;
@@ -2257,95 +2019,7 @@ test('אין נתון שמוצג פעמיים באותו מסך', () => {
 
 
 
-test('הדבקת שורה ממלאת את הטופס', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  const input = doc.querySelector('#paste-line');
-  assert(input, 'שדה ההדבקה חסר');
 
-  input.value = '1671 118 126 24 12';
-  doc.querySelector('#paste-apply').dispatchEvent(new window.Event('click', { bubbles: true }));
-
-  const value = (field) => Number(doc.querySelector('[data-field="' + field + '"]').value);
-  assert(value('kcal') === 1671, 'קלוריות: ' + value('kcal'));
-  assert(value('proteinG') === 118, 'חלבון');
-  assert(value('carbG') === 126, 'פחמימות');
-  assert(value('fatG') === 24, 'שומן');
-  assert(value('fiberG') === 12, 'סיבים');
-
-  const note = doc.querySelector('#paste-result').textContent;
-  assert(note.includes('נקלט'), 'לא דווח מה נקלט');
-  assert(note.includes('לא נמצא'), 'לא דווח שהצעדים חסרים');
-});
-
-test('הדבקה במילים ממלאת רק את מה שנכתב', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  const input = doc.querySelector('#paste-line');
-  input.value = 'קלוריות 2000, חלבון 150';
-  doc.querySelector('#paste-apply').dispatchEvent(new window.Event('click', { bubbles: true }));
-
-  assert(Number(doc.querySelector('[data-field="kcal"]').value) === 2000, 'קלוריות');
-  assert(Number(doc.querySelector('[data-field="proteinG"]').value) === 150, 'חלבון');
-});
-
-test('הדבקה ריקה מדווחת ולא מוחקת', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  doc.querySelector('[data-field="kcal"]').value = '1900';
-  doc.querySelector('#paste-line').value = '';
-  doc.querySelector('#paste-apply').dispatchEvent(new window.Event('click', { bubbles: true }));
-
-  assert(doc.querySelector('#paste-result').textContent.includes('ריק'), 'לא דווח');
-  assert(doc.querySelector('[data-field="kcal"]').value === '1900', 'הערך נמחק');
-});
-
-test('העלאת תמונה מופיעה רק עם מפתח, הדבקה תמיד', () => {
-  Store.updateSettings({ aiKeyA: '', aiKeyB: '' });
-  App.setState({ date: Dates.today(), tab: 'entry' });
-
-  assert(doc.querySelector('#paste-line'), 'שדה ההדבקה אמור להיות זמין תמיד');
-  assert(doc.querySelector('#copy-prompt'), 'כפתור העתקת ההוראה חסר');
-  assert(!doc.querySelector('#photo'), 'שדה התמונה לא אמור להופיע בלי מפתח');
-
-  Store.updateSettings({ aiKeyA: 'AIzaTEST' });
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  assert(doc.querySelector('#photo'), 'שדה התמונה חסר למרות שיש מפתח');
-
-  const card = [...doc.querySelectorAll('#view .card')]
-    .find((c) => c.textContent.includes('העלאת תמונה'));
-  assert(card.textContent.includes('Gemini'), 'הספק לא מזוהה: ' + card.textContent.slice(0, 60));
-  assert(card.textContent.includes('מעריך פעמיים'), 'לא צוין שזה מפתח יחיד');
-
-  Store.updateSettings({ aiKeyB: 'sk-or-TEST' });
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  const both = [...doc.querySelectorAll('#view .card')]
-    .find((c) => c.textContent.includes('העלאת תמונה'));
-  assert(both.textContent.includes('ויכוח בין Gemini ל-OpenRouter') ||
-    (both.textContent.includes('Gemini') && both.textContent.includes('OpenRouter')),
-    'לא צוין הוויכוח בין השניים: ' + both.textContent.slice(0, 80));
-
-  Store.updateSettings({ aiKeyA: '', aiKeyB: '' });
-});
-
-
-
-test('אפשר להעלות מהגלריה וגם לצלם', () => {
-  Store.updateSettings({ aiKeyA: 'AQ.Ab8RN6Ky_test' });
-  App.setState({ date: Dates.today(), tab: 'entry' });
-
-  const camera = doc.querySelector('#photo-camera');
-  const gallery = doc.querySelector('#photo');
-  assert(camera, 'כפתור הצילום חסר');
-  assert(gallery, 'כפתור הגלריה חסר');
-
-  // הצילום מבקש את המצלמה, הגלריה לא
-  assert(camera.getAttribute('capture') === 'environment', 'הצילום לא פותח מצלמה');
-  assert(!gallery.hasAttribute('capture'), 'הגלריה לא אמורה לפתוח מצלמה');
-  assert(gallery.getAttribute('accept') === 'image/*', 'הגלריה מוגבלת לתמונות');
-
-  // שניהם מחוברים לאותו מנגנון
-  assert(doc.querySelectorAll('.photo-input').length === 2, 'ציפיתי לשני שדות');
-
-  Store.updateSettings({ aiKeyA: '' });
-});
 
 test('פענוח תשובת המודל עמיד לעטיפות', () => {
   const E = window.Estimate;

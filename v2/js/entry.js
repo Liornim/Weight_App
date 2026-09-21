@@ -66,20 +66,6 @@
     return WEEKDAYS[new Date(iso + 'T12:00:00Z').getUTCDay()];
   }
 
-  /** מה ידוע על שמירת יום לגיליון */
-  function syncBadge(settings, date, group) {
-    var log = (settings.syncLog || {})[date + ':' + group];
-    if (!log) return '';
-    var marks = {
-      verified: ['good', '✓'],
-      duplicate: ['warn', '⚠ כפול'],
-      mismatch: ['warn', '⚠ שונה'],
-      missing: ['bad', '✗'],
-      unknown: ['', '⏳']
-    };
-    var m = marks[log] || ['', ''];
-    return '<span class="badge' + (m[0] ? ' badge--' + m[0] : '') + '">' + m[1] + '</span>';
-  }
 
   function navigator(day) {
     var morning = Dates.addDays(day, 1);
@@ -95,35 +81,6 @@
       '<button type="button" class="chip" data-shift="1" aria-label="יום הבא"' +
         (canForward ? '' : ' disabled') + '>‹</button>' +
     '</div>';
-  }
-
-  /** הימים האחרונים, כדי לראות מה חסר ולתקן */
-  function dayList(day, settings) {
-    var rows = [];
-    var yesterday = Dates.addDays(Dates.today(), -1);
-
-    for (var i = 0; i < 14; i++) {
-      var d = Dates.addDays(yesterday, -i);
-      var food = Store.getEntry(d) || {};
-      var body = Store.getEntry(Dates.addDays(d, 1)) || {};
-      var active = d === day;
-
-      rows.push('<tr data-day="' + d + '"' + (active ? ' class="now"' : '') + '>' +
-        '<td class="date-cell">' + P.esc(Dates.short(d)) +
-          '<span class="sub">' + weekday(d) + '</span></td>' +
-        '<td class="n">' + (Fmt.isNum(food.kcal) ? Fmt.n(food.kcal, 0)
-          : '<span class="flat">—</span>') + ' ' + syncBadge(settings, d, 'food') + '</td>' +
-        '<td class="n">' + (Fmt.isNum(body.weightKg) ? Fmt.n(body.weightKg, 1)
-          : '<span class="flat">—</span>') + ' ' +
-          syncBadge(settings, Dates.addDays(d, 1), 'body') + '</td>' +
-      '</tr>');
-    }
-
-    return P.card('הימים האחרונים', 'לחיצה על יום פותחת אותו לעריכה',
-      P.table(['יום', 'אוכל', 'שקילת הבוקר שאחריו'], [rows.join('')],
-        { hint: '✓ נשמר ואומת בגיליון · ⏳ נשלח ולא אומת · ⚠ כפול: יש בגיליון ' +
-          'יותר משורה אחת לתאריך · ✗ לא נמצא בגיליון. ' +
-          'יום בלי סימן נמשך מהגיליון או נשמר לפני שהאימות נוסף.' }));
   }
 
   /**
@@ -149,6 +106,25 @@
       'כדאי למשוך שוב מההגדרות.');
   }
 
+  /**
+   * רשימה אחת של שדות, בסדר ההקלדה.
+   *
+   * ההזנה נעשית ממספר מסכים באפליקציית התזונה, ובכל מעבר בין
+   * האפליקציות הדפדפן עלול לרענן את הלשונית ברקע. לכן כל ערך נשמר
+   * במכשיר ברגע שיוצאים מהשדה, ו"הבא" במקלדת עובר לשדה הבא — בלי
+   * לגעת במסך בין הקלדה להקלדה.
+   */
+  function field(f, entry, date, isLast) {
+    return '<label class="quick-row" for="in-' + f.key + '">' +
+      '<span class="quick-label">' + P.esc(f.label) +
+        (f.unit ? ' <span class="unit">' + P.esc(f.unit) + '</span>' : '') + '</span>' +
+      '<input id="in-' + f.key + '" class="quick-input num" data-field="' + f.key +
+        '" data-date="' + date + '" type="text" inputmode="decimal" ' +
+        'autocomplete="off" enterkeyhint="' + (isLast ? 'done' : 'next') + '" value="' +
+        (Fmt.isNum(entry[f.key]) ? entry[f.key] : '') + '">' +
+    '</label>';
+  }
+
   function render(state) {
     var settings = Store.getSettings();
     var day = closingDay(state);
@@ -156,28 +132,38 @@
 
     var food = Store.getEntry(day) || {};
     var body = Store.getEntry(morning) || {};
-
-    // השקילה שסוגרת את היום עוד לא קרתה אם הבוקר שלה עתידי
     var bodyOpen = morning <= Dates.today();
 
+    var total = FOOD.length + (bodyOpen ? BODY.length : 0);
+    var filled = filledCount(food, FOOD) + (bodyOpen ? filledCount(body, BODY) : 0);
+
+    var sync = settings.sync || {};
+    var toSheet = !!(sync.write && sync.url);
+
+    var rows =
+      '<div class="quick-group">אוכל של ' + P.esc(Dates.short(day)) + '</div>' +
+      FOOD.map(function (f, i) {
+        return field(f, food, day, !bodyOpen && i === FOOD.length - 1);
+      }).join('') +
+      (bodyOpen
+        ? '<div class="quick-group">שקילת בוקר ' + P.esc(Dates.short(morning)) + '</div>' +
+          BODY.map(function (f, i) {
+            return field(f, body, morning, i === BODY.length - 1);
+          }).join('')
+        : '');
+
     return P.section('הזנה',
-      P.card(null, null, navigator(day)) +
-
-      P.card('אוכל של ' + Dates.short(day), 'יום ' + weekday(day),
-        fields(FOOD, food) + missingMacroNote()) +
-
-      P.card('שקילת בוקר ' + Dates.short(morning), 'הבוקר שסוגר את היום',
-        bodyOpen
-          ? fields(BODY, body)
-          : P.empty('הבוקר הזה עוד לא הגיע.')) +
-
-      '<button type="button" class="btn btn--primary btn--wide" data-save="day">' +
-        'שמירת היום</button>' +
-      '<div id="save-status"></div>' +
-
-      dayList(day, settings) +
-
-      root.Dash.photoCard(state));
+      P.card(null, null,
+        navigator(day) +
+        '<div class="quick-list">' + rows + '</div>' +
+        '<div class="quick-foot">' +
+          '<button type="button" class="btn btn--primary" data-save="day">' +
+            (toSheet ? 'שלח לגיליון' : 'שמור') + '</button>' +
+          '<span class="quick-count" id="quick-count">' + filled + ' מתוך ' + total + '</span>' +
+        '</div>' +
+        '<div id="save-status"></div>' +
+        P.hint('כל ערך נשמר במכשיר כשיוצאים מהשדה, כך שאפשר לעבור ' +
+          'לאפליקציית התזונה ולחזור בלי לאבד כלום.')));
   }
 
   root.EntryTab = {

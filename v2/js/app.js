@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd81',
+    BUILD: 'd82',
     state: {
       date: Dates.today(),
       tab: 'budget',       // ארבעה טאבים: תקציב, הזנה, משקל, נתונים
@@ -400,11 +400,44 @@
       });
     });
 
-    // לחיצה על יום ברשימה פותחת אותו לעריכה
-    view.querySelectorAll('tr[data-day]').forEach(function (row) {
-      row.addEventListener('click', function () {
-        App.setState({ entryDay: row.dataset.day });
-        root.scrollTo(0, 0);
+    /**
+     * הקלדה מהירה.
+     *
+     * כל שדה נשמר במכשיר כשיוצאים ממנו — לא בכל הקשה, כדי שלא
+     * לרנדר מחדש באמצע ההקלדה. "הבא" במקלדת עובר לשדה הבא, ובשדה
+     * האחרון שומר.
+     */
+    var quick = [].slice.call(view.querySelectorAll('.quick-input'));
+    quick.forEach(function (input, index) {
+      input.addEventListener('change', function () {
+        var patch = { date: input.dataset.date };
+        patch[input.dataset.field] = input.value.replace(',', '.');
+
+        App.quiet = true;
+        try { Store.upsert(patch); } catch (error) { return; }
+        finally { App.quiet = false; }
+
+        var count = view.querySelector('#quick-count');
+        if (count) {
+          var filled = quick.filter(function (el) {
+            return String(el.value).trim() !== '';
+          }).length;
+          count.textContent = filled + ' מתוך ' + quick.length;
+        }
+      });
+
+      input.addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        var next = quick[index + 1];
+        if (next) {
+          next.focus();
+          next.select();
+        } else {
+          input.blur();
+          var save = view.querySelector('[data-save="day"]');
+          if (save) save.click();
+        }
       });
     });
 
@@ -883,7 +916,18 @@
     elements.toast = document.getElementById('toast');
 
     Store.init();
-    Store.subscribe(render);
+
+    /**
+     * שמירה שקטה לא מרנדרת.
+     *
+     * כל שינוי במאגר מרנדר את המסך כולו, וזה בסדר בדרך כלל — אבל
+     * לא באמצע הקלדה: יציאה משדה שמרה, המסך נבנה מחדש, והשדה הבא
+     * שאליו עבר המקלדת כבר לא היה קיים. המקלדת נסגרה והפוקוס אבד.
+     */
+    Store.subscribe(function () {
+      if (App.quiet) return;
+      render();
+    });
     render();
   }
 
