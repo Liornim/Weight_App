@@ -834,6 +834,13 @@ table.t tr[data-day]:hover td { background: var(--paper); }
 .badge--warn { color: var(--warn); }
 .badge--bad { color: var(--bad); }
 
+/* שורת סיכום בתחתית טבלה */
+
+table.t tr.total td {
+  border-top: 2px solid var(--ink-soft);
+  background: var(--paper);
+}
+
 /* שורה שאפשר לבחור */
 
 table.t tr[data-split-row] { cursor: pointer; }

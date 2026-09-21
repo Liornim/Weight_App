@@ -912,7 +912,7 @@ test('טבלת השורה האחרונה: שורה לכל חלון, זהה לש�
   const first = cards.findIndex((c) => (c.querySelector('h3') || {}).textContent === 'כל 3 ימים');
   assert(cards.indexOf(summary) < first, 'הטבלה אינה לפני הכרטיסים');
 
-  const rows = [...summary.querySelectorAll('tbody tr')];
+  const rows = [...summary.querySelectorAll('tbody tr:not(.total)')];
   rows.forEach((tr) => {
     const days = tr.children[0].textContent.trim();
     const card = cards.find((c) =>
@@ -923,6 +923,28 @@ test('טבלת השורה האחרונה: שורה לכל חלון, זהה לש�
       .map((td) => td.textContent.trim());
     const mine = [...tr.children].slice(1).map((td) => td.textContent.trim());
     assert(top.join('|') === mine.join('|'), days + ' ימים: השורה שונה מהכרטיס');
+  });
+});
+
+test('שורת ממוצע בתחתית: ממוצע כל עמודה', () => {
+  App.setState({ date: Dates.today(), tab: 'weight' });
+
+  const summary = [...doc.querySelectorAll('#view .card')].find((c) =>
+    (c.querySelector('h3') || {}).textContent === 'השורה האחרונה בכל חלון');
+  const total = summary.querySelector('tbody tr.total');
+  assert(total, 'שורת הממוצע חסרה');
+  assert(total === summary.querySelector('tbody tr:last-child'), 'אינה בתחתית');
+
+  const rows = [...summary.querySelectorAll('tbody tr:not(.total)')];
+  const num = (td) => Number(td.textContent.replace(/[^0-9.\-−]/g, '').replace('−', '-'));
+
+  // עמודות 2 עד 7: משקל, שינוי, שומן, שינוי, שריר, שינוי
+  [2, 3, 4, 5, 6, 7].forEach((col) => {
+    const values = rows.map((tr) => num(tr.children[col])).filter((v) => isFinite(v));
+    const mean = values.reduce((a, b) => a + b, 0) / values.length;
+    const shown = num(total.children[col]);
+    assert(Math.abs(shown - mean) < 0.011,
+      'עמודה ' + col + ': מוצג ' + shown + ' מול ' + mean.toFixed(3));
   });
 });
 

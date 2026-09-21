@@ -55,6 +55,7 @@
     var recent = base.rows.slice(-SHOW - 1).slice(-SHOW).reverse();
 
     return recent.map(function (row) {
+      var values = [];
       var cells = METRICS.map(function (m) {
         // אותה תקופה בדיוק, בכל אחד מהמדדים
         var match = (byMetric[m.value].rows || []).filter(function (r) {
@@ -62,14 +63,17 @@
         })[0];
 
         if (!match || !Fmt.isNum(match.mean)) {
+          values.push(null, null);
           return '<td class="n flat">—</td><td class="n flat">—</td>';
         }
 
+        values.push(match.mean, Fmt.isNum(match.change) ? match.change : null);
         return '<td class="n">' + Fmt.n(match.mean, 2) + '</td>' +
           '<td class="n">' + P.delta(match.change, 2, m.good) + '</td>';
       }).join('');
 
       return {
+        values: values,
         partial: row.partial,
         period: '<td>' + P.esc(Dates.short(row.from) + '–' + Dates.short(row.to)) +
           '<span class="sub">' + row.days + ' ימים' +
@@ -91,16 +95,42 @@
    * הקצרים והארוכים מסכימים על הכיוון.
    */
   function latestCard(entries, date) {
+    var firsts = [];
     var rows = LENGTHS.map(function (days) {
       var list = combinedRows(entries, date, days);
       if (!list || !list.length) return '';
       var first = list[0];
+      firsts.push(first.values);
       return '<tr' + (first.partial ? ' class="partial"' : '') + '>' +
         '<td class="n"><strong>' + days + '</strong></td>' +
         first.period + first.cells + '</tr>';
     }).filter(Boolean).join('');
 
     if (!rows) return '';
+
+    /**
+     * ממוצע כל השורות, עמודה אחר עמודה.
+     *
+     * כל חלון לבדו רועש בדרכו; הממוצע שלהם מקזז חלק מהרעש הזה. הוא
+     * כולל גם שורות פתוחות, ולכן שורה של יום בודד מושכת אותו.
+     */
+    var goods = ['down', 'down', 'up'];
+    var average = [0, 1, 2, 3, 4, 5].map(function (col) {
+      var list = firsts.map(function (v) { return v[col]; })
+        .filter(function (v) { return Fmt.isNum(v); });
+      if (!list.length) return '<td class="n flat">—</td>';
+
+      var mean = list.reduce(function (a, b) { return a + b; }, 0) / list.length;
+      return col % 2 === 0
+        ? '<td class="n"><strong>' + Fmt.n(mean, 2) + '</strong></td>'
+        : '<td class="n"><strong>' + P.delta(mean, 2, goods[(col - 1) / 2]) +
+          '</strong></td>';
+    }).join('');
+
+    rows += '<tr class="total">' +
+      '<td class="n"><strong>ממוצע</strong></td>' +
+      '<td><span class="sub">' + firsts.length + ' חלונות</span></td>' +
+      average + '</tr>';
 
     return P.card('השורה האחרונה בכל חלון', 'מהקצר לארוך',
       P.table(
