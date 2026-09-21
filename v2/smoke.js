@@ -900,6 +900,32 @@ test('שמירה בלי שינוי אינה יוצרת רשומה ריקה', () 
   App.setState({ entryDay: null });
 });
 
+test('טבלת השורה האחרונה: שורה לכל חלון, זהה לשורה העליונה בכרטיס שלו', () => {
+  App.setState({ date: Dates.today(), tab: 'weight' });
+
+  const cards = [...doc.querySelectorAll('#view .card')];
+  const summary = cards.find((c) =>
+    (c.querySelector('h3') || {}).textContent === 'השורה האחרונה בכל חלון');
+  assert(summary, 'הטבלה חסרה');
+
+  // היא לפני כרטיסי החלונות
+  const first = cards.findIndex((c) => (c.querySelector('h3') || {}).textContent === 'כל 3 ימים');
+  assert(cards.indexOf(summary) < first, 'הטבלה אינה לפני הכרטיסים');
+
+  const rows = [...summary.querySelectorAll('tbody tr')];
+  rows.forEach((tr) => {
+    const days = tr.children[0].textContent.trim();
+    const card = cards.find((c) =>
+      (c.querySelector('h3') || {}).textContent === 'כל ' + days + ' ימים');
+    assert(card, 'אין כרטיס ל-' + days);
+
+    const top = [...card.querySelector('tbody tr').children]
+      .map((td) => td.textContent.trim());
+    const mine = [...tr.children].slice(1).map((td) => td.textContent.trim());
+    assert(top.join('|') === mine.join('|'), days + ' ימים: השורה שונה מהכרטיס');
+  });
+});
+
 test('טאב התקציב מציג את שלושת החלקים', () => {
   App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2, splitRow: null });
 

@@ -69,12 +69,46 @@
           '<td class="n">' + P.delta(match.change, 2, m.good) + '</td>';
       }).join('');
 
-      return '<tr' + (row.partial ? ' class="partial"' : '') + '>' +
-        '<td>' + P.esc(Dates.short(row.from) + '–' + Dates.short(row.to)) +
+      return {
+        partial: row.partial,
+        period: '<td>' + P.esc(Dates.short(row.from) + '–' + Dates.short(row.to)) +
           '<span class="sub">' + row.days + ' ימים' +
-          (row.partial ? ' · עדיין פתוח' : '') + '</span></td>' +
-        cells + '</tr>';
-    }).join('');
+          (row.partial ? ' · עדיין פתוח' : '') + '</span></td>',
+        cells: cells
+      };
+    });
+  }
+
+  function rowHtml(r) {
+    return '<tr' + (r.partial ? ' class="partial"' : '') + '>' + r.period + r.cells + '</tr>';
+  }
+
+  /**
+   * השורה העליונה של כל חלון, זו מתחת לזו.
+   *
+   * כל כרטיס מתחת מראה חלון אחד לאורך זמן. הטבלה הזו מראה את
+   * הרגע האחרון בכל אורכי החלון יחד — כך רואים במבט אחד אם
+   * הקצרים והארוכים מסכימים על הכיוון.
+   */
+  function latestCard(entries, date) {
+    var rows = LENGTHS.map(function (days) {
+      var list = combinedRows(entries, date, days);
+      if (!list || !list.length) return '';
+      var first = list[0];
+      return '<tr' + (first.partial ? ' class="partial"' : '') + '>' +
+        '<td class="n"><strong>' + days + '</strong></td>' +
+        first.period + first.cells + '</tr>';
+    }).filter(Boolean).join('');
+
+    if (!rows) return '';
+
+    return P.card('השורה האחרונה בכל חלון', 'מהקצר לארוך',
+      P.table(
+        [{ label: 'ימים', n: true }, { label: 'תקופה', n: false },
+          'משקל', 'שינוי', 'שומן', 'שינוי', 'שריר', 'שינוי'],
+        [rows],
+        { hint: 'כל שורה היא השורה העליונה של הכרטיס המתאים למטה. ' +
+          'שורה חיוורת היא חלון שעדיין פתוח ולכן חלקי.' }));
   }
 
   /** מחשב את סיכום החלונות המלאים האחרונים */
@@ -105,8 +139,9 @@
   }
 
   function windowCard(entries, date, days) {
-    var rows = combinedRows(entries, date, days);
-    if (!rows) return '';
+    var list = combinedRows(entries, date, days);
+    if (!list) return '';
+    var rows = list.map(rowHtml).join('');
 
     var r = Metrics.weightBlocks(entries, { days: days, endDate: date });
     var summary = summarise(r.rows);
@@ -203,7 +238,8 @@
       return windowCard(entries, date, days);
     }).filter(Boolean).join('');
 
-    return P.section('משקל, שומן ושריר לפי חלונות', head + cards);
+    return P.section('משקל, שומן ושריר לפי חלונות',
+      head + latestCard(entries, date) + cards);
   }
 
   root.WeightTab = {
