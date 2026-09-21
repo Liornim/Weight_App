@@ -764,6 +764,30 @@ textarea:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
 
 .sticky-pick .chips { margin-bottom: 0; }
 
+/* ניווט בין ימים בהזנה */
+
+.day-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.day-nav .chip { font-size: 20px; padding: 4px 16px; line-height: 1; }
+.day-nav .chip:disabled { opacity: 0.3; }
+.day-title { flex: 1; text-align: center; }
+.day-title strong { display: block; font-size: 16px; }
+.day-title .sub { font-size: 12.5px; color: var(--ink-soft); }
+
+.btn--wide { width: 100%; margin-bottom: 12px; }
+
+table.t tr[data-day] { cursor: pointer; }
+table.t tr[data-day]:hover td { background: var(--paper); }
+
+.badge { font-size: 11px; font-family: var(--sans, inherit); color: var(--ink-soft); }
+.badge--good { color: var(--good); }
+.badge--warn { color: var(--warn); }
+.badge--bad { color: var(--bad); }
+
 /* שורה שאפשר לבחור */
 
 table.t tr[data-split-row] { cursor: pointer; }

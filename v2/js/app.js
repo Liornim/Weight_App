@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd80',
+    BUILD: 'd81',
     state: {
       date: Dates.today(),
       tab: 'budget',       // ארבעה טאבים: תקציב, הזנה, משקל, נתונים
@@ -23,6 +23,7 @@
       budgetWindows: 'few', // אילו אורכי חלון מוצגים בטבלה
       activityLevel: 'sedentary', // מקדם הפעילות בחישוב לפי נוסחה
       weightMetric: 'weightKg', // משקל, שומן או שריר בטאב המשקל
+      entryDay: null,      // היום שנסגר בהזנה; ריק = אתמול
       asOf: 0,             // עד מתי למדוד: היום, שבוע שעבר, שבועיים
       basis: 'adaptive',   // על סמך כמה זמן לחשב
       caution: 'mid',      // זהיר / אמצע / נדיב
@@ -272,68 +273,138 @@
       });
     });
 
-    // שמירה לפי קבוצה, כדי ששמירת תזונה לא תמחק מדד גוף ריק
-    view.querySelectorAll('[data-save]').forEach(function (button) {
-      button.addEventListener('click', function () {
-        var group = button.dataset.save === 'body'
-          ? root.EntryTab.BODY : root.EntryTab.FOOD;
+    /**
+     * שמירת יום שלם: האוכל שלו והשקילה של הבוקר שאחריו.
+     *
+     * כל קבוצה נשמרת לתאריך שלה. קבוצה נשמרת רק אם יש בה ערך, או אם
+     * כבר היה בה ערך ביום הזה — כך אפשר גם למחוק שדה, בלי ליצור
+     * רשומה ריקה ביום שלא נגעו בו.
+     */
+    var saveDay = view.querySelector('[data-save="day"]');
+    if (saveDay) {
+      saveDay.addEventListener('click', function () {
+        var day = root.EntryTab.closingDay(App.state);
+        var morning = Dates.addDays(day, 1);
 
-        var payload = { date: App.state.date };
-        group.forEach(function (field) {
-          var input = document.querySelector('[data-field="' + field.key + '"]');
-          if (input) payload[field.key] = input.value;
-        });
+        var collect = function (list, date) {
+          var payload = { date: date };
+          var any = false;
+          list.forEach(function (field) {
+            var input = view.querySelector('[data-field="' + field.key + '"]');
+            if (!input) return;
+            payload[field.key] = input.value;
+            if (String(input.value).trim() !== '') any = true;
+          });
 
-        var what = button.dataset.save === 'body' ? 'מדדי הגוף' : 'התזונה';
+          var existing = Store.getEntry(date) || {};
+          var had = list.some(function (f) { return root.Fmt.isNum(existing[f.key]); });
+          return (any || had) ? payload : null;
+        };
+
+        var jobs = [];
+        var food = collect(root.EntryTab.FOOD, day);
+        var body = collect(root.EntryTab.BODY, morning);
 
         try {
-          Store.upsert(payload);
+          if (food) { Store.upsert(food); jobs.push({ group: 'food', date: day }); }
+          if (body) { Store.upsert(body); jobs.push({ group: 'body', date: morning }); }
         } catch (error) {
           App.toast('השמירה נכשלה: ' + error.message);
           return;
         }
 
-        var sync = Store.getSettings().sync || {};
-        if (!sync.write || !sync.url) {
-          // ההודעה אומרת איפה נשמר, כי "נשמר" לבדו נקרא כאילו
-          // הגיליון התעדכן גם הוא
-          App.toast(what + ' נשמרו במכשיר');
+        if (!jobs.length) {
+          App.toast('אין מה לשמור ביום הזה');
           return;
         }
 
-        // הדיווח מאוחד: קודם נשלחו שתי קריאות ודווח על כל אחת
-        // בנפרד, וכך הופיעו הודעות סותרות
-        var status = outputAfter(button, 'save-status');
-        status.innerHTML = '<p class="stage">' + what + ' נשמרו במכשיר · שולח לגיליון…</p>';
+        var sync = Store.getSettings().sync || {};
+        var status = view.querySelector('#save-status');
 
-        // נשלחת רק הקבוצה שהכפתור שייך לה
-        var group = button.dataset.save === 'body' ? 'body' : 'food';
+        if (!sync.write || !sync.url) {
+          App.toast('נשמר במכשיר');
+          App.setState({ entryDay: day });
+          return;
+        }
 
-        root.Sheets.push(sync.url, Store.getEntry(App.state.date), group)
-          .then(function (parts) {
-          var names = { body: 'מדדי גוף', nutrition: 'תזונה' };
-          var sent = (parts || []).map(function (part) { return names[part.part]; });
+        var names = { food: 'האוכל', body: 'השקילה' };
+        status.innerHTML = '<p class="stage">נשמר במכשיר · שולח לגיליון ומאמת…</p>';
 
-          status.innerHTML = '<p class="stage">נשמר בגיליון: ' +
-            root.Fmt.esc(sent.join(' ו')) + '.</p>';
-          App.toast('נשמר גם בגיליון');
-        }).catch(function (error) {
-          // הכתובת שנשלחה מוצגת, כדי שאפשר יהיה לפתוח אותה ידנית
-          // ולראות מה הסקריפט עונה
-          // קישור שאפשר ללחוץ עליו ולראות מה הסקריפט באמת מחזיר
-          var tried = error.url
-            ? '<details class="round" open><summary>הכתובת שנשלחה</summary>' +
-              '<p class="why"><a href="' + root.Fmt.esc(error.url) +
-              '" target="_blank" rel="noopener">לפתוח אותה בלשונית חדשה</a> ' +
-              'כדי לראות מה הגיליון מחזיר.</p>' +
-              '<p class="why" style="word-break:break-all">' +
-              root.Fmt.esc(error.url) + '</p></details>'
-            : '';
+        /**
+         * רצף ולא במקביל: שתי כתיבות בו זמנית לאותו סקריפט עלולות
+         * להתנגש, ואז אחת מהן נכשלת בלי סיבה נראית.
+         */
+        var results = [];
+        jobs.reduce(function (chain, job) {
+          return chain.then(function () {
+            var entry = Store.getEntry(job.date);
+            return root.Sheets.save(sync.url, entry, job.group).then(function (r) {
+              // הגיליון לא תמיד מציג כתיבה מיד; ניסיון נוסף לפני שמסיקים
+              if (r.state !== 'missing') return r;
+              return new Promise(function (wait) { setTimeout(wait, 2000); })
+                .then(function () {
+                  return root.Sheets.verify(sync.url, entry, job.group);
+                })
+                .then(function (again) {
+                  return Object.assign({}, r, { state: again.state, count: again.count });
+                });
+            });
+          }).then(function (r) { results.push(r); });
+        }, Promise.resolve()).then(function () {
+          var log = Object.assign({}, Store.getSettings().syncLog || {});
+          results.forEach(function (r) { log[r.date + ':' + r.group] = r.state; });
+          Store.updateSettings({ syncLog: log });
 
-          status.innerHTML = '<p class="stage stage--bad">נשמר במכשיר, ' +
-            'אבל לא בגיליון.<br>' + root.Fmt.esc(error.message) + '</p>' + tried;
-          App.toast('הגיליון לא התעדכן');
+          var lines = results.map(function (r) {
+            var what = names[r.group] + ' (' + Dates.short(r.date) + ')';
+            if (r.state === 'verified') return '✓ ' + what + ' נשמר ואומת בגיליון.';
+            if (r.state === 'duplicate') {
+              return '⚠ ' + what + ' נשמר, אבל בגיליון יש ' + r.count +
+                ' שורות לתאריך הזה. הסקריפט כנראה מוסיף שורה במקום לעדכן — ' +
+                'צריך למחוק ידנית את הישנה.';
+            }
+            if (r.state === 'mismatch') {
+              return '⚠ ' + what + ': בגיליון יש שורה לתאריך הזה, אבל עם ערכים אחרים.';
+            }
+            if (r.state === 'missing') {
+              return '✗ ' + what + ' לא נמצא בגיליון.' +
+                (r.error ? ' ' + r.error.message : '');
+            }
+            return '⏳ ' + what + ' נשלח, אבל לא הצלחתי לקרוא את הגיליון כדי לאמת.';
+          });
+
+          var bad = results.some(function (r) {
+            return r.state === 'missing' || r.state === 'mismatch';
+          });
+
+          App.setState({ entryDay: day });
+          var fresh = document.querySelector('#save-status');
+          if (fresh) {
+            fresh.innerHTML = '<p class="stage' + (bad ? ' stage--bad' : '') + '">' +
+              lines.map(root.Fmt.esc).join('<br>') + '</p>';
+          }
+          App.toast(bad ? 'בדוק את הגיליון'
+            : results.every(function (r) { return r.state === 'verified'; })
+              ? 'נשמר ואומת' : 'נשמר');
         });
+      });
+    }
+
+    // ניווט בין ימים
+    view.querySelectorAll('[data-shift]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var day = root.EntryTab.closingDay(App.state);
+        var next = Dates.addDays(day, Number(button.dataset.shift));
+        if (Dates.addDays(next, 1) > Dates.today()) return;
+        App.setState({ entryDay: next });
+      });
+    });
+
+    // לחיצה על יום ברשימה פותחת אותו לעריכה
+    view.querySelectorAll('tr[data-day]').forEach(function (row) {
+      row.addEventListener('click', function () {
+        App.setState({ entryDay: row.dataset.day });
+        root.scrollTo(0, 0);
       });
     });
 

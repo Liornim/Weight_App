@@ -265,6 +265,79 @@ test('יום בלי שום ערך אינו נשלח', () => {
     });
 });
 
+
+// ---------- אימות בקריאה חוזרת ----------
+
+/** מדמה את קריאת הגיליון: מחזיר את השורות שניתנו לכל פעולה */
+function sheet(bodyRows, foodRows) {
+  return function (target) {
+    const action = new w.URLSearchParams(target.split('?')[1]).get('action');
+    if (action === 'get') return Promise.resolve({ success: true, data: bodyRows });
+    if (action === 'getNutrition') return Promise.resolve({ success: true, data: foodRows });
+    return Promise.resolve({ success: false });
+  };
+}
+
+test('אימות: שורה אחת עם הערכים הנכונים', () => {
+  const transport = sheet([['20/09/2026', 88.4, 35.9, 22.1, 48.9]], []);
+  return w.Sheets.verify(URL, { date: '2026-09-20', weightKg: 88.4, bodyFatKg: 22.1 },
+    'body', { transport }).then((r) => {
+      assert(r.state === 'verified', 'מצב: ' + r.state);
+      assert(r.count === 1, 'מספר שורות: ' + r.count);
+    });
+});
+
+test('אימות: שתי שורות לאותו תאריך מזוהות ככפילות', () => {
+  const transport = sheet([], [
+    ['19/09/2026', 2200, 90, 200, 160, 20, 8000],
+    ['19/09/2026', 2400, 95, 210, 170, 22, 9000]
+  ]);
+  return w.Sheets.verify(URL, { date: '2026-09-19', kcal: 2400 }, 'food', { transport })
+    .then((r) => {
+      assert(r.state === 'duplicate', 'מצב: ' + r.state);
+      assert(r.count === 2, 'מספר שורות: ' + r.count);
+      assert(r.matching === 1, 'שורות תואמות: ' + r.matching);
+    });
+});
+
+test('אימות: שורה עם ערכים אחרים אינה אימות', () => {
+  const transport = sheet([['20/09/2026', 90.1, 36, 22, 49]], []);
+  return w.Sheets.verify(URL, { date: '2026-09-20', weightKg: 88.4 }, 'body', { transport })
+    .then((r) => assert(r.state === 'mismatch', 'מצב: ' + r.state));
+});
+
+test('אימות: תאריך שאין לו שורה', () => {
+  const transport = sheet([['19/09/2026', 88, 36, 22, 49]], []);
+  return w.Sheets.verify(URL, { date: '2026-09-20', weightKg: 88.4 }, 'body', { transport })
+    .then((r) => assert(r.state === 'missing', 'מצב: ' + r.state));
+});
+
+test('אימות: עיגול בגיליון אינו נחשב שגיאה', () => {
+  const transport = sheet([], [['20/09/2026', 2191, 45.3, 137.5, 143, 11, 7388]]);
+  return w.Sheets.verify(URL,
+    { date: '2026-09-20', kcal: 2191.4, fatG: 45.3, steps: 7388 }, 'food', { transport })
+    .then((r) => assert(r.state === 'verified', 'מצב: ' + r.state));
+});
+
+test('אימות: גיליון שלא נקרא מדווח כלא ידוע, לא ככישלון', () => {
+  const transport = () => Promise.reject(new Error('רשת'));
+  return w.Sheets.verify(URL, { date: '2026-09-20', weightKg: 88.4 }, 'body', { transport })
+    .then((r) => assert(r.state === 'unknown', 'מצב: ' + r.state));
+});
+
+test('שמירה: כתיבה שנכשלה בתשובה אבל נכתבה — מאומתת', () => {
+  // זה בדיוק המקרה שדווח: הסקריפט כותב ולא מחזיר אישור
+  serve(() => 'silent');
+  const transport = sheet([['20/09/2026', 88.4, 35.9, 22.1, 48.9]], []);
+
+  return w.Sheets.save(URL, { date: '2026-09-20', weightKg: 88.4 }, 'body', { transport })
+    .then((r) => {
+      assert(r.sent === false, 'התשובה אמורה להיכשל בהדמיה הזו');
+      assert(r.state === 'verified',
+        'שמירה שהצליחה דווחה כ-' + r.state + ' רק כי האישור לא הגיע');
+    });
+});
+
 queue.reduce(function (chain, item) {
   return chain.then(function () {
     return Promise.resolve().then(item.fn).then(

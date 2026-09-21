@@ -185,69 +185,6 @@ test('אין נתון שמוצג פעמיים באותו מסך', () => {
 
 
 
-test('טופס ההזנה כולל את כל השדות ושומר', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  ['weightKg', 'bodyFatKg', 'muscleKg', 'kcal', 'proteinG', 'carbG', 'fatG', 'fiberG', 'steps']
-    .forEach((field) => {
-      assert(doc.querySelector('[data-field="' + field + '"]'), 'חסר שדה: ' + field);
-    });
-
-  doc.querySelector('[data-field="fiberG"]').value = '31';
-  doc.querySelector('[data-field="steps"]').value = '11500';
-  doc.querySelector('[data-save="food"]').dispatchEvent(
-    new window.Event('click', { bubbles: true }));
-
-  const saved = Store.getEntry(Dates.today());
-  assert(saved.fiberG === 31, 'הסיבים לא נשמרו: ' + saved.fiberG);
-  assert(saved.steps === 11500, 'הצעדים לא נשמרו: ' + saved.steps);
-});
-
-test('בחירת תאריך במקום ניווט יום־יום', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-
-  const field = doc.querySelector('#entry-date');
-  assert(field, 'שדה התאריך חסר');
-  assert(field.type === 'date', 'אמור להיות שדה תאריך');
-  assert(field.getAttribute('max') === Dates.today(), 'אין חסימה של תאריך עתידי');
-
-  // קפיצה ישירה לכל תאריך
-  const target = Dates.addDays(Dates.today(), -9);
-  field.value = target;
-  field.dispatchEvent(new window.Event('change', { bubbles: true }));
-  assert(App.state.date === target, 'התאריך לא התעדכן: ' + App.state.date);
-
-  // וקיצורים לימים הקרובים
-  doc.querySelector('[data-jump="1"]').dispatchEvent(new window.Event('click', { bubbles: true }));
-  assert(App.state.date === Dates.addDays(Dates.today(), -1), 'הקיצור לאתמול נכשל');
-
-  doc.querySelector('[data-jump="0"]').dispatchEvent(new window.Event('click', { bubbles: true }));
-  assert(App.state.date === Dates.today(), 'הקיצור להיום נכשל');
-});
-
-test('תאריך עתידי נדחה', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  const field = doc.querySelector('#entry-date');
-  field.value = Dates.addDays(Dates.today(), 3);
-  field.dispatchEvent(new window.Event('change', { bubbles: true }));
-  assert(App.state.date === Dates.today(), 'התקבל תאריך עתידי');
-});
-
-test('שתי הקבוצות מופרדות בכרטיסים', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  const cards = [...doc.querySelectorAll('#view .card')];
-
-  const titleOf = (card) => (card.querySelector('h3') || {}).textContent || '';
-  const body = cards.find((c) => titleOf(c) === 'מדדי גוף');
-  const food = cards.find((c) => titleOf(c) === 'תזונה');
-  assert(body && food, 'חסר אחד הכרטיסים');
-  assert(body !== food, 'שתי הקבוצות באותו כרטיס');
-
-  // שדה מכל קבוצה נמצא בכרטיס שלה
-  assert(body.querySelector('[data-field="weightKg"]'), 'המשקל לא בכרטיס הגוף');
-  assert(food.querySelector('[data-field="kcal"]'), 'הקלוריות לא בכרטיס התזונה');
-  assert(!body.querySelector('[data-field="kcal"]'), 'קלוריות בכרטיס הגוף');
-});
-
 test('הדבקת שורה ממלאת את הטופס', () => {
   App.setState({ date: Dates.today(), tab: 'entry' });
   const input = doc.querySelector('#paste-line');
@@ -928,6 +865,103 @@ test('פס הבחירה אטום ויושב מתחת לטאבים', () => {
   assert(zTabs > zPick, 'סדר השכבות הפוך: ' + zTabs + ' מול ' + zPick);
 });
 
+test('ההזנה סוגרת יום אחד: אוכל שלו ושקילת הבוקר שאחריו', () => {
+  App.setState({ tab: 'entry', entryDay: null });
+
+  const yesterday = Dates.addDays(Dates.today(), -1);
+  const title = doc.querySelector('.day-title').textContent;
+  assert(title.indexOf(Dates.short(yesterday)) !== -1,
+    'ברירת המחדל אינה אתמול: ' + title);
+  assert(title.indexOf(Dates.short(Dates.today())) !== -1,
+    'שקילת הבוקר אינה של היום');
+
+  const heads = [...doc.querySelectorAll('#view .card h3')].map((h) => h.textContent);
+  assert(heads.some((h) => h === 'אוכל של ' + Dates.short(yesterday)), 'כרטיס האוכל');
+  assert(heads.some((h) => h === 'שקילת בוקר ' + Dates.short(Dates.today())), 'כרטיס השקילה');
+
+  // כפתור שמירה אחד בלבד
+  assert(doc.querySelectorAll('[data-save]').length === 1, 'יותר מכפתור שמירה אחד');
+});
+
+test('שמירה כותבת כל קבוצה לתאריך שלה', () => {
+  const day = Dates.addDays(Dates.today(), -3);
+  const morning = Dates.addDays(day, 1);
+  App.setState({ tab: 'entry', entryDay: day });
+
+  doc.querySelector('[data-field="kcal"]').value = '2345';
+  doc.querySelector('[data-field="weightKg"]').value = '87.6';
+  doc.querySelector('[data-save="day"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+
+  assert(Store.getEntry(day).kcal === 2345, 'האוכל לא נשמר ליום הנכון');
+  assert(Store.getEntry(morning).weightKg === 87.6, 'המשקל לא נשמר לבוקר שאחריו');
+  assert(Store.getEntry(day).weightKg !== 87.6, 'המשקל נשמר ליום של האוכל');
+});
+
+test('ניווט בין ימים, בלי לעבור לבוקר שעוד לא הגיע', () => {
+  App.setState({ tab: 'entry', entryDay: null });
+  const start = window.EntryTab.closingDay(App.state);
+
+  doc.querySelector('[data-shift="-1"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+  assert(App.state.entryDay === Dates.addDays(start, -1), 'לא זז אחורה');
+
+  doc.querySelector('[data-shift="1"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+  assert(App.state.entryDay === start, 'לא חזר');
+
+  // מאתמול אי אפשר קדימה: הבוקר שסוגר את היום הוא מחר
+  const forward = doc.querySelector('[data-shift="1"]');
+  assert(forward.disabled, 'אפשר לעבור ליום שהבוקר שלו עתידי');
+
+  App.setState({ entryDay: null });
+});
+
+test('לחיצה על יום ברשימה פותחת אותו לעריכה', () => {
+  const day = Dates.addDays(Dates.today(), -5);
+  Store.upsert({ date: day, kcal: 2111 });
+  App.setState({ tab: 'entry', entryDay: null });
+
+  const row = doc.querySelector('tr[data-day="' + day + '"]');
+  assert(row, 'היום לא ברשימה');
+  row.dispatchEvent(new window.Event('click', { bubbles: true }));
+
+  assert(App.state.entryDay === day, 'היום לא נבחר');
+  assert(doc.querySelector('[data-field="kcal"]').value === '2111',
+    'הטופס לא התמלא בערכי היום');
+
+  App.setState({ entryDay: null });
+});
+
+test('שמירה בלי שינוי אינה יוצרת רשומה ריקה', () => {
+  // רחוק מספיק כדי שלא יחפוף לנתוני הבדיקה
+  const day = Dates.addDays(Dates.today(), -120);
+  const morning = Dates.addDays(day, 1);
+  assert(!Store.getEntry(day) && !Store.getEntry(morning), 'היום אינו ריק מלכתחילה');
+  App.setState({ tab: 'entry', entryDay: day });
+
+  doc.querySelectorAll('[data-field]').forEach((f) => { f.value = ''; });
+  doc.querySelector('[data-save="day"]').dispatchEvent(
+    new window.Event('click', { bubbles: true }));
+
+  assert(!Store.getEntry(day), 'נוצרה רשומה ריקה ליום האוכל');
+  assert(!Store.getEntry(morning), 'נוצרה רשומה ריקה לבוקר');
+
+  App.setState({ entryDay: null });
+});
+
+test('סימון מצב הגיליון מוצג לכל יום', () => {
+  const day = Dates.addDays(Dates.today(), -2);
+  Store.upsert({ date: day, kcal: 2200 });
+  const log = Object.assign({}, Store.getSettings().syncLog || {});
+  log[day + ':food'] = 'duplicate';
+  Store.updateSettings({ syncLog: log });
+
+  App.setState({ tab: 'entry', entryDay: null });
+  const row = doc.querySelector('tr[data-day="' + day + '"]');
+  assert(row.textContent.indexOf('כפול') !== -1, 'הכפילות לא סומנה');
+});
+
 test('טאב התקציב מציג את שלושת החלקים', () => {
   App.setState({ date: Dates.today(), tab: 'budget', splitParts: 2, splitRow: null });
 
@@ -1203,69 +1237,6 @@ test('אין נתון שמוצג פעמיים באותו מסך', () => {
 
 
 
-test('טופס ההזנה כולל את כל השדות ושומר', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  ['weightKg', 'bodyFatKg', 'muscleKg', 'kcal', 'proteinG', 'carbG', 'fatG', 'fiberG', 'steps']
-    .forEach((field) => {
-      assert(doc.querySelector('[data-field="' + field + '"]'), 'חסר שדה: ' + field);
-    });
-
-  doc.querySelector('[data-field="fiberG"]').value = '31';
-  doc.querySelector('[data-field="steps"]').value = '11500';
-  doc.querySelector('[data-save="food"]').dispatchEvent(
-    new window.Event('click', { bubbles: true }));
-
-  const saved = Store.getEntry(Dates.today());
-  assert(saved.fiberG === 31, 'הסיבים לא נשמרו: ' + saved.fiberG);
-  assert(saved.steps === 11500, 'הצעדים לא נשמרו: ' + saved.steps);
-});
-
-test('בחירת תאריך במקום ניווט יום־יום', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-
-  const field = doc.querySelector('#entry-date');
-  assert(field, 'שדה התאריך חסר');
-  assert(field.type === 'date', 'אמור להיות שדה תאריך');
-  assert(field.getAttribute('max') === Dates.today(), 'אין חסימה של תאריך עתידי');
-
-  // קפיצה ישירה לכל תאריך
-  const target = Dates.addDays(Dates.today(), -9);
-  field.value = target;
-  field.dispatchEvent(new window.Event('change', { bubbles: true }));
-  assert(App.state.date === target, 'התאריך לא התעדכן: ' + App.state.date);
-
-  // וקיצורים לימים הקרובים
-  doc.querySelector('[data-jump="1"]').dispatchEvent(new window.Event('click', { bubbles: true }));
-  assert(App.state.date === Dates.addDays(Dates.today(), -1), 'הקיצור לאתמול נכשל');
-
-  doc.querySelector('[data-jump="0"]').dispatchEvent(new window.Event('click', { bubbles: true }));
-  assert(App.state.date === Dates.today(), 'הקיצור להיום נכשל');
-});
-
-test('תאריך עתידי נדחה', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  const field = doc.querySelector('#entry-date');
-  field.value = Dates.addDays(Dates.today(), 3);
-  field.dispatchEvent(new window.Event('change', { bubbles: true }));
-  assert(App.state.date === Dates.today(), 'התקבל תאריך עתידי');
-});
-
-test('שתי הקבוצות מופרדות בכרטיסים', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  const cards = [...doc.querySelectorAll('#view .card')];
-
-  const titleOf = (card) => (card.querySelector('h3') || {}).textContent || '';
-  const body = cards.find((c) => titleOf(c) === 'מדדי גוף');
-  const food = cards.find((c) => titleOf(c) === 'תזונה');
-  assert(body && food, 'חסר אחד הכרטיסים');
-  assert(body !== food, 'שתי הקבוצות באותו כרטיס');
-
-  // שדה מכל קבוצה נמצא בכרטיס שלה
-  assert(body.querySelector('[data-field="weightKg"]'), 'המשקל לא בכרטיס הגוף');
-  assert(food.querySelector('[data-field="kcal"]'), 'הקלוריות לא בכרטיס התזונה');
-  assert(!body.querySelector('[data-field="kcal"]'), 'קלוריות בכרטיס הגוף');
-});
-
 test('הדבקת שורה ממלאת את הטופס', () => {
   App.setState({ date: Dates.today(), tab: 'entry' });
   const input = doc.querySelector('#paste-line');
@@ -1776,69 +1747,6 @@ test('אין נתון שמוצג פעמיים באותו מסך', () => {
 
 
 
-test('טופס ההזנה כולל את כל השדות ושומר', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  ['weightKg', 'bodyFatKg', 'muscleKg', 'kcal', 'proteinG', 'carbG', 'fatG', 'fiberG', 'steps']
-    .forEach((field) => {
-      assert(doc.querySelector('[data-field="' + field + '"]'), 'חסר שדה: ' + field);
-    });
-
-  doc.querySelector('[data-field="fiberG"]').value = '31';
-  doc.querySelector('[data-field="steps"]').value = '11500';
-  doc.querySelector('[data-save="food"]').dispatchEvent(
-    new window.Event('click', { bubbles: true }));
-
-  const saved = Store.getEntry(Dates.today());
-  assert(saved.fiberG === 31, 'הסיבים לא נשמרו: ' + saved.fiberG);
-  assert(saved.steps === 11500, 'הצעדים לא נשמרו: ' + saved.steps);
-});
-
-test('בחירת תאריך במקום ניווט יום־יום', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-
-  const field = doc.querySelector('#entry-date');
-  assert(field, 'שדה התאריך חסר');
-  assert(field.type === 'date', 'אמור להיות שדה תאריך');
-  assert(field.getAttribute('max') === Dates.today(), 'אין חסימה של תאריך עתידי');
-
-  // קפיצה ישירה לכל תאריך
-  const target = Dates.addDays(Dates.today(), -9);
-  field.value = target;
-  field.dispatchEvent(new window.Event('change', { bubbles: true }));
-  assert(App.state.date === target, 'התאריך לא התעדכן: ' + App.state.date);
-
-  // וקיצורים לימים הקרובים
-  doc.querySelector('[data-jump="1"]').dispatchEvent(new window.Event('click', { bubbles: true }));
-  assert(App.state.date === Dates.addDays(Dates.today(), -1), 'הקיצור לאתמול נכשל');
-
-  doc.querySelector('[data-jump="0"]').dispatchEvent(new window.Event('click', { bubbles: true }));
-  assert(App.state.date === Dates.today(), 'הקיצור להיום נכשל');
-});
-
-test('תאריך עתידי נדחה', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  const field = doc.querySelector('#entry-date');
-  field.value = Dates.addDays(Dates.today(), 3);
-  field.dispatchEvent(new window.Event('change', { bubbles: true }));
-  assert(App.state.date === Dates.today(), 'התקבל תאריך עתידי');
-});
-
-test('שתי הקבוצות מופרדות בכרטיסים', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  const cards = [...doc.querySelectorAll('#view .card')];
-
-  const titleOf = (card) => (card.querySelector('h3') || {}).textContent || '';
-  const body = cards.find((c) => titleOf(c) === 'מדדי גוף');
-  const food = cards.find((c) => titleOf(c) === 'תזונה');
-  assert(body && food, 'חסר אחד הכרטיסים');
-  assert(body !== food, 'שתי הקבוצות באותו כרטיס');
-
-  // שדה מכל קבוצה נמצא בכרטיס שלה
-  assert(body.querySelector('[data-field="weightKg"]'), 'המשקל לא בכרטיס הגוף');
-  assert(food.querySelector('[data-field="kcal"]'), 'הקלוריות לא בכרטיס התזונה');
-  assert(!body.querySelector('[data-field="kcal"]'), 'קלוריות בכרטיס הגוף');
-});
-
 test('הדבקת שורה ממלאת את הטופס', () => {
   App.setState({ date: Dates.today(), tab: 'entry' });
   const input = doc.querySelector('#paste-line');
@@ -2348,69 +2256,6 @@ test('אין נתון שמוצג פעמיים באותו מסך', () => {
 });
 
 
-
-test('טופס ההזנה כולל את כל השדות ושומר', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  ['weightKg', 'bodyFatKg', 'muscleKg', 'kcal', 'proteinG', 'carbG', 'fatG', 'fiberG', 'steps']
-    .forEach((field) => {
-      assert(doc.querySelector('[data-field="' + field + '"]'), 'חסר שדה: ' + field);
-    });
-
-  doc.querySelector('[data-field="fiberG"]').value = '31';
-  doc.querySelector('[data-field="steps"]').value = '11500';
-  doc.querySelector('[data-save="food"]').dispatchEvent(
-    new window.Event('click', { bubbles: true }));
-
-  const saved = Store.getEntry(Dates.today());
-  assert(saved.fiberG === 31, 'הסיבים לא נשמרו: ' + saved.fiberG);
-  assert(saved.steps === 11500, 'הצעדים לא נשמרו: ' + saved.steps);
-});
-
-test('בחירת תאריך במקום ניווט יום־יום', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-
-  const field = doc.querySelector('#entry-date');
-  assert(field, 'שדה התאריך חסר');
-  assert(field.type === 'date', 'אמור להיות שדה תאריך');
-  assert(field.getAttribute('max') === Dates.today(), 'אין חסימה של תאריך עתידי');
-
-  // קפיצה ישירה לכל תאריך
-  const target = Dates.addDays(Dates.today(), -9);
-  field.value = target;
-  field.dispatchEvent(new window.Event('change', { bubbles: true }));
-  assert(App.state.date === target, 'התאריך לא התעדכן: ' + App.state.date);
-
-  // וקיצורים לימים הקרובים
-  doc.querySelector('[data-jump="1"]').dispatchEvent(new window.Event('click', { bubbles: true }));
-  assert(App.state.date === Dates.addDays(Dates.today(), -1), 'הקיצור לאתמול נכשל');
-
-  doc.querySelector('[data-jump="0"]').dispatchEvent(new window.Event('click', { bubbles: true }));
-  assert(App.state.date === Dates.today(), 'הקיצור להיום נכשל');
-});
-
-test('תאריך עתידי נדחה', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  const field = doc.querySelector('#entry-date');
-  field.value = Dates.addDays(Dates.today(), 3);
-  field.dispatchEvent(new window.Event('change', { bubbles: true }));
-  assert(App.state.date === Dates.today(), 'התקבל תאריך עתידי');
-});
-
-test('שתי הקבוצות מופרדות בכרטיסים', () => {
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  const cards = [...doc.querySelectorAll('#view .card')];
-
-  const titleOf = (card) => (card.querySelector('h3') || {}).textContent || '';
-  const body = cards.find((c) => titleOf(c) === 'מדדי גוף');
-  const food = cards.find((c) => titleOf(c) === 'תזונה');
-  assert(body && food, 'חסר אחד הכרטיסים');
-  assert(body !== food, 'שתי הקבוצות באותו כרטיס');
-
-  // שדה מכל קבוצה נמצא בכרטיס שלה
-  assert(body.querySelector('[data-field="weightKg"]'), 'המשקל לא בכרטיס הגוף');
-  assert(food.querySelector('[data-field="kcal"]'), 'הקלוריות לא בכרטיס התזונה');
-  assert(!body.querySelector('[data-field="kcal"]'), 'קלוריות בכרטיס הגוף');
-});
 
 test('הדבקת שורה ממלאת את הטופס', () => {
   App.setState({ date: Dates.today(), tab: 'entry' });

@@ -408,8 +408,93 @@
     });
   }
 
+
+  /**
+   * אימות בקריאה חוזרת.
+   *
+   * תשובת הכתיבה אינה עדות אמינה לשום כיוון: הסקריפט כותב בהצלחה
+   * אבל לא תמיד מחזיר את האישור שהקוד מחכה לו, ולכן דווחה שגיאה
+   * על שמירה שהצליחה. במקום לנחש מהתשובה, קוראים את הגיליון אחרי
+   * הכתיבה ובודקים מה באמת יש בו.
+   *
+   * הבדיקה מזהה גם כפילות: שתי שורות לאותו תאריך. זה המקרה שעריכה
+   * עלולה לייצר אם הסקריפט מוסיף שורה במקום לדרוס — ואי אפשר לדעת
+   * מראש, רק לראות אחרי.
+   */
+  var BODY_KEYS = ['weightKg', 'muscleKg', 'bodyFatKg', 'waterKg'];
+  var FOOD_KEYS = ['kcal', 'proteinG', 'carbG', 'fatG', 'fiberG', 'steps'];
+
+  function verify(url, entry, group, options) {
+    var opts = options || {};
+    var transport = opts.transport || defaultTransport;
+    var isBody = group === 'body';
+
+    var actions = isBody ? (opts.bodyActions || BODY_ACTIONS)
+      : (opts.nutritionActions || NUTRITION_ACTIONS);
+    var columns = isBody ? BODY_COLUMNS : NUTRITION_COLUMNS;
+    var keys = isBody ? BODY_KEYS : FOOD_KEYS;
+
+    return tryActions(url, actions, transport).then(function (result) {
+      if (!result.action) return { state: 'unknown', count: 0 };
+
+      // בלי מיזוג: כל שורה בנפרד, כדי שכפילות תיראה
+      var rows = rowsToEntries(result.rows, columns)
+        .filter(function (row) { return row.date === entry.date; });
+
+      if (!rows.length) return { state: 'missing', count: 0 };
+
+      // סובלנות: הגיליון עשוי לעגל
+      var tolerance = function (key) { return key === 'steps' || key === 'kcal' ? 1 : 0.051; };
+
+      var matches = function (row) {
+        return keys.every(function (key) {
+          var want = toNumber(entry[key]);
+          if (want === null) return true;
+          var have = toNumber(row[key]);
+          return have !== null && Math.abs(have - want) <= tolerance(key);
+        });
+      };
+
+      var good = rows.filter(matches).length;
+
+      if (rows.length > 1) {
+        return { state: 'duplicate', count: rows.length, matching: good };
+      }
+      return { state: good ? 'verified' : 'mismatch', count: 1 };
+    }).catch(function () {
+      return { state: 'unknown', count: 0 };
+    });
+  }
+
+  /**
+   * שמירה ואימות.
+   *
+   * כישלון בתשובת הכתיבה אינו מסיים את התהליך: האימות רץ בכל מקרה,
+   * והוא שקובע. כך שמירה שהצליחה לא תדווח ככישלון רק מפני שהאישור
+   * לא הגיע.
+   */
+  function save(url, entry, group, options) {
+    return push(url, entry, group).then(
+      function () { return { sent: true }; },
+      function (error) { return { sent: false, error: error }; }
+    ).then(function (sending) {
+      return verify(url, entry, group, options).then(function (check) {
+        return {
+          group: group,
+          date: entry.date,
+          state: check.state,
+          count: check.count,
+          sent: sending.sent,
+          error: sending.error || null
+        };
+      });
+    });
+  }
+
   root.Sheets = {
     push: push,
+    save: save,
+    verify: verify,
     probe: probe,
     jsonp: jsonp,
     toSheetDate: toSheetDate,
