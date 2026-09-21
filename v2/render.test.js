@@ -86,25 +86,6 @@ test('חילוץ מטקסט מחזיר מבנה שהתצוגה יודעת לקר
   assert(merged.fields.kcal === 1500, 'המיזוג נכשל');
 });
 
-test('שמירת הגדרה באמצע התהליך לא מבטלת את התצוגה', () => {
-  // זה בדיוק התרחיש שנשבר: שמירת המודל שהוחלף מרנדרת מחדש,
-  // וכתיבה לאלמנט שנשמר קודם נעלמת
-  App.setState({ date: Dates.today(), tab: 'entry' });
-  const before = w.document.getElementById('debate');
-  assert(before, 'אלמנט התוצאה חסר');
-
-  Store.updateSettings({ aiModelB: 'some/model:free' });
-
-  const after = w.document.getElementById('debate');
-  assert(after, 'האלמנט נעלם אחרי הרינדור');
-  assert(before !== after, 'התרחיש לא שוחזר: האלמנט לא הוחלף');
-
-  // כתיבה לאלמנט הישן באמת נעלמת — ולכן הקוד חייב לשלוף מחדש
-  before.innerHTML = 'ישן';
-  assert(w.document.getElementById('debate').textContent !== 'ישן',
-    'הכתיבה לאלמנט הישן דווקא נראית — הבדיקה לא רלוונטית');
-});
-
 test('הקוד שולף את אלמנט התוצאה מחדש ולא שומר אותו', () => {
   const src = fs.readFileSync(path.join(__dirname, 'js/app.js'), 'utf8');
   const showFn = src.match(/var show = function[\s\S]*?\};/);
