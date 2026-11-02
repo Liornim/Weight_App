@@ -50,6 +50,14 @@ test('ערך מהקובץ נכנס למאגר, והסיכום מוצג', async (
   assert(w.document.getElementById('view').textContent.includes('כותרת'), 'אין סיכום במסך');
 });
 
+test('הגיליון הפשוט מציג יום בשורה', () => {
+  const box = w.document.createElement('div');
+  box.innerHTML = Coach.card();
+  const cells = [...box.querySelectorAll('tbody tr td')].map((td) => td.textContent);
+  assert(cells.length === 4, 'תאים: ' + cells.length);
+  assert(cells[1].includes('90.8'), cells.join('|'));
+});
+
 test('תיקון ידני לא נדרס בטעינה הבאה', async () => {
   Store.upsert({ date: '2026-11-02', weightKg: 90.5 });
   await Coach.load();

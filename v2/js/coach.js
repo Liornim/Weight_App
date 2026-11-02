@@ -84,6 +84,7 @@
     if (data && data.updatedAt !== state.updatedAt) {
       state.updatedAt = data.updatedAt || null;
       state.summary = (data && data.summary) || null;
+      state.rows = validEntries(data);
       changed = true;
     }
     return changed;
@@ -222,6 +223,21 @@
     });
   }
 
+  /** הגיליון הפשוט: יום בשורה, החדש למעלה */
+  function sheet(rows) {
+    if (!rows || !rows.length) return '';
+    var cell = function (value, digits) {
+      return typeof value === 'number'
+        ? '<td class="n">' + root.Fmt.n(value, digits) + '</td>'
+        : '<td class="n flat">—</td>';
+    };
+    return P.table(['תאריך', 'משקל', 'קלוריות', 'חלבון'],
+      rows.slice().reverse().map(function (row) {
+        return '<tr><td class="n">' + P.esc(root.Dates.short(row.date)) + '</td>' +
+          cell(row.weightKg, 1) + cell(row.kcal, 0) + cell(row.proteinG, 0) + '</tr>';
+      }));
+  }
+
   function card() {
     var state = read();
     var s = state.summary;
@@ -241,6 +257,7 @@
     return P.section('הסיכום של Claude', P.card(s.headline || null,
       s.date ? root.Dates.short(s.date) : null,
       (tiles.length ? P.tiles(tiles) : '') +
+      sheet(state.rows) +
       lines.map(function (line) { return P.hint(String(line)); }).join('') +
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
