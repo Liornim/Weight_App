@@ -596,7 +596,6 @@
    */
   var TABS = [
     { value: 'budget', label: 'תקציב' },
-    { value: 'entry', label: 'הזנה' },
     { value: 'weight', label: 'משקל' },
     { value: 'data', label: 'נתונים' }
   ];
