@@ -108,6 +108,7 @@
       state.updatedAt = data.updatedAt || null;
       state.summary = (data && data.summary) || null;
       state.rows = validEntries(data);
+      state.targets = (data && data.targets) || null;
       changed = true;
     }
     return changed;
@@ -249,6 +250,48 @@
     });
   }
 
+  /** הסכום של היום: מה שנסגר, ואם לא נסגר אז סכום הארוחות */
+  function eatenOf(row, key) {
+    if (typeof row[key] === 'number') return row[key];
+    var meals = Array.isArray(row.meals) ? row.meals : [];
+    var total = meals.reduce(function (sum, meal) {
+      return sum + (typeof meal[key] === 'number' ? meal[key] : 0);
+    }, 0);
+    return total ? total : null;
+  }
+
+  /** שורה גדולה: כמה נאכל, כמה היעד וכמה נשאר */
+  function gauge(label, unit, eaten, target, doneWhenFull) {
+    var value = eaten || 0;
+    var left = target - value;
+    var pct = Math.max(0, Math.min(100, Math.round(value / target * 100)));
+    var note = left >= 0
+      ? 'נשארו ' + root.Fmt.n(left, 0) + ' ' + unit
+      : (doneWhenFull ? 'עברת את היעד ב-' : 'מעל היעד ב-') + root.Fmt.n(-left, 0) + ' ' + unit;
+    var over = left < 0 && !doneWhenFull;
+    return '<div class="today__gauge' + (over ? ' today__gauge--over' : '') + '">' +
+      '<div class="today__label">' + P.esc(label) + '</div>' +
+      '<div class="today__num"><strong>' + root.Fmt.n(value, 0) + '</strong>' +
+        '<span> / ' + root.Fmt.n(target, 0) + ' ' + unit + '</span></div>' +
+      '<div class="today__bar"><i style="width:' + pct + '%"></i></div>' +
+      '<div class="today__left">' + P.esc(note) + '</div>' +
+    '</div>';
+  }
+
+  /** הכרטיס הגדול בראש המסך */
+  function today() {
+    var state = read();
+    var rows = state.rows || [];
+    var targets = state.targets;
+    if (!rows.length || !targets) return '';
+    var row = rows[rows.length - 1];
+    return '<section class="today">' +
+      '<h2 class="today__title">היום · ' + P.esc(root.Dates.short(row.date)) + '</h2>' +
+      gauge('קלוריות', 'קק״ל', eatenOf(row, 'kcal'), targets.kcal, false) +
+      gauge('חלבון', 'גרם', eatenOf(row, 'proteinG'), targets.proteinG, true) +
+    '</section>';
+  }
+
   /** הגיליון הפשוט: יום בשורה, החדש למעלה */
   function sheet(rows) {
     if (!rows || !rows.length) return '';
@@ -265,20 +308,11 @@
       }, 0);
       return minutes ? minutes : null;
     };
-    // יום פתוח: סכום הארוחות עד עכשיו. נכנס למאגר ולגיליון רק בסגירת היום
-    var eaten = function (row, key, closed) {
-      if (typeof closed === 'number') return closed;
-      var meals = Array.isArray(row.meals) ? row.meals : [];
-      var total = meals.reduce(function (sum, meal) {
-        return sum + (typeof meal[key] === 'number' ? meal[key] : 0);
-      }, 0);
-      return total ? total : null;
-    };
     return P.table(['תאריך', 'משקל', 'קלוריות', 'חלבון', 'צעדים', 'הליכה (דק׳)'],
       rows.slice().reverse().map(function (row) {
         return '<tr><td class="n">' + P.esc(root.Dates.short(row.date)) + '</td>' +
-          cell(row.weightKg, 1) + cell(eaten(row, 'kcal', row.kcal), 0) +
-          cell(eaten(row, 'proteinG', row.proteinG), 0) +
+          cell(row.weightKg, 1) + cell(eatenOf(row, 'kcal'), 0) +
+          cell(eatenOf(row, 'proteinG'), 0) +
           cell(row.steps, 0) + cell(walked(row), 0) + '</tr>';
       }));
   }
@@ -307,5 +341,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);

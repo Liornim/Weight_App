@@ -81,6 +81,20 @@ test('יום פתוח מציג סכום ארוחות, בלי לכתוב למאג
   assert(Store.getEntry('2026-11-02').kcal === undefined, 'נכנס למאגר');
 });
 
+test('הכרטיס הגדול מציג נאכל, יעד ונשאר', async () => {
+  file = base({ updatedAt: 't01', targets: { kcal: 1900, proteinG: 170 },
+    entries: [{ date: '2026-11-02', weightKg: 90.8, meals: [{ kcal: 840, proteinG: 89 }] }] });
+  await Coach.load();
+  const text = w.document.getElementById('view').textContent;
+  assert(text.includes('840') && text.includes('1,060') && text.includes('81'), text.slice(0, 200));
+});
+
+test('בלי יעדים אין כרטיס גדול', async () => {
+  file = base({ updatedAt: 't02', entries: [{ date: '2026-11-02', weightKg: 90.8 }] });
+  await Coach.load();
+  assert(Coach.today() === '');
+});
+
 test('תיקון ידני לא נדרס בטעינה הבאה', async () => {
   Store.upsert({ date: '2026-11-02', weightKg: 90.5 });
   await Coach.load();

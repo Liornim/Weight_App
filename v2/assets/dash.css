@@ -1165,3 +1165,24 @@ input[type='range']::-moz-range-thumb {
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+/* הכרטיס הגדול של היום: המספר הראשון שרואים במסך */
+.today {
+  display: grid;
+  gap: 18px;
+  margin: 12px 14px;
+  padding: 18px;
+  background: #101820;
+  color: #fff;
+  border-radius: 20px;
+}
+.today__title { margin: 0; font-size: 15px; font-weight: 700; opacity: .75; }
+.today__label { font-size: 16px; font-weight: 700; }
+.today__num { font-family: var(--mono); direction: ltr; text-align: right; }
+.today__num strong { font-size: 52px; line-height: 1.1; font-weight: 600; }
+.today__num span { font-size: 16px; opacity: .7; }
+.today__bar { height: 12px; margin: 6px 0; border-radius: 6px; background: rgba(255,255,255,.18); overflow: hidden; }
+.today__bar i { display: block; height: 100%; border-radius: 6px; background: #3ecf8e; }
+.today__left { font-size: 18px; font-weight: 700; }
+.today__gauge--over .today__bar i { background: #ff7a6b; }
+.today__gauge--over .today__left { color: #ff9c90; }

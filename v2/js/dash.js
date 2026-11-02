@@ -612,7 +612,7 @@
     var settings = Store.getSettings();
 
     if (!entries.length) {
-      container.innerHTML = top(state, entries, settings) +
+      container.innerHTML = root.Coach.today() + top(state, entries, settings) +
         root.Coach.card() +
         P.section('התחלה', P.card(null, null,
           P.empty('עוד אין נתונים. אפשר להביא אותם מהגיליון בהגדרות למטה.'))) +
@@ -626,6 +626,7 @@
       : root.BudgetTab.render(state);
 
     container.innerHTML =
+      root.Coach.today() +
       top(state, entries, settings) +
       root.Coach.card() +
       tabs(state.tab) +
