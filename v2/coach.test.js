@@ -70,6 +70,17 @@ test('הליכה מוצגת בעמודה משלה ולא נכנסת לצעדים
   assert(Store.getEntry('2026-11-02').steps === undefined);
 });
 
+test('יום פתוח מציג סכום ארוחות, בלי לכתוב למאגר', async () => {
+  file = base({ updatedAt: 't00', entries: [{ date: '2026-11-02', weightKg: 90.8,
+    meals: [{ kcal: 235, proteinG: 27 }, { kcal: 605, proteinG: 62 }] }] });
+  await Coach.load();
+  const box = w.document.createElement('div');
+  box.innerHTML = Coach.card();
+  const cells = [...box.querySelectorAll('tbody tr td')].map((td) => td.textContent.replace(/\D/g, ''));
+  assert(cells[2] === '840' && cells[3] === '89', cells.join('|'));
+  assert(Store.getEntry('2026-11-02').kcal === undefined, 'נכנס למאגר');
+});
+
 test('תיקון ידני לא נדרס בטעינה הבאה', async () => {
   Store.upsert({ date: '2026-11-02', weightKg: 90.5 });
   await Coach.load();

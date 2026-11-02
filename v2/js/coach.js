@@ -265,10 +265,20 @@
       }, 0);
       return minutes ? minutes : null;
     };
+    // יום פתוח: סכום הארוחות עד עכשיו. נכנס למאגר ולגיליון רק בסגירת היום
+    var eaten = function (row, key, closed) {
+      if (typeof closed === 'number') return closed;
+      var meals = Array.isArray(row.meals) ? row.meals : [];
+      var total = meals.reduce(function (sum, meal) {
+        return sum + (typeof meal[key] === 'number' ? meal[key] : 0);
+      }, 0);
+      return total ? total : null;
+    };
     return P.table(['תאריך', 'משקל', 'קלוריות', 'חלבון', 'צעדים', 'הליכה (דק׳)'],
       rows.slice().reverse().map(function (row) {
         return '<tr><td class="n">' + P.esc(root.Dates.short(row.date)) + '</td>' +
-          cell(row.weightKg, 1) + cell(row.kcal, 0) + cell(row.proteinG, 0) +
+          cell(row.weightKg, 1) + cell(eaten(row, 'kcal', row.kcal), 0) +
+          cell(eaten(row, 'proteinG', row.proteinG), 0) +
           cell(row.steps, 0) + cell(walked(row), 0) + '</tr>';
       }));
   }
