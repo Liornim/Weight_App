@@ -614,6 +614,7 @@
 
     if (!entries.length) {
       container.innerHTML = top(state, entries, settings) +
+        root.Coach.card() +
         P.section('התחלה', P.card(null, null,
           P.empty('עוד אין נתונים. אפשר להביא אותם מהגיליון בהגדרות למטה.'))) +
         settingsSection(state, entries, settings);
@@ -627,6 +628,7 @@
 
     container.innerHTML =
       top(state, entries, settings) +
+      root.Coach.card() +
       tabs(state.tab) +
       panel +
       settingsSection(state, entries, settings);
