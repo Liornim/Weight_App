@@ -31,6 +31,22 @@
 
   var busy = false;
 
+  /**
+   * תחילת המעקב: ב-v2 כל המסכים רואים רק מהתאריך הזה והלאה.
+   *
+   * זה סינון תצוגה בלבד. המאגר והגיליון שומרים את כל ההיסטוריה,
+   * והאפליקציה הישנה ב-/ עדיין מציגה אותה, כך שאפשר לחזור אחורה
+   * על ידי הסרת startDate מהקובץ.
+   */
+  var startDate = null;
+  var allEntries = Store.getEntries;
+  Store.getEntries = function () {
+    var entries = allEntries();
+    return startDate
+      ? entries.filter(function (e) { return e.date >= startDate; })
+      : entries;
+  };
+
   function blank() { return { applied: {}, sheet: {}, summary: null, updatedAt: null }; }
 
   function read() {
@@ -79,6 +95,13 @@
       });
     } finally {
       app.quiet = false;
+    }
+
+    var from = (data && /^\d{4}-\d{2}-\d{2}$/.test(data.startDate)) ? data.startDate : null;
+    if (from !== (state.startDate || null)) {
+      state.startDate = from;
+      startDate = from;
+      changed = true;
     }
 
     if (data && data.updatedAt !== state.updatedAt) {
@@ -195,6 +218,9 @@
       .catch(function () { return false; })
       .then(function (result) { busy = false; return result; });
   }
+
+  // מהמטמון, כדי שההיסטוריה לא תהבהב במסך לפני שהקובץ נטען
+  startDate = read().startDate || null;
 
   function start() {
     if (!root.fetch) return;

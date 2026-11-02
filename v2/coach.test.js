@@ -113,6 +113,18 @@ test('תקלה בבדיקה: לא כותב, ומנסה שוב בפעם הבאה'
   assert(saves.length === 1);
 });
 
+test('תאריך התחלה מסתיר היסטוריה בלי למחוק אותה', async () => {
+  Store.upsert({ date: '2026-01-01', weightKg: 95 });
+  file = base({ updatedAt: 't6', startDate: '2026-11-02', entries: [] });
+  await Coach.load();
+  assert(!Store.getEntries().some((e) => e.date === '2026-01-01'), 'ההיסטוריה מוצגת');
+  assert(Store.getEntry('2026-01-01').weightKg === 95, 'ההיסטוריה נמחקה');
+  assert(JSON.parse(Store.exportJSON()).entries.some((e) => e.date === '2026-01-01'), 'חסר בגיבוי');
+  file = base({ updatedAt: 't7', entries: [] });
+  await Coach.load();
+  assert(Store.getEntries().some((e) => e.date === '2026-01-01'), 'לא חזר');
+});
+
 test('קובץ שבור לא מפיל את הדף', async () => {
   const before = Store.getEntries().length;
   file = { entries: [{ date: 'לא תאריך', weightKg: 1 }, null], updatedAt: 't5' };
