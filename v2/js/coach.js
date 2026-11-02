@@ -257,10 +257,19 @@
         ? '<td class="n">' + root.Fmt.n(value, digits) + '</td>'
         : '<td class="n flat">—</td>';
     };
-    return P.table(['תאריך', 'משקל', 'קלוריות', 'חלבון'],
+    // הליכות נפרדות מסך הצעדים היומי, ולכן עמודה משלהן
+    var walked = function (row) {
+      var walks = Array.isArray(row.walks) ? row.walks : [];
+      var minutes = walks.reduce(function (sum, walk) {
+        return sum + (typeof walk.minutes === 'number' ? walk.minutes : 0);
+      }, 0);
+      return minutes ? minutes : null;
+    };
+    return P.table(['תאריך', 'משקל', 'קלוריות', 'חלבון', 'צעדים', 'הליכה (דק׳)'],
       rows.slice().reverse().map(function (row) {
         return '<tr><td class="n">' + P.esc(root.Dates.short(row.date)) + '</td>' +
-          cell(row.weightKg, 1) + cell(row.kcal, 0) + cell(row.proteinG, 0) + '</tr>';
+          cell(row.weightKg, 1) + cell(row.kcal, 0) + cell(row.proteinG, 0) +
+          cell(row.steps, 0) + cell(walked(row), 0) + '</tr>';
       }));
   }
 
