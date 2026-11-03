@@ -1186,3 +1186,8 @@ input[type='range']::-moz-range-thumb {
 .today__left { font-size: 18px; font-weight: 700; }
 .today__gauge--over .today__bar i { background: #ff7a6b; }
 .today__gauge--over .today__left { color: #ff9c90; }
+
+.today__meals { display: grid; gap: 10px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.18); }
+.today__meal { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+.today__meal span { min-width: 0; }
+.today__meal b { flex: none; font-weight: 600; }

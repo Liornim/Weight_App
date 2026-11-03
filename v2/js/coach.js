@@ -278,6 +278,16 @@
     '</div>';
   }
 
+  /** מה נאכל היום, ארוחה בשורה */
+  function mealList(row) {
+    var meals = Array.isArray(row.meals) ? row.meals : [];
+    if (!meals.length) return '';
+    return '<div class="today__meals">' + meals.map(function (meal) {
+      return '<div class="today__meal"><span>' + P.esc(meal.name) + '</span>' +
+        '<b>' + root.Fmt.n(meal.kcal, 0) + ' קק״ל · ' + root.Fmt.n(meal.proteinG, 0) + ' ג׳</b></div>';
+    }).join('') + '</div>';
+  }
+
   /** הכרטיס הגדול בראש המסך */
   function today() {
     var state = read();
@@ -289,6 +299,7 @@
       '<h2 class="today__title">היום · ' + P.esc(root.Dates.short(row.date)) + '</h2>' +
       gauge('קלוריות', 'קק״ל', eatenOf(row, 'kcal'), targets.kcal, false) +
       gauge('חלבון', 'גרם', eatenOf(row, 'proteinG'), targets.proteinG, true) +
+      mealList(row) +
     '</section>';
   }
 

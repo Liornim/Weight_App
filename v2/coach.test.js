@@ -89,6 +89,14 @@ test('הכרטיס הגדול מציג נאכל, יעד ונשאר', async () =>
   assert(text.includes('840') && text.includes('1,060') && text.includes('81'), text.slice(0, 200));
 });
 
+test('הארוחות של היום מוצגות, בלי להזריק HTML', async () => {
+  file = base({ updatedAt: 't03', targets: { kcal: 1900, proteinG: 170 },
+    entries: [{ date: '2026-11-02', meals: [{ name: '<b>סלט</b>', kcal: 760, proteinG: 93 }] }] });
+  await Coach.load();
+  const html = Coach.today();
+  assert(html.includes('סלט') && html.includes('760') && !html.includes('<b>סלט'), html);
+});
+
 test('בלי יעדים אין כרטיס גדול', async () => {
   file = base({ updatedAt: 't02', entries: [{ date: '2026-11-02', weightKg: 90.8 }] });
   await Coach.load();
