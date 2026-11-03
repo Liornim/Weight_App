@@ -1191,3 +1191,9 @@ input[type='range']::-moz-range-thumb {
 .today__meal { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
 .today__meal span { min-width: 0; }
 .today__meal b { flex: none; font-weight: 600; }
+
+.today__small { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.today__small .today__gauge { min-width: 0; }
+.today__small .today__num strong { font-size: 30px; }
+.today__small .today__num span { font-size: 12px; }
+.today__small .today__left { font-size: 14px; }

@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-03T15:33:00+02:00",
+  "updatedAt": "2026-11-03T15:42:00+02:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -116,6 +116,8 @@
   },
   "targets": {
     "kcal": 1900,
-    "proteinG": 170
+    "proteinG": 170,
+    "carbG": 160,
+    "fatG": 65
   }
 }

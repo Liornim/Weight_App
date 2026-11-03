@@ -299,6 +299,12 @@
       '<h2 class="today__title">היום · ' + P.esc(root.Dates.short(row.date)) + '</h2>' +
       gauge('קלוריות', 'קק״ל', eatenOf(row, 'kcal'), targets.kcal, false) +
       gauge('חלבון', 'גרם', eatenOf(row, 'proteinG'), targets.proteinG, true) +
+      (targets.carbG && targets.fatG
+        ? '<div class="today__small">' +
+            gauge('פחמימות', 'גרם', eatenOf(row, 'carbG'), targets.carbG, false) +
+            gauge('שומן', 'גרם', eatenOf(row, 'fatG'), targets.fatG, false) +
+          '</div>'
+        : '') +
       mealList(row) +
     '</section>';
   }
@@ -319,11 +325,12 @@
       }, 0);
       return minutes ? minutes : null;
     };
-    return P.table(['תאריך', 'משקל', 'קלוריות', 'חלבון', 'צעדים', 'הליכה (דק׳)'],
+    return P.table(['תאריך', 'משקל', 'קלוריות', 'חלבון', 'פחמימות', 'שומן', 'צעדים', 'הליכה (דק׳)'],
       rows.slice().reverse().map(function (row) {
         return '<tr><td class="n">' + P.esc(root.Dates.short(row.date)) + '</td>' +
           cell(row.weightKg, 1) + cell(eatenOf(row, 'kcal'), 0) +
           cell(eatenOf(row, 'proteinG'), 0) +
+          cell(eatenOf(row, 'carbG'), 0) + cell(eatenOf(row, 'fatG'), 0) +
           cell(row.steps, 0) + cell(walked(row), 0) + '</tr>';
       }));
   }

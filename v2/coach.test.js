@@ -54,7 +54,7 @@ test('הגיליון הפשוט מציג יום בשורה', () => {
   const box = w.document.createElement('div');
   box.innerHTML = Coach.card();
   const cells = [...box.querySelectorAll('tbody tr td')].map((td) => td.textContent);
-  assert(cells.length === 6, 'תאים: ' + cells.length);
+  assert(cells.length === 8, 'תאים: ' + cells.length);
   assert(cells[1].includes('90.8'), cells.join('|'));
 });
 
@@ -65,8 +65,8 @@ test('הליכה מוצגת בעמודה משלה ולא נכנסת לצעדים
   const box = w.document.createElement('div');
   box.innerHTML = Coach.card();
   const cells = [...box.querySelectorAll('tbody tr td')].map((td) => td.textContent);
-  assert(cells[5].includes('44'), cells.join('|'));
-  assert(!cells[4].match(/\d/), 'הליכה נכנסה לצעדים: ' + cells[4]);
+  assert(cells[7].includes('44'), cells.join('|'));
+  assert(!cells[6].match(/\d/), 'הליכה נכנסה לצעדים: ' + cells[6]);
   assert(Store.getEntry('2026-11-02').steps === undefined);
 });
 
@@ -95,6 +95,15 @@ test('הארוחות של היום מוצגות, בלי להזריק HTML', asyn
   await Coach.load();
   const html = Coach.today();
   assert(html.includes('סלט') && html.includes('760') && !html.includes('<b>סלט'), html);
+});
+
+test('פחמימות ושומן מוצגים מול היעד', async () => {
+  file = base({ updatedAt: 't04', targets: { kcal: 1900, proteinG: 170, carbG: 160, fatG: 65 },
+    entries: [{ date: '2026-11-02', meals: [{ name: 'א', kcal: 500, proteinG: 20, carbG: 52, fatG: 80 }] }] });
+  await Coach.load();
+  const html = Coach.today();
+  assert(html.includes('פחמימות') && html.includes('נשארו 108'), html);
+  assert(html.includes('מעל היעד ב-15'), html);
 });
 
 test('בלי יעדים אין כרטיס גדול', async () => {
