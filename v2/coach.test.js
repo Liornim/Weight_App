@@ -130,6 +130,16 @@ test('שדה חדש נקלט גם כש-updatedAt לא השתנה', async () => {
   assert(Coach.today().includes('מצטבר'), 'המאזן לא נקלט');
 });
 
+test('עודף וחוסר מצטבר של חלבון, פחמימות ושומן', () => {
+  const list = Coach.macroTotals([
+    { kcal: 2490, steps: 11870, proteinG: 163, carbG: 180, fatG: 106 },
+    { kcal: 3127, steps: 8627, proteinG: 232, carbG: 52, fatG: 163 },
+    { weightKg: 91.2, meals: [{ proteinG: 50 }] }
+  ], { kcal: 1900, proteinG: 170, carbG: 160, fatG: 65 });
+  const got = list.map((m) => m.diff).join(',');
+  assert(got === '55,-88,139', got);
+});
+
 test('בלי יעדים אין כרטיס גדול', async () => {
   file = base({ updatedAt: 't02', entries: [{ date: '2026-11-02', weightKg: 90.8 }] });
   await Coach.load();

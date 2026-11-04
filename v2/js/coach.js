@@ -311,7 +311,30 @@
     return { days: days, total: total, gap: total + days * cfg.plannedDeficit };
   }
 
-  function balanceBlock(rows, cfg) {
+  /** עודף או חוסר מול היעד, בימים סגורים בלבד */
+  function macroTotals(rows, targets) {
+    var closed = rows.filter(function (row) {
+      return typeof row.kcal === 'number' && typeof row.steps === 'number';
+    });
+    return [['proteinG', 'חלבון'], ['carbG', 'פחמימות'], ['fatG', 'שומן']].filter(function (m) {
+      return typeof targets[m[0]] === 'number';
+    }).map(function (m) {
+      var eaten = closed.reduce(function (sum, row) {
+        return sum + (typeof row[m[0]] === 'number' ? row[m[0]] : 0);
+      }, 0);
+      return { label: m[1], diff: eaten - targets[m[0]] * closed.length };
+    });
+  }
+
+  function macroBlock(rows, targets) {
+    if (!targets) return '';
+    return '<div class="today__macros">' + macroTotals(rows, targets).map(function (m) {
+      return '<div class="today__macro"><span>' + P.esc(m.label) + '</span>' +
+        '<b>' + root.Fmt.n(Math.abs(m.diff), 0) + ' ג׳ ' + (m.diff > 0 ? 'עודף' : 'חוסר') + '</b></div>';
+    }).join('') + '</div>';
+  }
+
+  function balanceBlock(rows, cfg, targets) {
     if (!cfg) return '';
     var b = balanceOf(rows, cfg);
     if (!b.days) return '';
@@ -323,6 +346,7 @@
       '<div class="today__left">' + (b.gap > 0
         ? 'מאחורי התוכנית ב-' + fmt(b.gap) + ' קק״ל'
         : 'לפני התוכנית ב-' + fmt(b.gap) + ' קק״ל') + '</div>' +
+      macroBlock(rows, targets) +
     '</div>';
   }
 
@@ -354,7 +378,7 @@
           '</div>'
         : '') +
       mealList(row) +
-      balanceBlock(rows, state.balance) +
+      balanceBlock(rows, state.balance, targets) +
     '</section>';
   }
 
@@ -409,5 +433,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);

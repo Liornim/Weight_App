@@ -1201,3 +1201,8 @@ input[type='range']::-moz-range-thumb {
 .today__balance { display: grid; gap: 4px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.18); }
 .today__sum { font-size: 16px; }
 .today__sum strong { font-family: var(--mono); font-size: 34px; font-weight: 600; }
+
+.today__macros { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+.today__macro { display: grid; gap: 2px; font-size: 13px; min-width: 0; }
+.today__macro span { opacity: .75; }
+.today__macro b { font-weight: 700; font-size: 14px; }
