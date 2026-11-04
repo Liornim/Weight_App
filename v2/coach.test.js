@@ -152,6 +152,13 @@ test('ממוצע משקל: 7 אחרונות, והשוואה רק עם 14', () =>
   assert(Coach.weightAverage([{}]) === null);
 });
 
+test('צעדים מול המינימום, בימים סגורים בלבד', () => {
+  const diff = Coach.stepsDiff([
+    { kcal: 2490, steps: 11870 }, { kcal: 3127, steps: 8627 }, { steps: 1000 }
+  ], 6700);
+  assert(diff === 7097, String(diff));
+});
+
 test('בלי יעדים אין כרטיס גדול', async () => {
   file = base({ updatedAt: 't02', entries: [{ date: '2026-11-02', weightKg: 90.8 }] });
   await Coach.load();

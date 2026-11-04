@@ -1206,3 +1206,5 @@ input[type='range']::-moz-range-thumb {
 .today__macro { display: grid; gap: 2px; font-size: 13px; min-width: 0; }
 .today__macro span { opacity: .75; }
 .today__macro b { font-weight: 700; font-size: 14px; }
+
+.today__macro--steps { margin-top: 10px; }

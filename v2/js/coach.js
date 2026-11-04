@@ -358,12 +358,28 @@
     });
   }
 
+  /** צעדים מול המינימום, בימים סגורים בלבד */
+  function stepsDiff(rows, minimum) {
+    var closed = rows.filter(function (row) {
+      return typeof row.kcal === 'number' && typeof row.steps === 'number';
+    });
+    return closed.reduce(function (sum, row) { return sum + row.steps - minimum; }, 0);
+  }
+
   function macroBlock(rows, targets) {
     if (!targets) return '';
     return '<div class="today__macros">' + macroTotals(rows, targets).map(function (m) {
       return '<div class="today__macro"><span>' + P.esc(m.label) + '</span>' +
         '<b>' + root.Fmt.n(Math.abs(m.diff), 0) + ' ג׳ ' + (m.diff > 0 ? 'עודף' : 'חוסר') + '</b></div>';
-    }).join('') + '</div>';
+    }).join('') + '</div>' +
+    (typeof targets.steps === 'number'
+      ? (function () {
+        var diff = stepsDiff(rows, targets.steps);
+        return '<div class="today__macro today__macro--steps"><span>צעדים, מול ' +
+          root.Fmt.n(targets.steps, 0) + ' ביום</span><b>' + root.Fmt.n(Math.abs(diff), 0) +
+          (diff >= 0 ? ' עודף' : ' חוסר') + '</b></div>';
+      })()
+      : '');
   }
 
   function balanceBlock(rows, cfg, targets) {
@@ -466,5 +482,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);
