@@ -104,13 +104,25 @@
       changed = true;
     }
 
-    if (data && data.updatedAt !== state.updatedAt) {
-      state.updatedAt = data.updatedAt || null;
-      state.summary = (data && data.summary) || null;
-      state.rows = validEntries(data);
-      state.targets = (data && data.targets) || null;
-      state.balance = (data && data.balance) || null;
-      changed = true;
+    /**
+     * התצוגה נבדקת לפי התוכן ולא לפי updatedAt. גרסה ישנה של הקוד
+     * שכבר קראה את הקובץ הזה שמרה אותו בלי השדות החדשים, ובדיקה לפי
+     * התאריך השאירה את הטלפון בלי המאזן.
+     */
+    if (data) {
+      var view = {
+        updatedAt: data.updatedAt || null,
+        summary: data.summary || null,
+        rows: validEntries(data),
+        targets: data.targets || null,
+        balance: data.balance || null
+      };
+      Object.keys(view).forEach(function (key) {
+        if (JSON.stringify(state[key] === undefined ? null : state[key]) !== JSON.stringify(view[key])) {
+          state[key] = view[key];
+          changed = true;
+        }
+      });
     }
     return changed;
   }

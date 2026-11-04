@@ -118,6 +118,18 @@ test('מאזן מצטבר סופר רק ימים סגורים', () => {
   assert(b.gap === 895, 'פער: ' + b.gap);
 });
 
+test('שדה חדש נקלט גם כש-updatedAt לא השתנה', async () => {
+  const entries = [{ date: '2026-11-02', kcal: 2490, steps: 11870 }];
+  const targets = { kcal: 1900, proteinG: 170 };
+  file = base({ updatedAt: 'same', targets, entries });
+  await Coach.load();
+  assert(!Coach.today().includes('מצטבר'), 'מאזן בלי הגדרה');
+  file = base({ updatedAt: 'same', targets, entries,
+    balance: { baseBurn: 2450, kcalPerStep: 0.045, plannedDeficit: 550 } });
+  await Coach.load();
+  assert(Coach.today().includes('מצטבר'), 'המאזן לא נקלט');
+});
+
 test('בלי יעדים אין כרטיס גדול', async () => {
   file = base({ updatedAt: 't02', entries: [{ date: '2026-11-02', weightKg: 90.8 }] });
   await Coach.load();
