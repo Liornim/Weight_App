@@ -54,7 +54,7 @@ test('הגיליון הפשוט מציג יום בשורה', () => {
   const box = w.document.createElement('div');
   box.innerHTML = Coach.card();
   const cells = [...box.querySelectorAll('tbody tr td')].map((td) => td.textContent);
-  assert(cells.length === 8, 'תאים: ' + cells.length);
+  assert(cells.length === 9, 'תאים: ' + cells.length);
   assert(cells[1].includes('90.8'), cells.join('|'));
 });
 
@@ -104,6 +104,18 @@ test('פחמימות ושומן מוצגים מול היעד', async () => {
   const html = Coach.today();
   assert(html.includes('פחמימות') && html.includes('נשארו 108'), html);
   assert(html.includes('מעל היעד ב-15'), html);
+});
+
+test('מאזן מצטבר סופר רק ימים סגורים', () => {
+  const cfg = { baseBurn: 2450, kcalPerStep: 0.045, plannedDeficit: 550 };
+  const b = Coach.balanceOf([
+    { date: 'a', kcal: 2490, steps: 11870 },
+    { date: 'b', kcal: 3127, steps: 8627 },
+    { date: 'c', weightKg: 91.2, meals: [{ kcal: 100 }] }
+  ], cfg);
+  assert(b.days === 2, 'ימים: ' + b.days);
+  assert(b.total === -205, 'מאזן: ' + b.total);
+  assert(b.gap === 895, 'פער: ' + b.gap);
 });
 
 test('בלי יעדים אין כרטיס גדול', async () => {

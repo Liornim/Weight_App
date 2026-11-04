@@ -1197,3 +1197,7 @@ input[type='range']::-moz-range-thumb {
 .today__small .today__num strong { font-size: 30px; }
 .today__small .today__num span { font-size: 12px; }
 .today__small .today__left { font-size: 14px; }
+
+.today__balance { display: grid; gap: 4px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.18); }
+.today__sum { font-size: 16px; }
+.today__sum strong { font-family: var(--mono); font-size: 34px; font-weight: 600; }

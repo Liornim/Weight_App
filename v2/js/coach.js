@@ -109,6 +109,7 @@
       state.summary = (data && data.summary) || null;
       state.rows = validEntries(data);
       state.targets = (data && data.targets) || null;
+      state.balance = (data && data.balance) || null;
       changed = true;
     }
     return changed;
@@ -278,6 +279,41 @@
     '</div>';
   }
 
+  /**
+   * המאזן של ימים סגורים בלבד: יום פתוח עוד יתמלא, והיה נראה כגירעון.
+   * הוצאה = תחזוקה בלי הליכה + צעדים × מקדם. שלילי = גירעון.
+   */
+  function dayBalance(row, cfg) {
+    if (typeof row.kcal !== 'number' || typeof row.steps !== 'number') return null;
+    return Math.round(row.kcal - (cfg.baseBurn + row.steps * cfg.kcalPerStep));
+  }
+
+  function balanceOf(rows, cfg) {
+    var days = 0, total = 0;
+    rows.forEach(function (row) {
+      var one = dayBalance(row, cfg);
+      if (one === null) return;
+      days++;
+      total += one;
+    });
+    return { days: days, total: total, gap: total + days * cfg.plannedDeficit };
+  }
+
+  function balanceBlock(rows, cfg) {
+    if (!cfg) return '';
+    var b = balanceOf(rows, cfg);
+    if (!b.days) return '';
+    var fmt = function (v) { return root.Fmt.n(Math.abs(v), 0); };
+    return '<div class="today__balance">' +
+      '<div class="today__label">מצטבר, ' + b.days + ' ימים סגורים</div>' +
+      '<div class="today__sum"><strong>' + fmt(b.total) + '</strong> קק״ל ' +
+        (b.total <= 0 ? 'גירעון' : 'עודף') + '</div>' +
+      '<div class="today__left">' + (b.gap > 0
+        ? 'מאחורי התוכנית ב-' + fmt(b.gap) + ' קק״ל'
+        : 'לפני התוכנית ב-' + fmt(b.gap) + ' קק״ל') + '</div>' +
+    '</div>';
+  }
+
   /** מה נאכל היום, ארוחה בשורה */
   function mealList(row) {
     var meals = Array.isArray(row.meals) ? row.meals : [];
@@ -306,11 +342,12 @@
           '</div>'
         : '') +
       mealList(row) +
+      balanceBlock(rows, state.balance) +
     '</section>';
   }
 
   /** הגיליון הפשוט: יום בשורה, החדש למעלה */
-  function sheet(rows) {
+  function sheet(rows, cfg) {
     if (!rows || !rows.length) return '';
     var cell = function (value, digits) {
       return typeof value === 'number'
@@ -325,13 +362,14 @@
       }, 0);
       return minutes ? minutes : null;
     };
-    return P.table(['תאריך', 'משקל', 'קלוריות', 'חלבון', 'פחמימות', 'שומן', 'צעדים', 'הליכה (דק׳)'],
+    return P.table(['תאריך', 'משקל', 'קלוריות', 'חלבון', 'פחמימות', 'שומן', 'צעדים', 'הליכה (דק׳)', 'מאזן'],
       rows.slice().reverse().map(function (row) {
         return '<tr><td class="n">' + P.esc(root.Dates.short(row.date)) + '</td>' +
           cell(row.weightKg, 1) + cell(eatenOf(row, 'kcal'), 0) +
           cell(eatenOf(row, 'proteinG'), 0) +
           cell(eatenOf(row, 'carbG'), 0) + cell(eatenOf(row, 'fatG'), 0) +
-          cell(row.steps, 0) + cell(walked(row), 0) + '</tr>';
+          cell(row.steps, 0) + cell(walked(row), 0) +
+          cell(cfg ? dayBalance(row, cfg) : null, 0) + '</tr>';
       }));
   }
 
@@ -354,10 +392,10 @@
     return P.section('הסיכום של Claude', P.card(s.headline || null,
       s.date ? root.Dates.short(s.date) : null,
       (tiles.length ? P.tiles(tiles) : '') +
-      sheet(state.rows) +
+      sheet(state.rows, state.balance) +
       lines.map(function (line) { return P.hint(String(line)); }).join('') +
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);
