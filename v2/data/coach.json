@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-04T21:42:00+02:00",
+  "updatedAt": "2026-11-04T22:11:00+02:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -182,7 +182,7 @@
       },
       {
         "label": "חלבון ליום",
-        "value": "170+",
+        "value": "150+",
         "sub": "גרם"
       }
     ],
@@ -195,8 +195,8 @@
   },
   "targets": {
     "kcal": 1900,
-    "proteinG": 170,
-    "carbG": 160,
+    "proteinG": 150,
+    "carbG": 180,
     "fatG": 65,
     "steps": 6700,
     "stepsGoal": 10000
