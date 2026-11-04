@@ -140,6 +140,18 @@ test('עודף וחוסר מצטבר של חלבון, פחמימות ושומן'
   assert(got === '55,-88,139', got);
 });
 
+test('ממוצע משקל: 7 אחרונות, והשוואה רק עם 14', () => {
+  const short = Coach.weightAverage([{ weightKg: 90.8 }, { weightKg: 90.8 }, {}, { weightKg: 91.2 }]);
+  assert(short.count === 3 && Math.abs(short.average - 90.933) < 0.01, JSON.stringify(short));
+  assert(short.change === null, 'השוואה מוקדמת');
+  const rows = [];
+  for (let i = 0; i < 7; i++) rows.push({ weightKg: 91 });
+  for (let i = 0; i < 7; i++) rows.push({ weightKg: 90 });
+  const full = Coach.weightAverage(rows);
+  assert(full.count === 7 && full.average === 90 && full.change === -1, JSON.stringify(full));
+  assert(Coach.weightAverage([{}]) === null);
+});
+
 test('בלי יעדים אין כרטיס גדול', async () => {
   file = base({ updatedAt: 't02', entries: [{ date: '2026-11-02', weightKg: 90.8 }] });
   await Coach.load();

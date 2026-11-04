@@ -311,6 +311,38 @@
     return { days: days, total: total, gap: total + days * cfg.plannedDeficit };
   }
 
+  /** ממוצע 7 השקילות האחרונות, ומול 7 שלפניהן כשיש מספיק */
+  function weightAverage(rows) {
+    var weights = rows.filter(function (row) {
+      return typeof row.weightKg === 'number';
+    }).map(function (row) { return row.weightKg; });
+    if (!weights.length) return null;
+    var mean = function (list) {
+      return list.reduce(function (sum, w) { return sum + w; }, 0) / list.length;
+    };
+    var last = weights.slice(-7);
+    var previous = weights.slice(-14, -7);
+    return {
+      count: last.length,
+      average: mean(last),
+      change: previous.length === 7 ? mean(last) - mean(previous) : null
+    };
+  }
+
+  function weightBlock(rows) {
+    var w = weightAverage(rows);
+    if (!w) return '';
+    var change = w.change === null
+      ? 'השוואה שבועית תופיע אחרי 14 שקילות'
+      : (w.change <= 0 ? 'ירידה של ' : 'עלייה של ') + root.Fmt.n(Math.abs(w.change), 1) +
+        ' ק״ג מול 7 השקילות הקודמות';
+    return '<div class="today__balance">' +
+      '<div class="today__label">ממוצע משקל, ' + w.count + ' שקילות אחרונות</div>' +
+      '<div class="today__sum"><strong>' + root.Fmt.n(w.average, 1) + '</strong> ק״ג</div>' +
+      '<div class="today__left">' + P.esc(change) + '</div>' +
+    '</div>';
+  }
+
   /** עודף או חוסר מול היעד, בימים סגורים בלבד */
   function macroTotals(rows, targets) {
     var closed = rows.filter(function (row) {
@@ -378,6 +410,7 @@
           '</div>'
         : '') +
       mealList(row) +
+      weightBlock(rows) +
       balanceBlock(rows, state.balance, targets) +
     '</section>';
   }
@@ -433,5 +466,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);
