@@ -165,6 +165,16 @@ test('צעדים לסגירת הפער', () => {
   assert(Coach.stepsForGap(-100, cfg) === 0);
 });
 
+test('צעדים מול שני היעדים, זה לצד זה', async () => {
+  file = base({ updatedAt: 't05',
+    targets: { kcal: 1900, proteinG: 170, steps: 6700, stepsGoal: 10000 },
+    balance: { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 },
+    entries: [{ date: '2026-11-02', kcal: 2490, steps: 11870 }, { date: '2026-11-03', kcal: 3127, steps: 8627 }] });
+  await Coach.load();
+  const html = Coach.today();
+  assert(html.includes('7,097') && html.includes('497'), html);
+});
+
 test('בלי יעדים אין כרטיס גדול', async () => {
   file = base({ updatedAt: 't02', entries: [{ date: '2026-11-02', weightKg: 90.8 }] });
   await Coach.load();

@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-04T09:08:00+02:00",
+  "updatedAt": "2026-11-04T09:11:00+02:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -143,7 +143,8 @@
     "proteinG": 170,
     "carbG": 160,
     "fatG": 65,
-    "steps": 6700
+    "steps": 6700,
+    "stepsGoal": 10000
   },
   "balance": {
     "baseBurn": 2150,

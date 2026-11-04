@@ -372,17 +372,23 @@
       return '<div class="today__macro"><span>' + P.esc(m.label) + '</span>' +
         '<b>' + root.Fmt.n(Math.abs(m.diff), 0) + ' ג׳ ' + (m.diff > 0 ? 'עודף' : 'חוסר') + '</b></div>';
     }).join('') + '</div>' +
-    (typeof targets.steps === 'number'
-      ? (function () {
-        var diff = stepsDiff(rows, targets.steps);
-        return '<div class="today__macro today__macro--steps"><span>צעדים, מול ' +
-          root.Fmt.n(targets.steps, 0) + ' ביום</span><b>' + root.Fmt.n(Math.abs(diff), 0) +
-          (diff >= 0 ? ' עודף' : ' חוסר') + '</b></div>';
-      })()
-      : '');
+    stepLines(rows, targets);
   }
 
-  /** כמה צעדים מעל המינימום שווים לפער */
+  /** צעדים מצטבר מול המינימום ומול המטרה, זה לצד זה */
+  function stepLines(rows, targets) {
+    var goals = [targets.steps, targets.stepsGoal].filter(function (goal) {
+      return typeof goal === 'number';
+    });
+    if (!goals.length) return '';
+    return '<div class="today__steps">' + goals.map(function (goal) {
+      var diff = stepsDiff(rows, goal);
+      return '<div class="today__macro"><span>צעדים, מול ' + root.Fmt.n(goal, 0) +
+        ' ביום</span><b>' + root.Fmt.n(Math.abs(diff), 0) +
+        (diff >= 0 ? ' עודף' : ' חוסר') + '</b></div>';
+    }).join('') + '</div>';
+  }
+
   function stepsForGap(gap, cfg) {
     return gap > 0 ? Math.round(gap / cfg.kcalPerStep) : 0;
   }

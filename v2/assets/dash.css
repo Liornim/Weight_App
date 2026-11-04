@@ -1210,3 +1210,5 @@ input[type='range']::-moz-range-thumb {
 .today__macro--steps { margin-top: 10px; }
 
 .today__gapnote { font-size: 13px; opacity: .8; }
+
+.today__steps { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
