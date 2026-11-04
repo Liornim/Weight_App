@@ -382,6 +382,19 @@
       : '');
   }
 
+  /** כמה צעדים מעל המינימום שווים לפער */
+  function stepsForGap(gap, cfg) {
+    return gap > 0 ? Math.round(gap / cfg.kcalPerStep) : 0;
+  }
+
+  function gapSteps(gap, cfg) {
+    var steps = stepsForGap(gap, cfg);
+    if (!steps) return '';
+    return '<div class="today__sum">חסרים <strong>' + root.Fmt.n(steps, 0) + '</strong> צעדים</div>' +
+      '<div class="today__gapnote">מעל המינימום, כדי לסגור את הפער. בפריסה ל-10 ימים: ' +
+        root.Fmt.n(Math.round(steps / 10), 0) + ' ביום</div>';
+  }
+
   function balanceBlock(rows, cfg, targets) {
     if (!cfg) return '';
     var b = balanceOf(rows, cfg);
@@ -394,6 +407,7 @@
       '<div class="today__left">' + (b.gap > 0
         ? 'מאחורי התוכנית ב-' + fmt(b.gap) + ' קק״ל'
         : 'לפני התוכנית ב-' + fmt(b.gap) + ' קק״ל') + '</div>' +
+      gapSteps(b.gap, cfg) +
       macroBlock(rows, targets) +
     '</div>';
   }
@@ -482,5 +496,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);

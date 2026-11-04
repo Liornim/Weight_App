@@ -1208,3 +1208,5 @@ input[type='range']::-moz-range-thumb {
 .today__macro b { font-weight: 700; font-size: 14px; }
 
 .today__macro--steps { margin-top: 10px; }
+
+.today__gapnote { font-size: 13px; opacity: .8; }

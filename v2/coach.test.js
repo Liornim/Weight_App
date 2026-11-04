@@ -159,6 +159,12 @@ test('צעדים מול המינימום, בימים סגורים בלבד', () 
   assert(diff === 7097, String(diff));
 });
 
+test('צעדים לסגירת הפער', () => {
+  const cfg = { kcalPerStep: 0.045 };
+  assert(Coach.stepsForGap(1495, cfg) === 33222, String(Coach.stepsForGap(1495, cfg)));
+  assert(Coach.stepsForGap(-100, cfg) === 0);
+});
+
 test('בלי יעדים אין כרטיס גדול', async () => {
   file = base({ updatedAt: 't02', entries: [{ date: '2026-11-02', weightKg: 90.8 }] });
   await Coach.load();
