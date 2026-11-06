@@ -200,6 +200,15 @@
     });
   }
 
+  /** שעת הרענון מתעדכנת בכל טעינה, גם כשהנתונים לא השתנו */
+  function stampNow(state) {
+    if (!root.document) return;
+    var text = stampText(state);
+    Array.prototype.forEach.call(root.document.querySelectorAll('[data-coach-stamp]'), function (el) {
+      el.textContent = text;
+    });
+  }
+
   /** לא לבנות מסך מחדש מתחת למי שמקליד */
   function refresh() {
     var active = root.document && root.document.activeElement;
@@ -219,8 +228,10 @@
       .then(function (data) {
         var state = read();
         var applied = apply(data, state);
+        state.loadedAt = Date.now();
         write(state);
         if (applied) refresh();
+        stampNow(state);
 
         return syncSheet(data, state).then(function (synced) {
           write(state);
@@ -366,56 +377,130 @@
     return closed.reduce(function (sum, row) { return sum + row.steps - minimum; }, 0);
   }
 
-  function macroBlock(rows, targets) {
-    if (!targets) return '';
-    return '<div class="today__macros">' + macroTotals(rows, targets).map(function (m) {
-      return '<div class="today__macro"><span>' + P.esc(m.label) + '</span>' +
-        '<b>' + root.Fmt.n(Math.abs(m.diff), 0) + ' ג׳ ' + (m.diff > 0 ? 'עודף' : 'חוסר') + '</b></div>';
-    }).join('') + '</div>' +
-    stepLines(rows, targets);
-  }
-
-  /** צעדים מצטבר מול המינימום ומול המטרה, זה לצד זה */
-  function stepLines(rows, targets) {
-    var goals = [targets.steps, targets.stepsGoal].filter(function (goal) {
-      return typeof goal === 'number';
-    });
-    if (!goals.length) return '';
-    return '<div class="today__steps">' + goals.map(function (goal) {
-      var diff = stepsDiff(rows, goal);
-      return '<div class="today__macro"><span>צעדים, מול ' + root.Fmt.n(goal, 0) +
-        ' ביום</span><b>' + root.Fmt.n(Math.abs(diff), 0) +
-        (diff >= 0 ? ' עודף' : ' חוסר') + '</b></div>';
-    }).join('') + '</div>';
-  }
-
   function stepsForGap(gap, cfg) {
     return gap > 0 ? Math.round(gap / cfg.kcalPerStep) : 0;
   }
 
-  function gapSteps(gap, cfg) {
-    var steps = stepsForGap(gap, cfg);
-    if (!steps) return '';
-    return '<div class="today__sum">חסרים <strong>' + root.Fmt.n(steps, 0) + '</strong> צעדים</div>' +
-      '<div class="today__gapnote">מעל המינימום, כדי לסגור את הפער. בפריסה ל-10 ימים: ' +
-        root.Fmt.n(Math.round(steps / 10), 0) + ' ביום</div>';
+  /** אריח אחד במצטבר; הצבע אומר אם הכיוון טוב, לא רק אם המספר גדול */
+  function tile(label, value, word, tone) {
+    return '<div class="cumul__tile cumul__tile--' + tone + '">' +
+      '<span class="cumul__k">' + P.esc(label) + '</span>' +
+      '<span class="cumul__v">' + value + '</span>' +
+      '<span class="cumul__w">' + P.esc(word) + '</span>' +
+    '</div>';
   }
 
-  function balanceBlock(rows, cfg, targets) {
+  /**
+   * גרף המאזן: עמודה לכל יום סגור, קו של הממוצע המצטבר, וקו מקווקו של
+   * התוכנית. מתחת לאפס זה גירעון, ולכן מה שמתחת לקו התוכנית הוא בקצב.
+   */
+  function balanceChart(daily, plan) {
+    if (!daily.length) return '';
+    var W = 320, H = 150, L = 34, R = 6, T = 10, B = 22;
+    var avg = [], sum = 0;
+    daily.forEach(function (d, i) { sum += d.value; avg.push(sum / (i + 1)); });
+    var values = daily.map(function (d) { return d.value; }).concat(avg, [0, -plan]);
+    var top = Math.max.apply(null, values), bottom = Math.min.apply(null, values);
+    var pad = (top - bottom) * 0.08 || 50;
+    top += pad; bottom -= pad;
+    var y = function (v) { return T + (top - v) / (top - bottom) * (H - T - B); };
+    var step = (W - L - R) / daily.length;
+    var x = function (i) { return L + step * i + step / 2; };
+    var barW = Math.min(step * 0.56, 26);
+    var bars = daily.map(function (d, i) {
+      var y0 = y(0), y1 = y(d.value);
+      return '<rect class="cumul__bar cumul__bar--' + (d.value <= 0 ? 'good' : 'bad') + '" x="' +
+        (x(i) - barW / 2).toFixed(1) + '" y="' + Math.min(y0, y1).toFixed(1) + '" width="' +
+        barW.toFixed(1) + '" height="' + Math.max(Math.abs(y1 - y0), 1).toFixed(1) + '" rx="3"/>' +
+        '<text class="cumul__tick" x="' + x(i).toFixed(1) + '" y="' + (H - 6) + '">' +
+        P.esc(root.Dates.short(d.date)) + '</text>';
+    }).join('');
+    var line = avg.map(function (v, i) {
+      return (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1);
+    }).join(' ');
+    var dots = avg.map(function (v, i) {
+      return '<circle class="cumul__dot" cx="' + x(i).toFixed(1) + '" cy="' + y(v).toFixed(1) + '" r="' +
+        (i === avg.length - 1 ? 4 : 2.5) + '"/>';
+    }).join('');
+    var label = function (v, text) {
+      return '<text class="cumul__axis" x="' + (L - 4) + '" y="' + (y(v) + 4).toFixed(1) + '">' + text + '</text>';
+    };
+    return '<svg class="cumul__chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="מאזן יומי וממוצע מצטבר">' +
+      '<line class="cumul__zero" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(0).toFixed(1) + '" y2="' + y(0).toFixed(1) + '"/>' +
+      '<line class="cumul__plan" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(-plan).toFixed(1) + '" y2="' + y(-plan).toFixed(1) + '"/>' +
+      label(0, '0') + label(-plan, '−' + root.Fmt.n(plan, 0)) +
+      bars + '<path class="cumul__avg" d="' + line + '"/>' + dots +
+    '</svg>' +
+    '<div class="cumul__legend">' +
+      '<span><i class="cumul__key cumul__key--good"></i>יום בגירעון</span>' +
+      '<span><i class="cumul__key cumul__key--bad"></i>יום בעודף</span>' +
+      '<span><i class="cumul__key cumul__key--avg"></i>ממוצע מצטבר</span>' +
+      '<span><i class="cumul__key cumul__key--plan"></i>תוכנית</span>' +
+    '</div>';
+  }
+
+  /** המצטבר: מקטע משלו, בסגנון הכותרת העליונה */
+  function cumulBlock(rows, cfg, targets) {
     if (!cfg) return '';
     var b = balanceOf(rows, cfg);
     if (!b.days) return '';
-    var fmt = function (v) { return root.Fmt.n(Math.abs(v), 0); };
-    return '<div class="today__balance">' +
-      '<div class="today__label">מצטבר, ' + b.days + ' ימים סגורים</div>' +
-      '<div class="today__sum"><strong>' + fmt(b.total) + '</strong> קק״ל ' +
-        (b.total <= 0 ? 'גירעון' : 'עודף') + '</div>' +
-      '<div class="today__left">' + (b.gap > 0
-        ? 'מאחורי התוכנית ב-' + fmt(b.gap) + ' קק״ל'
-        : 'לפני התוכנית ב-' + fmt(b.gap) + ' קק״ל') + '</div>' +
-      gapSteps(b.gap, cfg) +
-      macroBlock(rows, targets) +
-    '</div>';
+    var fmt = function (v) { return root.Fmt.n(Math.abs(Math.round(v)), 0); };
+    var daily = rows.map(function (row) {
+      return { date: row.date, value: dayBalance(row, cfg) };
+    }).filter(function (d) { return d.value !== null; });
+    var avg = b.total / b.days;
+    var onPlan = b.gap <= 0;
+
+    var tiles = targets ? macroTotals(rows, targets).map(function (m) {
+      var tone = m.label === 'חלבון' ? (m.diff >= 0 ? 'good' : 'warn')
+        : m.label === 'שומן' ? (m.diff > 0 ? 'bad' : 'good')
+        : (m.diff > 0 ? 'warn' : 'calm');
+      return tile(m.label, fmt(m.diff), 'ג׳ ' + (m.diff > 0 ? 'עודף' : 'חוסר'), tone);
+    }) : [];
+    if (targets) {
+      [targets.steps, targets.stepsGoal].forEach(function (goal) {
+        if (typeof goal !== 'number') return;
+        var diff = stepsDiff(rows, goal);
+        tiles.push(tile('צעדים, מול ' + root.Fmt.n(goal, 0) + ' ביום', fmt(diff),
+          diff >= 0 ? 'עודף' : 'חוסר', diff >= 0 ? 'good' : 'bad'));
+      });
+    }
+
+    var steps = stepsForGap(b.gap, cfg);
+    return '<section class="cumul">' +
+      '<div class="cumul__row"><h2 class="cumul__title">המצטבר שלי</h2>' +
+        '<span class="cumul__stamp">מצטבר, ' + b.days + ' ימים סגורים</span></div>' +
+      '<div class="cumul__head">' +
+        '<span class="cumul__label">מאזן קלוריות</span>' +
+        '<span class="cumul__big cumul__big--' + (b.total <= 0 ? 'good' : 'bad') + '">' + fmt(b.total) + '</span>' +
+        '<span class="cumul__unit">קק״ל ' + (b.total <= 0 ? 'גירעון' : 'עודף') +
+          ' · ממוצע ' + fmt(avg) + ' ' + (avg <= 0 ? 'גירעון' : 'עודף') + ' ליום, תוכנית ' +
+          fmt(cfg.plannedDeficit) + ' גירעון</span>' +
+      '</div>' +
+      '<div class="cumul__pill cumul__pill--' + (onPlan ? 'good' : 'bad') + '">' +
+        (onPlan ? 'לפני התוכנית ב-' : 'מאחורי התוכנית ב-') + fmt(b.gap) + ' קק״ל</div>' +
+      balanceChart(daily, cfg.plannedDeficit) +
+      (steps
+        ? '<div class="cumul__gap"><b>חסרים ' + root.Fmt.n(steps, 0) + ' צעדים</b> ' +
+            'מעל המינימום, כדי לסגור את הפער. בפריסה ל-10 ימים: ' +
+            root.Fmt.n(Math.round(steps / 10), 0) + ' ביום</div>'
+        : '') +
+      (tiles.length ? '<div class="cumul__tiles">' + tiles.join('') + '</div>' : '') +
+    '</section>';
+  }
+
+  function clock(date) {
+    var pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    return pad(date.getHours()) + ':' + pad(date.getMinutes());
+  }
+
+  /** שעת הרענון האחרון, ושעת עדכון הנתונים בקובץ */
+  function stampText(state) {
+    var parts = [];
+    if (state.loadedAt) parts.push('רענון אחרון ' + clock(new Date(state.loadedAt)));
+    var m = /T(\d{2}:\d{2})/.exec(state.updatedAt || '');
+    if (m) parts.push('נתונים מ-' + m[1]);
+    return parts.join(' · ');
   }
 
   /** מה נאכל היום, ארוחה בשורה */
@@ -436,7 +521,8 @@
     if (!rows.length || !targets) return '';
     var row = rows[rows.length - 1];
     return '<section class="today">' +
-      '<h2 class="today__title">היום · ' + P.esc(root.Dates.short(row.date)) + '</h2>' +
+      '<div class="today__row"><h2 class="today__title">היום · ' + P.esc(root.Dates.short(row.date)) + '</h2>' +
+        '<span class="today__stamp" data-coach-stamp>' + P.esc(stampText(state)) + '</span></div>' +
       gauge('קלוריות', 'קק״ל', eatenOf(row, 'kcal'), targets.kcal, false) +
       gauge('חלבון', 'גרם', eatenOf(row, 'proteinG'), targets.proteinG, true) +
       (targets.carbG && targets.fatG
@@ -447,8 +533,8 @@
         : '') +
       mealList(row) +
       weightBlock(rows) +
-      balanceBlock(rows, state.balance, targets) +
-    '</section>';
+    '</section>' +
+    cumulBlock(rows, state.balance, targets);
   }
 
   /** הגיליון הפשוט: יום בשורה, החדש למעלה */

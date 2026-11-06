@@ -185,6 +185,18 @@ test('הליכה ואורביטרק בעמודות נפרדות', async () => {
   assert(cells[7].includes('20') && cells[8].includes('45'), cells.join('|'));
 });
 
+test('המצטבר: גרף, צבעים ושעת רענון', async () => {
+  file = base({ updatedAt: '2026-11-07T01:04:00+02:00',
+    targets: { kcal: 1900, proteinG: 150, carbG: 180, fatG: 65, steps: 6700, stepsGoal: 10000 },
+    balance: { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 },
+    entries: [{ date: '2026-11-02', kcal: 2490, steps: 11870, proteinG: 163, carbG: 180, fatG: 106 },
+      { date: '2026-11-03', kcal: 3127, steps: 8627, proteinG: 232, carbG: 52, fatG: 163 }] });
+  await Coach.load();
+  const html = Coach.today();
+  assert(html.includes('<svg') && html.includes('cumul__bar--bad') && html.includes('cumul__bar--good'), 'אין גרף');
+  assert(html.includes('cumul__tile--bad') && html.includes('רענון אחרון') && html.includes('נתונים מ-01:04'), 'אין צבע או שעה');
+});
+
 test('בלי יעדים אין כרטיס גדול', async () => {
   file = base({ updatedAt: 't02', entries: [{ date: '2026-11-02', weightKg: 90.8 }] });
   await Coach.load();
