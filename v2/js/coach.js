@@ -503,6 +503,13 @@
     return parts.join(' · ');
   }
 
+  /** שם היום בשבוע, לפי תאריך ISO ובלי תלות באזור הזמן של הדפדפן */
+  function weekday(iso) {
+    var names = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
+    var p = iso.split('-').map(Number);
+    return 'יום ' + names[new Date(Date.UTC(p[0], p[1] - 1, p[2])).getUTCDay()];
+  }
+
   /** טאב הארוחות: כל יום, מהחדש לישן, עם כל מה שנרשם בו */
   function meals() {
     var state = read();
@@ -532,7 +539,7 @@
             ' · שומן ' + n(m.fatG) + '</div>' +
         '</li>';
       }).join('') + '</ul>' : P.hint('לא נרשמו ארוחות ביום הזה.');
-      return P.card(root.Dates.short(row.date), closed ? 'יום סגור' : 'יום פתוח', head + body);
+      return P.card(root.Dates.short(row.date) + ' · ' + weekday(row.date), closed ? 'יום סגור' : 'יום פתוח', head + body);
     }).join(''));
   }
 

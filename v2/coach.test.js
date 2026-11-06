@@ -206,6 +206,7 @@ test('טאב הארוחות מציג כל יום עם הארוחות שלו', as
   assert(html.includes('GO') && !html.includes('<i>GO') && html.includes('190'), html);
   assert(html.indexOf('06/11') < html.indexOf('05/11'), 'סדר');
   assert(html.includes('לא נרשמו ארוחות ביום הזה'), 'יום ריק');
+  assert(html.includes('06/11 · יום שישי') && html.includes('05/11 · יום חמישי'), 'שם היום');
 });
 
 test('בלי יעדים אין כרטיס גדול', async () => {
