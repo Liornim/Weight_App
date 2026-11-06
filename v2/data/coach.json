@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-06T13:07:00+02:00",
+  "updatedAt": "2026-11-06T14:51:00+02:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -278,6 +278,16 @@
           "maxHr": 114,
           "deviceKcal": 298,
           "machineKcal": 242
+        }
+      ],
+      "meals": [
+        {
+          "time": "14:50",
+          "name": "פרוסת לחם",
+          "kcal": 130,
+          "proteinG": 4,
+          "carbG": 25,
+          "fatG": 1
         }
       ]
     }
