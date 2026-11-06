@@ -595,6 +595,7 @@
    * ההגדרות נשארות בתחתית כל מסך ולא בטאב משלהן.
    */
   var TABS = [
+    { value: 'home', label: 'ראשי' },
     { value: 'budget', label: 'תקציב' },
     { value: 'weight', label: 'משקל' },
     { value: 'meals', label: 'ארוחות' },
@@ -621,16 +622,17 @@
       return;
     }
 
-    var panel = state.tab === 'weight' ? root.WeightTab.render(state)
+    // הטאב הראשי מחזיק את הכרטיסים שהיו מעל כל הטאבים; בשאר הטאבים
+    // אין צורך לחזור עליהם
+    var panel = state.tab === 'home'
+        ? root.Coach.today() + top(state, entries, settings) + root.Coach.card()
+      : state.tab === 'weight' ? root.WeightTab.render(state)
       : state.tab === 'entry' ? root.EntryTab.render(state)
       : state.tab === 'data' ? root.DataTab.render(state)
       : state.tab === 'meals' ? root.Coach.meals()
       : root.BudgetTab.render(state);
 
     container.innerHTML =
-      root.Coach.today() +
-      top(state, entries, settings) +
-      root.Coach.card() +
       tabs(state.tab) +
       panel +
       settingsSection(state, entries, settings);

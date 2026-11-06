@@ -137,6 +137,8 @@ test('כל קובץ מקומי נושא חותמת גרסה בכתובת', () =>
 });
 
 test('הכותרת מציגה את הירידה הכוללת ואת ההתקדמות ליעד', () => {
+  // הכותרת נמצאת בטאב הראשי
+  App.setState({ tab: 'home' });
   const d = Metrics.dashboard(Store.getEntries(), Store.getSettings(), { endDate: Dates.today() });
   const head = doc.querySelector('.headline .v').textContent;
   assert(Math.abs(Number(head) - d.totalLoss) < 0.06,
@@ -166,6 +168,8 @@ test('הזנת נתונים לא מייצרת שגיאות בקונסול', () =
 });
 
 test('שינוי משקל היעד מזיז את מד ההתקדמות', () => {
+  // הכותרת נמצאת בטאב הראשי
+  App.setState({ tab: 'home' });
   const before = Number(doc.querySelector('.progress-fill').style.width.replace('%', ''));
   const input = doc.querySelector('#goal-weight');
   input.value = '86';
@@ -1125,7 +1129,7 @@ test('ההמלצה היא החלון הארוך ביותר עם מספיק נת�
 });
 
 test('אפשר לעצור את המדידה בשבוע שעבר ולראות מה היא אמרה אז', () => {
-  App.setState({ date: Dates.today(), asOf: 0 });
+  App.setState({ date: Dates.today(), asOf: 0, tab: 'home' });
   const now = Number(doc.querySelector('.headline .v').textContent);
 
   const chip = doc.querySelector('[data-asof="7"]');
@@ -1175,6 +1179,8 @@ test('כל קובץ מקומי נושא חותמת גרסה בכתובת', () =>
 });
 
 test('הכותרת מציגה את הירידה הכוללת ואת ההתקדמות ליעד', () => {
+  // הכותרת נמצאת בטאב הראשי
+  App.setState({ tab: 'home' });
   const d = Metrics.dashboard(Store.getEntries(), Store.getSettings(), { endDate: Dates.today() });
   const head = doc.querySelector('.headline .v').textContent;
   assert(Math.abs(Number(head) - d.totalLoss) < 0.06,
@@ -1204,6 +1210,8 @@ test('הזנת נתונים לא מייצרת שגיאות בקונסול', () =
 });
 
 test('שינוי משקל היעד מזיז את מד ההתקדמות', () => {
+  // הכותרת נמצאת בטאב הראשי
+  App.setState({ tab: 'home' });
   const before = Number(doc.querySelector('.progress-fill').style.width.replace('%', ''));
   const input = doc.querySelector('#goal-weight');
   input.value = '86';
@@ -1547,7 +1555,7 @@ test('ההמלצה היא החלון הארוך ביותר עם מספיק נת�
 });
 
 test('אפשר לעצור את המדידה בשבוע שעבר ולראות מה היא אמרה אז', () => {
-  App.setState({ date: Dates.today(), asOf: 0 });
+  App.setState({ date: Dates.today(), asOf: 0, tab: 'home' });
   const now = Number(doc.querySelector('.headline .v').textContent);
 
   const chip = doc.querySelector('[data-asof="7"]');
@@ -1597,6 +1605,8 @@ test('כל קובץ מקומי נושא חותמת גרסה בכתובת', () =>
 });
 
 test('הכותרת מציגה את הירידה הכוללת ואת ההתקדמות ליעד', () => {
+  // הכותרת נמצאת בטאב הראשי
+  App.setState({ tab: 'home' });
   const d = Metrics.dashboard(Store.getEntries(), Store.getSettings(), { endDate: Dates.today() });
   const head = doc.querySelector('.headline .v').textContent;
   assert(Math.abs(Number(head) - d.totalLoss) < 0.06,
@@ -1626,6 +1636,8 @@ test('הזנת נתונים לא מייצרת שגיאות בקונסול', () =
 });
 
 test('שינוי משקל היעד מזיז את מד ההתקדמות', () => {
+  // הכותרת נמצאת בטאב הראשי
+  App.setState({ tab: 'home' });
   const before = Number(doc.querySelector('.progress-fill').style.width.replace('%', ''));
   const input = doc.querySelector('#goal-weight');
   input.value = '86';
@@ -1969,7 +1981,7 @@ test('ההמלצה היא החלון הארוך ביותר עם מספיק נת�
 });
 
 test('אפשר לעצור את המדידה בשבוע שעבר ולראות מה היא אמרה אז', () => {
-  App.setState({ date: Dates.today(), asOf: 0 });
+  App.setState({ date: Dates.today(), asOf: 0, tab: 'home' });
   const now = Number(doc.querySelector('.headline .v').textContent);
 
   const chip = doc.querySelector('[data-asof="7"]');
@@ -2019,6 +2031,8 @@ test('כל קובץ מקומי נושא חותמת גרסה בכתובת', () =>
 });
 
 test('הכותרת מציגה את הירידה הכוללת ואת ההתקדמות ליעד', () => {
+  // הכותרת נמצאת בטאב הראשי
+  App.setState({ tab: 'home' });
   const d = Metrics.dashboard(Store.getEntries(), Store.getSettings(), { endDate: Dates.today() });
   const head = doc.querySelector('.headline .v').textContent;
   assert(Math.abs(Number(head) - d.totalLoss) < 0.06,
@@ -2048,6 +2062,8 @@ test('הזנת נתונים לא מייצרת שגיאות בקונסול', () =
 });
 
 test('שינוי משקל היעד מזיז את מד ההתקדמות', () => {
+  // הכותרת נמצאת בטאב הראשי
+  App.setState({ tab: 'home' });
   const before = Number(doc.querySelector('.progress-fill').style.width.replace('%', ''));
   const input = doc.querySelector('#goal-weight');
   input.value = '86';
@@ -2391,7 +2407,7 @@ test('ההמלצה היא החלון הארוך ביותר עם מספיק נת�
 });
 
 test('אפשר לעצור את המדידה בשבוע שעבר ולראות מה היא אמרה אז', () => {
-  App.setState({ date: Dates.today(), asOf: 0 });
+  App.setState({ date: Dates.today(), asOf: 0, tab: 'home' });
   const now = Number(doc.querySelector('.headline .v').textContent);
 
   const chip = doc.querySelector('[data-asof="7"]');

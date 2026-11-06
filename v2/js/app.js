@@ -11,10 +11,10 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd103',
+    BUILD: 'd104',
     state: {
       date: Dates.today(),
-      tab: 'budget',       // ארבעה טאבים: תקציב, הזנה, משקל, נתונים
+      tab: 'home',         // הטאב הראשי נפתח ראשון
       splitParts: 2,       // חצי, שליש או רבע
       splitRow: null,      // המקטע שנבחר; ריק = האחרון
       dataAll: false,      // האם להציג את כל הימים בטאב הנתונים
