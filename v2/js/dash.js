@@ -597,6 +597,7 @@
   var TABS = [
     { value: 'home', label: 'ראשי' },
     { value: 'meals', label: 'ארוחות' },
+    { value: 'groups', label: 'קבוצות' },
     { value: 'budget', label: 'תקציב' },
     { value: 'weight', label: 'משקל' },
     { value: 'data', label: 'נתונים' }
@@ -630,6 +631,7 @@
       : state.tab === 'entry' ? root.EntryTab.render(state)
       : state.tab === 'data' ? root.DataTab.render(state)
       : state.tab === 'meals' ? root.Coach.meals()
+      : state.tab === 'groups' ? root.Coach.groups()
       : root.BudgetTab.render(state);
 
     container.innerHTML =

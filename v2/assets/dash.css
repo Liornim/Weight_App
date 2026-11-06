@@ -1287,3 +1287,35 @@ input[type='range']::-moz-range-thumb {
 
 /* מספר הגרסה, גלוי בכל טאב */
 .ver { margin: 12px 16px 6px; font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--ink-soft); text-align: left; direction: ltr; }
+
+/* ---------------------------------------------------------- טאב קבוצות */
+.groups__c--meat { background: #B5523B; }
+.groups__c--dairy { background: #4A7BD0; }
+.groups__c--protein { background: #6B4FE0; }
+.groups__c--veg { background: #2E9E6B; }
+.groups__c--grains { background: #D9A23A; }
+.groups__c--fat { background: #93A3AE; }
+.groups__c--snacks { background: #E07A34; }
+.groups__c--fried { background: #7A4E3A; }
+.groups__c--alcohol { background: #C8385A; }
+.groups__c--other { background: #D4DBDF; }
+.groups__stack { display: flex; height: 14px; border-radius: 7px; overflow: hidden; background: var(--rule); gap: 2px; }
+.groups__seg { display: block; height: 100%; min-width: 2px; }
+.groups__list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; }
+.groups__row { display: grid; grid-template-columns: minmax(0, 1fr) 44px 58px 72px; align-items: baseline; gap: 8px; padding: 9px 0; border-bottom: 1px solid var(--rule); font-size: 14px; }
+.groups__row:last-child { border-bottom: 0; }
+.groups__name { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.groups__dot { display: inline-block; flex: none; width: 10px; height: 10px; border-radius: 3px; }
+.groups__pct { font-family: var(--mono); font-weight: 700; text-align: left; direction: ltr; }
+.groups__kcal { font-family: var(--mono); text-align: left; direction: ltr; }
+.groups__day { font-size: 12px; color: var(--ink-soft); text-align: left; }
+.groups__daybar { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; padding: 10px 0; border-bottom: 1px solid var(--rule); }
+.groups__daybar:last-child { border-bottom: 0; }
+.groups__daybar .groups__stack { grid-column: 1 / -1; height: 10px; }
+.groups__date { font-size: 13px; color: var(--ink-soft); }
+.groups__daykcal { font-family: var(--mono); font-size: 13px; font-weight: 600; }
+
+/* שישה טאבים: הסרגל נגלל בתוכו ולא מרחיב את הדף */
+.tabs { overflow-x: auto; scrollbar-width: none; gap: 2px; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { flex: 1 0 auto; padding: 10px 12px; white-space: nowrap; }

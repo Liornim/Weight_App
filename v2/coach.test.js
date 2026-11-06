@@ -209,6 +209,18 @@ test('טאב הארוחות מציג כל יום עם הארוחות שלו', as
   assert(html.includes('06/11 · יום שישי') && html.includes('05/11 · יום חמישי'), 'שם היום');
 });
 
+test('קבוצות: סכום לכל קבוצה, וארוחה בלי פירוק נספרת בנפרד', async () => {
+  const t = Coach.catTotals([{ date: '2026-11-06', meals: [
+    { kcal: 1210, items: [{ cat: 'meat', kcal: 750, proteinG: 64 }, { cat: 'grains', kcal: 390, proteinG: 13 }, { cat: 'fat', kcal: 70 }] },
+    { kcal: 625, items: [{ cat: 'alcohol', kcal: 625 }] },
+    { kcal: 100, proteinG: 5 }] }]);
+  assert(t.meat.kcal === 750 && t.alcohol.kcal === 625 && t.other.kcal === 100 && t.meat.proteinG === 64, JSON.stringify(t));
+  file = base({ updatedAt: 't08', entries: [{ date: '2026-11-06', meals: [{ kcal: 625, items: [{ cat: 'alcohol', kcal: 625 }] }] }] });
+  await Coach.load();
+  const html = Coach.groups();
+  assert(html.includes('אלכוהול') && html.includes('100%') && html.includes('groups__c--alcohol'), html);
+});
+
 test('בלי יעדים אין כרטיס גדול', async () => {
   file = base({ updatedAt: 't02', entries: [{ date: '2026-11-02', weightKg: 90.8 }] });
   await Coach.load();

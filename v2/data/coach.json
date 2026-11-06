@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-07T01:04:00+02:00",
+  "updatedAt": "2026-11-07T01:30:00+02:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -23,7 +23,25 @@
           "kcal": 235,
           "proteinG": 27,
           "carbG": 11,
-          "fatG": 10
+          "fatG": 10,
+          "items": [
+            {
+              "cat": "veg",
+              "name": "גמבה",
+              "kcal": 35,
+              "proteinG": 1,
+              "carbG": 7,
+              "fatG": 0
+            },
+            {
+              "cat": "dairy",
+              "name": "קוטג׳ וצהובה",
+              "kcal": 200,
+              "proteinG": 26,
+              "carbG": 4,
+              "fatG": 10
+            }
+          ]
         },
         {
           "time": "15:50",
@@ -31,7 +49,49 @@
           "kcal": 605,
           "proteinG": 62,
           "carbG": 55,
-          "fatG": 16
+          "fatG": 16,
+          "items": [
+            {
+              "cat": "veg",
+              "name": "ירקות",
+              "kcal": 90,
+              "proteinG": 5,
+              "carbG": 17,
+              "fatG": 1
+            },
+            {
+              "cat": "grains",
+              "name": "בטטה, תפוח אדמה, בורגול",
+              "kcal": 145,
+              "proteinG": 4,
+              "carbG": 31,
+              "fatG": 0
+            },
+            {
+              "cat": "veg",
+              "name": "אדממה",
+              "kcal": 50,
+              "proteinG": 5,
+              "carbG": 4,
+              "fatG": 2
+            },
+            {
+              "cat": "dairy",
+              "name": "ביצים ובולגרית",
+              "kcal": 210,
+              "proteinG": 23,
+              "carbG": 3,
+              "fatG": 12
+            },
+            {
+              "cat": "meat",
+              "name": "טונה",
+              "kcal": 110,
+              "proteinG": 25,
+              "carbG": 0,
+              "fatG": 1
+            }
+          ]
         },
         {
           "time": "17:30",
@@ -39,7 +99,17 @@
           "kcal": 80,
           "proteinG": 14,
           "carbG": 1,
-          "fatG": 2
+          "fatG": 2,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "פסטרמה הודו",
+              "kcal": 80,
+              "proteinG": 14,
+              "carbG": 1,
+              "fatG": 2
+            }
+          ]
         },
         {
           "time": "ערב",
@@ -47,7 +117,25 @@
           "kcal": 1570,
           "proteinG": 60,
           "carbG": 113,
-          "fatG": 78
+          "fatG": 78,
+          "items": [
+            {
+              "cat": "fried",
+              "name": "נאמס, שרימפס, אגאדשי",
+              "kcal": 1370,
+              "proteinG": 60,
+              "carbG": 105,
+              "fatG": 78
+            },
+            {
+              "cat": "alcohol",
+              "name": "נגרוני",
+              "kcal": 200,
+              "proteinG": 0,
+              "carbG": 8,
+              "fatG": 0
+            }
+          ]
         }
       ],
       "kcal": 2490,
@@ -77,7 +165,41 @@
           "kcal": 762,
           "proteinG": 93,
           "carbG": 52,
-          "fatG": 24
+          "fatG": 24,
+          "items": [
+            {
+              "cat": "veg",
+              "name": "ירקות",
+              "kcal": 225,
+              "proteinG": 15,
+              "carbG": 45,
+              "fatG": 2
+            },
+            {
+              "cat": "dairy",
+              "name": "קוטג׳ ובולגרית",
+              "kcal": 255,
+              "proteinG": 32,
+              "carbG": 7,
+              "fatG": 12
+            },
+            {
+              "cat": "meat",
+              "name": "שייטל",
+              "kcal": 257,
+              "proteinG": 46,
+              "carbG": 0,
+              "fatG": 7
+            },
+            {
+              "cat": "fat",
+              "name": "שמן בתרסיס",
+              "kcal": 25,
+              "proteinG": 0,
+              "carbG": 0,
+              "fatG": 3
+            }
+          ]
         },
         {
           "time": "ערב",
@@ -85,7 +207,17 @@
           "kcal": 1810,
           "proteinG": 139,
           "carbG": 0,
-          "fatG": 139
+          "fatG": 139,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "נתח קצבים, טי-בון, אנטריקוט",
+              "kcal": 1810,
+              "proteinG": 139,
+              "carbG": 0,
+              "fatG": 139
+            }
+          ]
         },
         {
           "time": "ערב",
@@ -93,7 +225,17 @@
           "kcal": 555,
           "proteinG": 0,
           "carbG": 0,
-          "fatG": 0
+          "fatG": 0,
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "ערק",
+              "kcal": 555,
+              "proteinG": 0,
+              "carbG": 0,
+              "fatG": 0
+            }
+          ]
         }
       ],
       "kcal": 3127,
@@ -134,7 +276,25 @@
           "kcal": 275,
           "proteinG": 30,
           "carbG": 6,
-          "fatG": 14
+          "fatG": 14,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "כבד עוף",
+              "kcal": 195,
+              "proteinG": 29,
+              "carbG": 1,
+              "fatG": 8
+            },
+            {
+              "cat": "fat",
+              "name": "בצל מטוגן",
+              "kcal": 80,
+              "proteinG": 1,
+              "carbG": 5,
+              "fatG": 6
+            }
+          ]
         },
         {
           "time": "14:30",
@@ -142,7 +302,17 @@
           "kcal": 255,
           "proteinG": 20,
           "carbG": 6,
-          "fatG": 17
+          "fatG": 17,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "קציצות בשר",
+              "kcal": 255,
+              "proteinG": 20,
+              "carbG": 6,
+              "fatG": 17
+            }
+          ]
         },
         {
           "time": "14:32",
@@ -150,7 +320,17 @@
           "kcal": 290,
           "proteinG": 8,
           "carbG": 50,
-          "fatG": 6
+          "fatG": 6,
+          "items": [
+            {
+              "cat": "grains",
+              "name": "פתיתים",
+              "kcal": 290,
+              "proteinG": 8,
+              "carbG": 50,
+              "fatG": 6
+            }
+          ]
         },
         {
           "time": "14:45",
@@ -158,7 +338,25 @@
           "kcal": 253,
           "proteinG": 28,
           "carbG": 5,
-          "fatG": 13
+          "fatG": 13,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "כבד עוף",
+              "kcal": 180,
+              "proteinG": 27,
+              "carbG": 1,
+              "fatG": 7
+            },
+            {
+              "cat": "fat",
+              "name": "בצל מטוגן",
+              "kcal": 73,
+              "proteinG": 1,
+              "carbG": 4,
+              "fatG": 6
+            }
+          ]
         },
         {
           "time": "21:41",
@@ -166,7 +364,33 @@
           "kcal": 226,
           "proteinG": 22,
           "carbG": 21,
-          "fatG": 5
+          "fatG": 5,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "חזה עוף",
+              "kcal": 100,
+              "proteinG": 19,
+              "carbG": 0,
+              "fatG": 2
+            },
+            {
+              "cat": "fat",
+              "name": "שמן בתרסיס",
+              "kcal": 17,
+              "proteinG": 0,
+              "carbG": 0,
+              "fatG": 2
+            },
+            {
+              "cat": "grains",
+              "name": "פירורי לחם, אורז, פתיתים",
+              "kcal": 109,
+              "proteinG": 3,
+              "carbG": 21,
+              "fatG": 1
+            }
+          ]
         },
         {
           "time": "22:12",
@@ -174,7 +398,17 @@
           "kcal": 219,
           "proteinG": 42,
           "carbG": 6,
-          "fatG": 2
+          "fatG": 2,
+          "items": [
+            {
+              "cat": "protein",
+              "name": "אבקת חלבון",
+              "kcal": 219,
+              "proteinG": 42,
+              "carbG": 6,
+              "fatG": 2
+            }
+          ]
         }
       ],
       "kcal": 1518,
@@ -215,7 +449,17 @@
           "kcal": 190,
           "proteinG": 20,
           "carbG": 12,
-          "fatG": 6
+          "fatG": 6,
+          "items": [
+            {
+              "cat": "dairy",
+              "name": "GO",
+              "kcal": 190,
+              "proteinG": 20,
+              "carbG": 12,
+              "fatG": 6
+            }
+          ]
         },
         {
           "time": "14:57",
@@ -223,7 +467,33 @@
           "kcal": 805,
           "proteinG": 70,
           "carbG": 83,
-          "fatG": 21
+          "fatG": 21,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "חזה עוף",
+              "kcal": 315,
+              "proteinG": 52,
+              "carbG": 0,
+              "fatG": 12
+            },
+            {
+              "cat": "veg",
+              "name": "אפונה",
+              "kcal": 190,
+              "proteinG": 9,
+              "carbG": 25,
+              "fatG": 6
+            },
+            {
+              "cat": "grains",
+              "name": "קוסקוס",
+              "kcal": 300,
+              "proteinG": 9,
+              "carbG": 58,
+              "fatG": 3
+            }
+          ]
         },
         {
           "time": "15:03",
@@ -231,7 +501,17 @@
           "kcal": 30,
           "proteinG": 1,
           "carbG": 6,
-          "fatG": 0
+          "fatG": 0,
+          "items": [
+            {
+              "cat": "veg",
+              "name": "כרוב",
+              "kcal": 30,
+              "proteinG": 1,
+              "carbG": 6,
+              "fatG": 0
+            }
+          ]
         },
         {
           "time": "18:42",
@@ -239,7 +519,17 @@
           "kcal": 295,
           "proteinG": 59,
           "carbG": 8,
-          "fatG": 3
+          "fatG": 3,
+          "items": [
+            {
+              "cat": "protein",
+              "name": "אבקת חלבון",
+              "kcal": 295,
+              "proteinG": 59,
+              "carbG": 8,
+              "fatG": 3
+            }
+          ]
         },
         {
           "time": "ערב",
@@ -247,7 +537,25 @@
           "kcal": 1070,
           "proteinG": 21,
           "carbG": 56,
-          "fatG": 49
+          "fatG": 49,
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "וודקה",
+              "kcal": 330,
+              "proteinG": 0,
+              "carbG": 0,
+              "fatG": 0
+            },
+            {
+              "cat": "snacks",
+              "name": "אגוזים, סניידרס, גלידונית, וופל",
+              "kcal": 740,
+              "proteinG": 21,
+              "carbG": 56,
+              "fatG": 49
+            }
+          ]
         },
         {
           "time": "ערב",
@@ -255,7 +563,17 @@
           "kcal": 160,
           "proteinG": 0,
           "carbG": 8,
-          "fatG": 14
+          "fatG": 14,
+          "items": [
+            {
+              "cat": "snacks",
+              "name": "מרווח ביטחון",
+              "kcal": 160,
+              "proteinG": 0,
+              "carbG": 8,
+              "fatG": 14
+            }
+          ]
         }
       ],
       "kcal": 2550,
@@ -287,7 +605,33 @@
           "kcal": 1210,
           "proteinG": 77,
           "carbG": 82,
-          "fatG": 59
+          "fatG": 59,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "פסטרמה, פרושוטו, סלמי",
+              "kcal": 750,
+              "proteinG": 64,
+              "carbG": 4,
+              "fatG": 51
+            },
+            {
+              "cat": "grains",
+              "name": "3 פרוסות לחם",
+              "kcal": 390,
+              "proteinG": 13,
+              "carbG": 75,
+              "fatG": 2
+            },
+            {
+              "cat": "fat",
+              "name": "רוטב ומלפפונים",
+              "kcal": 70,
+              "proteinG": 0,
+              "carbG": 3,
+              "fatG": 6
+            }
+          ]
         },
         {
           "time": "צהריים",
@@ -295,7 +639,33 @@
           "kcal": 545,
           "proteinG": 29,
           "carbG": 10,
-          "fatG": 42
+          "fatG": 42,
+          "items": [
+            {
+              "cat": "dairy",
+              "name": "גבינות",
+              "kcal": 440,
+              "proteinG": 27,
+              "carbG": 1,
+              "fatG": 36
+            },
+            {
+              "cat": "veg",
+              "name": "עגבניות",
+              "kcal": 40,
+              "proteinG": 2,
+              "carbG": 8,
+              "fatG": 0
+            },
+            {
+              "cat": "fat",
+              "name": "זיתים",
+              "kcal": 65,
+              "proteinG": 0,
+              "carbG": 1,
+              "fatG": 6
+            }
+          ]
         },
         {
           "time": "צהריים",
@@ -303,7 +673,17 @@
           "kcal": 500,
           "proteinG": 51,
           "carbG": 2,
-          "fatG": 30
+          "fatG": 30,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "פסטרמה, פרושוטו, סלמי",
+              "kcal": 500,
+              "proteinG": 51,
+              "carbG": 2,
+              "fatG": 30
+            }
+          ]
         },
         {
           "time": "צהריים",
@@ -311,7 +691,17 @@
           "kcal": 625,
           "proteinG": 0,
           "carbG": 20,
-          "fatG": 0
+          "fatG": 0,
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "יין",
+              "kcal": 625,
+              "proteinG": 0,
+              "carbG": 20,
+              "fatG": 0
+            }
+          ]
         }
       ],
       "kcal": 2880,

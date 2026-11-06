@@ -503,6 +503,88 @@
     return parts.join(' · ');
   }
 
+  /** קבוצות המזון; הסדר קבוע כדי שהצבעים יישארו באותו מקום בכל פס */
+  var CATS = [
+    { key: 'meat', label: 'בשר, עוף ודגים' },
+    { key: 'dairy', label: 'חלב וביצים' },
+    { key: 'protein', label: 'אבקת חלבון' },
+    { key: 'veg', label: 'ירקות וקטניות' },
+    { key: 'grains', label: 'לחם ודגנים' },
+    { key: 'fat', label: 'שמן, רטבים וזיתים' },
+    { key: 'snacks', label: 'נשנושים ומתוקים' },
+    { key: 'fried', label: 'מטוגן במסעדה' },
+    { key: 'alcohol', label: 'אלכוהול' },
+    { key: 'other', label: 'לא מפורק' }
+  ];
+
+  /** סכום לכל קבוצה; ארוחה בלי פירוק נספרת כ"לא מפורק" */
+  function catTotals(rows) {
+    var out = {};
+    CATS.forEach(function (c) { out[c.key] = { kcal: 0, proteinG: 0 }; });
+    rows.forEach(function (row) {
+      (Array.isArray(row.meals) ? row.meals : []).forEach(function (meal) {
+        var items = Array.isArray(meal.items) && meal.items.length ? meal.items
+          : [{ cat: 'other', kcal: meal.kcal, proteinG: meal.proteinG }];
+        items.forEach(function (item) {
+          var bucket = out[item.cat] || out.other;
+          bucket.kcal += typeof item.kcal === 'number' ? item.kcal : 0;
+          bucket.proteinG += typeof item.proteinG === 'number' ? item.proteinG : 0;
+        });
+      });
+    });
+    return out;
+  }
+
+  function stack(totals, all) {
+    if (!all) return '';
+    return '<div class="groups__stack">' + CATS.filter(function (c) {
+      return totals[c.key].kcal > 0;
+    }).map(function (c) {
+      return '<i class="groups__seg groups__c--' + c.key + '" style="width:' +
+        (totals[c.key].kcal / all * 100).toFixed(2) + '%" title="' + P.esc(c.label) + '"></i>';
+    }).join('') + '</div>';
+  }
+
+  function groupCard(title, sub, rows) {
+    var totals = catTotals(rows);
+    var all = CATS.reduce(function (sum, c) { return sum + totals[c.key].kcal; }, 0);
+    var days = rows.filter(function (r) { return Array.isArray(r.meals) && r.meals.length; }).length || 1;
+    var list = CATS.filter(function (c) { return totals[c.key].kcal > 0; }).sort(function (a, b) {
+      return totals[b.key].kcal - totals[a.key].kcal;
+    }).map(function (c) {
+      var t = totals[c.key];
+      var pct = all ? Math.round(t.kcal / all * 100) : 0;
+      return '<li class="groups__row">' +
+        '<span class="groups__name"><i class="groups__dot groups__c--' + c.key + '"></i>' + P.esc(c.label) + '</span>' +
+        '<span class="groups__pct">' + pct + '%</span>' +
+        '<span class="groups__kcal">' + root.Fmt.n(t.kcal, 0) + '</span>' +
+        '<span class="groups__day">' + root.Fmt.n(Math.round(t.kcal / days), 0) + ' ליום</span>' +
+      '</li>';
+    }).join('');
+    return P.card(title, sub + ' · ' + root.Fmt.n(all, 0) + ' קק״ל',
+      stack(totals, all) + '<ul class="groups__list">' + list + '</ul>');
+  }
+
+  /** טאב הקבוצות: לאן הלכו הקלוריות */
+  function groups() {
+    var state = read();
+    var rows = state.rows || [];
+    if (!rows.length) return P.section('קבוצות', P.card(null, null, P.empty('עוד לא נרשמו ארוחות.')));
+    var last = rows.slice(-7);
+    var perDay = rows.slice().reverse().map(function (row) {
+      var totals = catTotals([row]);
+      var all = CATS.reduce(function (sum, c) { return sum + totals[c.key].kcal; }, 0);
+      return '<div class="groups__daybar"><span class="groups__date">' +
+        P.esc(root.Dates.short(row.date) + ' · ' + weekday(row.date)) + '</span>' +
+        '<span class="groups__daykcal">' + root.Fmt.n(all, 0) + '</span>' + stack(totals, all) + '</div>';
+    }).join('');
+    return P.section('קבוצות',
+      groupCard('כל התקופה', rows.length + ' ימים', rows) +
+      (rows.length > 7 ? groupCard('7 הימים האחרונים', '7 ימים', last) : '') +
+      P.card('לפי יום', 'קק״ל לכל יום', perDay) +
+      P.hint('החלוקה נשענת על ההערכות של כל פריט, ולכן היא טובה לזיהוי דפוסים ולא לחשבון מדויק.'));
+  }
+
   /** שם היום בשבוע, לפי תאריך ISO ובלי תלות באזור הזמן של הדפדפן */
   function weekday(iso) {
     var names = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
@@ -630,5 +712,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, catTotals: catTotals, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);
