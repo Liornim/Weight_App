@@ -597,6 +597,7 @@
   var TABS = [
     { value: 'budget', label: 'תקציב' },
     { value: 'weight', label: 'משקל' },
+    { value: 'meals', label: 'ארוחות' },
     { value: 'data', label: 'נתונים' }
   ];
 
@@ -623,6 +624,7 @@
     var panel = state.tab === 'weight' ? root.WeightTab.render(state)
       : state.tab === 'entry' ? root.EntryTab.render(state)
       : state.tab === 'data' ? root.DataTab.render(state)
+      : state.tab === 'meals' ? root.Coach.meals()
       : root.BudgetTab.render(state);
 
     container.innerHTML =

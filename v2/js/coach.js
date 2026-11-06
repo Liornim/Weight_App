@@ -503,6 +503,39 @@
     return parts.join(' · ');
   }
 
+  /** טאב הארוחות: כל יום, מהחדש לישן, עם כל מה שנרשם בו */
+  function meals() {
+    var state = read();
+    var rows = (state.rows || []).slice().reverse();
+    if (!rows.length) return P.section('ארוחות', P.card(null, null, P.empty('עוד לא נרשמו ארוחות.')));
+    var n = function (v) { return typeof v === 'number' ? root.Fmt.n(v, 0) : '—'; };
+    return P.section('ארוחות', rows.map(function (row) {
+      var list = Array.isArray(row.meals) ? row.meals : [];
+      var sum = function (key) {
+        if (typeof row[key] === 'number') return row[key];
+        var total = list.reduce(function (acc, m) { return acc + (typeof m[key] === 'number' ? m[key] : 0); }, 0);
+        return list.length ? total : null;
+      };
+      var closed = typeof row.kcal === 'number' && typeof row.steps === 'number';
+      var head = '<div class="meals__sum">' +
+        '<span><b>' + n(sum('kcal')) + '</b> קק״ל</span>' +
+        '<span><b>' + n(sum('proteinG')) + '</b> ג׳ חלבון</span>' +
+        '<span><b>' + n(sum('carbG')) + '</b> ג׳ פחמימות</span>' +
+        '<span><b>' + n(sum('fatG')) + '</b> ג׳ שומן</span>' +
+      '</div>';
+      var body = list.length ? '<ul class="meals__list">' + list.map(function (m) {
+        return '<li class="meals__item">' +
+          '<div class="meals__top"><span class="meals__time">' + P.esc(m.time || '') + '</span>' +
+            '<span class="meals__kcal">' + n(m.kcal) + ' קק״ל</span></div>' +
+          '<div class="meals__name">' + P.esc(m.name || '') + '</div>' +
+          '<div class="meals__macro">חלבון ' + n(m.proteinG) + ' · פחמימות ' + n(m.carbG) +
+            ' · שומן ' + n(m.fatG) + '</div>' +
+        '</li>';
+      }).join('') + '</ul>' : P.hint('לא נרשמו ארוחות ביום הזה.');
+      return P.card(root.Dates.short(row.date), closed ? 'יום סגור' : 'יום פתוח', head + body);
+    }).join(''));
+  }
+
   /** מה נאכל היום, ארוחה בשורה */
   function mealList(row) {
     var meals = Array.isArray(row.meals) ? row.meals : [];
@@ -590,5 +623,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);

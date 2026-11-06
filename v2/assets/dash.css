@@ -1272,3 +1272,15 @@ input[type='range']::-moz-range-thumb {
 .cumul__tile--warn .cumul__w { color: #F8C08A; }
 .cumul__tile--calm .cumul__w { color: rgba(255,255,255,.7); }
 @media (max-width: 360px) { .cumul__tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ---------------------------------------------------------- טאב ארוחות */
+.meals__sum { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--ink-soft); padding-bottom: 12px; border-bottom: 1px solid var(--rule); }
+.meals__sum b { font-family: var(--mono); font-size: 16px; color: var(--ink); }
+.meals__list { list-style: none; margin: 0; padding: 0; display: grid; }
+.meals__item { display: grid; gap: 3px; padding: 12px 0; border-bottom: 1px solid var(--rule); }
+.meals__item:last-child { border-bottom: 0; padding-bottom: 0; }
+.meals__top { display: flex; justify-content: space-between; gap: 12px; }
+.meals__time { font-size: 12px; color: var(--ink-faint); }
+.meals__kcal { font-family: var(--mono); font-size: 14px; font-weight: 600; color: var(--brand); }
+.meals__name { font-size: 14.5px; line-height: 1.45; min-width: 0; }
+.meals__macro { font-size: 12.5px; color: var(--ink-soft); }

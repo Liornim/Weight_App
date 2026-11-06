@@ -197,6 +197,17 @@ test('המצטבר: גרף, צבעים ושעת רענון', async () => {
   assert(html.includes('cumul__tile--bad') && html.includes('רענון אחרון') && html.includes('נתונים מ-01:04'), 'אין צבע או שעה');
 });
 
+test('טאב הארוחות מציג כל יום עם הארוחות שלו', async () => {
+  file = base({ updatedAt: 't07', entries: [
+    { date: '2026-11-05', meals: [{ time: '10:37', name: '<i>GO</i>', kcal: 190, proteinG: 20, carbG: 12, fatG: 6 }] },
+    { date: '2026-11-06', meals: [] }] });
+  await Coach.load();
+  const html = Coach.meals();
+  assert(html.includes('GO') && !html.includes('<i>GO') && html.includes('190'), html);
+  assert(html.indexOf('06/11') < html.indexOf('05/11'), 'סדר');
+  assert(html.includes('לא נרשמו ארוחות ביום הזה'), 'יום ריק');
+});
+
 test('בלי יעדים אין כרטיס גדול', async () => {
   file = base({ updatedAt: 't02', entries: [{ date: '2026-11-02', weightKg: 90.8 }] });
   await Coach.load();
