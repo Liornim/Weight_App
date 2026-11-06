@@ -54,7 +54,7 @@ test('הגיליון הפשוט מציג יום בשורה', () => {
   const box = w.document.createElement('div');
   box.innerHTML = Coach.card();
   const cells = [...box.querySelectorAll('tbody tr td')].map((td) => td.textContent);
-  assert(cells.length === 9, 'תאים: ' + cells.length);
+  assert(cells.length === 10, 'תאים: ' + cells.length);
   assert(cells[1].includes('90.8'), cells.join('|'));
 });
 
@@ -173,6 +173,16 @@ test('צעדים מול שני היעדים, זה לצד זה', async () => {
   await Coach.load();
   const html = Coach.today();
   assert(html.includes('7,097') && html.includes('497'), html);
+});
+
+test('הליכה ואורביטרק בעמודות נפרדות', async () => {
+  file = base({ updatedAt: 't06', entries: [{ date: '2026-11-06', weightKg: 89.6,
+    walks: [{ minutes: 20 }, { type: 'אליפטיקל', minutes: 45 }] }] });
+  await Coach.load();
+  const box = w.document.createElement('div');
+  box.innerHTML = Coach.card();
+  const cells = [...box.querySelectorAll('tbody tr td')].map((td) => td.textContent);
+  assert(cells[7].includes('20') && cells[8].includes('45'), cells.join('|'));
 });
 
 test('בלי יעדים אין כרטיס גדול', async () => {

@@ -459,21 +459,23 @@
         ? '<td class="n">' + root.Fmt.n(value, digits) + '</td>'
         : '<td class="n flat">—</td>';
     };
-    // הליכות נפרדות מסך הצעדים היומי, ולכן עמודה משלהן
-    var walked = function (row) {
+    // תצוגה בלבד: שני סוגי האימון כבר נספרים בסך הצעדים היומי
+    var minutesOf = function (row, isElliptical) {
       var walks = Array.isArray(row.walks) ? row.walks : [];
-      var minutes = walks.reduce(function (sum, walk) {
+      var minutes = walks.filter(function (walk) {
+        return (walk.type === 'אליפטיקל') === isElliptical;
+      }).reduce(function (sum, walk) {
         return sum + (typeof walk.minutes === 'number' ? walk.minutes : 0);
       }, 0);
       return minutes ? minutes : null;
     };
-    return P.table(['תאריך', 'משקל', 'קלוריות', 'חלבון', 'פחמימות', 'שומן', 'צעדים', 'הליכה (דק׳)', 'מאזן'],
+    return P.table(['תאריך', 'משקל', 'קלוריות', 'חלבון', 'פחמימות', 'שומן', 'צעדים', 'הליכה (דק׳)', 'אורביטרק (דק׳)', 'מאזן'],
       rows.slice().reverse().map(function (row) {
         return '<tr><td class="n">' + P.esc(root.Dates.short(row.date)) + '</td>' +
           cell(row.weightKg, 1) + cell(eatenOf(row, 'kcal'), 0) +
           cell(eatenOf(row, 'proteinG'), 0) +
           cell(eatenOf(row, 'carbG'), 0) + cell(eatenOf(row, 'fatG'), 0) +
-          cell(row.steps, 0) + cell(walked(row), 0) +
+          cell(row.steps, 0) + cell(minutesOf(row, false), 0) + cell(minutesOf(row, true), 0) +
           cell(cfg ? dayBalance(row, cfg) : null, 0) + '</tr>';
       }));
   }
