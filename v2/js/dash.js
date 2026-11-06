@@ -596,9 +596,9 @@
    */
   var TABS = [
     { value: 'home', label: 'ראשי' },
+    { value: 'meals', label: 'ארוחות' },
     { value: 'budget', label: 'תקציב' },
     { value: 'weight', label: 'משקל' },
-    { value: 'meals', label: 'ארוחות' },
     { value: 'data', label: 'נתונים' }
   ];
 
