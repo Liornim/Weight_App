@@ -633,6 +633,7 @@
       : root.BudgetTab.render(state);
 
     container.innerHTML =
+      '<div class="ver">' + P.esc(root.App.VERSION || '') + '</div>' +
       tabs(state.tab) +
       panel +
       settingsSection(state, entries, settings);
