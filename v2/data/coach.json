@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-07T22:06:52+00:00",
+  "updatedAt": "2026-11-07T22:08:09+00:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -927,6 +927,24 @@
               "proteinG": 3.5,
               "carbG": 4,
               "fatG": 0.5
+            }
+          ]
+        },
+        {
+          "time": "20:30",
+          "name": "¾ בקבוק יין אדום",
+          "kcal": 490,
+          "proteinG": 0,
+          "carbG": 15,
+          "fatG": 0,
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "¾ בקבוק יין אדום (~560 מ״ל)",
+              "kcal": 490,
+              "proteinG": 0,
+              "carbG": 15,
+              "fatG": 0
             }
           ]
         }
