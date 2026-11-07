@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-07T16:55:52+00:00",
+  "updatedAt": "2026-11-07T16:57:45+00:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -848,7 +848,9 @@
           "seconds": 2,
           "avgHr": 107,
           "maxHr": 128,
-          "deviceKcal": 413
+          "deviceKcal": 413,
+          "km": 14.97,
+          "machineKcal": 329
         }
       ]
     }
