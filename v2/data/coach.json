@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-07T16:57:45+00:00",
+  "updatedAt": "2026-11-07T18:04:26+00:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -839,6 +839,64 @@
           "proteinG": 0,
           "carbG": 10,
           "fatG": 0
+        },
+        {
+          "time": "20:00",
+          "name": "ערב גבינות: רבע מכל הגבינות, רבע לחם וגבינת שמנת",
+          "kcal": 1038,
+          "proteinG": 48.5,
+          "carbG": 51.5,
+          "fatG": 70.5,
+          "items": [
+            {
+              "cat": "grains",
+              "name": "לחם איטלקי 100 ג׳ (רבע כיכר)",
+              "kcal": 266,
+              "proteinG": 7,
+              "carbG": 50,
+              "fatG": 5
+            },
+            {
+              "cat": "dairy",
+              "name": "גבינת שמנת כמהין ~50 ג׳ (רבע גביע, הערכה)",
+              "kcal": 126,
+              "proteinG": 2.5,
+              "carbG": 1.5,
+              "fatG": 12
+            },
+            {
+              "cat": "dairy",
+              "name": "גאודה עיזים כמהין 43 ג׳",
+              "kcal": 164,
+              "proteinG": 11,
+              "carbG": 0,
+              "fatG": 13
+            },
+            {
+              "cat": "dairy",
+              "name": "גאודה עיזים הולנדית 47 ג׳",
+              "kcal": 169,
+              "proteinG": 12,
+              "carbG": 0,
+              "fatG": 13
+            },
+            {
+              "cat": "dairy",
+              "name": "מנצ׳גו שום 43 ג׳",
+              "kcal": 172,
+              "proteinG": 11,
+              "carbG": 0,
+              "fatG": 14
+            },
+            {
+              "cat": "dairy",
+              "name": "מונטניולו 34 ג׳",
+              "kcal": 141,
+              "proteinG": 5,
+              "carbG": 0,
+              "fatG": 13.5
+            }
+          ]
         }
       ],
       "walks": [
