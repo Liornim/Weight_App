@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-07T08:55:00+02:00",
+  "updatedAt": "2026-11-07T13:17:00+02:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -712,7 +712,51 @@
     },
     {
       "date": "2026-11-07",
-      "weightKg": 90.1
+      "weightKg": 90.1,
+      "meals": [
+        {
+          "time": "13:16",
+          "name": "נורדר: כ-60% מקממבר, כבד קצוץ וסלט ביצים, נגרוני",
+          "items": [
+            {
+              "cat": "dairy",
+              "name": "קממבר",
+              "kcal": 120,
+              "proteinG": 8,
+              "carbG": 1,
+              "fatG": 10
+            },
+            {
+              "cat": "meat",
+              "name": "כבד קצוץ",
+              "kcal": 130,
+              "proteinG": 7,
+              "carbG": 3,
+              "fatG": 10
+            },
+            {
+              "cat": "dairy",
+              "name": "סלט ביצים",
+              "kcal": 150,
+              "proteinG": 6,
+              "carbG": 1,
+              "fatG": 13
+            },
+            {
+              "cat": "alcohol",
+              "name": "נגרוני",
+              "kcal": 200,
+              "proteinG": 0,
+              "carbG": 8,
+              "fatG": 0
+            }
+          ],
+          "kcal": 600,
+          "proteinG": 21,
+          "carbG": 13,
+          "fatG": 33
+        }
+      ]
     }
   ],
   "summary": {
