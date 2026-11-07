@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-07T14:21:00+02:00",
+  "updatedAt": "2026-11-07T14:22:00+02:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -759,14 +759,6 @@
               "fatG": 16
             },
             {
-              "cat": "snacks",
-              "name": "קונפי שרי, חצי",
-              "kcal": 30,
-              "proteinG": 0,
-              "carbG": 6,
-              "fatG": 1
-            },
-            {
               "cat": "alcohol",
               "name": "נגרוני",
               "kcal": 200,
@@ -775,60 +767,78 @@
               "fatG": 0
             }
           ],
-          "kcal": 1620,
+          "kcal": 1590,
           "proteinG": 54,
-          "carbG": 100,
-          "fatG": 94
+          "carbG": 94,
+          "fatG": 93
         },
         {
           "time": "13:35",
-          "name": "נורדר: מקושקשת על לחם דגנים, אבוקדו, גרעינים, הולנדייז",
+          "name": "נורדר: כ-30% ממקושקשת על לחם דגנים, אבוקדו, גרעינים, הולנדייז",
           "items": [
             {
               "cat": "grains",
               "name": "פרוסת לחם דגנים עבה",
-              "kcal": 330,
-              "proteinG": 12,
-              "carbG": 45,
-              "fatG": 10
+              "kcal": 99,
+              "proteinG": 4,
+              "carbG": 14,
+              "fatG": 3
             },
             {
               "cat": "dairy",
               "name": "ביצים מקושקשות",
-              "kcal": 270,
-              "proteinG": 18,
-              "carbG": 2,
-              "fatG": 21
+              "kcal": 81,
+              "proteinG": 5,
+              "carbG": 1,
+              "fatG": 6
             },
             {
               "cat": "veg",
               "name": "אבוקדו",
-              "kcal": 65,
-              "proteinG": 1,
-              "carbG": 3,
-              "fatG": 6
+              "kcal": 20,
+              "proteinG": 0,
+              "carbG": 1,
+              "fatG": 2
             },
             {
               "cat": "snacks",
               "name": "גרעינים",
-              "kcal": 30,
-              "proteinG": 1,
-              "carbG": 1,
-              "fatG": 3
+              "kcal": 9,
+              "proteinG": 0,
+              "carbG": 0,
+              "fatG": 1
             },
             {
               "cat": "fat",
               "name": "רוטב הולנדייז",
-              "kcal": 200,
-              "proteinG": 1,
-              "carbG": 4,
-              "fatG": 20
+              "kcal": 60,
+              "proteinG": 0,
+              "carbG": 1,
+              "fatG": 6
             }
           ],
-          "kcal": 895,
-          "proteinG": 33,
-          "carbG": 55,
-          "fatG": 60
+          "kcal": 269,
+          "proteinG": 9,
+          "carbG": 17,
+          "fatG": 18
+        },
+        {
+          "time": "14:21",
+          "name": "קוקטייל אולד פאשן",
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "אולד פאשן",
+              "kcal": 180,
+              "proteinG": 0,
+              "carbG": 10,
+              "fatG": 0
+            }
+          ],
+          "kcal": 180,
+          "proteinG": 0,
+          "carbG": 10,
+          "fatG": 0
         }
       ]
     }
