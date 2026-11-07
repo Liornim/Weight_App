@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-07T13:17:00+02:00",
+  "updatedAt": "2026-11-07T13:36:00+02:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -755,6 +755,56 @@
           "proteinG": 21,
           "carbG": 13,
           "fatG": 33
+        },
+        {
+          "time": "13:35",
+          "name": "נורדר: מקושקשת על לחם דגנים, אבוקדו, גרעינים, הולנדייז",
+          "items": [
+            {
+              "cat": "grains",
+              "name": "פרוסת לחם דגנים עבה",
+              "kcal": 330,
+              "proteinG": 12,
+              "carbG": 45,
+              "fatG": 10
+            },
+            {
+              "cat": "dairy",
+              "name": "ביצים מקושקשות",
+              "kcal": 270,
+              "proteinG": 18,
+              "carbG": 2,
+              "fatG": 21
+            },
+            {
+              "cat": "veg",
+              "name": "אבוקדו",
+              "kcal": 65,
+              "proteinG": 1,
+              "carbG": 3,
+              "fatG": 6
+            },
+            {
+              "cat": "snacks",
+              "name": "גרעינים",
+              "kcal": 30,
+              "proteinG": 1,
+              "carbG": 1,
+              "fatG": 3
+            },
+            {
+              "cat": "fat",
+              "name": "רוטב הולנדייז",
+              "kcal": 200,
+              "proteinG": 1,
+              "carbG": 4,
+              "fatG": 20
+            }
+          ],
+          "kcal": 895,
+          "proteinG": 33,
+          "carbG": 55,
+          "fatG": 60
         }
       ]
     }
