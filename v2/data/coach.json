@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-07T13:36:00+02:00",
+  "updatedAt": "2026-11-07T14:21:00+02:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -716,31 +716,55 @@
       "meals": [
         {
           "time": "13:16",
-          "name": "נורדר: כ-60% מקממבר, כבד קצוץ וסלט ביצים, נגרוני",
+          "name": "נורדר: כבד קצוץ מלא, כ-60% קממבר וסלט ביצים, חצי סלסלת לחמים וחמאה, נגרוני",
           "items": [
             {
               "cat": "dairy",
-              "name": "קממבר",
-              "kcal": 120,
-              "proteinG": 8,
-              "carbG": 1,
-              "fatG": 10
+              "name": "קממבר עם ריבת פלפלים ופירורי אגוזים, כ-60%",
+              "kcal": 290,
+              "proteinG": 13,
+              "carbG": 13,
+              "fatG": 21
             },
             {
               "cat": "meat",
-              "name": "כבד קצוץ",
-              "kcal": 130,
-              "proteinG": 7,
-              "carbG": 3,
-              "fatG": 10
+              "name": "כבד קצוץ, מלא",
+              "kcal": 380,
+              "proteinG": 20,
+              "carbG": 8,
+              "fatG": 30
             },
             {
               "cat": "dairy",
-              "name": "סלט ביצים",
-              "kcal": 150,
-              "proteinG": 6,
-              "carbG": 1,
-              "fatG": 13
+              "name": "סלט ביצים, כ-60%",
+              "kcal": 240,
+              "proteinG": 10,
+              "carbG": 2,
+              "fatG": 22
+            },
+            {
+              "cat": "grains",
+              "name": "חצי סלסלת לחמים",
+              "kcal": 335,
+              "proteinG": 11,
+              "carbG": 63,
+              "fatG": 4
+            },
+            {
+              "cat": "fat",
+              "name": "חצי מהחמאה",
+              "kcal": 145,
+              "proteinG": 0,
+              "carbG": 0,
+              "fatG": 16
+            },
+            {
+              "cat": "snacks",
+              "name": "קונפי שרי, חצי",
+              "kcal": 30,
+              "proteinG": 0,
+              "carbG": 6,
+              "fatG": 1
             },
             {
               "cat": "alcohol",
@@ -751,10 +775,10 @@
               "fatG": 0
             }
           ],
-          "kcal": 600,
-          "proteinG": 21,
-          "carbG": 13,
-          "fatG": 33
+          "kcal": 1620,
+          "proteinG": 54,
+          "carbG": 100,
+          "fatG": 94
         },
         {
           "time": "13:35",
