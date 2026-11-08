@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-08T08:49:27+00:00",
+  "updatedAt": "2026-11-08T09:07:11+00:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -986,6 +986,40 @@
               "proteinG": 1.3,
               "carbG": 28,
               "fatG": 0.4
+            }
+          ]
+        },
+        {
+          "time": "11:05",
+          "name": "יוגורט חלבון, פסטרמה הודו ומלפפונים",
+          "kcal": 263,
+          "proteinG": 35.7,
+          "carbG": 18.5,
+          "fatG": 5.3,
+          "items": [
+            {
+              "cat": "dairy",
+              "name": "יוגורט PRO 25 ג׳ חלבון 2%, 200 ג׳",
+              "kcal": 175,
+              "proteinG": 25,
+              "carbG": 9,
+              "fatG": 4
+            },
+            {
+              "cat": "meat",
+              "name": "2 פרוסות פסטרמה/חזה הודו (~45 ג׳)",
+              "kcal": 50,
+              "proteinG": 9,
+              "carbG": 1.5,
+              "fatG": 1
+            },
+            {
+              "cat": "veg",
+              "name": "2 מלפפונים",
+              "kcal": 38,
+              "proteinG": 1.7,
+              "carbG": 8,
+              "fatG": 0.3
             }
           ]
         }
