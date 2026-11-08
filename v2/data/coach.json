@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-08T12:30:40+00:00",
+  "updatedAt": "2026-11-08T13:12:24+00:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -1120,6 +1120,24 @@
               "proteinG": 12.8,
               "carbG": 3.8,
               "fatG": 6.3
+            }
+          ]
+        },
+        {
+          "time": "15:10",
+          "name": "2 ביסים של לחם",
+          "kcal": 80,
+          "proteinG": 2.7,
+          "carbG": 15,
+          "fatG": 1,
+          "items": [
+            {
+              "cat": "grains",
+              "name": "2 ביסים לחם מהסלט (~30 ג׳)",
+              "kcal": 80,
+              "proteinG": 2.7,
+              "carbG": 15,
+              "fatG": 1
             }
           ]
         }
