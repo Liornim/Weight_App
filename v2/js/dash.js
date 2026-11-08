@@ -598,6 +598,7 @@
     { value: 'home', label: 'ראשי' },
     { value: 'meals', label: 'ארוחות' },
     { value: 'groups', label: 'קבוצות' },
+    { value: 'split', label: 'פירוק' },
     { value: 'budget', label: 'תקציב' },
     { value: 'weight', label: 'משקל' },
     { value: 'data', label: 'נתונים' }
@@ -632,6 +633,7 @@
       : state.tab === 'data' ? root.DataTab.render(state)
       : state.tab === 'meals' ? root.Coach.meals()
       : state.tab === 'groups' ? root.Coach.groups()
+      : state.tab === 'split' ? root.Coach.split()
       : root.BudgetTab.render(state);
 
     container.innerHTML =

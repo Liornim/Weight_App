@@ -1319,3 +1319,5 @@ input[type='range']::-moz-range-thumb {
 .tabs { overflow-x: auto; scrollbar-width: none; gap: 2px; }
 .tabs::-webkit-scrollbar { display: none; }
 .tab { flex: 1 0 auto; padding: 10px 12px; white-space: nowrap; }
+.split__good { color: #1F8F5F; font-weight: 600; }
+.split__bad { color: #C8463A; font-weight: 600; }

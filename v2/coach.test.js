@@ -221,6 +221,19 @@ test('קבוצות: סכום לכל קבוצה, וארוחה בלי פירוק �
   assert(html.includes('אלכוהול') && html.includes('100%') && html.includes('groups__c--alcohol'), html);
 });
 
+test('פירוק: תזונה וצעדים בנפרד, יום פתוח לא נספר', async () => {
+  const cfg = { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 };
+  const s = Coach.splitOf([
+    { date: '2026-11-07', kcal: 3600, steps: 11219 },
+    { date: '2026-11-08', meals: [{ kcal: 1419 }] }], cfg, { kcal: 1900 });
+  assert(s.days === 1 && s.diet === -1450 && s.steps === 505 && s.dietPlan === 250 && s.stepsPlan === 300, JSON.stringify(s));
+  assert(s.list[1].diet === 731 && !s.list[1].closed, 'יום פתוח');
+  file = base({ updatedAt: 't09', balance: cfg, entries: [{ date: '2026-11-07', kcal: 3600, steps: 11219 }] });
+  await Coach.load();
+  const html = Coach.split();
+  assert(html.includes('פירוק הגירעון') && html.includes('1,450') && html.includes('505'), html);
+});
+
 test('בלי יעדים אין כרטיס גדול', async () => {
   file = base({ updatedAt: 't02', entries: [{ date: '2026-11-02', weightKg: 90.8 }] });
   await Coach.load();

@@ -585,6 +585,72 @@
       P.hint('החלוקה נשענת על ההערכות של כל פריט, ולכן היא טובה לזיהוי דפוסים ולא לחשבון מדויק.'));
   }
 
+
+  /**
+   * פירוק הגירעון לשני מקורות: תזונה (תחזוקה בלי צעדים פחות מה שנאכל)
+   * וצעדים (צעדים × מקדם). כאן חיובי = גירעון, כמו שמדברים עליו.
+   * יום פתוח מציג רק את חלק התזונה עד עכשיו, ולא נכנס לסכום.
+   */
+  function splitOf(rows, cfg, targets) {
+    var out = { days: 0, diet: 0, steps: 0, list: [] };
+    rows.forEach(function (row) {
+      var kcal = typeof row.kcal === 'number' ? row.kcal : eatenOf(row, 'kcal');
+      var closed = typeof row.kcal === 'number' && typeof row.steps === 'number';
+      var diet = typeof kcal === 'number' ? Math.round(cfg.baseBurn - kcal) : null;
+      var steps = typeof row.steps === 'number' ? Math.round(row.steps * cfg.kcalPerStep) : null;
+      out.list.push({ date: row.date, kcal: kcal, stepsCount: row.steps, diet: diet, steps: steps, closed: closed });
+      if (!closed) return;
+      out.days++;
+      out.diet += diet;
+      out.steps += steps;
+    });
+    var kcalTarget = targets && typeof targets.kcal === 'number' ? targets.kcal : null;
+    out.dietPlan = kcalTarget === null ? null : (cfg.baseBurn - kcalTarget) * out.days;
+    out.stepsPlan = kcalTarget === null ? null : (cfg.plannedDeficit - (cfg.baseBurn - kcalTarget)) * out.days;
+    return out;
+  }
+
+  /** טאב הפירוק: כמה מהגירעון בא מהתזונה וכמה מהצעדים */
+  function split() {
+    var state = read();
+    var cfg = state.balance;
+    var rows = state.rows || [];
+    if (!cfg || !rows.length) return P.section('פירוק', P.card(null, null, P.empty('עוד אין ימים לפירוק.')));
+    var s = splitOf(rows, cfg, state.targets);
+    var fmt = function (v) { return root.Fmt.n(Math.abs(Math.round(v)), 0); };
+    var word = function (v) { return v >= 0 ? 'גירעון' : 'עודף'; };
+    var vsPlan = function (v, plan) {
+      if (plan === null) return word(v);
+      var d = v - plan;
+      return word(v) + ' · ' + (d >= 0 ? 'לפני התוכנית ב-' : 'מאחורי התוכנית ב-') + fmt(d);
+    };
+    var total = s.diet + s.steps;
+    var tiles = s.days ? '<div class="cumul__tiles">' +
+      tile('מהתזונה', fmt(s.diet), vsPlan(s.diet, s.dietPlan), s.dietPlan === null ? 'calm' : (s.diet >= s.dietPlan ? 'good' : 'bad')) +
+      tile('מהצעדים', fmt(s.steps), vsPlan(s.steps, s.stepsPlan), s.stepsPlan === null ? 'calm' : (s.steps >= s.stepsPlan ? 'good' : 'bad')) +
+      tile('סה״כ', fmt(total), word(total), total >= 0 ? 'good' : 'bad') +
+    '</div>' : '';
+    var head = '<section class="cumul">' +
+      '<div class="cumul__row"><h2 class="cumul__title">פירוק הגירעון</h2>' +
+        '<span class="cumul__stamp">' + s.days + ' ימים סגורים</span></div>' +
+      '<div class="cumul__gap">תזונה = ' + root.Fmt.n(cfg.baseBurn, 0) + ' פחות מה שנאכל. ' +
+        'צעדים = צעדים × ' + cfg.kcalPerStep + '. חיובי = גירעון.</div>' +
+      tiles + '</section>';
+    var cell = function (v, signed) {
+      if (typeof v !== 'number') return '<td class="n flat">—</td>';
+      if (!signed) return '<td class="n">' + root.Fmt.n(v, 0) + '</td>';
+      return '<td class="n split__' + (v >= 0 ? 'good' : 'bad') + '">' + (v > 0 ? '+' : v < 0 ? '−' : '') + fmt(v) + '</td>';
+    };
+    var table = P.table(['תאריך', 'קלוריות', 'מהתזונה', 'צעדים', 'מהצעדים', 'סה״כ'],
+      s.list.slice().reverse().map(function (d) {
+        var both = typeof d.diet === 'number' && typeof d.steps === 'number' ? d.diet + d.steps : null;
+        return '<tr><td class="n">' + P.esc(root.Dates.short(d.date)) + (d.closed ? '' : ' (פתוח)') + '</td>' +
+          cell(d.kcal, false) + cell(d.diet, true) + cell(d.stepsCount, false) + cell(d.steps, true) + cell(both, true) + '</tr>';
+      }));
+    return P.section('פירוק', head + P.card('לפי יום', 'קק״ל', table) +
+      P.hint('יום פתוח מציג את התזונה עד עכשיו, ונכנס לסכום רק כשנסגר עם הצעדים.'));
+  }
+
   /** שם היום בשבוע, לפי תאריך ISO ובלי תלות באזור הזמן של הדפדפן */
   function weekday(iso) {
     var names = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
@@ -712,5 +778,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, catTotals: catTotals, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, catTotals: catTotals, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);
