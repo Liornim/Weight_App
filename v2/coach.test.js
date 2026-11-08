@@ -231,7 +231,7 @@ test('פירוק: תזונה וצעדים בנפרד, יום פתוח לא נס�
   file = base({ updatedAt: 't09', balance: cfg, entries: [{ date: '2026-11-07', kcal: 3600, steps: 11219 }] });
   await Coach.load();
   const html = Coach.split();
-  assert(html.includes('פירוק הגירעון') && html.includes('1,450') && html.includes('505'), html);
+  assert(html.includes('פירוק הגירעון') && html.includes('1,450') && html.includes('505') && html.includes('ק״ג') && html.includes('0.12'), html);
 });
 
 test('בלי יעדים אין כרטיס גדול', async () => {

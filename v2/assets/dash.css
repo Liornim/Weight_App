@@ -1321,3 +1321,6 @@ input[type='range']::-moz-range-thumb {
 .tab { flex: 1 0 auto; padding: 10px 12px; white-space: nowrap; }
 .split__good { color: #1F8F5F; font-weight: 600; }
 .split__bad { color: #C8463A; font-weight: 600; }
+.cumul__kg { display: block; font-size: 15px; font-weight: 600; margin-top: 2px; }
+.cumul__kg--good { color: #7BEBB6; }
+.cumul__kg--bad { color: #FFA79C; }

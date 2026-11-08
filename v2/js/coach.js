@@ -381,6 +381,13 @@
     return gap > 0 ? Math.round(gap / cfg.kcalPerStep) : 0;
   }
 
+
+  /** קלוריות לקילוגרם שומן, בערך */
+  var KCAL_PER_KG = 7700;
+  function kgText(kcal) {
+    return '≈' + root.Fmt.n(Math.abs(kcal) / KCAL_PER_KG, 2) + ' ק״ג';
+  }
+
   /** אריח אחד במצטבר; הצבע אומר אם הכיוון טוב, לא רק אם המספר גדול */
   function tile(label, value, word, tone) {
     return '<div class="cumul__tile cumul__tile--' + tone + '">' +
@@ -473,12 +480,14 @@
       '<div class="cumul__head">' +
         '<span class="cumul__label">מאזן קלוריות</span>' +
         '<span class="cumul__big cumul__big--' + (b.total <= 0 ? 'good' : 'bad') + '">' + fmt(b.total) + '</span>' +
+        '<span class="cumul__kg cumul__kg--' + (b.total <= 0 ? 'good' : 'bad') + '">' + kgText(b.total) + ' ' +
+          (b.total <= 0 ? 'ירידה' : 'עלייה') + ' בשומן, לפי החשבון</span>' +
         '<span class="cumul__unit">קק״ל ' + (b.total <= 0 ? 'גירעון' : 'עודף') +
           ' · ממוצע ' + fmt(avg) + ' ' + (avg <= 0 ? 'גירעון' : 'עודף') + ' ליום, תוכנית ' +
           fmt(cfg.plannedDeficit) + ' גירעון</span>' +
       '</div>' +
       '<div class="cumul__pill cumul__pill--' + (onPlan ? 'good' : 'bad') + '">' +
-        (onPlan ? 'לפני התוכנית ב-' : 'מאחורי התוכנית ב-') + fmt(b.gap) + ' קק״ל</div>' +
+        (onPlan ? 'לפני התוכנית ב-' : 'מאחורי התוכנית ב-') + fmt(b.gap) + ' קק״ל (' + kgText(b.gap) + ')</div>' +
       balanceChart(daily, cfg.plannedDeficit) +
       (steps
         ? '<div class="cumul__gap"><b>חסרים ' + root.Fmt.n(steps, 0) + ' צעדים</b> ' +
@@ -622,30 +631,36 @@
     var vsPlan = function (v, plan) {
       if (plan === null) return word(v);
       var d = v - plan;
-      return word(v) + ' · ' + (d >= 0 ? 'לפני התוכנית ב-' : 'מאחורי התוכנית ב-') + fmt(d);
+      return word(v) + ' ' + kgText(v) + ' · ' + (d >= 0 ? 'לפני התוכנית ב-' : 'מאחורי התוכנית ב-') + fmt(d);
     };
     var total = s.diet + s.steps;
     var tiles = s.days ? '<div class="cumul__tiles">' +
       tile('מהתזונה', fmt(s.diet), vsPlan(s.diet, s.dietPlan), s.dietPlan === null ? 'calm' : (s.diet >= s.dietPlan ? 'good' : 'bad')) +
       tile('מהצעדים', fmt(s.steps), vsPlan(s.steps, s.stepsPlan), s.stepsPlan === null ? 'calm' : (s.steps >= s.stepsPlan ? 'good' : 'bad')) +
-      tile('סה״כ', fmt(total), word(total), total >= 0 ? 'good' : 'bad') +
+      tile('סה״כ', fmt(total), word(total) + ' ' + kgText(total) + ' ' + (total >= 0 ? 'ירידה' : 'עלייה'), total >= 0 ? 'good' : 'bad') +
     '</div>' : '';
     var head = '<section class="cumul">' +
       '<div class="cumul__row"><h2 class="cumul__title">פירוק הגירעון</h2>' +
         '<span class="cumul__stamp">' + s.days + ' ימים סגורים</span></div>' +
       '<div class="cumul__gap">תזונה = ' + root.Fmt.n(cfg.baseBurn, 0) + ' פחות מה שנאכל. ' +
-        'צעדים = צעדים × ' + cfg.kcalPerStep + '. חיובי = גירעון.</div>' +
+        'צעדים = צעדים × ' + cfg.kcalPerStep + '. חיובי = גירעון. ' +
+        'ק״ג = קק״ל ÷ ' + root.Fmt.n(KCAL_PER_KG, 0) + ', שינוי בשומן לפי החשבון.</div>' +
       tiles + '</section>';
     var cell = function (v, signed) {
       if (typeof v !== 'number') return '<td class="n flat">—</td>';
       if (!signed) return '<td class="n">' + root.Fmt.n(v, 0) + '</td>';
       return '<td class="n split__' + (v >= 0 ? 'good' : 'bad') + '">' + (v > 0 ? '+' : v < 0 ? '−' : '') + fmt(v) + '</td>';
     };
-    var table = P.table(['תאריך', 'קלוריות', 'מהתזונה', 'צעדים', 'מהצעדים', 'סה״כ'],
+    var kgCell = function (v) {
+      if (typeof v !== 'number') return '<td class="n flat">—</td>';
+      return '<td class="n split__' + (v >= 0 ? 'good' : 'bad') + '">' + (v >= 0 ? '−' : '+') +
+        root.Fmt.n(Math.abs(v) / KCAL_PER_KG, 2) + '</td>';
+    };
+    var table = P.table(['תאריך', 'קלוריות', 'מהתזונה', 'צעדים', 'מהצעדים', 'סה״כ', 'ק״ג'],
       s.list.slice().reverse().map(function (d) {
         var both = typeof d.diet === 'number' && typeof d.steps === 'number' ? d.diet + d.steps : null;
         return '<tr><td class="n">' + P.esc(root.Dates.short(d.date)) + (d.closed ? '' : ' (פתוח)') + '</td>' +
-          cell(d.kcal, false) + cell(d.diet, true) + cell(d.stepsCount, false) + cell(d.steps, true) + cell(both, true) + '</tr>';
+          cell(d.kcal, false) + cell(d.diet, true) + cell(d.stepsCount, false) + cell(d.steps, true) + cell(both, true) + kgCell(both) + '</tr>';
       }));
     return P.section('פירוק', head + P.card('לפי יום', 'קק״ל', table) +
       P.hint('יום פתוח מציג את התזונה עד עכשיו, ונכנס לסכום רק כשנסגר עם הצעדים.'));
