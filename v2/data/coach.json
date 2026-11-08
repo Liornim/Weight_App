@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-08T05:40:36+00:00",
+  "updatedAt": "2026-11-08T08:49:27+00:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -970,7 +970,26 @@
     {
       "date": "2026-11-08",
       "weightKg": 90.7,
-      "meals": []
+      "meals": [
+        {
+          "time": "10:45",
+          "name": "בננה",
+          "kcal": 110,
+          "proteinG": 1.3,
+          "carbG": 28,
+          "fatG": 0.4,
+          "items": [
+            {
+              "cat": "veg",
+              "name": "בננה בינונית",
+              "kcal": 110,
+              "proteinG": 1.3,
+              "carbG": 28,
+              "fatG": 0.4
+            }
+          ]
+        }
+      ]
     }
   ],
   "summary": {
