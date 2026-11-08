@@ -666,6 +666,136 @@
       P.hint('יום פתוח מציג את התזונה עד עכשיו, ונכנס לסכום רק כשנסגר עם הצעדים.'));
   }
 
+
+  /**
+   * תמונת מצב בסוף כל יום סגור: מה היה המצטבר נכון לאותו יום.
+   * כאן חיובי = טוב (גירעון, לפני התוכנית), כדי שהחצים יהיו פשוטים.
+   */
+  function trendOf(rows, cfg, targets) {
+    var kcalTarget = targets && typeof targets.kcal === 'number' ? targets.kcal : null;
+    var protTarget = targets && typeof targets.proteinG === 'number' ? targets.proteinG : null;
+    var stepsTarget = targets && typeof targets.steps === 'number' ? targets.steps : null;
+    var acc = { days: 0, eaten: 0, burnSteps: 0, steps: 0, prot: 0 };
+    var weights = [];
+    var out = [];
+    rows.forEach(function (row) {
+      if (typeof row.weightKg === 'number') weights.push(row.weightKg);
+      if (typeof row.kcal !== 'number' || typeof row.steps !== 'number') return;
+      acc.days++;
+      acc.eaten += row.kcal;
+      acc.steps += row.steps;
+      acc.burnSteps += row.steps * cfg.kcalPerStep;
+      acc.prot += typeof row.proteinG === 'number' ? row.proteinG : 0;
+      var deficit = acc.days * cfg.baseBurn + acc.burnSteps - acc.eaten;
+      var ahead = deficit - acc.days * cfg.plannedDeficit;
+      var last3 = weights.slice(-3);
+      out.push({
+        date: row.date,
+        days: acc.days,
+        deficit: Math.round(deficit),
+        ahead: Math.round(ahead),
+        food: kcalTarget === null ? null : Math.round(acc.days * kcalTarget - acc.eaten),
+        walk: stepsTarget === null ? null : Math.round(acc.burnSteps - acc.days * stepsTarget * cfg.kcalPerStep),
+        stepsPerDay: ahead < 0 ? Math.round(-ahead / cfg.kcalPerStep / 10) : 0,
+        protein: protTarget === null ? null : Math.round(acc.prot - acc.days * protTarget),
+        weight3: last3.length ? last3.reduce(function (a, b) { return a + b; }, 0) / last3.length : null
+      });
+    });
+    return out;
+  }
+
+  function trendChart(list, plan) {
+    if (list.length < 2) return '';
+    var W = 320, H = 150, L = 40, R = 6, T = 10, B = 22;
+    var planAt = function (i) { return list[i].days * plan; };
+    var values = list.map(function (d) { return d.deficit; }).concat(list.map(function (d, i) { return planAt(i); }), [0]);
+    var top = Math.max.apply(null, values), bottom = Math.min.apply(null, values);
+    var pad = (top - bottom) * 0.08 || 50;
+    top += pad; bottom -= pad;
+    var y = function (v) { return T + (top - v) / (top - bottom) * (H - T - B); };
+    var step = (W - L - R) / list.length;
+    var x = function (i) { return L + step * i + step / 2; };
+    var path = function (fn) {
+      return list.map(function (d, i) { return (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(fn(d, i)).toFixed(1); }).join(' ');
+    };
+    var dots = list.map(function (d, i) {
+      return '<circle class="trend__dot trend__dot--' + (d.ahead >= 0 ? 'good' : 'bad') + '" cx="' + x(i).toFixed(1) +
+        '" cy="' + y(d.deficit).toFixed(1) + '" r="' + (i === list.length - 1 ? 4.5 : 3) + '"/>' +
+        '<text class="cumul__tick" x="' + x(i).toFixed(1) + '" y="' + (H - 6) + '">' + P.esc(root.Dates.short(d.date)) + '</text>';
+    }).join('');
+    var label = function (v) {
+      return '<text class="cumul__axis" x="' + (L - 4) + '" y="' + (y(v) + 4).toFixed(1) + '">' + root.Fmt.n(Math.round(v), 0) + '</text>';
+    };
+    return '<svg class="cumul__chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="גירעון מצטבר מול התוכנית">' +
+      '<line class="cumul__zero" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(0).toFixed(1) + '" y2="' + y(0).toFixed(1) + '"/>' +
+      label(0) + label(planAt(list.length - 1)) +
+      '<path class="trend__plan" d="' + path(function (d, i) { return planAt(i); }) + '"/>' +
+      '<path class="trend__line" d="' + path(function (d) { return d.deficit; }) + '"/>' + dots +
+    '</svg>' +
+    '<div class="cumul__legend">' +
+      '<span><i class="cumul__key cumul__key--avg"></i>גירעון מצטבר בפועל</span>' +
+      '<span><i class="cumul__key cumul__key--plan"></i>התוכנית</span>' +
+      '<span>מעל אפס = גירעון</span>' +
+    '</div>';
+  }
+
+  /** טאב המגמה: איך השתנה המצטבר מיום ליום */
+  function trend() {
+    var state = read();
+    var cfg = state.balance;
+    var list = cfg ? trendOf(state.rows || [], cfg, state.targets) : [];
+    if (!list.length) return P.section('מגמה', P.card(null, null, P.empty('עוד אין ימים סגורים להשוואה.')));
+    var fmt = function (v, d) { return root.Fmt.n(Math.abs(v), d || 0); };
+    var kg = function (v) { return fmt(v / KCAL_PER_KG, 2); };
+    var METRICS = [
+      { key: 'deficit', label: 'מאזן מצטבר', show: function (v) { return fmt(v) + ' ' + (v >= 0 ? 'גירעון' : 'עודף'); } },
+      { key: 'deficit', label: 'בק״ג שומן', show: function (v) { return (v >= 0 ? '−' : '+') + kg(v); }, delta: function (v) { return kg(v); } },
+      { key: 'ahead', label: 'מול התוכנית', show: function (v) { return fmt(v) + ' ' + (v >= 0 ? 'לפני' : 'מאחורי'); } },
+      { key: 'food', label: 'אוכל מול היעד', show: function (v) { return fmt(v) + ' ' + (v >= 0 ? 'מתחת' : 'מעל'); } },
+      { key: 'walk', label: 'הליכה מול התוכנית', show: function (v) { return fmt(v) + ' ' + (v >= 0 ? 'יותר' : 'פחות'); } },
+      { key: 'stepsPerDay', label: 'צעדים נוספים ליום (10 ימים)', show: function (v) { return v ? fmt(v) : 'אין פער'; }, lowerIsBetter: true },
+      { key: 'protein', label: 'חלבון מול היעד (ג׳)', show: function (v) { return fmt(v) + ' ' + (v >= 0 ? 'עודף' : 'חוסר'); } },
+      { key: 'weight3', label: 'ממוצע 3 שקילות', show: function (v) { return fmt(v, 1); }, delta: function (v) { return fmt(v, 1); }, lowerIsBetter: true }
+    ];
+    var arrow = function (m, a, b) {
+      if (typeof a !== 'number' || typeof b !== 'number') return '<span class="trend__d">—</span>';
+      var d = b - a;
+      if (Math.abs(d) < (m.key === 'weight3' ? 0.05 : 1)) return '<span class="trend__d">ללא שינוי</span>';
+      var good = m.lowerIsBetter ? d < 0 : d > 0;
+      return '<span class="trend__d trend__d--' + (good ? 'good' : 'bad') + '">' + (good ? '✓ ' : '✗ ') +
+        (m.delta ? m.delta(d) : fmt(d)) + '</span>';
+    };
+    var cell = function (m, v) { return typeof v === 'number' ? m.show(v) : '—'; };
+    var now = list[list.length - 1];
+    var prev = list.length > 1 ? list[list.length - 2] : null;
+    var compare = '<section class="cumul trend">' +
+      '<div class="cumul__row"><h2 class="cumul__title">' +
+        (prev ? P.esc(root.Dates.short(prev.date)) + ' מול ' : '') + P.esc(root.Dates.short(now.date)) + '</h2>' +
+        '<span class="cumul__stamp">מצטבר נכון לסוף כל יום</span></div>' +
+      '<div class="trend__grid">' +
+        '<span class="trend__h"></span><span class="trend__h">' + (prev ? P.esc(root.Dates.short(prev.date)) : '') +
+        '</span><span class="trend__h">' + P.esc(root.Dates.short(now.date)) + '</span><span class="trend__h">שינוי</span>' +
+        METRICS.map(function (m) {
+          return '<span class="trend__k">' + P.esc(m.label) + '</span>' +
+            '<span class="trend__v">' + (prev ? cell(m, prev[m.key]) : '—') + '</span>' +
+            '<span class="trend__v trend__v--now">' + cell(m, now[m.key]) + '</span>' +
+            (prev ? arrow(m, prev[m.key], now[m.key]) : '<span class="trend__d">—</span>');
+        }).join('') +
+      '</div>' + trendChart(list, cfg.plannedDeficit) + '</section>';
+    var table = P.table(['עד יום', 'מאזן', 'ק״ג', 'מול התוכנית', 'צעדים נוספים ליום', 'ממוצע משקל'],
+      list.slice().reverse().map(function (d, i, arr) {
+        var before = arr[i + 1];
+        var withArrow = function (m, v) {
+          return '<td class="n">' + cell(m, v) + (before ? '<br>' + arrow(m, before[m.key], v) : '') + '</td>';
+        };
+        return '<tr><td class="n">' + P.esc(root.Dates.short(d.date)) + '</td>' +
+          withArrow(METRICS[0], d.deficit) + withArrow(METRICS[1], d.deficit) + withArrow(METRICS[2], d.ahead) +
+          withArrow(METRICS[5], d.stepsPerDay) + withArrow(METRICS[7], d.weight3) + '</tr>';
+      }));
+    return P.section('מגמה', compare + P.card('המצב בסוף כל יום', 'מהחדש לישן', table) +
+      P.hint('✓ ירוק = השתפר מהיום הקודם, ✗ אדום = הורע. ק״ג = קק״ל ÷ 7,700. צעדים נוספים = כמה צעדים מעל 6,700 ביום, לאורך 10 ימים, כדי לסגור את הפער.'));
+  }
+
   /** שם היום בשבוע, לפי תאריך ISO ובלי תלות באזור הזמן של הדפדפן */
   function weekday(iso) {
     var names = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
@@ -793,5 +923,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, catTotals: catTotals, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, catTotals: catTotals, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -234,6 +234,22 @@ test('פירוק: תזונה וצעדים בנפרד, יום פתוח לא נס�
   assert(html.includes('פירוק הגירעון') && html.includes('1,450') && html.includes('505') && html.includes('ק״ג') && html.includes('0.12'), html);
 });
 
+test('מגמה: מצטבר נכון לסוף כל יום, ושינוי מהיום הקודם', async () => {
+  const cfg = { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 };
+  const list = Coach.trendOf([
+    { date: '2026-11-07', kcal: 3600, steps: 11219, proteinG: 117, weightKg: 90.1 },
+    { date: '2026-11-08', kcal: 1419, steps: 10822, proteinG: 150, weightKg: 90.7 },
+    { date: '2026-11-09', weightKg: 90.2 }], cfg, { kcal: 1900, proteinG: 150, steps: 6700 });
+  assert(list.length === 2, 'רק ימים סגורים');
+  assert(list[0].deficit === -945 && list[1].deficit === 273, JSON.stringify(list));
+  assert(list[1].food === 3800 - 5019 && list[1].protein === -33, JSON.stringify(list[1]));
+  file = base({ updatedAt: 't10', balance: cfg, entries: [
+    { date: '2026-11-07', kcal: 3600, steps: 11219 }, { date: '2026-11-08', kcal: 1419, steps: 10822 }] });
+  await Coach.load();
+  const html = Coach.trend();
+  assert(html.includes('07/11 מול 08/11') && html.includes('trend__d--good') && html.includes('<svg'), html);
+});
+
 test('בלי יעדים אין כרטיס גדול', async () => {
   file = base({ updatedAt: 't02', entries: [{ date: '2026-11-02', weightKg: 90.8 }] });
   await Coach.load();

@@ -1324,3 +1324,18 @@ input[type='range']::-moz-range-thumb {
 .cumul__kg { display: block; font-size: 15px; font-weight: 600; margin-top: 2px; }
 .cumul__kg--good { color: #7BEBB6; }
 .cumul__kg--bad { color: #FFA79C; }
+.trend__grid { display: grid; grid-template-columns: minmax(0,1.4fr) repeat(3, minmax(0,1fr)); gap: 6px 8px; align-items: center; font-size: 13px; }
+.trend__h { font-size: 11px; color: rgba(255,255,255,.55); }
+.trend__k { color: rgba(255,255,255,.8); }
+.trend__v { color: rgba(255,255,255,.7); font-variant-numeric: tabular-nums; }
+.trend__v--now { color: #fff; font-weight: 700; }
+.trend__d { font-size: 12px; color: rgba(255,255,255,.5); font-variant-numeric: tabular-nums; }
+.trend__d--good { color: #3ECF8E; font-weight: 600; }
+.trend__d--bad { color: #FF7A6B; font-weight: 600; }
+.trend__line { fill: none; stroke: #fff; stroke-width: 2; }
+.trend__plan { fill: none; stroke: rgba(255,255,255,.55); stroke-width: 1.2; stroke-dasharray: 4 4; }
+.trend__dot--good { fill: #3ECF8E; }
+.trend__dot--bad { fill: #FF7A6B; }
+td .trend__d { color: #8a8f98; }
+td .trend__d--good { color: #1F8F5F; }
+td .trend__d--bad { color: #C8463A; }
