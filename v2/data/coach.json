@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-08T13:12:24+00:00",
+  "updatedAt": "2026-11-08T19:09:29+00:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -1138,6 +1138,24 @@
               "proteinG": 2.7,
               "carbG": 15,
               "fatG": 1
+            }
+          ]
+        },
+        {
+          "time": "21:05",
+          "name": "10 ענבים",
+          "kcal": 40,
+          "proteinG": 0.4,
+          "carbG": 10,
+          "fatG": 0.1,
+          "items": [
+            {
+              "cat": "veg",
+              "name": "10 ענבים (~55 ג׳)",
+              "kcal": 40,
+              "proteinG": 0.4,
+              "carbG": 10,
+              "fatG": 0.1
             }
           ]
         }
