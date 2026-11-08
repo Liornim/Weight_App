@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-08T09:07:48+00:00",
+  "updatedAt": "2026-11-08T11:49:37+00:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -1020,6 +1020,80 @@
               "proteinG": 2.5,
               "carbG": 12,
               "fatG": 0.5
+            }
+          ]
+        },
+        {
+          "time": "13:45",
+          "name": "סלט בהרכבה 1000 מ״ל עם פטה, בלי רוטב ובלי לחם",
+          "kcal": 495,
+          "proteinG": 35.5,
+          "carbG": 74,
+          "fatG": 5.7,
+          "items": [
+            {
+              "cat": "grains",
+              "name": "קינואה",
+              "kcal": 70,
+              "proteinG": 2.5,
+              "carbG": 12,
+              "fatG": 1
+            },
+            {
+              "cat": "veg",
+              "name": "עדשים שחורות",
+              "kcal": 70,
+              "proteinG": 5,
+              "carbG": 11,
+              "fatG": 0.3
+            },
+            {
+              "cat": "veg",
+              "name": "עדשים ירוקות",
+              "kcal": 70,
+              "proteinG": 5,
+              "carbG": 11,
+              "fatG": 0.3
+            },
+            {
+              "cat": "veg",
+              "name": "שעועית מאש",
+              "kcal": 65,
+              "proteinG": 4.5,
+              "carbG": 11,
+              "fatG": 0.3
+            },
+            {
+              "cat": "veg",
+              "name": "אפונה ירוקה",
+              "kcal": 50,
+              "proteinG": 3.5,
+              "carbG": 8,
+              "fatG": 0.3
+            },
+            {
+              "cat": "veg",
+              "name": "סלק מבושל",
+              "kcal": 25,
+              "proteinG": 1,
+              "carbG": 5,
+              "fatG": 0
+            },
+            {
+              "cat": "veg",
+              "name": "ירקות קלים: עלה בייבי, עגבניות, מלפפון, גמבה, נבטים, שעועית ירוקה, כרוב לבן וסגול, פטריות, צנון",
+              "kcal": 90,
+              "proteinG": 6,
+              "carbG": 15,
+              "fatG": 1
+            },
+            {
+              "cat": "dairy",
+              "name": "פטה 5%",
+              "kcal": 55,
+              "proteinG": 8,
+              "carbG": 1,
+              "fatG": 2.5
             }
           ]
         }
