@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-09T10:52:30+00:00",
+  "updatedAt": "2026-11-09T10:55:08+00:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -1395,10 +1395,10 @@
         {
           "time": "12:45",
           "name": "לברק בפתיתים, 168 ג׳ (כמעט רק דג)",
-          "kcal": 225,
+          "kcal": 226,
           "proteinG": 34.5,
           "carbG": 6,
-          "fatG": 7.5,
+          "fatG": 7.6,
           "items": [
             {
               "cat": "meat",
@@ -1411,10 +1411,10 @@
             {
               "cat": "grains",
               "name": "פתיתים ורוטב שנדבקו ~28 ג׳",
-              "kcal": 32,
+              "kcal": 33,
               "proteinG": 1,
               "carbG": 6,
-              "fatG": 0.5
+              "fatG": 0.6
             }
           ],
           "basis": "partial",
@@ -1425,10 +1425,10 @@
         {
           "time": "12:50",
           "name": "עוד מנה לברק בפתיתים, 242 ג׳ (בעיקר פתיתים)",
-          "kcal": 290,
-          "proteinG": 19,
+          "kcal": 297,
+          "proteinG": 18.7,
           "carbG": 40,
-          "fatG": 4.1,
+          "fatG": 4.6,
           "items": [
             {
               "cat": "meat",
@@ -1441,10 +1441,10 @@
             {
               "cat": "grains",
               "name": "פתיתים ברוטב עגבניות ~192 ג׳",
-              "kcal": 221,
-              "proteinG": 7,
+              "kcal": 228,
+              "proteinG": 6.7,
               "carbG": 40,
-              "fatG": 1.6
+              "fatG": 2.1
             }
           ],
           "basis": "partial",
