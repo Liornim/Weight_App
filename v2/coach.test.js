@@ -259,6 +259,18 @@ test('דיוק הרישום: חלוקה לפי קק״ל ותגית לכל ארו
   assert(html.includes('basis__tag basis--exact') && html.includes('45 ג׳ ותווית.') && html.includes('כמה מזה נמדד') && html.includes('100%'), html);
 });
 
+test('טווח: לכל ארוחה לפי מה שנקבע לה, ומצטבר לגירעון', async () => {
+  const cfg = { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 };
+  const rows = [{ date: '2026-11-08', kcal: 1539, steps: 10822, meals: [{ kcal: 495, kcalLow: 360, kcalHigh: 520 }, { kcal: 1044 }] }];
+  const d = Coach.dayRange(rows[0]);
+  assert(d[0] === 1404 && d[1] === 1564, JSON.stringify(d));
+  const r = Coach.deficitRange(rows, cfg);
+  assert(r.low === 1073 && r.high === 1233, JSON.stringify(r));
+  file = base({ updatedAt: 't12', balance: cfg, entries: rows });
+  await Coach.load();
+  assert(Coach.meals().includes('360–520') && Coach.split().includes('טווח הסה״כ'), 'תצוגה');
+});
+
 test('בלי יעדים אין כרטיס גדול', async () => {
   file = base({ updatedAt: 't02', entries: [{ date: '2026-11-02', weightKg: 90.8 }] });
   await Coach.load();

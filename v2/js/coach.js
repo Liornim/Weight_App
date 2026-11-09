@@ -388,6 +388,42 @@
     return '≈' + root.Fmt.n(Math.abs(kcal) / KCAL_PER_KG, 2) + ' ק״ג';
   }
 
+
+  /** טווח סביר לכל ארוחה: הנמוך והגבוה שקבעתי לה, ובלי טווח = המספר עצמו */
+  function mealRange(m) {
+    var k = typeof m.kcal === 'number' ? m.kcal : 0;
+    return [typeof m.kcalLow === 'number' ? m.kcalLow : k, typeof m.kcalHigh === 'number' ? m.kcalHigh : k];
+  }
+
+  function dayRange(row) {
+    var list = Array.isArray(row.meals) ? row.meals : [];
+    if (!list.length) return typeof row.kcal === 'number' ? [row.kcal, row.kcal] : null;
+    return list.reduce(function (acc, m) {
+      var r = mealRange(m);
+      return [acc[0] + r[0], acc[1] + r[1]];
+    }, [0, 0]);
+  }
+
+  /** טווח הגירעון המצטבר לפי דיוק הרישום; השריפה נשארת כפי שהיא. חיובי = גירעון */
+  function deficitRange(rows, cfg) {
+    var low = 0, high = 0, days = 0;
+    rows.forEach(function (row) {
+      if (typeof row.kcal !== 'number' || typeof row.steps !== 'number') return;
+      var r = dayRange(row) || [row.kcal, row.kcal];
+      var burn = cfg.baseBurn + row.steps * cfg.kcalPerStep;
+      low += burn - r[1];
+      high += burn - r[0];
+      days++;
+    });
+    return days ? { low: Math.round(low), high: Math.round(high) } : null;
+  }
+
+  function rangeText(r) {
+    var side = function (v) { return root.Fmt.n(Math.abs(v), 0) + ' ' + (v >= 0 ? 'גירעון' : 'עודף'); };
+    var kg = function (v) { return (v >= 0 ? 'ירידה ' : 'עלייה ') + root.Fmt.n(Math.abs(v) / KCAL_PER_KG, 2); };
+    return 'בין ' + side(r.low) + ' ל-' + side(r.high) + ', כלומר בין ' + kg(r.low) + ' ל' + kg(r.high) + ' ק״ג';
+  }
+
   /** אריח אחד במצטבר; הצבע אומר אם הכיוון טוב, לא רק אם המספר גדול */
   function tile(label, value, word, tone) {
     return '<div class="cumul__tile cumul__tile--' + tone + '">' +
@@ -482,6 +518,10 @@
         '<span class="cumul__big cumul__big--' + (b.total <= 0 ? 'good' : 'bad') + '">' + fmt(b.total) + '</span>' +
         '<span class="cumul__kg cumul__kg--' + (b.total <= 0 ? 'good' : 'bad') + '">' + kgText(b.total) + ' ' +
           (b.total <= 0 ? 'ירידה' : 'עלייה') + ' בשומן, לפי החשבון</span>' +
+        (function () {
+          var r = deficitRange(rows, cfg);
+          return r && r.low !== r.high ? '<span class="cumul__range">טווח לפי דיוק הרישום: ' + rangeText(r) + '</span>' : '';
+        })() +
         '<span class="cumul__unit">קק״ל ' + (b.total <= 0 ? 'גירעון' : 'עודף') +
           ' · ממוצע ' + fmt(avg) + ' ' + (avg <= 0 ? 'גירעון' : 'עודף') + ' ליום, תוכנית ' +
           fmt(cfg.plannedDeficit) + ' גירעון</span>' +
@@ -645,7 +685,10 @@
       '<div class="cumul__gap">תזונה = ' + root.Fmt.n(cfg.baseBurn, 0) + ' פחות מה שנאכל. ' +
         'צעדים = צעדים × ' + cfg.kcalPerStep + '. חיובי = גירעון. ' +
         'ק״ג = קק״ל ÷ ' + root.Fmt.n(KCAL_PER_KG, 0) + ', שינוי בשומן לפי החשבון.</div>' +
-      tiles + '</section>';
+      tiles + (function () {
+        var r = deficitRange(rows, cfg);
+        return r && r.low !== r.high ? '<div class="cumul__gap">טווח הסה״כ לפי דיוק הרישום: ' + rangeText(r) + '</div>' : '';
+      })() + '</section>';
     var cell = function (v, signed) {
       if (typeof v !== 'number') return '<td class="n flat">—</td>';
       if (!signed) return '<td class="n">' + root.Fmt.n(v, 0) + '</td>';
@@ -855,7 +898,8 @@
       };
       var closed = typeof row.kcal === 'number' && typeof row.steps === 'number';
       var head = '<div class="meals__sum">' +
-        '<span><b>' + n(sum('kcal')) + '</b> קק״ל</span>' +
+        '<span><b>' + n(sum('kcal')) + '</b> קק״ל' +
+          (function () { var r = dayRange(row); return r && r[0] !== r[1] ? ' <small class="meals__range">(טווח <bdi dir="ltr">' + n(r[0]) + '–' + n(r[1]) + '</bdi>)</small>' : ''; })() + '</span>' +
         '<span><b>' + n(sum('proteinG')) + '</b> ג׳ חלבון</span>' +
         '<span><b>' + n(sum('carbG')) + '</b> ג׳ פחמימות</span>' +
         '<span><b>' + n(sum('fatG')) + '</b> ג׳ שומן</span>' +
@@ -863,7 +907,9 @@
       var body = list.length ? '<ul class="meals__list">' + list.map(function (m) {
         return '<li class="meals__item">' +
           '<div class="meals__top"><span class="meals__time">' + P.esc(m.time || '') + '</span>' +
-            '<span class="meals__kcal">' + n(m.kcal) + ' קק״ל</span></div>' +
+            '<span class="meals__kcal">' + n(m.kcal) + ' קק״ל' +
+              (function () { var r = mealRange(m); return r[0] !== r[1] ? '<small class="meals__range" dir="ltr">' + n(r[0]) + '–' + n(r[1]) + '</small>' : ''; })() +
+            '</span></div>' +
           '<div class="meals__name">' + P.esc(m.name || '') + '</div>' +
           '<div class="meals__macro">חלבון ' + n(m.proteinG) + ' · פחמימות ' + n(m.carbG) +
             ' · שומן ' + n(m.fatG) + '</div>' +
@@ -963,5 +1009,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, basisOf: basisOf, catTotals: catTotals, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);

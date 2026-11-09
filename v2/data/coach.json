@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-09T06:04:40+00:00",
+  "updatedAt": "2026-11-09T06:08:27+00:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -43,7 +43,9 @@
             }
           ],
           "basis": "partial",
-          "basisNote": "התוויות של הקוטג׳ והצהובה ידועות; כמות הקוטג׳ והגמבה הערכה."
+          "basisNote": "התוויות של הקוטג׳ והצהובה ידועות; כמות הקוטג׳ והגמבה הערכה.",
+          "kcalLow": 200,
+          "kcalHigh": 260
         },
         {
           "time": "15:50",
@@ -95,7 +97,9 @@
             }
           ],
           "basis": "estimate",
-          "basisNote": "סלט מסעדה; הכמויות וגודל המנות הערכה שלי."
+          "basisNote": "סלט מסעדה; הכמויות וגודל המנות הערכה שלי.",
+          "kcalLow": 480,
+          "kcalHigh": 700
         },
         {
           "time": "17:30",
@@ -115,7 +119,9 @@
             }
           ],
           "basis": "estimate",
-          "basisNote": "משקל הפרוסות הערכה."
+          "basisNote": "משקל הפרוסות הערכה.",
+          "kcalLow": 50,
+          "kcalHigh": 90
         },
         {
           "time": "ערב",
@@ -143,7 +149,9 @@
             }
           ],
           "basis": "estimate",
-          "basisNote": "מנות מסעדה בלי ערכים; הערכה שלי."
+          "basisNote": "מנות מסעדה בלי ערכים; הערכה שלי.",
+          "kcalLow": 1200,
+          "kcalHigh": 1800
         }
       ],
       "kcal": 2490,
@@ -209,7 +217,9 @@
             }
           ],
           "basis": "exact",
-          "basisNote": "שקילה ותוויות; רק השמן הערכה."
+          "basisNote": "שקילה ותוויות; רק השמן הערכה.",
+          "kcalLow": 720,
+          "kcalHigh": 800
         },
         {
           "time": "ערב",
@@ -229,7 +239,9 @@
             }
           ],
           "basis": "partial",
-          "basisNote": "משקלי הבשר מהאריזות; כמה מזה נאכל הערכה."
+          "basisNote": "משקלי הבשר מהאריזות; כמה מזה נאכל הערכה.",
+          "kcalLow": 1550,
+          "kcalHigh": 2000
         },
         {
           "time": "ערב",
@@ -249,7 +261,9 @@
             }
           ],
           "basis": "exact",
-          "basisNote": "כמות ידועה (250 מ״ל) וערך סטנדרטי."
+          "basisNote": "כמות ידועה (250 מ״ל) וערך סטנדרטי.",
+          "kcalLow": 540,
+          "kcalHigh": 570
         }
       ],
       "kcal": 3127,
@@ -310,7 +324,9 @@
             }
           ],
           "basis": "exact",
-          "basisNote": "שקילה; השמן בבצל הערכה."
+          "basisNote": "שקילה; השמן בבצל הערכה.",
+          "kcalLow": 260,
+          "kcalHigh": 300
         },
         {
           "time": "14:30",
@@ -330,7 +346,9 @@
             }
           ],
           "basis": "exact",
-          "basisNote": "שקילה; המתכון הערכה."
+          "basisNote": "שקילה; המתכון הערכה.",
+          "kcalLow": 230,
+          "kcalHigh": 280
         },
         {
           "time": "14:32",
@@ -350,7 +368,9 @@
             }
           ],
           "basis": "exact",
-          "basisNote": "שקילה."
+          "basisNote": "שקילה.",
+          "kcalLow": 280,
+          "kcalHigh": 300
         },
         {
           "time": "14:45",
@@ -378,7 +398,9 @@
             }
           ],
           "basis": "exact",
-          "basisNote": "שקילה; השמן בבצל הערכה."
+          "basisNote": "שקילה; השמן בבצל הערכה.",
+          "kcalLow": 240,
+          "kcalHigh": 275
         },
         {
           "time": "21:41",
@@ -414,7 +436,9 @@
             }
           ],
           "basis": "partial",
-          "basisNote": "החזה נשקל; הכפות והשמן הערכה."
+          "basisNote": "החזה נשקל; הכפות והשמן הערכה.",
+          "kcalLow": 190,
+          "kcalHigh": 260
         },
         {
           "time": "22:12",
@@ -434,7 +458,9 @@
             }
           ],
           "basis": "exact",
-          "basisNote": "שקילה ותווית."
+          "basisNote": "שקילה ותווית.",
+          "kcalLow": 215,
+          "kcalHigh": 225
         }
       ],
       "kcal": 1518,
@@ -487,7 +513,9 @@
             }
           ],
           "basis": "exact",
-          "basisNote": "תווית ומנה ארוזה."
+          "basisNote": "תווית ומנה ארוזה.",
+          "kcalLow": 190,
+          "kcalHigh": 190
         },
         {
           "time": "14:57",
@@ -523,7 +551,9 @@
             }
           ],
           "basis": "estimate",
-          "basisNote": "מגש מסעדה; הערכה מתמונה."
+          "basisNote": "מגש מסעדה; הערכה מתמונה.",
+          "kcalLow": 600,
+          "kcalHigh": 900
         },
         {
           "time": "15:03",
@@ -543,7 +573,9 @@
             }
           ],
           "basis": "estimate",
-          "basisNote": "הערכה מתמונה."
+          "basisNote": "הערכה מתמונה.",
+          "kcalLow": 20,
+          "kcalHigh": 50
         },
         {
           "time": "18:42",
@@ -563,7 +595,9 @@
             }
           ],
           "basis": "exact",
-          "basisNote": "שקילה ותווית."
+          "basisNote": "שקילה ותווית.",
+          "kcalLow": 290,
+          "kcalHigh": 300
         },
         {
           "time": "ערב",
@@ -591,7 +625,9 @@
             }
           ],
           "basis": "estimate",
-          "basisNote": "חופנים ונשנושים בלי שקילה; הערכה."
+          "basisNote": "חופנים ונשנושים בלי שקילה; הערכה.",
+          "kcalLow": 750,
+          "kcalHigh": 1250
         },
         {
           "time": "ערב",
@@ -611,7 +647,9 @@
             }
           ],
           "basis": "estimate",
-          "basisNote": "מרווח שהוספתי בגלל אי־ודאות."
+          "basisNote": "מרווח שהוספתי בגלל אי־ודאות.",
+          "kcalLow": 0,
+          "kcalHigh": 160
         }
       ],
       "kcal": 2550,
@@ -671,7 +709,9 @@
             }
           ],
           "basis": "estimate",
-          "basisNote": "פלטת מסעדה; הערכה מתמונה."
+          "basisNote": "פלטת מסעדה; הערכה מתמונה.",
+          "kcalLow": 900,
+          "kcalHigh": 1350
         },
         {
           "time": "צהריים",
@@ -707,7 +747,9 @@
             }
           ],
           "basis": "estimate",
-          "basisNote": "פלטת מסעדה; הערכה מתמונה."
+          "basisNote": "פלטת מסעדה; הערכה מתמונה.",
+          "kcalLow": 400,
+          "kcalHigh": 650
         },
         {
           "time": "צהריים",
@@ -727,7 +769,9 @@
             }
           ],
           "basis": "estimate",
-          "basisNote": "פלטת מסעדה; הערכה מתמונה."
+          "basisNote": "פלטת מסעדה; הערכה מתמונה.",
+          "kcalLow": 380,
+          "kcalHigh": 580
         },
         {
           "time": "צהריים",
@@ -747,7 +791,9 @@
             }
           ],
           "basis": "partial",
-          "basisNote": "מספר הכוסות ידוע; גודל הכוס הערכה."
+          "basisNote": "מספר הכוסות ידוע; גודל הכוס הערכה.",
+          "kcalLow": 550,
+          "kcalHigh": 750
         }
       ],
       "kcal": 2880,
@@ -818,7 +864,9 @@
           "carbG": 94,
           "fatG": 93,
           "basis": "estimate",
-          "basisNote": "מנות מסעדה; הכמויות הערכה מתמונות."
+          "basisNote": "מנות מסעדה; הכמויות הערכה מתמונות.",
+          "kcalLow": 1250,
+          "kcalHigh": 1750
         },
         {
           "time": "13:35",
@@ -870,7 +918,9 @@
           "carbG": 17,
           "fatG": 18,
           "basis": "estimate",
-          "basisNote": "מנת מסעדה; הערכה מתמונה."
+          "basisNote": "מנת מסעדה; הערכה מתמונה.",
+          "kcalLow": 200,
+          "kcalHigh": 320
         },
         {
           "time": "14:21",
@@ -890,7 +940,9 @@
           "carbG": 10,
           "fatG": 0,
           "basis": "estimate",
-          "basisNote": "קוקטייל; ערך טיפוסי."
+          "basisNote": "קוקטייל; ערך טיפוסי.",
+          "kcalLow": 150,
+          "kcalHigh": 220
         },
         {
           "time": "20:00",
@@ -982,7 +1034,9 @@
             }
           ],
           "basis": "partial",
-          "basisNote": "משקלי האריזות ידועים; החלק שנאכל (רבע/שישית) הערכה שלך."
+          "basisNote": "משקלי האריזות ידועים; החלק שנאכל (רבע/שישית) הערכה שלך.",
+          "kcalLow": 850,
+          "kcalHigh": 1250
         },
         {
           "time": "20:30",
@@ -1002,7 +1056,9 @@
             }
           ],
           "basis": "partial",
-          "basisNote": "¾ בקבוק ידוע; ערך יין סטנדרטי."
+          "basisNote": "¾ בקבוק ידוע; ערך יין סטנדרטי.",
+          "kcalLow": 450,
+          "kcalHigh": 530
         }
       ],
       "walks": [
@@ -1045,7 +1101,9 @@
             }
           ],
           "basis": "partial",
-          "basisNote": "פרי ידוע; הגודל הערכה."
+          "basisNote": "פרי ידוע; הגודל הערכה.",
+          "kcalLow": 90,
+          "kcalHigh": 120
         },
         {
           "time": "11:05",
@@ -1081,7 +1139,9 @@
             }
           ],
           "basis": "exact",
-          "basisNote": "מוצרים ארוזים ומנות ידועות; טעות קטנה."
+          "basisNote": "מוצרים ארוזים ומנות ידועות; טעות קטנה.",
+          "kcalLow": 260,
+          "kcalHigh": 300
         },
         {
           "time": "13:45",
@@ -1157,7 +1217,9 @@
             }
           ],
           "basis": "estimate",
-          "basisNote": "סלט מסעדה בלי משקלים; הערכה גבוהה בכוונה."
+          "basisNote": "סלט מסעדה בלי משקלים; הערכה גבוהה בכוונה.",
+          "kcalLow": 360,
+          "kcalHigh": 520
         },
         {
           "time": "14:30",
@@ -1185,7 +1247,9 @@
             }
           ],
           "basis": "exact",
-          "basisNote": "קופסה וחצי גביע; ערכי תווית."
+          "basisNote": "קופסה וחצי גביע; ערכי תווית.",
+          "kcalLow": 225,
+          "kcalHigh": 255
         },
         {
           "time": "15:10",
@@ -1205,7 +1269,9 @@
             }
           ],
           "basis": "estimate",
-          "basisNote": "גודל הביסים הערכה."
+          "basisNote": "גודל הביסים הערכה.",
+          "kcalLow": 50,
+          "kcalHigh": 90
         },
         {
           "time": "21:05",
@@ -1225,7 +1291,9 @@
             }
           ],
           "basis": "partial",
-          "basisNote": "מספר ידוע; הגודל הערכה."
+          "basisNote": "מספר ידוע; הגודל הערכה.",
+          "kcalLow": 30,
+          "kcalHigh": 50
         },
         {
           "time": "22:40",
@@ -1245,7 +1313,9 @@
             }
           ],
           "basis": "exact",
-          "basisNote": "45 ג׳ ותווית."
+          "basisNote": "45 ג׳ ותווית.",
+          "kcalLow": 170,
+          "kcalHigh": 175
         },
         {
           "time": "22:50",
@@ -1273,7 +1343,9 @@
             }
           ],
           "basis": "partial",
-          "basisNote": "הביצה ידועה; השמן הערכה."
+          "basisNote": "הביצה ידועה; השמן הערכה.",
+          "kcalLow": 100,
+          "kcalHigh": 140
         }
       ],
       "walks": [
