@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-09T19:56:07+00:00",
+  "updatedAt": "2026-11-09T19:57:08+00:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -1533,6 +1533,52 @@
           "basisNote": "כל רכיבי הסיר נשקלו; הצלחת נשקלה; החלוקה דג/פתיתים לפי ממוצע הסיר.",
           "kcalLow": 205,
           "kcalHigh": 250
+        },
+        {
+          "time": "21:55",
+          "name": "ירקות ו-2 כפות מהתבשיל",
+          "kcal": 125,
+          "proteinG": 7.7,
+          "carbG": 20.0,
+          "fatG": 1.7,
+          "items": [
+            {
+              "cat": "veg",
+              "name": "6 עגבניות שרי",
+              "kcal": 16,
+              "proteinG": 0.8,
+              "carbG": 3.5,
+              "fatG": 0.2
+            },
+            {
+              "cat": "veg",
+              "name": "חצי מלפפון",
+              "kcal": 11,
+              "proteinG": 0.5,
+              "carbG": 2.5,
+              "fatG": 0.1
+            },
+            {
+              "cat": "veg",
+              "name": "חצי גמבה",
+              "kcal": 25,
+              "proteinG": 0.9,
+              "carbG": 5.5,
+              "fatG": 0.2
+            },
+            {
+              "cat": "grains",
+              "name": "2 כפות לברק בפתיתים (~60 ג׳, לפי ממוצע הסיר)",
+              "kcal": 73,
+              "proteinG": 5.5,
+              "carbG": 8.5,
+              "fatG": 1.2
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "גודל הירקות והכפות הערכה.",
+          "kcalLow": 95,
+          "kcalHigh": 150
         }
       ],
       "walks": [
