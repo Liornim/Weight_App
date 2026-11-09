@@ -268,7 +268,7 @@ test('טווח: לכל ארוחה לפי מה שנקבע לה, ומצטבר לג
   assert(r.low === 1073 && r.high === 1233, JSON.stringify(r));
   file = base({ updatedAt: 't12', balance: cfg, entries: rows });
   await Coach.load();
-  assert(Coach.meals().includes('360–520') && Coach.split().includes('טווח הסה״כ'), 'תצוגה');
+  assert(Coach.meals().includes('360–520') && Coach.split().includes('טווח הסה״כ') && Coach.split().includes('הכי פחות אוכל') && Coach.split().includes('1,404'), 'תצוגה');
 });
 
 test('בלי יעדים אין כרטיס גדול', async () => {

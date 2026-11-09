@@ -705,7 +705,33 @@
         return '<tr><td class="n">' + P.esc(root.Dates.short(d.date)) + (d.closed ? '' : ' (פתוח)') + '</td>' +
           cell(d.kcal, false) + cell(d.diet, true) + cell(d.stepsCount, false) + cell(d.steps, true) + cell(both, true) + kgCell(both) + '</tr>';
       }));
-    return P.section('פירוק', head + P.card('לפי יום', 'קק״ל', table) +
+    var scen = (function () {
+      var closed = rows.filter(function (row) { return typeof row.kcal === 'number' && typeof row.steps === 'number'; });
+      if (!closed.length) return '';
+      var eaten = { low: 0, mid: 0, high: 0 };
+      closed.forEach(function (row) {
+        var r = dayRange(row) || [row.kcal, row.kcal];
+        eaten.low += r[0]; eaten.mid += row.kcal; eaten.high += r[1];
+      });
+      var base = cfg.baseBurn * closed.length;
+      var signed = function (v) {
+        return '<td class="n split__' + (v >= 0 ? 'good' : 'bad') + '">' + (v > 0 ? '+' : v < 0 ? '−' : '') + fmt(v) + '</td>';
+      };
+      var kgCell2 = function (v) {
+        return '<td class="n split__' + (v >= 0 ? 'good' : 'bad') + '">' + (v >= 0 ? '−' : '+') + root.Fmt.n(Math.abs(v) / KCAL_PER_KG, 2) + '</td>';
+      };
+      var line = function (label, e) {
+        var diet = Math.round(base - e);
+        var tot = diet + Math.round(s.steps);
+        return '<tr><td>' + label + '</td><td class="n">' + root.Fmt.n(Math.round(e), 0) + '</td>' +
+          signed(diet) + signed(Math.round(s.steps)) + signed(tot) + kgCell2(tot) + '</tr>';
+      };
+      return P.card('מה אם', 'לפי טווח הדיוק של כל ארוחה',
+        P.table(['תרחיש', 'אכלת', 'מהתזונה', 'מהצעדים', 'סה״כ', 'ק״ג'], [
+          line('הכי פחות אוכל', eaten.low), line('רשום', eaten.mid), line('הכי הרבה אוכל', eaten.high)]) +
+        P.hint('הצעדים לא משתנים בין התרחישים; הטווח הוא רק של רישום האוכל. ק״ג שלילי = ירידה.'));
+    })();
+    return P.section('פירוק', head + scen + P.card('לפי יום', 'קק״ל', table) +
       P.hint('יום פתוח מציג את התזונה עד עכשיו, ונכנס לסכום רק כשנסגר עם הצעדים.'));
   }
 
