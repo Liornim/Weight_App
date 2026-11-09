@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-09T16:54:15+00:00",
+  "updatedAt": "2026-11-09T19:56:07+00:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -1553,6 +1553,15 @@
           "avgHr": 94,
           "maxHr": 103,
           "deviceKcal": 153
+        },
+        {
+          "type": "אליפטיקל",
+          "time": "20:51",
+          "minutes": 60,
+          "seconds": 13,
+          "avgHr": 97,
+          "maxHr": 107,
+          "deviceKcal": 403
         }
       ]
     }
