@@ -250,6 +250,15 @@ test('מגמה: מצטבר נכון לסוף כל יום, ושינוי מהיו�
   assert(html.includes('07/11 מול 08/11') && html.includes('trend__d--good') && html.includes('<svg'), html);
 });
 
+test('דיוק הרישום: חלוקה לפי קק״ל ותגית לכל ארוחה', async () => {
+  const b = Coach.basisOf([{ meals: [{ kcal: 100, basis: 'exact' }, { kcal: 300, basis: 'estimate' }, { kcal: 50 }] }]);
+  assert(b.exact === 100 && b.estimate === 300 && b.none === 50 && b.total === 450, JSON.stringify(b));
+  file = base({ updatedAt: 't11', entries: [{ date: '2026-11-08', meals: [{ kcal: 172, name: 'שייק', basis: 'exact', basisNote: '45 ג׳ ותווית.' }] }] });
+  await Coach.load();
+  const html = Coach.meals();
+  assert(html.includes('basis__tag basis--exact') && html.includes('45 ג׳ ותווית.') && html.includes('כמה מזה נמדד') && html.includes('100%'), html);
+});
+
 test('בלי יעדים אין כרטיס גדול', async () => {
   file = base({ updatedAt: 't02', entries: [{ date: '2026-11-02', weightKg: 90.8 }] });
   await Coach.load();

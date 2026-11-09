@@ -803,13 +803,50 @@
     return 'יום ' + names[new Date(Date.UTC(p[0], p[1] - 1, p[2])).getUTCDay()];
   }
 
+
+  /** כמה מדויק כל רישום: נמדד, חלקי, או הערכה */
+  var BASIS = {
+    exact: { label: 'מדויק', hint: 'שקילה או תווית' },
+    partial: { label: 'חלקי', hint: 'חלק נמדד, חלק הערכה' },
+    estimate: { label: 'הערכה', hint: 'הערכה שלי, בלי מדידה' }
+  };
+
+  function basisOf(rows) {
+    var out = { exact: 0, partial: 0, estimate: 0, none: 0 };
+    rows.forEach(function (row) {
+      (Array.isArray(row.meals) ? row.meals : []).forEach(function (m) {
+        var k = typeof m.kcal === 'number' ? m.kcal : 0;
+        out[BASIS[m.basis] ? m.basis : 'none'] += k;
+      });
+    });
+    out.total = out.exact + out.partial + out.estimate + out.none;
+    return out;
+  }
+
+  function basisBar(b) {
+    if (!b.total) return '';
+    var keys = ['exact', 'partial', 'estimate'];
+    var pct = function (k) { return Math.round(b[k] / b.total * 100); };
+    return '<div class="basis">' +
+      '<div class="basis__bar">' + keys.filter(function (k) { return b[k]; }).map(function (k) {
+        return '<i class="basis__seg basis--' + k + '" style="width:' + (b[k] / b.total * 100).toFixed(2) + '%"></i>';
+      }).join('') + '</div>' +
+      '<div class="basis__legend">' + keys.map(function (k) {
+        return '<span><i class="basis__dot basis--' + k + '"></i>' + BASIS[k].label + ' ' + pct(k) + '% · ' +
+          root.Fmt.n(b[k], 0) + '</span>';
+      }).join('') + '</div></div>';
+  }
+
   /** טאב הארוחות: כל יום, מהחדש לישן, עם כל מה שנרשם בו */
   function meals() {
     var state = read();
     var rows = (state.rows || []).slice().reverse();
     if (!rows.length) return P.section('ארוחות', P.card(null, null, P.empty('עוד לא נרשמו ארוחות.')));
     var n = function (v) { return typeof v === 'number' ? root.Fmt.n(v, 0) : '—'; };
-    return P.section('ארוחות', rows.map(function (row) {
+    var all = basisOf(rows);
+    var overall = all.total ? P.card('כמה מזה נמדד', 'כל התקופה, לפי קק״ל', basisBar(all) +
+      P.hint('מדויק = שקילה או תווית. חלקי = חלק נמדד וחלק הערכה. הערכה = בלי מדידה, מעוגל למעלה.')) : '';
+    return P.section('ארוחות', overall + rows.map(function (row) {
       var list = Array.isArray(row.meals) ? row.meals : [];
       var sum = function (key) {
         if (typeof row[key] === 'number') return row[key];
@@ -830,9 +867,12 @@
           '<div class="meals__name">' + P.esc(m.name || '') + '</div>' +
           '<div class="meals__macro">חלבון ' + n(m.proteinG) + ' · פחמימות ' + n(m.carbG) +
             ' · שומן ' + n(m.fatG) + '</div>' +
+          (BASIS[m.basis] ? '<div class="meals__basis"><span class="basis__tag basis--' + m.basis + '">' +
+            BASIS[m.basis].label + '</span>' + P.esc(m.basisNote || BASIS[m.basis].hint) + '</div>' : '') +
         '</li>';
       }).join('') + '</ul>' : P.hint('לא נרשמו ארוחות ביום הזה.');
-      return P.card(root.Dates.short(row.date) + ' · ' + weekday(row.date), closed ? 'יום סגור' : 'יום פתוח', head + body);
+      return P.card(root.Dates.short(row.date) + ' · ' + weekday(row.date), closed ? 'יום סגור' : 'יום פתוח',
+        head + basisBar(basisOf([row])) + body);
     }).join(''));
   }
 
@@ -923,5 +963,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, catTotals: catTotals, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, basisOf: basisOf, catTotals: catTotals, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);

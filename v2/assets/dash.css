@@ -1339,3 +1339,14 @@ input[type='range']::-moz-range-thumb {
 td .trend__d { color: #8a8f98; }
 td .trend__d--good { color: #1F8F5F; }
 td .trend__d--bad { color: #C8463A; }
+.basis { display: grid; gap: 6px; margin: 8px 0 4px; }
+.basis__bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: #e8ecef; }
+.basis__seg { display: block; height: 100%; }
+.basis__legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: #5b6470; }
+.basis__legend span { display: inline-flex; align-items: center; gap: 5px; }
+.basis__dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.basis--exact { background: #2E9E6B; }
+.basis--partial { background: #D9A23A; }
+.basis--estimate { background: #C8385A; }
+.meals__basis { display: flex; align-items: baseline; gap: 6px; font-size: 12px; color: #5b6470; margin-top: 3px; }
+.basis__tag { color: #fff; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 9px; flex: none; }
