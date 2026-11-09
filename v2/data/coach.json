@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-09T06:08:27+00:00",
+  "updatedAt": "2026-11-09T06:18:40+00:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -132,12 +132,36 @@
           "fatG": 78,
           "items": [
             {
-              "cat": "fried",
-              "name": "נאמס, שרימפס, אגאדשי",
-              "kcal": 1370,
-              "proteinG": 60,
-              "carbG": 105,
-              "fatG": 78
+              "cat": "meat",
+              "name": "שרימפס ומילוי הנאמס",
+              "kcal": 230,
+              "proteinG": 38,
+              "carbG": 2,
+              "fatG": 8
+            },
+            {
+              "cat": "veg",
+              "name": "טופו (~150 ג׳)",
+              "kcal": 120,
+              "proteinG": 15,
+              "carbG": 3,
+              "fatG": 7
+            },
+            {
+              "cat": "grains",
+              "name": "ציפוי ועטיפות (בצק, עמילן)",
+              "kcal": 330,
+              "proteinG": 7,
+              "carbG": 72,
+              "fatG": 1
+            },
+            {
+              "cat": "fat",
+              "name": "שמן טיגון ורטבים (מיונז חריף, צ׳ילי מתוק)",
+              "kcal": 690,
+              "proteinG": 0,
+              "carbG": 28,
+              "fatG": 62
             },
             {
               "cat": "alcohol",
@@ -149,7 +173,7 @@
             }
           ],
           "basis": "estimate",
-          "basisNote": "מנות מסעדה בלי ערכים; הערכה שלי.",
+          "basisNote": "מנות מסעדה בלי ערכים; הפירוק לשרימפס, ציפוי ושמן הוא ניחוש שלי.",
           "kcalLow": 1200,
           "kcalHigh": 1800
         }
