@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-09T06:20:39+00:00",
+  "updatedAt": "2026-11-09T06:24:29+00:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -240,10 +240,10 @@
               "fatG": 3
             }
           ],
-          "basis": "exact",
-          "basisNote": "שקילה ותוויות; רק השמן הערכה.",
+          "basis": "partial",
+          "basisNote": "הקוטג׳ והבולגרית לפי תווית ושקילה; כמה שמן ספג השניצל לא ידוע.",
           "kcalLow": 720,
-          "kcalHigh": 802
+          "kcalHigh": 860
         },
         {
           "time": "ערב",
@@ -347,10 +347,10 @@
               "fatG": 6
             }
           ],
-          "basis": "exact",
-          "basisNote": "שקילה; השמן בבצל הערכה.",
-          "kcalLow": 260,
-          "kcalHigh": 300
+          "basis": "partial",
+          "basisNote": "המשקל נשקל; כמה שמן בבצל ובכבד לא ידוע.",
+          "kcalLow": 230,
+          "kcalHigh": 340
         },
         {
           "time": "14:30",
@@ -369,10 +369,10 @@
               "fatG": 17
             }
           ],
-          "basis": "exact",
-          "basisNote": "שקילה; המתכון הערכה.",
-          "kcalLow": 230,
-          "kcalHigh": 280
+          "basis": "partial",
+          "basisNote": "המשקל נשקל; אחוז השומן בבשר, הלחם בתערובת והטיגון לא ידועים.",
+          "kcalLow": 200,
+          "kcalHigh": 310
         },
         {
           "time": "14:32",
@@ -391,10 +391,10 @@
               "fatG": 6
             }
           ],
-          "basis": "exact",
-          "basisNote": "שקילה.",
-          "kcalLow": 280,
-          "kcalHigh": 300
+          "basis": "partial",
+          "basisNote": "המשקל נשקל; כמה שמן בפתיתים לא ידוע.",
+          "kcalLow": 250,
+          "kcalHigh": 330
         },
         {
           "time": "14:45",
@@ -421,10 +421,10 @@
               "fatG": 6
             }
           ],
-          "basis": "exact",
-          "basisNote": "שקילה; השמן בבצל הערכה.",
-          "kcalLow": 240,
-          "kcalHigh": 275
+          "basis": "partial",
+          "basisNote": "המשקל נשקל; כמה שמן בבצל ובכבד לא ידוע.",
+          "kcalLow": 210,
+          "kcalHigh": 315
         },
         {
           "time": "21:41",
@@ -460,9 +460,9 @@
             }
           ],
           "basis": "partial",
-          "basisNote": "החזה נשקל; הכפות והשמן הערכה.",
-          "kcalLow": 190,
-          "kcalHigh": 261
+          "basisNote": "החזה נשקל; אופן ההכנה, הכפות והשמן הערכה.",
+          "kcalLow": 185,
+          "kcalHigh": 275
         },
         {
           "time": "22:12",
