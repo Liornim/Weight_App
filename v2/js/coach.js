@@ -979,7 +979,60 @@
       mealList(row) +
       weightBlock(rows) +
     '</section>' +
-    cumulBlock(rows, state.balance, targets);
+    cumulBlock(rows, state.balance, targets) +
+    forecastBlock(rows, state.balance);
+  }
+
+
+  /**
+   * תחזית: מתי מגיעים ליעדי משקל, לפי הגירעון הממוצע עד היום ולפי התוכנית.
+   * נקודת המוצא היא ממוצע 3 השקילות האחרונות, כדי לא להיגרר אחרי שקילה בודדת.
+   */
+  var MILESTONES = [86, 84];
+  function forecastOf(rows, cfg, now) {
+    var b = balanceOf(rows, cfg);
+    var weights = rows.filter(function (row) { return typeof row.weightKg === 'number'; });
+    if (!b.days || !weights.length) return null;
+    var last = weights.slice(-3).map(function (row) { return row.weightKg; });
+    var from = last.reduce(function (a, w) { return a + w; }, 0) / last.length;
+    var avg = -b.total / b.days;
+    var first = rows.length ? rows[0].date : null;
+    var today = now || new Date();
+    var tracked = first ? Math.round((Date.parse(today.toISOString().slice(0, 10)) - Date.parse(first)) / 864e5) + 1 : b.days;
+    var when = function (kg, perDay) {
+      if (from <= kg) return { done: true };
+      if (!(perDay > 0)) return { never: true };
+      var days = Math.ceil((from - kg) * KCAL_PER_KG / perDay);
+      var d = new Date(today.getTime() + days * 864e5);
+      return { days: days, date: d.toISOString().slice(0, 10) };
+    };
+    return {
+      tracked: tracked, closed: b.days, avg: Math.round(avg), from: from,
+      goals: MILESTONES.map(function (kg) {
+        return { kg: kg, actual: when(kg, avg), plan: when(kg, cfg.plannedDeficit) };
+      })
+    };
+  }
+
+  function forecastBlock(rows, cfg) {
+    if (!cfg) return '';
+    var f = forecastOf(rows, cfg);
+    if (!f) return '';
+    var cell = function (w) {
+      if (w.done) return 'הושג';
+      if (w.never) return 'לא בקצב הזה';
+      return P.esc(root.Dates.short(w.date)) + '<br><small>בעוד ' + root.Fmt.n(w.days, 0) + ' ימים</small>';
+    };
+    var rowsHtml = f.goals.map(function (g) {
+      return '<tr><td>' + g.kg + ' ק״ג</td><td>' + cell(g.actual) + '</td><td>' + cell(g.plan) + '</td></tr>';
+    });
+    return P.card('תחזית', f.tracked + ' ימים במעקב · ' + f.closed + ' ימים סגורים',
+      '<div class="forecast__facts">' +
+        '<span>גירעון ממוצע: <b>' + root.Fmt.n(Math.abs(f.avg), 0) + '</b> ' + (f.avg >= 0 ? 'ליום' : 'עודף ליום') + '</span>' +
+        '<span>נקודת מוצא: <b>' + root.Fmt.n(f.from, 1) + '</b> ק״ג (ממוצע 3 שקילות)</span>' +
+      '</div>' +
+      P.table(['יעד', 'בקצב עד עכשיו', 'בקצב התוכנית'], rowsHtml) +
+      P.hint('חשבון לפי ' + root.Fmt.n(KCAL_PER_KG, 0) + ' קק״ל לק״ג שומן. לא כולל מים, ולא את ההאטה כשהמשקל יורד. יכויל ב-23.11.'));
   }
 
   /** הגיליון הפשוט: יום בשורה, החדש למעלה */
@@ -1035,5 +1088,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);

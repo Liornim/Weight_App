@@ -271,6 +271,14 @@ test('טווח: לכל ארוחה לפי מה שנקבע לה, ומצטבר לג
   assert(Coach.meals().includes('360–520') && Coach.split().includes('טווח הסה״כ') && Coach.split().includes('הכי פחות אוכל') && Coach.split().includes('1,404'), 'תצוגה');
 });
 
+test('תחזית: ימים במעקב ותאריך ליעד לפי הממוצע ולפי התוכנית', async () => {
+  const cfg = { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 };
+  const rows = [{ date: '2026-11-08', kcal: 1519, steps: 10822, weightKg: 90 }, { date: '2026-11-09', weightKg: 89 }, { date: '2026-11-10', weightKg: 88 }];
+  const f = Coach.forecastOf(rows, cfg, new Date('2026-11-10T12:00:00Z'));
+  assert(f.tracked === 3 && f.closed === 1 && f.from === 89, JSON.stringify(f));
+  assert(f.goals[0].kg === 86 && f.goals[0].plan.days === 42, JSON.stringify(f.goals[0]));
+});
+
 test('בלי יעדים אין כרטיס גדול', async () => {
   file = base({ updatedAt: 't02', entries: [{ date: '2026-11-02', weightKg: 90.8 }] });
   await Coach.load();

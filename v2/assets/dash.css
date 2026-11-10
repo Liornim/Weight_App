@@ -1353,3 +1353,5 @@ td .trend__d--bad { color: #C8463A; }
 .cumul__range { display: block; font-size: 12px; color: rgba(255,255,255,.7); margin-top: 2px; }
 .meals__range { display: block; font-size: 11px; font-weight: 400; color: #8a8f98; text-align: left; }
 .meals__sum .meals__range { display: inline; }
+.forecast__facts { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: #5b6470; margin-bottom: 8px; }
+.forecast__facts b { color: #1d2330; }
