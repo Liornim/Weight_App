@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-10T10:53:19+00:00",
+  "updatedAt": "2026-11-10T13:14:40+00:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -1657,6 +1657,74 @@
           "basisNote": "מוצרים ארוזים ומנות ידועות; משקל הפרוסות הערכה.",
           "kcalLow": 300,
           "kcalHigh": 360
+        },
+        {
+          "time": "צהריים",
+          "name": "לברק בפתיתים, ~300 ג׳",
+          "kcal": 372,
+          "proteinG": 32.7,
+          "carbG": 40,
+          "fatG": 7.5,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "לברק מבושל ~110 ג׳",
+              "kcal": 152,
+              "proteinG": 26.4,
+              "carbG": 0,
+              "fatG": 5.5
+            },
+            {
+              "cat": "grains",
+              "name": "פתיתים ברוטב עגבניות ~190 ג׳",
+              "kcal": 220,
+              "proteinG": 6.3,
+              "carbG": 40,
+              "fatG": 2
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "רכיבי הסיר נשקלו; 300 ג׳ לפי מה שתכננת, לא נשקל עכשיו; לפי התמונה יותר פתיתים מדג.",
+          "kcalLow": 330,
+          "kcalHigh": 420
+        },
+        {
+          "time": "צהריים",
+          "name": "צלחת ירקות: עגבנייה, גמבה, מלפפונים",
+          "kcal": 89,
+          "proteinG": 3.5,
+          "carbG": 19.5,
+          "fatG": 0.8,
+          "items": [
+            {
+              "cat": "veg",
+              "name": "עגבנייה",
+              "kcal": 22,
+              "proteinG": 1,
+              "carbG": 4.5,
+              "fatG": 0.2
+            },
+            {
+              "cat": "veg",
+              "name": "גמבה אדומה",
+              "kcal": 40,
+              "proteinG": 1.5,
+              "carbG": 9,
+              "fatG": 0.4
+            },
+            {
+              "cat": "veg",
+              "name": "מלפפון וחצי",
+              "kcal": 27,
+              "proteinG": 1,
+              "carbG": 6,
+              "fatG": 0.2
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "גודל הירקות הערכה מהתמונה.",
+          "kcalLow": 70,
+          "kcalHigh": 110
         }
       ],
       "walks": [
