@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-10T06:43:43+00:00",
+  "updatedAt": "2026-11-10T07:09:01+00:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -1619,7 +1619,19 @@
     {
       "date": "2026-11-10",
       "weightKg": 88.4,
-      "meals": []
+      "meals": [],
+      "walks": [
+        {
+          "time": "08:41",
+          "km": 1.86,
+          "minutes": 23,
+          "seconds": 40,
+          "steps": 2555,
+          "avgHr": 93,
+          "deviceKcal": 159,
+          "kmh": 4.7
+        }
+      ]
     }
   ],
   "summary": {
