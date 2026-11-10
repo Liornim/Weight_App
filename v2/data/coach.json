@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-10T20:39:55+00:00",
+  "updatedAt": "2026-11-10T20:41:06+00:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -1801,6 +1801,72 @@
           "basisNote": "\"קצת\" לפי מה שאמרת; חישבתי כרבע מהקערה.",
           "kcalLow": 50,
           "kcalHigh": 170
+        },
+        {
+          "time": "ערב",
+          "name": "נאפו: חצי טרין כבד עוף, בלי לחם וריבה",
+          "kcal": 165,
+          "proteinG": 7.5,
+          "carbG": 1.5,
+          "fatG": 14,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "חצי טרין כבד עוף (~50 ג׳)",
+              "kcal": 165,
+              "proteinG": 7.5,
+              "carbG": 1.5,
+              "fatG": 14
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "גודל הטרין הערכה מהתמונה; החלק לפי מה שאמרת.",
+          "kcalLow": 130,
+          "kcalHigh": 200
+        },
+        {
+          "time": "ערב",
+          "name": "נאפו: קערת זיתים",
+          "kcal": 85,
+          "proteinG": 0.5,
+          "carbG": 2,
+          "fatG": 8.5,
+          "items": [
+            {
+              "cat": "fat",
+              "name": "~8 זיתים גדולים, ירוקים וקלמטה",
+              "kcal": 85,
+              "proteinG": 0.5,
+              "carbG": 2,
+              "fatG": 8.5
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "ספרתי מהתמונה; גודל הזיתים הערכה.",
+          "kcalLow": 65,
+          "kcalHigh": 100
+        },
+        {
+          "time": "ערב",
+          "name": "נאפו: יין אדום, חצי בקבוק ומעט יותר (~400 מ״ל)",
+          "kcal": 340,
+          "proteinG": 0,
+          "carbG": 10,
+          "fatG": 0,
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "יין אדום ~400 מ״ל",
+              "kcal": 340,
+              "proteinG": 0,
+              "carbG": 10,
+              "fatG": 0
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "הכמות לפי מה שאמרת; ערך יין סטנדרטי.",
+          "kcalLow": 320,
+          "kcalHigh": 385
         }
       ],
       "walks": [
