@@ -1355,3 +1355,6 @@ td .trend__d--bad { color: #C8463A; }
 .meals__sum .meals__range { display: inline; }
 .forecast__facts { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: #5b6470; margin-bottom: 8px; }
 .forecast__facts b { color: #1d2330; }
+.export { margin: 16px 0 8px; display: flex; justify-content: center; }
+.export__btn { font: inherit; font-size: 15px; font-weight: 600; padding: 12px 20px; border-radius: 12px; border: 1px solid #1F8F5F; background: #fff; color: #1F8F5F; cursor: pointer; width: 100%; }
+.export__btn:active { background: #eaf6f0; }

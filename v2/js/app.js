@@ -11,9 +11,9 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'd115',
+    BUILD: 'd116',
     // גרסה גלויה למשתמש, עולה באחד בכל עדכון שמשנה את האתר
-    VERSION: 'V10',
+    VERSION: 'V11',
     state: {
       date: Dates.today(),
       tab: 'home',         // הטאב הראשי נפתח ראשון
@@ -81,6 +81,12 @@
       chip.addEventListener('click', function () {
         var raw = chip.dataset.basis;
         App.setState({ basis: raw === 'adaptive' ? 'adaptive' : Number(raw) });
+      });
+    });
+
+    view.querySelectorAll('[data-coach-export]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        if (root.Coach && root.Coach.exportXlsx) root.Coach.exportXlsx();
       });
     });
 

@@ -279,6 +279,19 @@ test('תחזית: ימים במעקב ותאריך ליעד לפי הממוצע 
   assert(f.goals[0].kg === 86 && f.goals[0].plan.days === 42, JSON.stringify(f.goals[0]));
 });
 
+test('ייצוא: גיליון לכל טאב, עם ימים, ארוחות, פריטים ואימונים', async () => {
+  const cfg = { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 };
+  file = base({ updatedAt: 't13', balance: cfg, entries: [
+    { date: '2026-11-09', kcal: 1467, steps: 12304, weightKg: 89.1, walks: [{ type: 'אליפטיקל', minutes: 60, seconds: 13 }],
+      meals: [{ time: 'צהריים', name: 'לברק', kcal: 225, proteinG: 35, basis: 'partial', items: [{ cat: 'meat', name: 'דג', kcal: 193 }] }] }] });
+  await Coach.load();
+  const wb = Coach.workbookData();
+  const names = wb.map(s => s.name).join(',');
+  assert(names === 'ימים,ארוחות,פריטים,קבוצות,אימונים,מגמה,תחזית,הגדרות', names);
+  assert(wb[0].rows[1][0] === '2026-11-09' && wb[0].rows[1][11] === 1237, JSON.stringify(wb[0].rows[1]));
+  assert(wb[1].rows[1][9] === 'חלקי' && wb[2].rows[1][3] === 'בשר, עוף ודגים' && wb[4].rows[1][3] === 60.2, 'פירוט');
+});
+
 test('בלי יעדים אין כרטיס גדול', async () => {
   file = base({ updatedAt: 't02', entries: [{ date: '2026-11-02', weightKg: 90.8 }] });
   await Coach.load();

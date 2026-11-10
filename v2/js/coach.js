@@ -980,7 +980,8 @@
       weightBlock(rows) +
     '</section>' +
     cumulBlock(rows, state.balance, targets) +
-    forecastBlock(rows, state.balance);
+    forecastBlock(rows, state.balance) +
+    exportButton();
   }
 
 
@@ -1033,6 +1034,141 @@
       '</div>' +
       P.table(['יעד', 'בקצב עד עכשיו', 'בקצב התוכנית'], rowsHtml) +
       P.hint('חשבון לפי ' + root.Fmt.n(KCAL_PER_KG, 0) + ' קק״ל לק״ג שומן. לא כולל מים, ולא את ההאטה כשהמשקל יורד. יכויל ב-23.11.'));
+  }
+
+
+  /**
+   * ייצוא לאקסל: גיליון לכל טאב. הספרייה (SheetJS) נטענת רק בלחיצה,
+   * כדי לא להכביד על כל פתיחה של האתר.
+   */
+  function workbookData() {
+    var state = read();
+    var rows = state.rows || [];
+    var cfg = state.balance || { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 };
+    var targets = state.targets || {};
+    var r1 = function (v) { return typeof v === 'number' ? Math.round(v * 10) / 10 : ''; };
+    var r0 = function (v) { return typeof v === 'number' ? Math.round(v) : ''; };
+    var catLabel = {};
+    CATS.forEach(function (c) { catLabel[c.key] = c.label; });
+    var basisLabel = function (b) { return BASIS[b] ? BASIS[b].label : ''; };
+    var sum = function (row, key) {
+      return (Array.isArray(row.meals) ? row.meals : []).reduce(function (a, m) {
+        return a + (typeof m[key] === 'number' ? m[key] : 0);
+      }, 0);
+    };
+
+    var cum = 0, cumDays = 0;
+    var days = [['תאריך', 'יום', 'משקל', 'קלוריות', 'טווח נמוך', 'טווח גבוה', 'חלבון', 'פחמימות', 'שומן',
+      'צעדים', 'שריפה משוערת', 'גירעון (+) / עודף (−)', 'מהתזונה', 'מהצעדים', 'ק״ג שומן (− ירידה)',
+      'גירעון מצטבר', 'מול התוכנית מצטבר', 'יום סגור']];
+    rows.forEach(function (row) {
+      var kcal = typeof row.kcal === 'number' ? row.kcal : (row.meals && row.meals.length ? sum(row, 'kcal') : null);
+      var closed = typeof row.kcal === 'number' && typeof row.steps === 'number';
+      var range = dayRange(row);
+      var burn = typeof row.steps === 'number' ? cfg.baseBurn + row.steps * cfg.kcalPerStep : null;
+      var bal = closed ? burn - row.kcal : null;
+      if (closed) { cum += bal; cumDays++; }
+      days.push([row.date, weekday(row.date), r1(row.weightKg), r0(kcal), range ? r0(range[0]) : '', range ? r0(range[1]) : '',
+        r0(typeof row.proteinG === 'number' ? row.proteinG : sum(row, 'proteinG')),
+        r0(typeof row.carbG === 'number' ? row.carbG : sum(row, 'carbG')),
+        r0(typeof row.fatG === 'number' ? row.fatG : sum(row, 'fatG')),
+        r0(row.steps), r0(burn), r0(bal),
+        typeof kcal === 'number' ? r0(cfg.baseBurn - kcal) : '',
+        typeof row.steps === 'number' ? r0(row.steps * cfg.kcalPerStep) : '',
+        closed ? Math.round(-bal / KCAL_PER_KG * 100) / 100 : '',
+        closed ? r0(cum) : '', closed ? r0(cum - cumDays * cfg.plannedDeficit) : '',
+        closed ? 'כן' : 'לא']);
+    });
+
+    var meals = [['תאריך', 'שעה', 'ארוחה', 'קלוריות', 'טווח נמוך', 'טווח גבוה', 'חלבון', 'פחמימות', 'שומן', 'דיוק', 'הערת דיוק']];
+    var items = [['תאריך', 'ארוחה', 'פריט', 'קבוצה', 'קלוריות', 'חלבון', 'פחמימות', 'שומן']];
+    var walks = [['תאריך', 'סוג', 'שעה', 'דקות', 'ק״מ', 'צעדים', 'דופק ממוצע', 'דופק מרבי', 'קלוריות לפי השעון']];
+    rows.forEach(function (row) {
+      (row.meals || []).forEach(function (m) {
+        var r = mealRange(m);
+        meals.push([row.date, m.time || '', m.name || '', r0(m.kcal), r0(r[0]), r0(r[1]), r1(m.proteinG), r1(m.carbG), r1(m.fatG),
+          basisLabel(m.basis), m.basisNote || '']);
+        (m.items || []).forEach(function (i) {
+          items.push([row.date, m.name || '', i.name || '', catLabel[i.cat] || i.cat || '', r0(i.kcal), r1(i.proteinG), r1(i.carbG), r1(i.fatG)]);
+        });
+      });
+      (row.walks || []).forEach(function (w) {
+        walks.push([row.date, w.type || 'הליכה', w.time || '',
+          typeof w.minutes === 'number' ? Math.round((w.minutes + (w.seconds || 0) / 60) * 10) / 10 : '',
+          r1(w.km), r0(w.steps), r0(w.avgHr), r0(w.maxHr), r0(w.deviceKcal)]);
+      });
+    });
+
+    var totals = catTotals(rows);
+    var all = CATS.reduce(function (a, c) { return a + totals[c.key].kcal; }, 0) || 1;
+    var groups = [['קבוצה', 'קלוריות', 'אחוז מהקלוריות', 'חלבון']];
+    CATS.forEach(function (c) {
+      if (!totals[c.key].kcal) return;
+      groups.push([c.label, r0(totals[c.key].kcal), Math.round(totals[c.key].kcal / all * 1000) / 10, r0(totals[c.key].proteinG)]);
+    });
+
+    var trendRows = [['עד יום', 'ימים סגורים', 'גירעון מצטבר', 'ק״ג שומן (− ירידה)', 'מול התוכנית (+ לפני)', 'אוכל מול היעד (+ מתחת)',
+      'הליכה מול התוכנית (+ יותר)', 'צעדים נוספים ליום (10 ימים)', 'חלבון מול היעד', 'ממוצע 3 שקילות']];
+    trendOf(rows, cfg, targets).forEach(function (t) {
+      trendRows.push([t.date, t.days, t.deficit, Math.round(-t.deficit / KCAL_PER_KG * 100) / 100, t.ahead,
+        t.food === null ? '' : t.food, t.walk === null ? '' : t.walk, t.stepsPerDay, t.protein === null ? '' : t.protein, r1(t.weight3)]);
+    });
+
+    var f = forecastOf(rows, cfg);
+    var forecast = [['נתון', 'ערך']];
+    if (f) {
+      forecast.push(['ימים במעקב', f.tracked], ['ימים סגורים', f.closed], ['גירעון ממוצע ליום', f.avg], ['נקודת מוצא (ממוצע 3 שקילות)', r1(f.from)]);
+      forecast.push(['', ''], ['יעד', 'בקצב עד עכשיו', 'ימים', 'בקצב התוכנית', 'ימים']);
+      f.goals.forEach(function (g) {
+        var a = g.actual, p = g.plan;
+        forecast.push([g.kg + ' ק״ג', a.date || (a.done ? 'הושג' : 'לא בקצב הזה'), a.days || '', p.date || (p.done ? 'הושג' : ''), p.days || '']);
+      });
+    }
+
+    var settings = [['הגדרה', 'ערך'],
+      ['יעד קלוריות', targets.kcal || ''], ['יעד חלבון', targets.proteinG || ''], ['יעד פחמימות', targets.carbG || ''],
+      ['יעד שומן', targets.fatG || ''], ['צעדים (מינימום לתוכנית)', targets.steps || ''], ['יעד צעדים', targets.stepsGoal || ''],
+      ['שריפת בסיס', cfg.baseBurn], ['קלוריות לצעד', cfg.kcalPerStep], ['גירעון מתוכנן ליום', cfg.plannedDeficit],
+      ['קק״ל לק״ג שומן', KCAL_PER_KG], ['עודכן', state.updatedAt || '']];
+
+    return [
+      { name: 'ימים', rows: days }, { name: 'ארוחות', rows: meals }, { name: 'פריטים', rows: items },
+      { name: 'קבוצות', rows: groups }, { name: 'אימונים', rows: walks }, { name: 'מגמה', rows: trendRows },
+      { name: 'תחזית', rows: forecast }, { name: 'הגדרות', rows: settings }
+    ];
+  }
+
+  function loadXlsx(done) {
+    if (root.XLSX) return done();
+    var tag = root.document.createElement('script');
+    tag.src = 'vendor/xlsx.full.min.js';
+    tag.onload = function () { done(); };
+    tag.onerror = function () { done(new Error('load')); };
+    root.document.head.appendChild(tag);
+  }
+
+  function exportXlsx() {
+    loadXlsx(function (err) {
+      if (err || !root.XLSX) { root.alert && root.alert('לא הצלחתי לטעון את כלי הייצוא.'); return; }
+      var X = root.XLSX;
+      var wb = X.utils.book_new();
+      wb.Workbook = { Views: [{ RTL: true }] };
+      workbookData().forEach(function (sheet) {
+        var ws = X.utils.aoa_to_sheet(sheet.rows);
+        ws['!cols'] = sheet.rows[0].map(function (_, c) {
+          var w = sheet.rows.reduce(function (m, r) { return Math.max(m, String(r[c] === undefined ? '' : r[c]).length); }, 6);
+          return { wch: Math.min(w + 2, 60) };
+        });
+        ws['!views'] = [{ RTL: true }];
+        X.utils.book_append_sheet(wb, ws, sheet.name);
+      });
+      var today = new Date().toISOString().slice(0, 10);
+      X.writeFile(wb, 'weight-tracking-' + today + '.xlsx');
+    });
+  }
+
+  function exportButton() {
+    return '<div class="export"><button type="button" class="export__btn" data-coach-export>⬇ הורדה לאקסל (כל הטאבים)</button></div>';
   }
 
   /** הגיליון הפשוט: יום בשורה, החדש למעלה */
@@ -1088,5 +1224,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, workbookData: workbookData, exportXlsx: exportXlsx, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);
