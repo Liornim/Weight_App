@@ -628,10 +628,10 @@
     // הטאב הראשי מחזיק את הכרטיסים שהיו מעל כל הטאבים; בשאר הטאבים
     // אין צורך לחזור עליהם
     var panel = state.tab === 'home'
-        ? root.Coach.today() + top(state, entries, settings) + root.Coach.card()
+        ? root.Coach.exportButton() + root.Coach.today() + top(state, entries, settings) + root.Coach.card() + root.Coach.exportButton()
       : state.tab === 'weight' ? root.WeightTab.render(state)
       : state.tab === 'entry' ? root.EntryTab.render(state)
-      : state.tab === 'data' ? root.DataTab.render(state)
+      : state.tab === 'data' ? root.Coach.exportButton() + root.DataTab.render(state)
       : state.tab === 'meals' ? root.Coach.meals()
       : state.tab === 'groups' ? root.Coach.groups()
       : state.tab === 'split' ? root.Coach.split()

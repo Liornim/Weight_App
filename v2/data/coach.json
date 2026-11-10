@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-10T09:45:23+00:00",
+  "updatedAt": "2026-11-10T10:53:19+00:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -1669,6 +1669,17 @@
           "avgHr": 93,
           "deviceKcal": 159,
           "kmh": 4.7
+        },
+        {
+          "time": "12:30",
+          "km": 1.6,
+          "minutes": 19,
+          "seconds": 32,
+          "steps": 2093,
+          "avgHr": 104,
+          "deviceKcal": 147,
+          "kmh": 4.9,
+          "climbM": 21
         }
       ]
     }
