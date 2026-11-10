@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-10T13:23:32+00:00",
+  "updatedAt": "2026-11-10T20:29:57+00:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -1725,6 +1725,82 @@
           "basisNote": "גודל הירקות הערכה מהתמונה.",
           "kcalLow": 70,
           "kcalHigh": 110
+        },
+        {
+          "time": "ערב",
+          "name": "נאפו: פילה סלמון עם ירקות ירוקים",
+          "kcal": 575,
+          "proteinG": 45,
+          "carbG": 10,
+          "fatG": 37.5,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "פילה סלמון צלוי (~190 ג׳ מבושל)",
+              "kcal": 425,
+              "proteinG": 40,
+              "carbG": 0,
+              "fatG": 28
+            },
+            {
+              "cat": "veg",
+              "name": "ירקות ירוקים: ברוקולי, קישוא, אפונה",
+              "kcal": 90,
+              "proteinG": 5,
+              "carbG": 10,
+              "fatG": 3
+            },
+            {
+              "cat": "fat",
+              "name": "שמן/פסטו על הירקות",
+              "kcal": 60,
+              "proteinG": 0,
+              "carbG": 0,
+              "fatG": 6.5
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "מנת מסעדה; גודל הפילה והשמן הערכה מהתמונה.",
+          "kcalLow": 480,
+          "kcalHigh": 650
+        },
+        {
+          "time": "ערב",
+          "name": "נאפו: קצת מהסלט המשותף (~רבע)",
+          "kcal": 100,
+          "proteinG": 2.3,
+          "carbG": 6.5,
+          "fatG": 7.4,
+          "items": [
+            {
+              "cat": "veg",
+              "name": "עלים, אגס, צנון ובצל",
+              "kcal": 25,
+              "proteinG": 0.5,
+              "carbG": 5,
+              "fatG": 0.2
+            },
+            {
+              "cat": "fat",
+              "name": "פקאנים וויניגרט",
+              "kcal": 60,
+              "proteinG": 0.8,
+              "carbG": 1.5,
+              "fatG": 6
+            },
+            {
+              "cat": "dairy",
+              "name": "גבינת עיזים",
+              "kcal": 15,
+              "proteinG": 1,
+              "carbG": 0,
+              "fatG": 1.2
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "\"קצת\" לפי מה שאמרת; חישבתי כרבע מהקערה.",
+          "kcalLow": 50,
+          "kcalHigh": 170
         }
       ],
       "walks": [
