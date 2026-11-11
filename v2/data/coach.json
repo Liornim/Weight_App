@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-11T09:30:27+00:00",
+  "updatedAt": "2026-11-11T14:49:22+00:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -1953,6 +1953,74 @@
           "basisNote": "יוגורט לפי תווית; משקל הפרוסות והמלפפונים הערכה קטנה.",
           "kcalLow": 310,
           "kcalHigh": 350
+        },
+        {
+          "time": "צהריים",
+          "name": "לברק בפתיתים, 402 ג׳ (חצי־חצי)",
+          "kcal": 510,
+          "proteinG": 54.8,
+          "carbG": 42.2,
+          "fatG": 12.2,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "לברק מבושל ~201 ג׳",
+              "kcal": 277,
+              "proteinG": 48.2,
+              "carbG": 0,
+              "fatG": 10
+            },
+            {
+              "cat": "grains",
+              "name": "פתיתים ברוטב עגבניות ~201 ג׳",
+              "kcal": 233,
+              "proteinG": 6.6,
+              "carbG": 42.2,
+              "fatG": 2.2
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "הצלחת נשקלה (402 ג׳) ורכיבי הסיר נשקלו; חצי־חצי לפי מה שאמרת.",
+          "kcalLow": 460,
+          "kcalHigh": 560
+        },
+        {
+          "time": "צהריים",
+          "name": "ירקות: עגבנייה, 3 מלפפונים, גמבה",
+          "kcal": 119,
+          "proteinG": 5.0,
+          "carbG": 25.5,
+          "fatG": 1.1,
+          "items": [
+            {
+              "cat": "veg",
+              "name": "עגבנייה",
+              "kcal": 22,
+              "proteinG": 1,
+              "carbG": 4.5,
+              "fatG": 0.2
+            },
+            {
+              "cat": "veg",
+              "name": "3 מלפפונים",
+              "kcal": 57,
+              "proteinG": 2.5,
+              "carbG": 12,
+              "fatG": 0.5
+            },
+            {
+              "cat": "veg",
+              "name": "גמבה",
+              "kcal": 40,
+              "proteinG": 1.5,
+              "carbG": 9,
+              "fatG": 0.4
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "כמות ידועה; הגודל הערכה.",
+          "kcalLow": 95,
+          "kcalHigh": 140
         }
       ]
     }
