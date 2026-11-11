@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-11T21:52:00+02:00",
+  "updatedAt": "2026-11-11T21:55:00+02:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -2043,6 +2043,28 @@
           "basisNote": "62 ג׳ ותווית.",
           "kcalLow": 230,
           "kcalHigh": 238
+        },
+        {
+          "time": "ערב",
+          "name": "ביס אחד מקערת Shi-Shi Royal",
+          "kcal": 60,
+          "proteinG": 3,
+          "carbG": 7,
+          "fatG": 2,
+          "items": [
+            {
+              "cat": "grains",
+              "name": "ביס פוקי (אורז, דג, רוטב) ~30 ג׳",
+              "kcal": 60,
+              "proteinG": 3,
+              "carbG": 7,
+              "fatG": 2
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "ביס אחד, לא נשקל; רכיבי הקערה המדויקים לא ידועים. הערכה כלפי מעלה.",
+          "kcalLow": 30,
+          "kcalHigh": 90
         }
       ],
       "walks": [
