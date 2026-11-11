@@ -1390,3 +1390,12 @@ td .trend__d--bad { color: #C8463A; }
 td small { display: block; font-size: 10px; color: #8a8f98; font-weight: 400; }
 .mcell--good { color: #1F8F5F; font-weight: 600; } .mcell--bad { color: #C8463A; font-weight: 600; }
 .mtable__bar { min-width: 80px; vertical-align: middle; }
+.score__big { font-size: 56px; font-weight: 800; line-height: 1; margin: 6px 0 4px; }
+.score__big small { font-size: 18px; opacity: .6; margin-inline-start: 4px; }
+.score__big.score--good { color: #3ECF8E; } .score__big.score--warn { color: #F2B84B; } .score__big.score--bad { color: #FF7A6B; }
+.score__cell--good b { color: #1F8F5F; } .score__cell--warn b { color: #B7791F; } .score__cell--bad b { color: #C8463A; }
+.score__bar { height: 8px; border-radius: 4px; background: #e8ecef; overflow: hidden; min-width: 60px; }
+.score__bar i { display: block; height: 100%; }
+.score__bar .score--good { background: #2E9E6B; } .score__bar .score--warn { background: #D9A23A; } .score__bar .score--bad { background: #C8385A; }
+.score__mark { text-align: center; font-weight: 700; }
+.score__mark--ok { color: #1F8F5F; } .score__mark--no { color: #C8463A; opacity: .8; }

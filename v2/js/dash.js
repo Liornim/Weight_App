@@ -601,6 +601,7 @@
     { value: 'macros', label: 'מאקרו' },
     { value: 'split', label: 'פירוק' },
     { value: 'trend', label: 'מגמה' },
+    { value: 'score', label: 'ציונים' },
     { value: 'budget', label: 'תקציב' },
     { value: 'weight', label: 'משקל' },
     { value: 'data', label: 'נתונים' }
@@ -638,6 +639,7 @@
       : state.tab === 'macros' ? root.Coach.macros()
       : state.tab === 'split' ? root.Coach.split()
       : state.tab === 'trend' ? root.Coach.trend()
+      : state.tab === 'score' ? root.Coach.scorecard()
       : root.BudgetTab.render(state);
 
     container.innerHTML =

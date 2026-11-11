@@ -1014,6 +1014,80 @@
       P.hint('האחוזים מחושבים מקלוריות: חלבון ופחמימה 4 לגרם, שומן 9 לגרם, אלכוהול לפי הרישום. ירוק = בתוך היעד (חלבון: מעליו).'));
   }
 
+
+  /**
+   * דף ציונים: לכל יום סגור, האם עמד בכל מטרה; ספירה, אחוז ורצף נוכחי.
+   */
+  function goalsOf(state) {
+    var t = state.targets || {};
+    var cfg = state.balance || { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 };
+    var G = [];
+    if (typeof t.kcal === 'number') G.push({ key: 'kcal', label: 'קלוריות עד ' + root.Fmt.n(t.kcal, 0), test: function (r) { return r.kcal <= t.kcal; } });
+    G.push({ key: 'deficit', label: 'גירעון של ' + cfg.plannedDeficit + ' לפחות', test: function (r) { return cfg.baseBurn + r.steps * cfg.kcalPerStep - r.kcal >= cfg.plannedDeficit; } });
+    G.push({ key: 'balance', label: 'בלי עודף (גירעון כלשהו)', test: function (r) { return cfg.baseBurn + r.steps * cfg.kcalPerStep - r.kcal >= 0; } });
+    if (typeof t.proteinG === 'number') G.push({ key: 'protein', label: 'חלבון ' + t.proteinG + ' לפחות', test: function (r) { return (r.proteinG || 0) >= t.proteinG; } });
+    if (typeof t.fatG === 'number') G.push({ key: 'fat', label: 'שומן עד ' + t.fatG, test: function (r) { return (r.fatG || 0) <= t.fatG; } });
+    if (typeof t.steps === 'number') G.push({ key: 'steps', label: 'צעדים ' + root.Fmt.n(t.steps, 0) + ' לפחות', test: function (r) { return r.steps >= t.steps; } });
+    if (typeof t.stepsGoal === 'number') G.push({ key: 'steps10', label: 'צעדים ' + root.Fmt.n(t.stepsGoal, 0) + ' לפחות', test: function (r) { return r.steps >= t.stepsGoal; } });
+    G.push({ key: 'dry', label: 'בלי אלכוהול', test: function (r) {
+      return !(r.meals || []).some(function (m) { return (m.items || []).some(function (i) { return i.cat === 'alcohol' && i.kcal > 0; }); });
+    } });
+    return G;
+  }
+
+  function scoresOf(state) {
+    var rows = (state.rows || []).filter(function (r) { return typeof r.kcal === 'number' && typeof r.steps === 'number'; });
+    var goals = goalsOf(state);
+    var days = rows.map(function (r) {
+      var res = {};
+      goals.forEach(function (g) { res[g.key] = !!g.test(r); });
+      var hit = goals.filter(function (g) { return res[g.key]; }).length;
+      return { date: r.date, res: res, hit: hit, of: goals.length };
+    });
+    var stats = goals.map(function (g) {
+      var hit = days.filter(function (d) { return d.res[g.key]; }).length;
+      var streak = 0;
+      for (var i = days.length - 1; i >= 0 && days[i].res[g.key]; i--) streak++;
+      var best = 0, run = 0;
+      days.forEach(function (d) { run = d.res[g.key] ? run + 1 : 0; best = Math.max(best, run); });
+      return { key: g.key, label: g.label, hit: hit, of: days.length, pct: days.length ? Math.round(hit / days.length * 100) : 0, streak: streak, best: best };
+    });
+    var total = days.reduce(function (a, d) { return a + d.hit; }, 0);
+    var possible = days.length * goals.length;
+    return { goals: goals, days: days, stats: stats, score: possible ? Math.round(total / possible * 100) : 0 };
+  }
+
+  function scorecard() {
+    var state = read();
+    var sc = scoresOf(state);
+    if (!sc.days.length) return P.section('ציונים', P.card(null, null, P.empty('עוד אין ימים סגורים.')));
+    var grade = sc.score >= 80 ? 'good' : sc.score >= 60 ? 'warn' : 'bad';
+    var head = '<section class="cumul">' +
+      '<div class="cumul__row"><h2 class="cumul__title">דף ציונים</h2><span class="cumul__stamp">' + sc.days.length + ' ימים סגורים</span></div>' +
+      '<div class="score__big score--' + grade + '">' + sc.score + '<small>/100</small></div>' +
+      '<div class="cumul__gap">אחוז המטרות שהושגו מכל המטרות בכל הימים</div>' +
+    '</section>';
+    var statRows = sc.stats.map(function (s) {
+      var cls = s.pct >= 80 ? 'good' : s.pct >= 50 ? 'warn' : 'bad';
+      return '<tr><td>' + P.esc(s.label) + '</td>' +
+        '<td class="n score__cell--' + cls + '"><b>' + s.hit + '/' + s.of + '</b><small>' + s.pct + '%</small></td>' +
+        '<td class="n">' + s.streak + '</td><td class="n">' + s.best + '</td>' +
+        '<td><div class="score__bar"><i class="score--' + cls + '" style="width:' + s.pct + '%"></i></div></td></tr>';
+    });
+    var statCard = P.card('לפי מטרה', 'כמה ימים עמדת בכל מטרה',
+      P.table(['מטרה', 'ימים', 'רצף נוכחי', 'רצף שיא', ''], statRows));
+    var dayRows = sc.days.slice().reverse().map(function (d) {
+      return '<tr><td class="n">' + P.esc(root.Dates.short(d.date)) + '<small>' + P.esc(weekday(d.date).replace('יום ', '')) + '</small></td>' +
+        sc.goals.map(function (g) { return '<td class="score__mark score__mark--' + (d.res[g.key] ? 'ok' : 'no') + '">' + (d.res[g.key] ? '✓' : '✗') + '</td>'; }).join('') +
+        '<td class="n"><b>' + d.hit + '/' + d.of + '</b></td></tr>';
+    });
+    var short = { kcal: 'קל׳', deficit: 'גירעון', balance: 'בלי עודף', protein: 'חלבון', fat: 'שומן', steps: '6.7K', steps10: '10K', dry: 'בלי אלכ׳' };
+    var dayCard = P.card('לפי יום', '✓ עמד · ✗ לא עמד',
+      P.table(['תאריך'].concat(sc.goals.map(function (g) { return short[g.key] || g.label; })).concat(['סה״כ']), dayRows));
+    return P.section('ציונים', head + statCard + dayCard +
+      P.hint('רק ימים סגורים (עם צעדים). גירעון לפי החשבון הנוכחי: ' + root.Fmt.n((state.balance || {}).baseBurn || 2150, 0) + ' + צעדים × ' + ((state.balance || {}).kcalPerStep || 0.045) + '.'));
+  }
+
   /** שם היום בשבוע, לפי תאריך ISO ובלי תלות באזור הזמן של הדפדפן */
   function weekday(iso) {
     var names = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
@@ -1281,6 +1355,15 @@
       macroRows.push([m.date, r0(m.kcal), r0(m.p), m.pp, r0(m.c), m.pc, r0(m.f), m.pf, r0(m.alcohol), m.pa]);
     });
 
+    var sc = scoresOf(state);
+    var scoreRows = [['מטרה', 'ימים שעמד', 'מתוך', 'אחוז', 'רצף נוכחי', 'רצף שיא']];
+    sc.stats.forEach(function (st) { scoreRows.push([st.label, st.hit, st.of, st.pct, st.streak, st.best]); });
+    scoreRows.push(['', ''], ['ציון כולל', sc.score], ['', '']);
+    scoreRows.push(['תאריך'].concat(sc.goals.map(function (g) { return g.label; })).concat(['סה״כ']));
+    sc.days.forEach(function (dd) {
+      scoreRows.push([dd.date].concat(sc.goals.map(function (g) { return dd.res[g.key] ? '✓' : '✗'; })).concat([dd.hit + '/' + dd.of]));
+    });
+
     var settings = [['הגדרה', 'ערך'],
       ['יעד קלוריות', targets.kcal || ''], ['יעד חלבון', targets.proteinG || ''], ['יעד פחמימות', targets.carbG || ''],
       ['יעד שומן', targets.fatG || ''], ['צעדים (מינימום לתוכנית)', targets.steps || ''], ['יעד צעדים', targets.stepsGoal || ''],
@@ -1289,7 +1372,7 @@
 
     return [
       { name: 'ימים', rows: days }, { name: 'ארוחות', rows: meals }, { name: 'פריטים', rows: items },
-      { name: 'קבוצות', rows: groups }, { name: 'מאקרו', rows: macroRows }, { name: 'אימונים', rows: walks }, { name: 'מגמה', rows: trendRows },
+      { name: 'קבוצות', rows: groups }, { name: 'מאקרו', rows: macroRows }, { name: 'אימונים', rows: walks }, { name: 'מגמה', rows: trendRows }, { name: 'ציונים', rows: scoreRows },
       { name: 'תחזית', rows: forecast }, { name: 'הגדרות', rows: settings }
     ];
   }
@@ -1380,5 +1463,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, macros: macros, macroOf: macroOf, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, macros: macros, macroOf: macroOf, scorecard: scorecard, scoresOf: scoresOf, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -287,7 +287,7 @@ test('ייצוא: גיליון לכל טאב, עם ימים, ארוחות, פר�
   await Coach.load();
   const wb = Coach.workbookData();
   const names = wb.map(s => s.name).join(',');
-  assert(names === 'ימים,ארוחות,פריטים,קבוצות,מאקרו,אימונים,מגמה,תחזית,הגדרות', names);
+  assert(names === 'ימים,ארוחות,פריטים,קבוצות,מאקרו,אימונים,מגמה,ציונים,תחזית,הגדרות', names);
   assert(wb[0].rows[1][0] === '2026-11-09' && wb[0].rows[1][11] === 1237, JSON.stringify(wb[0].rows[1]));
   assert(wb[1].rows[1][9] === 'חלקי' && wb[2].rows[1][3] === 'בשר, עוף ודגים' && wb[5].rows[1][3] === 60.2, 'פירוט');
 });
@@ -309,6 +309,19 @@ test('מאקרו: אחוזים מקלוריות, כולל אלכוהול', async
   const html = Coach.macros();
   assert(html.includes('ממוצע יומי') && html.includes('מאיפה בא השומן') && html.includes('mbar--p'), html);
   assert(Coach.workbookData().some(s => s.name === 'מאקרו'), 'אקסל');
+});
+
+test('ציונים: כמה ימים עמד בכל מטרה, ורצף', async () => {
+  file = base({ updatedAt: 't15', targets: { kcal: 1900, proteinG: 150, fatG: 65, steps: 6700, stepsGoal: 10000 },
+    balance: { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 }, entries: [
+    { date: '2026-11-07', kcal: 3600, proteinG: 117, fatG: 178, steps: 11219, meals: [{ items: [{ cat: 'alcohol', kcal: 490 }] }] },
+    { date: '2026-11-08', kcal: 1517, proteinG: 156, fatG: 30, steps: 10822, meals: [] },
+    { date: '2026-11-09', kcal: 1467, proteinG: 162, fatG: 29, steps: 12304, meals: [] }] });
+  await Coach.load();
+  const sc = Coach.scoresOf(Coach.__state ? Coach.__state() : JSON.parse(w.localStorage.getItem(Coach.KEY)));
+  const k = sc.stats.find(s => s.key === 'kcal'), dry = sc.stats.find(s => s.key === 'dry');
+  assert(k.hit === 2 && k.of === 3 && k.streak === 2 && dry.hit === 2, JSON.stringify(sc.stats));
+  assert(Coach.scorecard().includes('דף ציונים'), 'תצוגה');
 });
 
 test('בלי יעדים אין כרטיס גדול', async () => {
