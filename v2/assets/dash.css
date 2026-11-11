@@ -1399,3 +1399,29 @@ td small { display: block; font-size: 10px; color: #8a8f98; font-weight: 400; }
 .score__bar .score--good { background: #2E9E6B; } .score__bar .score--warn { background: #D9A23A; } .score__bar .score--bad { background: #C8385A; }
 .score__mark { text-align: center; font-weight: 700; }
 .score__mark--ok { color: #1F8F5F; } .score__mark--no { color: #C8463A; opacity: .8; }
+
+/* מתכונים */
+
+details.rx {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-bottom: 12px;
+}
+details.rx > summary {
+  padding: 15px 18px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 700;
+  list-style: none;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+details.rx > summary::-webkit-details-marker { display: none; }
+details.rx > summary::after { content: '+'; font-family: var(--mono); color: var(--ink-faint); }
+details.rx[open] > summary::after { content: '\2212'; }
+.rx-kcal { margin-inline-start: auto; font-size: 12.5px; font-weight: 500; color: var(--ink-soft); }
+details.rx .body { padding: 0 18px 18px; }
+.rx-h { font-size: 13px; font-weight: 700; color: var(--brand); margin: 16px 0 6px; }
+.rx-list { margin: 0; padding-inline-start: 20px; line-height: 1.7; font-size: 14.5px; }

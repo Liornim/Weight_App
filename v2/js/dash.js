@@ -604,7 +604,8 @@
     { value: 'score', label: 'ציונים' },
     { value: 'budget', label: 'תקציב' },
     { value: 'weight', label: 'משקל' },
-    { value: 'data', label: 'נתונים' }
+    { value: 'data', label: 'נתונים' },
+    { value: 'recipes', label: 'מתכונים' }
   ];
 
   function tabs(active) {
@@ -640,6 +641,7 @@
       : state.tab === 'split' ? root.Coach.split()
       : state.tab === 'trend' ? root.Coach.trend()
       : state.tab === 'score' ? root.Coach.scorecard()
+      : state.tab === 'recipes' ? root.RecipesTab.render()
       : root.BudgetTab.render(state);
 
     container.innerHTML =
