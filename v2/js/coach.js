@@ -353,29 +353,40 @@
 
   function weightChart(series) {
     if (series.length < 2) return '';
-    var W = 320, H = 130, L = 34, R = 6, T = 8, B = 20;
+    var W = 340, H = 230, L = 38, R = 44, T = 14, B = 26;
     var vals = [];
     series.forEach(function (p) { vals.push(p.w, p.avg3, p.avg7); });
-    var top = Math.max.apply(null, vals) + 0.2, bottom = Math.min.apply(null, vals) - 0.2;
-    var x = function (i) { return L + (W - L - R) * (series.length === 1 ? 0.5 : i / (series.length - 1)); };
+    var top = Math.ceil((Math.max.apply(null, vals) + 0.1) * 2) / 2;
+    var bottom = Math.floor((Math.min.apply(null, vals) - 0.1) * 2) / 2;
+    var x = function (i) { return L + (W - L - R) * i / (series.length - 1); };
     var y = function (v) { return T + (top - v) / (top - bottom) * (H - T - B); };
     var path = function (key) {
       return series.map(function (p, i) { return (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(p[key]).toFixed(1); }).join(' ');
     };
+    var grid = '';
+    for (var v = bottom; v <= top + 0.001; v += 0.5) {
+      var whole = Math.abs(v - Math.round(v)) < 0.01;
+      grid += '<line class="wchart__grid' + (whole ? ' wchart__grid--whole' : '') + '" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(v).toFixed(1) + '" y2="' + y(v).toFixed(1) + '"/>' +
+        '<text class="wchart__axis" x="' + (L - 5) + '" y="' + (y(v) + 4).toFixed(1) + '">' + root.Fmt.n(v, 1) + '</text>';
+    }
+    var step = Math.ceil(series.length / 7);
     var ticks = series.map(function (p, i) {
-      if (i % Math.ceil(series.length / 6) && i !== series.length - 1) return '';
-      return '<text class="wchart__tick" x="' + x(i).toFixed(1) + '" y="' + (H - 5) + '">' + P.esc(root.Dates.short(p.date)) + '</text>';
-    }).join('');
-    var axis = [top - 0.2, (top + bottom) / 2, bottom + 0.2].map(function (v) {
-      return '<text class="wchart__axis" x="' + (L - 4) + '" y="' + (y(v) + 4).toFixed(1) + '">' + root.Fmt.n(v, 1) + '</text>';
+      if (i % step && i !== series.length - 1) return '';
+      return '<text class="wchart__tick" x="' + x(i).toFixed(1) + '" y="' + (H - 7) + '">' + P.esc(p.date.slice(8, 10) + '/' + p.date.slice(5, 7)) + '</text>';
     }).join('');
     var dots = series.map(function (p, i) {
-      return '<circle class="wchart__dot" cx="' + x(i).toFixed(1) + '" cy="' + y(p.w).toFixed(1) + '" r="2.5"/>';
+      return '<circle class="wchart__dot" cx="' + x(i).toFixed(1) + '" cy="' + y(p.w).toFixed(1) + '" r="3"/>';
     }).join('');
-    return '<svg class="wchart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="משקל וממוצע נע">' + axis +
-      '<path class="wchart__a3" d="' + path('avg3') + '"/><path class="wchart__a7" d="' + path('avg7') + '"/>' + dots + ticks + '</svg>' +
+    var last = series[series.length - 1], lx = x(series.length - 1) + 6;
+    var y7 = y(last.avg7), y3 = y(last.avg3);
+    if (Math.abs(y7 - y3) < 12) { if (y7 < y3) { y7 -= 6; y3 += 6; } else { y7 += 6; y3 -= 6; } }
+    var ends = '<text class="wchart__end wchart__end--a7" x="' + lx + '" y="' + (y7 + 4).toFixed(1) + '">' + root.Fmt.n(last.avg7, 1) + '</text>' +
+      '<text class="wchart__end wchart__end--a3" x="' + lx + '" y="' + (y3 + 4).toFixed(1) + '">' + root.Fmt.n(last.avg3, 1) + '</text>';
+    return '<svg class="wchart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="משקל וממוצע נע">' + grid +
+      '<path class="wchart__a3" d="' + path('avg3') + '"/><path class="wchart__a7" d="' + path('avg7') + '"/>' + dots + ticks + ends + '</svg>' +
       '<div class="wchart__legend"><span><i class="wchart__k wchart__k--a7"></i>ממוצע 7</span>' +
-      '<span><i class="wchart__k wchart__k--a3"></i>ממוצע 3</span><span><i class="wchart__k wchart__k--dot"></i>שקילה</span></div>';
+      '<span><i class="wchart__k wchart__k--a3"></i>ממוצע 3</span><span><i class="wchart__k wchart__k--dot"></i>שקילה</span>' +
+      '<span>קו לכל חצי ק״ג</span></div>';
   }
 
   function weightBlock(rows) {

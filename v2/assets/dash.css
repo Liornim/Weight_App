@@ -1373,3 +1373,10 @@ td .trend__d--bad { color: #C8463A; }
 .wchart__k { display: inline-block; width: 12px; height: 3px; }
 .wchart__k--a7 { background: #3ECF8E; } .wchart__k--a3 { background: #F2B84B; }
 .wchart__k--dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.75); }
+.wchart__grid { stroke: rgba(255,255,255,.10); stroke-width: 1; }
+.wchart__grid--whole { stroke: rgba(255,255,255,.25); }
+.wchart__tick, .wchart__axis { font-size: 11px; }
+.wchart__end { font-size: 12px; font-weight: 700; direction: ltr; }
+.wchart__end--a7 { fill: #3ECF8E; } .wchart__end--a3 { fill: #F2B84B; }
+.wchart__a7 { stroke-width: 3; }
+.wchart__dot { fill: #fff; }
