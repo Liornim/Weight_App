@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-11T05:30:09+00:00",
+  "updatedAt": "2026-11-11T05:30:46+00:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -1859,6 +1859,28 @@
           "basisNote": "הכמות לפי מה שאמרת; ערך יין סטנדרטי.",
           "kcalLow": 320,
           "kcalHigh": 385
+        },
+        {
+          "time": "ערב",
+          "name": "נאפו: שוט טקילה 30 מ״ל",
+          "kcal": 67,
+          "proteinG": 0,
+          "carbG": 0,
+          "fatG": 0,
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "טקילה 30 מ״ל",
+              "kcal": 67,
+              "proteinG": 0,
+              "carbG": 0,
+              "fatG": 0
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "כמות ידועה וערך סטנדרטי (40%).",
+          "kcalLow": 64,
+          "kcalHigh": 70
         }
       ],
       "walks": [
