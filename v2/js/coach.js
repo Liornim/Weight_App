@@ -924,6 +924,96 @@
       P.hint('✓ ירוק = השתפר מהיום הקודם, ✗ אדום = הורע. ק״ג = קק״ל ÷ 7,700. צעדים נוספים = כמה צעדים מעל 6,700 ביום, לאורך 10 ימים, כדי לסגור את הפער.'));
   }
 
+
+  /**
+   * טאב המאקרו: לכל יום גרמים ואחוז מהקלוריות של חלבון, פחמימה, שומן ואלכוהול.
+   * האחוז מחושב מקלוריות המאקרו (4/4/9 ואלכוהול לפי הרישום), כך שהארבעה מסתכמים ל-100.
+   */
+  function macroOf(row) {
+    var meals = Array.isArray(row.meals) ? row.meals : [];
+    var sum = function (key) {
+      return meals.reduce(function (a, m) { return a + (typeof m[key] === 'number' ? m[key] : 0); }, 0);
+    };
+    var alcohol = meals.reduce(function (a, m) {
+      return a + (m.items || []).reduce(function (b, i) { return b + (i.cat === 'alcohol' && typeof i.kcal === 'number' ? i.kcal : 0); }, 0);
+    }, 0);
+    var p = typeof row.proteinG === 'number' ? row.proteinG : sum('proteinG');
+    var c = typeof row.carbG === 'number' ? row.carbG : sum('carbG');
+    var f = typeof row.fatG === 'number' ? row.fatG : sum('fatG');
+    var kcal = typeof row.kcal === 'number' ? row.kcal : sum('kcal');
+    var parts = { p: p * 4, c: c * 4, f: f * 9, a: alcohol };
+    var total = parts.p + parts.c + parts.f + parts.a;
+    var pct = function (v) { return total ? Math.round(v / total * 100) : 0; };
+    return { date: row.date, kcal: kcal, p: p, c: c, f: f, alcohol: alcohol,
+      pp: pct(parts.p), pc: pct(parts.c), pf: pct(parts.f), pa: pct(parts.a), closed: typeof row.steps === 'number' };
+  }
+
+  function macroBar(m) {
+    var seg = function (cls, v) { return v ? '<i class="mbar__seg mbar--' + cls + '" style="width:' + v + '%"></i>' : ''; };
+    return '<div class="mbar">' + seg('p', m.pp) + seg('c', m.pc) + seg('f', m.pf) + seg('a', m.pa) + '</div>';
+  }
+
+  function macros() {
+    var state = read();
+    var rows = (state.rows || []).filter(function (r) { return Array.isArray(r.meals) && r.meals.length; });
+    if (!rows.length) return P.section('מאקרו', P.card(null, null, P.empty('עוד אין ארוחות.')));
+    var t = state.targets || {};
+    var list = rows.map(macroOf);
+    var n = root.Fmt.n;
+    var avg = function (key) { return list.reduce(function (a, m) { return a + m[key]; }, 0) / list.length; };
+    var all = macroOf({ meals: [], kcal: avg('kcal'), proteinG: avg('p'), carbG: avg('c'), fatG: avg('f') });
+    all.alcohol = avg('alcohol');
+    var tot = all.p * 4 + all.c * 4 + all.f * 9 + all.alcohol;
+    all.pp = Math.round(all.p * 4 / tot * 100); all.pc = Math.round(all.c * 4 / tot * 100);
+    all.pf = Math.round(all.f * 9 / tot * 100); all.pa = Math.round(all.alcohol / tot * 100);
+    var tgt = function (key) { return typeof t[key] === 'number' ? t[key] : null; };
+    var tp = tgt('proteinG'), tc = tgt('carbG'), tf = tgt('fatG');
+    var tk = (tp || 0) * 4 + (tc || 0) * 4 + (tf || 0) * 9;
+    var targetPct = tk ? ' · יעד: חלבון ' + Math.round(tp * 4 / tk * 100) + '%, פחמימה ' + Math.round(tc * 4 / tk * 100) +
+      '%, שומן ' + Math.round(tf * 9 / tk * 100) + '%' : '';
+    var legend = '<div class="mlegend"><span><i class="mbar--p"></i>חלבון</span><span><i class="mbar--c"></i>פחמימה</span>' +
+      '<span><i class="mbar--f"></i>שומן</span><span><i class="mbar--a"></i>אלכוהול</span></div>';
+    var summary = P.card('ממוצע יומי', list.length + ' ימים' + targetPct,
+      macroBar(all) + legend +
+      '<div class="mavg">' +
+        '<span><b>' + n(all.p, 0) + '</b> ג׳ חלבון<small>' + all.pp + '% · יעד ' + (tp || '—') + '</small></span>' +
+        '<span><b>' + n(all.c, 0) + '</b> ג׳ פחמימה<small>' + all.pc + '% · יעד ' + (tc || '—') + '</small></span>' +
+        '<span><b>' + n(all.f, 0) + '</b> ג׳ שומן<small>' + all.pf + '% · יעד ' + (tf || '—') + '</small></span>' +
+        '<span><b>' + n(all.alcohol, 0) + '</b> קק״ל אלכוהול<small>' + all.pa + '%</small></span>' +
+      '</div>');
+    var flag = function (v, target, higherIsGood, closed) {
+      if (target === null || !closed) return '';
+      var good = higherIsGood ? v >= target * 0.95 : v <= target * 1.05;
+      return ' mcell--' + (good ? 'good' : 'bad');
+    };
+    var cell = function (g, pc, cls) { return '<td class="n' + cls + '">' + n(g, 0) + '<small>' + pc + '%</small></td>'; };
+    var table = P.table(['תאריך', 'קק״ל', 'חלבון', 'פחמימה', 'שומן', 'אלכוהול', 'חלוקה'],
+      list.slice().reverse().map(function (m) {
+        return '<tr><td class="n">' + P.esc(root.Dates.short(m.date)) + '<small>' + P.esc(weekday(m.date).replace('יום ', '')) + '</small></td>' +
+          '<td class="n">' + n(m.kcal, 0) + '</td>' +
+          cell(m.p, m.pp, flag(m.p, tp, true, m.closed)) + cell(m.c, m.pc, flag(m.c, tc, false, m.closed)) + cell(m.f, m.pf, flag(m.f, tf, false, m.closed)) +
+          '<td class="n">' + (m.alcohol ? n(m.alcohol, 0) + '<small>' + m.pa + '%</small>' : '—') + '</td>' +
+          '<td class="mtable__bar">' + macroBar(m) + '</td></tr>';
+      }));
+    var totals = catTotals(state.rows || []);
+    var fatRows = CATS.map(function (c) {
+      var fat = (state.rows || []).reduce(function (a, r) {
+        return a + (r.meals || []).reduce(function (b, m) {
+          return b + (m.items || []).reduce(function (x, i) { return x + (i.cat === c.key && typeof i.fatG === 'number' ? i.fatG : 0); }, 0);
+        }, 0);
+      }, 0);
+      return { label: c.label, fat: fat };
+    }).filter(function (r) { return r.fat >= 1; }).sort(function (a, b) { return b.fat - a.fat; });
+    var fatAll = fatRows.reduce(function (a, r) { return a + r.fat; }, 0) || 1;
+    var fatCard = P.card('מאיפה בא השומן', 'כל התקופה',
+      P.table(['קבוצה', 'שומן (ג׳)', 'מהשומן'], fatRows.map(function (r) {
+        return '<tr><td>' + P.esc(r.label) + '</td><td class="n">' + n(r.fat, 0) + '</td><td class="n">' + Math.round(r.fat / fatAll * 100) + '%</td></tr>';
+      })));
+    void totals;
+    return P.section('מאקרו', summary + P.card('לפי יום', 'גרמים ואחוז מהקלוריות', table) + fatCard +
+      P.hint('האחוזים מחושבים מקלוריות: חלבון ופחמימה 4 לגרם, שומן 9 לגרם, אלכוהול לפי הרישום. ירוק = בתוך היעד (חלבון: מעליו).'));
+  }
+
   /** שם היום בשבוע, לפי תאריך ISO ובלי תלות באזור הזמן של הדפדפן */
   function weekday(iso) {
     var names = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
@@ -1185,6 +1275,12 @@
       });
     }
 
+    var macroRows = [['תאריך', 'קלוריות', 'חלבון (ג׳)', 'חלבון %', 'פחמימה (ג׳)', 'פחמימה %', 'שומן (ג׳)', 'שומן %', 'אלכוהול (קק״ל)', 'אלכוהול %']];
+    rows.filter(function (r) { return Array.isArray(r.meals) && r.meals.length; }).forEach(function (r) {
+      var m = macroOf(r);
+      macroRows.push([m.date, r0(m.kcal), r0(m.p), m.pp, r0(m.c), m.pc, r0(m.f), m.pf, r0(m.alcohol), m.pa]);
+    });
+
     var settings = [['הגדרה', 'ערך'],
       ['יעד קלוריות', targets.kcal || ''], ['יעד חלבון', targets.proteinG || ''], ['יעד פחמימות', targets.carbG || ''],
       ['יעד שומן', targets.fatG || ''], ['צעדים (מינימום לתוכנית)', targets.steps || ''], ['יעד צעדים', targets.stepsGoal || ''],
@@ -1193,7 +1289,7 @@
 
     return [
       { name: 'ימים', rows: days }, { name: 'ארוחות', rows: meals }, { name: 'פריטים', rows: items },
-      { name: 'קבוצות', rows: groups }, { name: 'אימונים', rows: walks }, { name: 'מגמה', rows: trendRows },
+      { name: 'קבוצות', rows: groups }, { name: 'מאקרו', rows: macroRows }, { name: 'אימונים', rows: walks }, { name: 'מגמה', rows: trendRows },
       { name: 'תחזית', rows: forecast }, { name: 'הגדרות', rows: settings }
     ];
   }
@@ -1284,5 +1380,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, macros: macros, macroOf: macroOf, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);

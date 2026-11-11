@@ -598,6 +598,7 @@
     { value: 'home', label: 'ראשי' },
     { value: 'meals', label: 'ארוחות' },
     { value: 'groups', label: 'קבוצות' },
+    { value: 'macros', label: 'מאקרו' },
     { value: 'split', label: 'פירוק' },
     { value: 'trend', label: 'מגמה' },
     { value: 'budget', label: 'תקציב' },
@@ -634,6 +635,7 @@
       : state.tab === 'data' ? root.Coach.exportButton() + root.DataTab.render(state)
       : state.tab === 'meals' ? root.Coach.meals()
       : state.tab === 'groups' ? root.Coach.groups()
+      : state.tab === 'macros' ? root.Coach.macros()
       : state.tab === 'split' ? root.Coach.split()
       : state.tab === 'trend' ? root.Coach.trend()
       : root.BudgetTab.render(state);

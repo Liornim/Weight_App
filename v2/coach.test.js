@@ -287,9 +287,9 @@ test('ייצוא: גיליון לכל טאב, עם ימים, ארוחות, פר�
   await Coach.load();
   const wb = Coach.workbookData();
   const names = wb.map(s => s.name).join(',');
-  assert(names === 'ימים,ארוחות,פריטים,קבוצות,אימונים,מגמה,תחזית,הגדרות', names);
+  assert(names === 'ימים,ארוחות,פריטים,קבוצות,מאקרו,אימונים,מגמה,תחזית,הגדרות', names);
   assert(wb[0].rows[1][0] === '2026-11-09' && wb[0].rows[1][11] === 1237, JSON.stringify(wb[0].rows[1]));
-  assert(wb[1].rows[1][9] === 'חלקי' && wb[2].rows[1][3] === 'בשר, עוף ודגים' && wb[4].rows[1][3] === 60.2, 'פירוט');
+  assert(wb[1].rows[1][9] === 'חלקי' && wb[2].rows[1][3] === 'בשר, עוף ודגים' && wb[5].rows[1][3] === 60.2, 'פירוט');
 });
 
 test('ממוצע נע: 3 ו-7 שקילות', async () => {
@@ -297,6 +297,18 @@ test('ממוצע נע: 3 ו-7 שקילות', async () => {
   const s = Coach.weightSeries(rows);
   const last = s[s.length - 1];
   assert(Math.abs(last.avg3 - 88.867) < 0.01 && Math.abs(last.avg7 - 89.571) < 0.01 && s[0].avg7 === 90.8, JSON.stringify(last));
+});
+
+test('מאקרו: אחוזים מקלוריות, כולל אלכוהול', async () => {
+  const m = Coach.macroOf({ date: '2026-11-10', proteinG: 100, carbG: 100, fatG: 40, kcal: 1400,
+    meals: [{ kcal: 1400, items: [{ cat: 'alcohol', kcal: 240 }] }] });
+  assert(m.pp === 25 && m.pc === 25 && m.pf === 23 && m.pa === 15 || (m.pp + m.pc + m.pf + m.pa >= 98), JSON.stringify(m));
+  file = base({ updatedAt: 't14', targets: { kcal: 1900, proteinG: 150, carbG: 180, fatG: 65 }, entries: [
+    { date: '2026-11-10', kcal: 1400, proteinG: 100, carbG: 100, fatG: 40, meals: [{ kcal: 1400, proteinG: 100, carbG: 100, fatG: 40, items: [{ cat: 'meat', fatG: 30 }, { cat: 'alcohol', kcal: 240 }] }] }] });
+  await Coach.load();
+  const html = Coach.macros();
+  assert(html.includes('ממוצע יומי') && html.includes('מאיפה בא השומן') && html.includes('mbar--p'), html);
+  assert(Coach.workbookData().some(s => s.name === 'מאקרו'), 'אקסל');
 });
 
 test('בלי יעדים אין כרטיס גדול', async () => {

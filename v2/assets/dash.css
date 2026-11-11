@@ -1380,3 +1380,13 @@ td .trend__d--bad { color: #C8463A; }
 .wchart__end--a7 { fill: #3ECF8E; } .wchart__end--a3 { fill: #F2B84B; }
 .wchart__a7 { stroke-width: 3; }
 .wchart__dot { fill: #fff; }
+.mbar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: #e8ecef; min-width: 70px; }
+.mbar__seg { display: block; height: 100%; }
+.mbar--p { background: #2E7DD7; } .mbar--c { background: #E8A33D; } .mbar--f { background: #C8385A; } .mbar--a { background: #8A5CC2; }
+.mlegend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: #5b6470; margin: 6px 0 10px; }
+.mlegend span { display: inline-flex; align-items: center; gap: 5px; } .mlegend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.mavg { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px 14px; }
+.mavg span { display: flex; flex-direction: column; font-size: 13px; } .mavg b { font-size: 20px; } .mavg small { color: #8a8f98; font-size: 11px; }
+td small { display: block; font-size: 10px; color: #8a8f98; font-weight: 400; }
+.mcell--good { color: #1F8F5F; font-weight: 600; } .mcell--bad { color: #C8463A; font-weight: 600; }
+.mtable__bar { min-width: 80px; vertical-align: middle; }
