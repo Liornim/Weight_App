@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-11T05:31:26+00:00",
+  "updatedAt": "2026-11-11T09:30:00+00:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -1915,7 +1915,46 @@
     {
       "date": "2026-11-11",
       "weightKg": 89.1,
-      "meals": []
+      "meals": [
+        {
+          "time": "11:30",
+          "name": "יוגורט GO, 3 פסטרמה הודו ו-3 מלפפונים",
+          "kcal": 303,
+          "proteinG": 41.0,
+          "carbG": 23.1,
+          "fatG": 5.6,
+          "items": [
+            {
+              "cat": "dairy",
+              "name": "יוגורט GO טבעי 200 ג׳ (תווית)",
+              "kcal": 171,
+              "proteinG": 25,
+              "carbG": 8.8,
+              "fatG": 4
+            },
+            {
+              "cat": "meat",
+              "name": "3 פרוסות פסטרמה הודו (~68 ג׳)",
+              "kcal": 75,
+              "proteinG": 13.5,
+              "carbG": 2.3,
+              "fatG": 1.1
+            },
+            {
+              "cat": "veg",
+              "name": "3 מלפפונים",
+              "kcal": 57,
+              "proteinG": 2.5,
+              "carbG": 12,
+              "fatG": 0.5
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "יוגורט לפי תווית; משקל הפרוסות והמלפפונים הערכה קטנה.",
+          "kcalLow": 285,
+          "kcalHigh": 325
+        }
+      ]
     }
   ],
   "summary": {
