@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-11T18:01:09+00:00",
+  "updatedAt": "2026-11-11T21:52:00+02:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -2043,6 +2043,17 @@
           "basisNote": "62 ג׳ ותווית.",
           "kcalLow": 230,
           "kcalHigh": 238
+        }
+      ],
+      "walks": [
+        {
+          "type": "אליפטיקל",
+          "time": "20:36",
+          "minutes": 60,
+          "seconds": 10,
+          "avgHr": 96,
+          "maxHr": 114,
+          "deviceKcal": 396
         }
       ]
     }
