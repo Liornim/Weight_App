@@ -1358,3 +1358,18 @@ td .trend__d--bad { color: #C8463A; }
 .export { margin: 16px 0 8px; display: flex; justify-content: center; }
 .export__btn { font: inherit; font-size: 15px; font-weight: 600; padding: 12px 20px; border-radius: 12px; border: 1px solid #1F8F5F; background: #fff; color: #1F8F5F; cursor: pointer; width: 100%; }
 .export__btn:active { background: #eaf6f0; }
+.wavg { display: flex; gap: 14px; flex-wrap: wrap; margin: 4px 0; }
+.wavg span { display: flex; flex-direction: column; font-size: 13px; }
+.wavg b { font-size: 22px; }
+.wavg small { font-size: 11px; opacity: .7; }
+.wchart { width: 100%; height: auto; margin-top: 6px; }
+.wchart__a7 { fill: none; stroke: #3ECF8E; stroke-width: 2.5; }
+.wchart__a3 { fill: none; stroke: #F2B84B; stroke-width: 1.5; stroke-dasharray: 4 3; }
+.wchart__dot { fill: rgba(255,255,255,.75); }
+.wchart__tick, .wchart__axis { font-size: 9px; fill: rgba(255,255,255,.55); text-anchor: middle; }
+.wchart__axis { text-anchor: end; }
+.wchart__legend { display: flex; gap: 12px; font-size: 11px; opacity: .8; margin-top: 2px; }
+.wchart__legend span { display: inline-flex; align-items: center; gap: 4px; }
+.wchart__k { display: inline-block; width: 12px; height: 3px; }
+.wchart__k--a7 { background: #3ECF8E; } .wchart__k--a3 { background: #F2B84B; }
+.wchart__k--dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.75); }

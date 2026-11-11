@@ -340,6 +340,44 @@
     };
   }
 
+
+  /** סדרת שקילות עם ממוצע נע של 3 ושל 7 שקילות (או פחות בהתחלה) */
+  function weightSeries(rows) {
+    var list = rows.filter(function (row) { return typeof row.weightKg === 'number'; });
+    var mean = function (a) { return a.reduce(function (x, y) { return x + y; }, 0) / a.length; };
+    return list.map(function (row, i) {
+      var upto = list.slice(0, i + 1).map(function (r) { return r.weightKg; });
+      return { date: row.date, w: row.weightKg, avg3: mean(upto.slice(-3)), avg7: mean(upto.slice(-7)) };
+    });
+  }
+
+  function weightChart(series) {
+    if (series.length < 2) return '';
+    var W = 320, H = 130, L = 34, R = 6, T = 8, B = 20;
+    var vals = [];
+    series.forEach(function (p) { vals.push(p.w, p.avg3, p.avg7); });
+    var top = Math.max.apply(null, vals) + 0.2, bottom = Math.min.apply(null, vals) - 0.2;
+    var x = function (i) { return L + (W - L - R) * (series.length === 1 ? 0.5 : i / (series.length - 1)); };
+    var y = function (v) { return T + (top - v) / (top - bottom) * (H - T - B); };
+    var path = function (key) {
+      return series.map(function (p, i) { return (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(p[key]).toFixed(1); }).join(' ');
+    };
+    var ticks = series.map(function (p, i) {
+      if (i % Math.ceil(series.length / 6) && i !== series.length - 1) return '';
+      return '<text class="wchart__tick" x="' + x(i).toFixed(1) + '" y="' + (H - 5) + '">' + P.esc(root.Dates.short(p.date)) + '</text>';
+    }).join('');
+    var axis = [top - 0.2, (top + bottom) / 2, bottom + 0.2].map(function (v) {
+      return '<text class="wchart__axis" x="' + (L - 4) + '" y="' + (y(v) + 4).toFixed(1) + '">' + root.Fmt.n(v, 1) + '</text>';
+    }).join('');
+    var dots = series.map(function (p, i) {
+      return '<circle class="wchart__dot" cx="' + x(i).toFixed(1) + '" cy="' + y(p.w).toFixed(1) + '" r="2.5"/>';
+    }).join('');
+    return '<svg class="wchart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="משקל וממוצע נע">' + axis +
+      '<path class="wchart__a3" d="' + path('avg3') + '"/><path class="wchart__a7" d="' + path('avg7') + '"/>' + dots + ticks + '</svg>' +
+      '<div class="wchart__legend"><span><i class="wchart__k wchart__k--a7"></i>ממוצע 7</span>' +
+      '<span><i class="wchart__k wchart__k--a3"></i>ממוצע 3</span><span><i class="wchart__k wchart__k--dot"></i>שקילה</span></div>';
+  }
+
   function weightBlock(rows) {
     var w = weightAverage(rows);
     if (!w) return '';
@@ -347,9 +385,16 @@
       ? 'השוואה שבועית תופיע אחרי 14 שקילות'
       : (w.change <= 0 ? 'ירידה של ' : 'עלייה של ') + root.Fmt.n(Math.abs(w.change), 1) +
         ' ק״ג מול 7 השקילות הקודמות';
+    var series = weightSeries(rows);
+    var last = series[series.length - 1];
     return '<div class="today__balance">' +
-      '<div class="today__label">ממוצע משקל, ' + w.count + ' שקילות אחרונות</div>' +
-      '<div class="today__sum"><strong>' + root.Fmt.n(w.average, 1) + '</strong> ק״ג</div>' +
+      '<div class="today__label">ממוצע משקל נע</div>' +
+      '<div class="wavg">' +
+        '<span><b>' + root.Fmt.n(last.avg7, 1) + '</b> ק״ג<small>ממוצע ' + Math.min(7, series.length) + ' שקילות</small></span>' +
+        '<span><b>' + root.Fmt.n(last.avg3, 1) + '</b> ק״ג<small>ממוצע ' + Math.min(3, series.length) + ' שקילות</small></span>' +
+        '<span><b>' + root.Fmt.n(last.w, 1) + '</b> ק״ג<small>שקילה אחרונה</small></span>' +
+      '</div>' +
+      weightChart(series) +
       '<div class="today__left">' + P.esc(change) + '</div>' +
     '</div>';
   }
@@ -767,7 +812,8 @@
         walk: stepsTarget === null ? null : Math.round(acc.burnSteps - acc.days * stepsTarget * cfg.kcalPerStep),
         stepsPerDay: ahead < 0 ? Math.round(-ahead / cfg.kcalPerStep / 10) : 0,
         protein: protTarget === null ? null : Math.round(acc.prot - acc.days * protTarget),
-        weight3: last3.length ? last3.reduce(function (a, b) { return a + b; }, 0) / last3.length : null
+        weight3: last3.length ? last3.reduce(function (a, b) { return a + b; }, 0) / last3.length : null,
+        weight7: weights.length ? weights.slice(-7).reduce(function (a, b) { return a + b; }, 0) / weights.slice(-7).length : null
       });
     });
     return out;
@@ -824,7 +870,8 @@
       { key: 'walk', label: 'הליכה מול התוכנית', show: function (v) { return fmt(v) + ' ' + (v >= 0 ? 'יותר' : 'פחות'); } },
       { key: 'stepsPerDay', label: 'צעדים נוספים ליום (10 ימים)', show: function (v) { return v ? fmt(v) : 'אין פער'; }, lowerIsBetter: true },
       { key: 'protein', label: 'חלבון מול היעד (ג׳)', show: function (v) { return fmt(v) + ' ' + (v >= 0 ? 'עודף' : 'חוסר'); } },
-      { key: 'weight3', label: 'ממוצע 3 שקילות', show: function (v) { return fmt(v, 1); }, delta: function (v) { return fmt(v, 1); }, lowerIsBetter: true }
+      { key: 'weight3', label: 'ממוצע 3 שקילות', show: function (v) { return fmt(v, 1); }, delta: function (v) { return fmt(v, 1); }, lowerIsBetter: true },
+      { key: 'weight7', label: 'ממוצע 7 שקילות', show: function (v) { return fmt(v, 1); }, delta: function (v) { return fmt(v, 1); }, lowerIsBetter: true }
     ];
     var arrow = function (m, a, b) {
       if (typeof a !== 'number' || typeof b !== 'number') return '<span class="trend__d">—</span>';
@@ -851,7 +898,7 @@
             (prev ? arrow(m, prev[m.key], now[m.key]) : '<span class="trend__d">—</span>');
         }).join('') +
       '</div>' + trendChart(list, cfg.plannedDeficit) + '</section>';
-    var table = P.table(['עד יום', 'מאזן', 'ק״ג', 'מול התוכנית', 'צעדים נוספים ליום', 'ממוצע משקל'],
+    var table = P.table(['עד יום', 'מאזן', 'ק״ג', 'מול התוכנית', 'צעדים נוספים ליום', 'ממוצע 3', 'ממוצע 7'],
       list.slice().reverse().map(function (d, i, arr) {
         var before = arr[i + 1];
         var withArrow = function (m, v) {
@@ -859,7 +906,7 @@
         };
         return '<tr><td class="n">' + P.esc(root.Dates.short(d.date)) + '</td>' +
           withArrow(METRICS[0], d.deficit) + withArrow(METRICS[1], d.deficit) + withArrow(METRICS[2], d.ahead) +
-          withArrow(METRICS[5], d.stepsPerDay) + withArrow(METRICS[7], d.weight3) + '</tr>';
+          withArrow(METRICS[5], d.stepsPerDay) + withArrow(METRICS[7], d.weight3) + withArrow(METRICS[8], d.weight7) + '</tr>';
       }));
     return P.section('מגמה', compare + P.card('המצב בסוף כל יום', 'מהחדש לישן', table) +
       P.hint('✓ ירוק = השתפר מהיום הקודם, ✗ אדום = הורע. ק״ג = קק״ל ÷ 7,700. צעדים נוספים = כמה צעדים מעל 6,700 ביום, לאורך 10 ימים, כדי לסגור את הפער.'));
@@ -1059,7 +1106,9 @@
     var cum = 0, cumDays = 0;
     var days = [['תאריך', 'יום', 'משקל', 'קלוריות', 'טווח נמוך', 'טווח גבוה', 'חלבון', 'פחמימות', 'שומן',
       'צעדים', 'שריפה משוערת', 'גירעון (+) / עודף (−)', 'מהתזונה', 'מהצעדים', 'ק״ג שומן (− ירידה)',
-      'גירעון מצטבר', 'מול התוכנית מצטבר', 'יום סגור']];
+      'גירעון מצטבר', 'מול התוכנית מצטבר', 'יום סגור', 'ממוצע 3 שקילות', 'ממוצע 7 שקילות']];
+    var ws = {};
+    weightSeries(rows).forEach(function (p) { ws[p.date] = p; });
     rows.forEach(function (row) {
       var kcal = typeof row.kcal === 'number' ? row.kcal : (row.meals && row.meals.length ? sum(row, 'kcal') : null);
       var closed = typeof row.kcal === 'number' && typeof row.steps === 'number';
@@ -1076,7 +1125,7 @@
         typeof row.steps === 'number' ? r0(row.steps * cfg.kcalPerStep) : '',
         closed ? Math.round(-bal / KCAL_PER_KG * 100) / 100 : '',
         closed ? r0(cum) : '', closed ? r0(cum - cumDays * cfg.plannedDeficit) : '',
-        closed ? 'כן' : 'לא']);
+        closed ? 'כן' : 'לא', ws[row.date] ? r1(ws[row.date].avg3) : '', ws[row.date] ? r1(ws[row.date].avg7) : '']);
     });
 
     var meals = [['תאריך', 'שעה', 'ארוחה', 'קלוריות', 'טווח נמוך', 'טווח גבוה', 'חלבון', 'פחמימות', 'שומן', 'דיוק', 'הערת דיוק']];
@@ -1107,10 +1156,10 @@
     });
 
     var trendRows = [['עד יום', 'ימים סגורים', 'גירעון מצטבר', 'ק״ג שומן (− ירידה)', 'מול התוכנית (+ לפני)', 'אוכל מול היעד (+ מתחת)',
-      'הליכה מול התוכנית (+ יותר)', 'צעדים נוספים ליום (10 ימים)', 'חלבון מול היעד', 'ממוצע 3 שקילות']];
+      'הליכה מול התוכנית (+ יותר)', 'צעדים נוספים ליום (10 ימים)', 'חלבון מול היעד', 'ממוצע 3 שקילות', 'ממוצע 7 שקילות']];
     trendOf(rows, cfg, targets).forEach(function (t) {
       trendRows.push([t.date, t.days, t.deficit, Math.round(-t.deficit / KCAL_PER_KG * 100) / 100, t.ahead,
-        t.food === null ? '' : t.food, t.walk === null ? '' : t.walk, t.stepsPerDay, t.protein === null ? '' : t.protein, r1(t.weight3)]);
+        t.food === null ? '' : t.food, t.walk === null ? '' : t.walk, t.stepsPerDay, t.protein === null ? '' : t.protein, r1(t.weight3), r1(t.weight7)]);
     });
 
     var f = forecastOf(rows, cfg);
@@ -1223,5 +1272,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);

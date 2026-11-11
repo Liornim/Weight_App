@@ -292,6 +292,13 @@ test('ייצוא: גיליון לכל טאב, עם ימים, ארוחות, פר�
   assert(wb[1].rows[1][9] === 'חלקי' && wb[2].rows[1][3] === 'בשר, עוף ודגים' && wb[4].rows[1][3] === 60.2, 'פירוט');
 });
 
+test('ממוצע נע: 3 ו-7 שקילות', async () => {
+  const rows = [90.8, 90.8, 91.2, 90.0, 89.6, 90.1, 90.7, 89.1, 88.4, 89.1].map((w, i) => ({ date: '2026-11-' + String(i + 2).padStart(2, '0'), weightKg: w }));
+  const s = Coach.weightSeries(rows);
+  const last = s[s.length - 1];
+  assert(Math.abs(last.avg3 - 88.867) < 0.01 && Math.abs(last.avg7 - 89.571) < 0.01 && s[0].avg7 === 90.8, JSON.stringify(last));
+});
+
 test('בלי יעדים אין כרטיס גדול', async () => {
   file = base({ updatedAt: 't02', entries: [{ date: '2026-11-02', weightKg: 90.8 }] });
   await Coach.load();
