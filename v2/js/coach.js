@@ -371,7 +371,8 @@
     }
     var step = Math.ceil(series.length / 7);
     var ticks = series.map(function (p, i) {
-      if (i % step && i !== series.length - 1) return '';
+      var lastI = series.length - 1;
+      if (i !== lastI && (i % step || lastI - i < step)) return '';
       return '<text class="wchart__tick" x="' + x(i).toFixed(1) + '" y="' + (H - 7) + '">' + P.esc(p.date.slice(8, 10) + '/' + p.date.slice(5, 7)) + '</text>';
     }).join('');
     var dots = series.map(function (p, i) {
@@ -393,7 +394,7 @@
     var w = weightAverage(rows);
     if (!w) return '';
     var change = w.change === null
-      ? 'השוואה שבועית תופיע אחרי 14 שקילות'
+      ? 'השוואה של 7 השקילות האחרונות מול 7 הקודמות תופיע אחרי 14 שקילות (עכשיו ' + rows.filter(function (r) { return typeof r.weightKg === 'number'; }).length + ')'
       : (w.change <= 0 ? 'ירידה של ' : 'עלייה של ') + root.Fmt.n(Math.abs(w.change), 1) +
         ' ק״ג מול 7 השקילות הקודמות';
     var series = weightSeries(rows);
