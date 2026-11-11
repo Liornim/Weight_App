@@ -54,7 +54,9 @@
       nutrition(r.nutrition) +
       '<h4 class="rx-h">מצרכים</h4>' + bullets(r.ingredients) +
       '<h4 class="rx-h">הכנה</h4>' + bullets(r.steps, true) +
-      (r.tips && r.tips.length ? '<h4 class="rx-h">טיפים</h4>' + bullets(r.tips) : '');
+      (r.tips && r.tips.length ? '<h4 class="rx-h">טיפים</h4>' + bullets(r.tips) : '') +
+      (/^https:\/\//.test(r.link || '') ? '<p class="rx-link"><a href="' + P.esc(r.link) +
+        '" target="_blank" rel="noopener">למקור ↗</a></p>' : '');
 
     var kcal = r.nutrition && r.nutrition.kcal ? ' · ' + r.nutrition.kcal + ' קק״ל' : '';
     // לא details.fold: app.js מחבר את הראשון מהם למצב פתיחת ההגדרות

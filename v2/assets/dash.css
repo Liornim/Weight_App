@@ -1425,3 +1425,5 @@ details.rx[open] > summary::after { content: '\2212'; }
 details.rx .body { padding: 0 18px 18px; }
 .rx-h { font-size: 13px; font-weight: 700; color: var(--brand); margin: 16px 0 6px; }
 .rx-list { margin: 0; padding-inline-start: 20px; line-height: 1.7; font-size: 14.5px; }
+.rx-link { margin: 16px 0 0; font-size: 14px; }
+.rx-link a { color: var(--brand); font-weight: 500; }
