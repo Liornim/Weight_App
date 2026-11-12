@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-12T20:08:00+02:00",
+  "updatedAt": "2026-11-12T22:51:00+02:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -2192,6 +2192,96 @@
           "basisNote": "נשקל: 5 ג׳ (המשקל בקפיצות של 1 ג׳, לכן חושב 5.5 ג׳). ערכים לפי התווית; חלבון לא מופיע בתווית, הערכה.",
           "kcalLow": 26,
           "kcalHigh": 31
+        },
+        {
+          "time": "ערב",
+          "name": "יונו: חצי צלחת גבינות, בלי לחם ודבש",
+          "kcal": 472,
+          "proteinG": 27.7,
+          "carbG": 3.8,
+          "fatG": 38.2,
+          "items": [
+            {
+              "cat": "dairy",
+              "name": "מנצ׳גו, גאודה וגבינה כחולה ~110 ג׳ (חצי מכ-220 ג׳)",
+              "kcal": 415,
+              "proteinG": 27,
+              "carbG": 1,
+              "fatG": 33
+            },
+            {
+              "cat": "fat",
+              "name": "פקאן ~7 ג׳",
+              "kcal": 50,
+              "proteinG": 0.7,
+              "carbG": 1,
+              "fatG": 5.2
+            },
+            {
+              "cat": "snacks",
+              "name": "2 ענבים",
+              "kcal": 7,
+              "proteinG": 0,
+              "carbG": 1.8,
+              "fatG": 0
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "כמות הגבינה הוערכה מהתמונה (כ-220 ג׳ בצלחת); חצי לפי מה שאמרת. בלי הלחם והדבש.",
+          "kcalLow": 380,
+          "kcalHigh": 580
+        },
+        {
+          "time": "ערב",
+          "name": "יונו: חצי ירוקים בג׳וספר",
+          "kcal": 190,
+          "proteinG": 5,
+          "carbG": 9,
+          "fatG": 15,
+          "items": [
+            {
+              "cat": "veg",
+              "name": "שעועית ירוקה, ברוקולי, זוקיני, אספרגוס ~150 ג׳",
+              "kcal": 45,
+              "proteinG": 3,
+              "carbG": 7,
+              "fatG": 0.5
+            },
+            {
+              "cat": "fat",
+              "name": "צזיקי, שמן זית ואגוזי לוז (חצי)",
+              "kcal": 145,
+              "proteinG": 2,
+              "carbG": 2,
+              "fatG": 14.5
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "הערכה מהתמונה; השמן והצזיקי לא ידועים. חצי לפי מה שאמרת.",
+          "kcalLow": 140,
+          "kcalHigh": 250
+        },
+        {
+          "time": "ערב",
+          "name": "יין ~400 מ״ל",
+          "kcal": 340,
+          "proteinG": 0,
+          "carbG": 10,
+          "fatG": 0,
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "יין ~400 מ״ל",
+              "kcal": 340,
+              "proteinG": 0,
+              "carbG": 10,
+              "fatG": 0
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "כמות לפי מה שאמרת; כ-85 קל׳ ל-100 מ״ל.",
+          "kcalLow": 300,
+          "kcalHigh": 380
         }
       ],
       "walks": [
