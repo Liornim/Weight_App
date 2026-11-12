@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-12T18:05:00+02:00",
+  "updatedAt": "2026-11-12T19:22:00+02:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -2148,6 +2148,28 @@
           "basisNote": "גביע שלם, לפי התווית.",
           "kcalLow": 105,
           "kcalHigh": 112
+        },
+        {
+          "time": "ערב",
+          "name": "שייק חלבון עוגיות 64 ג׳",
+          "kcal": 245,
+          "proteinG": 49.3,
+          "carbG": 6.8,
+          "fatG": 2.3,
+          "items": [
+            {
+              "cat": "protein",
+              "name": "אבקת חלבון עוגיות 64 ג׳ (383/77 ל-100 ג׳)",
+              "kcal": 245,
+              "proteinG": 49.3,
+              "carbG": 6.8,
+              "fatG": 2.3
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "64 ג׳ ותווית.",
+          "kcalLow": 242,
+          "kcalHigh": 249
         }
       ],
       "walks": [
