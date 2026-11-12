@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-13T00:12:00+02:00",
+  "updatedAt": "2026-11-13T00:15:00+02:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -2293,6 +2293,15 @@
           "steps": 3822,
           "avgHr": 92,
           "deviceKcal": 268
+        },
+        {
+          "type": "אליפטיקל",
+          "time": "16:51",
+          "minutes": 30,
+          "seconds": 2,
+          "avgHr": 93,
+          "maxHr": 113,
+          "deviceKcal": 186
         }
       ],
       "kcal": 1887,
