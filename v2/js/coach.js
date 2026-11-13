@@ -496,40 +496,50 @@
    */
   function balanceChart(daily, plan) {
     if (!daily.length) return '';
-    var W = 320, H = 150, L = 34, R = 6, T = 10, B = 22;
+    var W = 340, H = 240, L = 46, R = 10, T = 14, B = 34;
     var avg = [], sum = 0;
     daily.forEach(function (d, i) { sum += d.value; avg.push(sum / (i + 1)); });
     var values = daily.map(function (d) { return d.value; }).concat(avg, [0, -plan]);
-    var top = Math.max.apply(null, values), bottom = Math.min.apply(null, values);
-    var pad = (top - bottom) * 0.08 || 50;
-    top += pad; bottom -= pad;
+    var gridStep = 500;
+    var top = Math.ceil((Math.max.apply(null, values) + 50) / gridStep) * gridStep;
+    var bottom = Math.floor((Math.min.apply(null, values) - 50) / gridStep) * gridStep;
     var y = function (v) { return T + (top - v) / (top - bottom) * (H - T - B); };
     var step = (W - L - R) / daily.length;
     var x = function (i) { return L + step * i + step / 2; };
-    var barW = Math.min(step * 0.56, 26);
+    var barW = Math.min(step * 0.62, 24);
+    var n0 = function (v) { return root.Fmt.n(Math.abs(Math.round(v)), 0); };
+    var signed = function (v) { return v === 0 ? '0' : (v > 0 ? '+' : '−') + n0(v); };
+    var grid = '';
+    for (var g = bottom; g <= top; g += gridStep) {
+      grid += '<line class="cumul__grid' + (g === 0 ? ' cumul__grid--zero' : '') + '" x1="' + L + '" x2="' + (W - R) +
+        '" y1="' + y(g).toFixed(1) + '" y2="' + y(g).toFixed(1) + '"/>' +
+        '<text class="cumul__axis" x="' + (L - 6) + '" y="' + (y(g) + 4).toFixed(1) + '">' + signed(g) + '</text>';
+    }
+    var month = '';
     var bars = daily.map(function (d, i) {
       var y0 = y(0), y1 = y(d.value);
+      var parts = String(d.date).split('-');
+      var showMonth = parts[1] !== month; month = parts[1];
       return '<rect class="cumul__bar cumul__bar--' + (d.value <= 0 ? 'good' : 'bad') + '" x="' +
         (x(i) - barW / 2).toFixed(1) + '" y="' + Math.min(y0, y1).toFixed(1) + '" width="' +
-        barW.toFixed(1) + '" height="' + Math.max(Math.abs(y1 - y0), 1).toFixed(1) + '" rx="3"/>' +
-        '<text class="cumul__tick" x="' + x(i).toFixed(1) + '" y="' + (H - 6) + '">' +
-        P.esc(root.Dates.short(d.date)) + '</text>';
+        barW.toFixed(1) + '" height="' + Math.max(Math.abs(y1 - y0), 1).toFixed(1) + '" rx="3">' +
+        '<title>' + P.esc(root.Dates.short(d.date)) + ': ' + (d.value <= 0 ? 'גירעון ' : 'עודף ') + n0(d.value) + '</title></rect>' +
+        '<text class="cumul__tick" x="' + x(i).toFixed(1) + '" y="' + (H - B + 14) + '">' + Number(parts[2]) + '</text>' +
+        (showMonth ? '<text class="cumul__tick cumul__tick--month" x="' + x(i).toFixed(1) + '" y="' + (H - B + 27) + '">' + ['ינו׳','פבר׳','מרץ','אפר׳','מאי','יוני','יולי','אוג׳','ספט׳','אוק׳','נוב׳','דצמ׳'][Number(parts[1]) - 1] + '</text>' : '');
     }).join('');
     var line = avg.map(function (v, i) {
       return (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1);
     }).join(' ');
     var dots = avg.map(function (v, i) {
       return '<circle class="cumul__dot" cx="' + x(i).toFixed(1) + '" cy="' + y(v).toFixed(1) + '" r="' +
-        (i === avg.length - 1 ? 4 : 2.5) + '"/>';
+        (i === avg.length - 1 ? 4.5 : 2.5) + '"/>';
     }).join('');
-    var label = function (v, text) {
-      return '<text class="cumul__axis" x="' + (L - 4) + '" y="' + (y(v) + 4).toFixed(1) + '">' + text + '</text>';
-    };
+    var last = avg[avg.length - 1];
+    var endLabel = '<text class="cumul__endlabel" x="' + (x(avg.length - 1) - 8).toFixed(1) + '" y="' + (y(last) + (last < -plan ? 16 : -9)).toFixed(1) + '">' + signed(last) + '</text>';
     return '<svg class="cumul__chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="מאזן יומי וממוצע מצטבר">' +
-      '<line class="cumul__zero" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(0).toFixed(1) + '" y2="' + y(0).toFixed(1) + '"/>' +
+      grid +
       '<line class="cumul__plan" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(-plan).toFixed(1) + '" y2="' + y(-plan).toFixed(1) + '"/>' +
-      label(0, '0') + label(-plan, '−' + root.Fmt.n(plan, 0)) +
-      bars + '<path class="cumul__avg" d="' + line + '"/>' + dots +
+      bars + '<path class="cumul__avg" d="' + line + '"/>' + dots + endLabel +
     '</svg>' +
     '<div class="cumul__legend">' +
       '<span><i class="cumul__key cumul__key--good"></i>יום בגירעון</span>' +

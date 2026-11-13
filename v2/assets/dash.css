@@ -1431,3 +1431,9 @@ details.rx .body { padding: 0 18px 18px; }
 .today__steps { display: flex; align-items: center; gap: 8px; font-size: 14px; opacity: .9; margin: 4px 0 2px; }
 .today__steps input { width: 110px; font: inherit; font-family: var(--mono); direction: ltr; padding: 4px 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.12); color: inherit; }
 .today__hint { font-size: 12px; opacity: .65; margin-top: 2px; }
+
+.cumul__grid { stroke: rgba(255,255,255,.10); stroke-width: 1; }
+.cumul__grid--zero { stroke: rgba(255,255,255,.45); stroke-width: 1.2; }
+.cumul__tick--month { opacity: .75; font-size: 9px; }
+.cumul__planlabel { fill: rgba(255,255,255,.6); font-size: 9px; font-family: var(--mono); text-anchor: start; direction: ltr; }
+.cumul__endlabel { fill: #fff; font-size: 10px; font-weight: 700; text-anchor: end; font-family: var(--mono); direction: ltr; }
