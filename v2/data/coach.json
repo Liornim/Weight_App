@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-13T18:11:00+02:00",
+  "updatedAt": "2026-11-13T19:40:00+02:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -2449,6 +2449,28 @@
           "basisNote": "נשקל 40 ג׳. ערכים טיפוסיים לבראוניז, אין תווית.",
           "kcalLow": 160,
           "kcalHigh": 200
+        },
+        {
+          "time": "ערב",
+          "name": "יוגורט PRO 0%, גביע",
+          "kcal": 116,
+          "proteinG": 21,
+          "carbG": 6.7,
+          "fatG": 0,
+          "items": [
+            {
+              "cat": "dairy",
+              "name": "יוגורט PRO 0%, גביע 200 ג׳ (תווית)",
+              "kcal": 116,
+              "proteinG": 21,
+              "carbG": 6.7,
+              "fatG": 0
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "גביע שלם, לפי התווית.",
+          "kcalLow": 114,
+          "kcalHigh": 118
         }
       ],
       "walks": [
