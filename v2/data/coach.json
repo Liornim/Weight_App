@@ -2316,11 +2316,11 @@
       "meals": [
         {
           "time": "צהריים",
-          "name": "2 ביצים קשות, קוטג׳ 5% שלם וטונה במים",
-          "kcal": 502,
-          "proteinG": 66.1,
-          "carbG": 5.8,
-          "fatG": 24,
+          "name": "2 ביצים קשות, קוטג׳ 5% שלם, טונה במים וגמבה",
+          "kcal": 557,
+          "proteinG": 67.9,
+          "carbG": 16.8,
+          "fatG": 24.5,
           "items": [
             {
               "cat": "protein",
@@ -2345,12 +2345,20 @@
               "proteinG": 26,
               "carbG": 0,
               "fatG": 1.5
+            },
+            {
+              "cat": "veg",
+              "name": "גמבה אחת (~180 ג׳)",
+              "kcal": 55,
+              "proteinG": 1.8,
+              "carbG": 11,
+              "fatG": 0.5
             }
           ],
           "basis": "partial",
           "basisNote": "כמויות לפי יחידות ואריזות; ערכים טיפוסיים לפי תווית.",
-          "kcalLow": 470,
-          "kcalHigh": 540
+          "kcalLow": 520,
+          "kcalHigh": 600
         }
       ],
       "walks": [
