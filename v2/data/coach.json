@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-13T11:12:00+02:00",
+  "updatedAt": "2026-11-13T11:42:00+02:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -2313,7 +2313,46 @@
     {
       "date": "2026-11-13",
       "weightKg": 88.5,
-      "meals": [],
+      "meals": [
+        {
+          "time": "צהריים",
+          "name": "2 ביצים קשות, קוטג׳ 5% שלם וטונה במים",
+          "kcal": 502,
+          "proteinG": 66.1,
+          "carbG": 5.8,
+          "fatG": 24,
+          "items": [
+            {
+              "cat": "protein",
+              "name": "2 ביצים קשות",
+              "kcal": 144,
+              "proteinG": 12.6,
+              "carbG": 0.8,
+              "fatG": 10
+            },
+            {
+              "cat": "dairy",
+              "name": "קוטג׳ 5%, גביע 250 ג׳",
+              "kcal": 238,
+              "proteinG": 27.5,
+              "carbG": 5,
+              "fatG": 12.5
+            },
+            {
+              "cat": "protein",
+              "name": "טונה במים, מסוננת (~110 ג׳)",
+              "kcal": 120,
+              "proteinG": 26,
+              "carbG": 0,
+              "fatG": 1.5
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "כמויות לפי יחידות ואריזות; ערכים טיפוסיים לפי תווית.",
+          "kcalLow": 470,
+          "kcalHigh": 540
+        }
+      ],
       "walks": [
         {
           "time": "09:41",
