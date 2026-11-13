@@ -1091,7 +1091,7 @@
         sc.goals.map(function (g) { return '<td class="score__mark score__mark--' + (d.res[g.key] ? 'ok' : 'no') + '">' + (d.res[g.key] ? '✓' : '✗') + '</td>'; }).join('') +
         '<td class="n"><b>' + d.hit + '/' + d.of + '</b></td></tr>';
     });
-    var short = { kcal: 'קל׳', deficit: 'גירעון', balance: 'בלי עודף', protein: 'חלבון', fat: 'שומן', steps: '6.7K', steps10: '10K', dry: 'בלי אלכ׳' };
+    var short = { kcal: 'קל׳', deficit: 'גירעון 550+', balance: 'בלי עודף', protein: 'חלבון', fat: 'שומן', steps: '6.7K', steps10: '10K', dry: 'בלי אלכ׳' };
     var dayCard = P.card('לפי יום', '✓ עמד · ✗ לא עמד',
       P.table(['תאריך'].concat(sc.goals.map(function (g) { return short[g.key] || g.label; })).concat(['סה״כ']), dayRows));
     return P.section('ציונים', head + statCard + dayCard +
