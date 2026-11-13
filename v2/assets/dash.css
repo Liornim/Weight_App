@@ -1427,3 +1427,7 @@ details.rx .body { padding: 0 18px 18px; }
 .rx-list { margin: 0; padding-inline-start: 20px; line-height: 1.7; font-size: 14.5px; }
 .rx-link { margin: 16px 0 0; font-size: 14px; }
 .rx-link a { color: var(--brand); font-weight: 500; }
+
+.today__steps { display: flex; align-items: center; gap: 8px; font-size: 14px; opacity: .9; margin: 4px 0 2px; }
+.today__steps input { width: 110px; font: inherit; font-family: var(--mono); direction: ltr; padding: 4px 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,.35); background: rgba(255,255,255,.12); color: inherit; }
+.today__hint { font-size: 12px; opacity: .65; margin-top: 2px; }

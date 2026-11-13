@@ -13,7 +13,7 @@
   var App = {
     BUILD: 'd127',
     // גרסה גלויה למשתמש, עולה באחד בכל עדכון שמשנה את האתר
-    VERSION: 'V22',
+    VERSION: 'V23',
     state: {
       date: Dates.today(),
       tab: 'home',         // הטאב הראשי נפתח ראשון
@@ -83,6 +83,8 @@
         App.setState({ basis: raw === 'adaptive' ? 'adaptive' : Number(raw) });
       });
     });
+
+    if (root.Coach && root.Coach.bindBreakEven) root.Coach.bindBreakEven(view);
 
     view.querySelectorAll('[data-coach-export]').forEach(function (button) {
       button.addEventListener('click', function () {

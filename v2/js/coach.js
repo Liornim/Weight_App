@@ -1181,6 +1181,60 @@
     }).join('') + '</div>';
   }
 
+  /**
+   * break even להיום: כמה מותר לאכול כדי לא לעלות, לפי צעדים צפויים.
+   * מקדם שמרני 0.035 לצעד (המודל הרגיל 0.045 כנראה אופטימי).
+   */
+  var BE_KCAL_PER_STEP = 0.035;
+  var BE_KEY = 'coach.expectedSteps';
+  function breakEvenOf(eaten, steps, base) {
+    var max = Math.round(base + steps * BE_KCAL_PER_STEP);
+    return { max: max, eaten: Math.round(eaten || 0), left: max - Math.round(eaten || 0) };
+  }
+  function expectedSteps(row, rows) {
+    try {
+      var saved = JSON.parse(root.localStorage.getItem(BE_KEY) || 'null');
+      if (saved && saved.date === row.date && saved.steps > 0) return saved.steps;
+    } catch (e) { /* בלי אחסון */ }
+    if (typeof row.steps === 'number') return row.steps;
+    var closed = rows.filter(function (r) { return typeof r.steps === 'number'; }).slice(-7);
+    if (!closed.length) return 10000;
+    return Math.round(closed.reduce(function (a, r) { return a + r.steps; }, 0) / closed.length / 100) * 100;
+  }
+  function breakEvenInner(be) {
+    var pct = be.max > 0 ? Math.max(0, Math.min(100, Math.round(be.eaten / be.max * 100))) : 0;
+    var note = be.left >= 0 ? 'נשארו ' + root.Fmt.n(be.left, 0) + ' קק״ל עד נקודת האיזון'
+      : 'מעל נקודת האיזון ב-' + root.Fmt.n(-be.left, 0) + ' קק״ל';
+    return '<div class="today__num"><strong>' + root.Fmt.n(be.eaten, 0) + '</strong>' +
+        '<span> / ' + root.Fmt.n(be.max, 0) + ' קק״ל</span></div>' +
+      '<div class="today__bar"><i style="width:' + pct + '%"></i></div>' +
+      '<div class="today__left">' + P.esc(note) + '</div>';
+  }
+  function breakEvenBlock(row, rows, cfg) {
+    if (!cfg || typeof cfg.baseBurn !== 'number') return '';
+    var steps = expectedSteps(row, rows);
+    var be = breakEvenOf(eatenOf(row, 'kcal'), steps, cfg.baseBurn);
+    return '<div class="today__gauge today__be' + (be.left < 0 ? ' today__gauge--over' : '') + '" data-coach-be data-eaten="' + be.eaten + '" data-base="' + cfg.baseBurn + '">' +
+      '<div class="today__label">נקודת איזון · מקסימום להיום</div>' +
+      '<label class="today__steps">צעדים צפויים <input type="number" inputmode="numeric" min="0" step="500" value="' + steps + '" data-coach-steps data-date="' + P.esc(row.date) + '"></label>' +
+      '<div data-coach-be-body>' + breakEvenInner(be) + '</div>' +
+      '<div class="today__hint">בסיס ' + root.Fmt.n(cfg.baseBurn, 0) + ' ועוד ' + BE_KCAL_PER_STEP + ' לכל צעד (מקדם שמרני)</div>' +
+    '</div>';
+  }
+  function bindBreakEven(view) {
+    view.querySelectorAll('[data-coach-be]').forEach(function (box) {
+      var input = box.querySelector('[data-coach-steps]');
+      if (!input) return;
+      input.addEventListener('input', function () {
+        var steps = Math.max(0, Number(input.value) || 0);
+        var be = breakEvenOf(Number(box.dataset.eaten), steps, Number(box.dataset.base));
+        box.querySelector('[data-coach-be-body]').innerHTML = breakEvenInner(be);
+        box.classList.toggle('today__gauge--over', be.left < 0);
+        try { root.localStorage.setItem(BE_KEY, JSON.stringify({ date: input.dataset.date, steps: steps })); } catch (e) { /* בלי אחסון */ }
+      });
+    });
+  }
+
   /** הכרטיס הגדול בראש המסך */
   function today() {
     var state = read();
@@ -1192,6 +1246,7 @@
       '<div class="today__row"><h2 class="today__title">היום · ' + P.esc(root.Dates.short(row.date)) + '</h2>' +
         '<span class="today__stamp" data-coach-stamp>' + P.esc(stampText(state)) + '</span></div>' +
       gauge('קלוריות', 'קק״ל', eatenOf(row, 'kcal'), targets.kcal, false) +
+      breakEvenBlock(row, rows, state.balance) +
       gauge('חלבון', 'גרם', eatenOf(row, 'proteinG'), targets.proteinG, true) +
       (targets.carbG && targets.fatG
         ? '<div class="today__small">' +
@@ -1463,5 +1518,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, macros: macros, macroOf: macroOf, scorecard: scorecard, scoresOf: scoresOf, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, macros: macros, macroOf: macroOf, scorecard: scorecard, scoresOf: scoresOf, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, breakEvenOf: breakEvenOf, bindBreakEven: bindBreakEven, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);

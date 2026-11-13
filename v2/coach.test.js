@@ -408,6 +408,12 @@ test('קובץ שבור לא מפיל את הדף', async () => {
   w.fetch = saved;
 });
 
+test('break even: 2150 + צעדים × 0.035 פחות מה שנאכל', () => {
+  const be = Coach.breakEvenOf(926, 9600, 2150);
+  if (be.max !== 2486) throw new Error('max ' + be.max);
+  if (be.left !== 1560) throw new Error('left ' + be.left);
+});
+
 // jsdom מפעיל את init בעצמו, וזה חייב להסתיים לפני הבדיקה הראשונה
 const ready = new Promise((done) => setTimeout(done, 200));
 queue.reduce((chain, item) => chain.then(() => item.fn()).then(() => { passed++; },
