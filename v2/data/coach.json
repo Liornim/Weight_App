@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-13T19:40:00+02:00",
+  "updatedAt": "2026-11-13T20:55:00+02:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -2491,6 +2491,15 @@
           "avgHr": 104,
           "maxHr": 115,
           "deviceKcal": 322
+        },
+        {
+          "time": "20:41",
+          "km": 0.89,
+          "minutes": 12,
+          "seconds": 9,
+          "steps": 1031,
+          "avgHr": 93,
+          "deviceKcal": 71
         }
       ]
     }
