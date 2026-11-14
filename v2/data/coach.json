@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-14T23:16:00+02:00",
+  "updatedAt": "2026-11-14T23:21:00+02:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -2652,10 +2652,10 @@
         {
           "time": "ערב",
           "name": "פוקר: נשנושים ובירה",
-          "kcal": 556,
-          "proteinG": 13.7,
-          "carbG": 42.5,
-          "fatG": 27.6,
+          "kcal": 624,
+          "proteinG": 15.0,
+          "carbG": 50.5,
+          "fatG": 31.2,
           "items": [
             {
               "cat": "snacks",
@@ -2704,12 +2704,20 @@
               "proteinG": 1.5,
               "carbG": 11,
               "fatG": 0
+            },
+            {
+              "cat": "snacks",
+              "name": "5 יחידות במבה נוגט (~13 ג׳)",
+              "kcal": 68,
+              "proteinG": 1.3,
+              "carbG": 8,
+              "fatG": 3.6
             }
           ],
           "basis": "estimate",
           "basisNote": "לפי מספר יחידות. משקל ליחידה הוא ערך טיפוסי.",
-          "kcalLow": 521,
-          "kcalHigh": 611
+          "kcalLow": 584,
+          "kcalHigh": 684
         }
       ]
     }
