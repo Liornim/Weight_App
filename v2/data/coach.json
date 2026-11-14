@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-14T20:34:00+02:00",
+  "updatedAt": "2026-11-14T21:12:00+02:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -2651,11 +2651,11 @@
         },
         {
           "time": "ערב",
-          "name": "פוקר: נשנושים",
-          "kcal": 63,
-          "proteinG": 1.8,
-          "carbG": 5.4,
-          "fatG": 4,
+          "name": "פוקר: נשנושים ובירה",
+          "kcal": 247,
+          "proteinG": 4.2,
+          "carbG": 22.3,
+          "fatG": 5.7,
           "items": [
             {
               "cat": "snacks",
@@ -2688,12 +2688,36 @@
               "proteinG": 0.2,
               "carbG": 0.4,
               "fatG": 0.3
+            },
+            {
+              "cat": "snacks",
+              "name": "3 יחידות ביסלי בצל (~4.5 ג׳)",
+              "kcal": 22,
+              "proteinG": 0.5,
+              "carbG": 2.9,
+              "fatG": 1
+            },
+            {
+              "cat": "snacks",
+              "name": "סניידרס, יחידה אחת (~4 ג׳)",
+              "kcal": 20,
+              "proteinG": 0.4,
+              "carbG": 3,
+              "fatG": 0.7
+            },
+            {
+              "cat": "alcohol",
+              "name": "בירה גולדסטאר 330 מ״ל",
+              "kcal": 142,
+              "proteinG": 1.5,
+              "carbG": 11,
+              "fatG": 0
             }
           ],
           "basis": "estimate",
           "basisNote": "לפי מספר יחידות. משקל ליחידה הוא ערך טיפוסי.",
-          "kcalLow": 50,
-          "kcalHigh": 80
+          "kcalLow": 227,
+          "kcalHigh": 277
         }
       ]
     }
