@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-14T21:12:00+02:00",
+  "updatedAt": "2026-11-14T21:19:00+02:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -2652,18 +2652,18 @@
         {
           "time": "ערב",
           "name": "פוקר: נשנושים ובירה",
-          "kcal": 247,
-          "proteinG": 4.2,
-          "carbG": 22.3,
-          "fatG": 5.7,
+          "kcal": 284,
+          "proteinG": 4.9,
+          "carbG": 27.0,
+          "fatG": 7.5,
           "items": [
             {
               "cat": "snacks",
-              "name": "4 יחידות ביסלי בצל (~6 ג׳)",
-              "kcal": 29,
-              "proteinG": 0.6,
-              "carbG": 3.8,
-              "fatG": 1.4
+              "name": "12 יחידות ביסלי בצל (~18 ג׳)",
+              "kcal": 88,
+              "proteinG": 1.8,
+              "carbG": 11.4,
+              "fatG": 4.2
             },
             {
               "cat": "fat",
@@ -2691,14 +2691,6 @@
             },
             {
               "cat": "snacks",
-              "name": "3 יחידות ביסלי בצל (~4.5 ג׳)",
-              "kcal": 22,
-              "proteinG": 0.5,
-              "carbG": 2.9,
-              "fatG": 1
-            },
-            {
-              "cat": "snacks",
               "name": "סניידרס, יחידה אחת (~4 ג׳)",
               "kcal": 20,
               "proteinG": 0.4,
@@ -2716,8 +2708,8 @@
           ],
           "basis": "estimate",
           "basisNote": "לפי מספר יחידות. משקל ליחידה הוא ערך טיפוסי.",
-          "kcalLow": 227,
-          "kcalHigh": 277
+          "kcalLow": 259,
+          "kcalHigh": 319
         }
       ]
     }
