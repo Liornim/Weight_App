@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-14T17:10:00+02:00",
+  "updatedAt": "2026-11-14T20:34:00+02:00",
   "startDate": "2026-11-02",
   "entries": [
     {
@@ -2648,6 +2648,52 @@
           "basisNote": "המגש: ~718 ג׳ חזה עוף טחון (הערכה), 5 טורטיות חלבון, ביצה, 10 שפריצים, ~1,665 קק\"ל. 42 עיגולים.",
           "kcalLow": 490,
           "kcalHigh": 630
+        },
+        {
+          "time": "ערב",
+          "name": "פוקר: נשנושים",
+          "kcal": 63,
+          "proteinG": 1.8,
+          "carbG": 5.4,
+          "fatG": 4,
+          "items": [
+            {
+              "cat": "snacks",
+              "name": "4 יחידות ביסלי בצל (~6 ג׳)",
+              "kcal": 29,
+              "proteinG": 0.6,
+              "carbG": 3.8,
+              "fatG": 1.4
+            },
+            {
+              "cat": "fat",
+              "name": "3 בוטנים (~2 ג׳)",
+              "kcal": 12,
+              "proteinG": 0.5,
+              "carbG": 0.3,
+              "fatG": 1
+            },
+            {
+              "cat": "fat",
+              "name": "2 קשיו (~3 ג׳)",
+              "kcal": 17,
+              "proteinG": 0.5,
+              "carbG": 0.9,
+              "fatG": 1.3
+            },
+            {
+              "cat": "snacks",
+              "name": "יחידת במבה (~1 ג׳)",
+              "kcal": 5,
+              "proteinG": 0.2,
+              "carbG": 0.4,
+              "fatG": 0.3
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "לפי מספר יחידות. משקל ליחידה הוא ערך טיפוסי.",
+          "kcalLow": 50,
+          "kcalHigh": 80
         }
       ]
     }
