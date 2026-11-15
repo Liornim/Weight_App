@@ -471,6 +471,20 @@ test('מדדים: מסלול לפי הגירעון', () => {
   if (Math.abs(k.path.paceWk - 800 * 7 / 7700) > 1e-6) throw new Error('pace');
 });
 
+
+test('מדדים: חלון ממוצע של 7 ימים בתחזית', () => {
+  const rows = [];
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(Date.UTC(2026, 10, 1 + i)).toISOString().slice(0, 10);
+    rows.push({ date: d, weightKg: 90 - i * 0.1, kcal: i < 7 ? 2400 : 1800, steps: 10000 });
+  }
+  const cfg = { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 };
+  const k7 = Coach.kpiOf(rows, cfg, '2026-12-31', '2026-11-14', 85, null, 'deficit', '7');
+  if (Math.round(k7.fwd.def.avg) !== 800) throw new Error('7d avg ' + k7.fwd.def.avg);
+  const kS = Coach.kpiOf(rows, cfg, '2026-12-31', '2026-11-14', 85, null, 'deficit', 'start');
+  if (Math.round(kS.fwd.def.avg) !== 500) throw new Error('start avg ' + kS.fwd.def.avg);
+});
+
 // jsdom מפעיל את init בעצמו, וזה חייב להסתיים לפני הבדיקה הראשונה
 const ready = new Promise((done) => setTimeout(done, 200));
 queue.reduce((chain, item) => chain.then(() => item.fn()).then(() => { passed++; },
