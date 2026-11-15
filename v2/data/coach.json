@@ -2754,7 +2754,18 @@
     {
       "date": "2026-11-15",
       "weightKg": 87.8,
-      "meals": []
+      "meals": [],
+      "walks": [
+        {
+          "time": "09:18",
+          "km": 2.13,
+          "minutes": 33,
+          "seconds": 40,
+          "steps": 3131,
+          "avgHr": 100,
+          "deviceKcal": 199
+        }
+      ]
     }
   ],
   "summary": {
