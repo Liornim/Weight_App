@@ -1335,6 +1335,11 @@
   var GOAL_KG = 84;
   var KPI_GOAL_KEY = 'coach.goalKg';
   var KPI_START_KEY = 'coach.pathStart';
+  var KPI_MODE_KEY = 'coach.pathMode';
+
+  function kpiMode() {
+    try { return root.localStorage.getItem(KPI_MODE_KEY) === 'trend' ? 'trend' : 'deficit'; } catch (e) { return 'deficit'; }
+  }
 
   function kpiStart() {
     try { return root.localStorage.getItem(KPI_START_KEY) || null; } catch (e) { return null; }
@@ -1370,7 +1375,8 @@
     return { slope: slope, at: function (x) { return my + slope * (x - mx); } };
   }
 
-  function kpiOf(rows, cfg, targetDate, todayIso, goalKg, startDate) {
+  function kpiOf(rows, cfg, targetDate, todayIso, goalKg, startDate, mode) {
+    mode = mode === 'trend' ? 'trend' : 'deficit';
     var goal = typeof goalKg === 'number' ? goalKg : GOAL_KG;
     if (!cfg) return null;
     var closed = rows.filter(function (r) { return typeof r.kcal === 'number' && typeof r.steps === 'number'; });
@@ -1453,11 +1459,25 @@
         var startKg = near.reduce(function (a, r) { return a + r.weightKg; }, 0) / near.length;
         var perDayKg = (startKg - goal) / (s1 - s0);
         var pathAt = function (dn) { return startKg - perDayKg * (dn - s0); };
-        var ahead = pathAt(nowD) - out.nowKg;
+        // לפי הגירעון: משקל ההתחלה פחות הגירעון המצטבר ÷ 7,700, יום סגור אחרי יום
+        var model = [{ dn: s0, kg: startKg }], cum = 0;
+        closed.forEach(function (r) {
+          var dn = dayNum(r.date);
+          if (dn < s0) return;
+          cum += burn(r) - r.kcal;
+          model.push({ dn: dn + 1, kg: startKg - cum / KCAL_PER_KG });
+        });
+        var mLast = model[model.length - 1];
+        var useDef = mode === 'deficit';
+        var curD = useDef ? mLast.dn : nowD, curKg = useDef ? mLast.kg : out.nowKg;
+        var ahead = pathAt(curD) - curKg;
+        var paceWk = useDef ? (out.deficit || 0) * 7 / KCAL_PER_KG : (typeof out.weekKg === 'number' ? -out.weekKg : 0);
         out.path = {
-          start: firstW.date, startKg: startKg, startRaw: firstW.weightKg, startN: near.length, end: targetDate, goal: goal,
-          today: lastW.date, pathKg: pathAt(nowD), nowKg: out.nowKg, aheadKg: ahead,
-          aheadDays: perDayKg > 0 ? ahead / perDayKg : null,
+          mode: mode, start: firstW.date, startKg: startKg, startRaw: firstW.weightKg, startN: near.length, end: targetDate, goal: goal,
+          todayDn: curD, pathKg: pathAt(curD), nowKg: curKg, trendKg: out.nowKg, aheadKg: ahead,
+          aheadDays: perDayKg > 0 ? ahead / perDayKg : null, paceWk: paceWk,
+          needWk: (curKg - goal) / Math.max(1, s1 - curD) * 7,
+          model: model,
           weights: weighed.map(function (r) { return { date: r.date, kg: r.weightKg }; })
         };
       }
@@ -1471,7 +1491,7 @@
     var W = 340, H = 200, L = 34, R = 10, T = 10, B = 24;
     var d0 = dayNum(pt.start), d1 = dayNum(pt.end);
     var ws = pt.weights.filter(function (w) { var dn = dayNum(w.date); return dn >= d0 && dn <= d1; });
-    var kgs = ws.map(function (w) { return w.kg; }).concat([pt.startKg, pt.goal]);
+    var kgs = ws.map(function (w) { return w.kg; }).concat([pt.startKg, pt.goal, pt.nowKg]);
     var lo = Math.floor(Math.min.apply(null, kgs) - 0.5), hi = Math.ceil(Math.max.apply(null, kgs) + 0.5);
     var x = function (d) { return L + (d - d0) / (d1 - d0) * (W - L - R); };
     var y = function (k) { return T + (hi - k) / (hi - lo) * (H - T - B); };
@@ -1489,8 +1509,18 @@
     var dots = ws.map(function (w) {
       return '<circle class="kpi__dot" cx="' + x(dayNum(w.date)).toFixed(1) + '" cy="' + y(w.kg).toFixed(1) + '" r="2.6"/>';
     }).join('');
-    var nd = dayNum(pt.today);
-    var now = '<circle class="kpi__now kpi__now--' + (pt.aheadKg >= 0 ? 'good' : 'bad') + '" cx="' + x(nd).toFixed(1) + '" cy="' + y(pt.nowKg).toFixed(1) + '" r="5"/>';
+    var nd = pt.todayDn;
+    var modelLine = '';
+    if (pt.mode === 'deficit' && pt.model.length > 1) {
+      modelLine = '<path class="kpi__model" d="' + pt.model.filter(function (m) { return m.dn <= d1; }).map(function (m, i) {
+        return (i ? 'L' : 'M') + x(m.dn).toFixed(1) + ' ' + y(m.kg).toFixed(1);
+      }).join(' ') + '"/>';
+      if (pt.paceWk > 0 && nd < d1) {
+        var endKg = pt.nowKg - pt.paceWk / 7 * (d1 - nd);
+        modelLine += '<line class="kpi__proj" x1="' + x(nd).toFixed(1) + '" y1="' + y(pt.nowKg).toFixed(1) + '" x2="' + x(d1).toFixed(1) + '" y2="' + y(Math.max(endKg, lo)).toFixed(1) + '"/>';
+      }
+    }
+    var now = modelLine + '<circle class="kpi__now kpi__now--' + (pt.aheadKg >= 0 ? 'good' : 'bad') + '" cx="' + x(nd).toFixed(1) + '" cy="' + y(pt.nowKg).toFixed(1) + '" r="5"/>';
     var lab = function (d, anchor) { return '<text class="cumul__tick" x="' + x(d).toFixed(1) + '" y="' + (H - 6) + '" style="text-anchor:' + anchor + '">' + P.esc(root.Dates.short(new Date(d * 864e5).toISOString().slice(0, 10))) + '</text>'; };
     var ticksX = function () {
       var span = d1 - d0, step = Math.max(7, Math.ceil(span / 6 / 7) * 7), out = '';
@@ -1499,14 +1529,14 @@
           lab(d, d === d0 ? 'start' : 'middle');
       }
       out += '<line class="cumul__grid" x1="' + x(d1).toFixed(1) + '" x2="' + x(d1).toFixed(1) + '" y1="' + (H - B) + '" y2="' + (H - B + 4) + '"/>' + lab(d1, 'end');
-      var nd2 = dayNum(pt.today);
+      var nd2 = pt.todayDn;
       out += '<line class="kpi__todayline" x1="' + x(nd2).toFixed(1) + '" x2="' + x(nd2).toFixed(1) + '" y1="' + T + '" y2="' + (H - B) + '"/>';
       return out;
     };
     return '<svg class="cumul__chart" direction="ltr" style="direction:ltr" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="משקל מול מסלול היעד">' +
       grid + trips + plan + dots + now + ticksX() + '</svg>' +
       '<div class="cumul__legend"><span><i class="kpi__k kpi__k--path"></i>מסלול</span><span><i class="kpi__k kpi__k--dot"></i>שקילה</span>' +
-      '<span><i class="kpi__k kpi__k--now"></i>משקל המגמה היום</span><span><i class="kpi__k kpi__k--trip"></i>חו״ל</span></div>';
+      (pt.mode === 'deficit' ? '<span><i class="kpi__k kpi__k--model"></i>לפי הגירעון + המשך בקצב הנוכחי</span>' : '') + '<span><i class="kpi__k kpi__k--now"></i>' + (pt.mode === 'deficit' ? 'מיקום לפי הגירעון' : 'משקל המגמה היום') + '</span><span><i class="kpi__k kpi__k--trip"></i>חו״ל</span></div>';
   }
 
   function kpi() {
@@ -1517,7 +1547,7 @@
     var tdate = kpiTargetDate();
     var goalKg = kpiGoalKg();
     var startDate = kpiStart();
-    var k = kpiOf(rows, cfg, tdate, todayIso, goalKg, startDate);
+    var k = kpiOf(rows, cfg, tdate, todayIso, goalKg, startDate, kpiMode());
     if (!k || !k.days) return P.section('מדדים', P.card(null, null, P.empty('עוד אין ימים סגורים.')));
     var n = function (v, d) { return root.Fmt.n(Math.abs(v), d || 0); };
     var dash = '—';
@@ -1580,15 +1610,15 @@
     var t6 = '';
     if (k.path) {
       var pt = k.path, on = Math.abs(pt.aheadKg) < 0.05, good = pt.aheadKg >= 0;
-      var needWk = (pt.nowKg - pt.goal) / Math.max(1, dayNum(pt.end) - dayNum(pt.today)) * 7;
-      var paceLine = typeof k.weekKg === 'number'
-        ? '</small><small class="kpi__sub kpi__sub--' + (-k.weekKg >= needWk ? 'good' : 'bad') + '">מכאן והלאה צריך <bdi>' + n(needWk, 2) + '</bdi> ק״ג לשבוע. הקצב שלך במגמה: <bdi>' + n(-k.weekKg, 2) + '</bdi>' +
-          (-k.weekKg >= needWk ? ' — מספיק.' : ' — <b>איטי מדי</b>, ולכן התחזית למטה אחרי היעד.')
-        : '';
-      t6 = '<div class="kpi__path-card">' +
-        tile('6 · התקדמות מול מסלול היעד', on ? 'על' : (good ? '' : '−') + n(pt.aheadKg, 1), on ? ' המסלול בדיוק' : ' ק״ג ' + (good ? 'לפני המסלול' : 'אחרי המסלול'),
+      var needWk = pt.needWk, curName = pt.mode === 'deficit' ? 'לפי הגירעון' : 'המגמה';
+      var paceLine = '</small><small class="kpi__sub kpi__sub--' + (pt.paceWk >= needWk ? 'good' : 'bad') + '">מכאן והלאה צריך <bdi>' + n(needWk, 2) + '</bdi> ק״ג לשבוע. הקצב שלך ' + (pt.mode === 'deficit' ? 'לפי הגירעון' : 'במגמה') + ': <bdi>' + n(pt.paceWk, 2) + '</bdi>' +
+          (pt.paceWk >= needWk ? ' — מספיק.' : ' — <b>איטי מדי</b>.');
+      var modeBtns = '<div class="kpi__chips"><button type="button" class="kpi__chip" data-kpi-mode="deficit" aria-pressed="' + (pt.mode === 'deficit') + '">לפי הגירעון של 7 ימים</button>' +
+        '<button type="button" class="kpi__chip" data-kpi-mode="trend" aria-pressed="' + (pt.mode === 'trend') + '">לפי מגמת המשקל</button></div>';
+      t6 = '<div class="kpi__path-card">' + modeBtns +
+        tile('6 · התקדמות מול מסלול היעד', on ? '✓' : (good ? '' : '−') + n(pt.aheadKg, 1), on ? ' על המסלול בדיוק' : ' ק״ג ' + (good ? 'לפני המסלול' : 'אחרי המסלול'),
           '<small class="kpi__sub kpi__sub--' + (good ? 'good' : 'bad') + '">' + (on ? 'בדיוק בזמן' : pt.aheadDays !== null ? 'כ-' + n(pt.aheadDays) + ' ימים ' + (good ? 'לפני' : 'אחרי') : '') +
-          '. לפי המסלול היום: <bdi>' + n(pt.pathKg, 1) + '</bdi> ק״ג. המגמה: <bdi>' + n(pt.nowKg, 1) + '</bdi> ק״ג.' + paceLine + '</small>',
+          '. לפי המסלול: <bdi>' + n(pt.pathKg, 1) + '</bdi> ק״ג. ' + curName + ': <bdi>' + n(pt.nowKg, 1) + '</bdi> ק״ג' + (pt.mode === 'deficit' ? ' (המשקל במגמה: <bdi>' + n(pt.trendKg, 1) + '</bdi>)' : '') + '.' + paceLine + '</small>',
           'קו ישר מ-' + n(pt.startKg, 1) + ' (' + P.esc(root.Dates.short(pt.start)) + (pt.startN > 1 ? ', ממוצע ' + pt.startN + ' שקילות סביב התאריך' : '') + ') עד ' + n(pt.goal, 1) + ' (' + P.esc(root.Dates.short(pt.end)) + '). ' +
           (rows.length && dayNum(pt.start) < dayNum(rows[0].date) + 7 ? 'המסלול מתחיל בשבוע המים, ולכן חלק מהיתרון צפוי להצטמצם. ' : '') + 'בימי חו״ל צפויה עלייה זמנית.') +
         pathChart(pt) + startSel(rows, pt.start) + '</div>';
@@ -1639,6 +1669,12 @@
   }
 
   function bindKpi(view) {
+    view.querySelectorAll('[data-kpi-mode]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        try { root.localStorage.setItem(KPI_MODE_KEY, b.dataset.kpiMode); } catch (e) { /* בלי אחסון */ }
+        if (root.App && root.App.setState) root.App.setState({});
+      });
+    });
     view.querySelectorAll('[data-kpi-start]').forEach(function (el) {
       el.addEventListener('change', function () {
         try { root.localStorage.setItem(KPI_START_KEY, el.value); } catch (e) { /* בלי אחסון */ }

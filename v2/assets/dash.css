@@ -1474,3 +1474,6 @@ details.rx .body { padding: 0 18px 18px; }
 .kpi__eta-row span { opacity: .75; min-width: 140px; }
 .kpi__eta-row b { font-size: 20px; font-family: var(--mono); }
 .kpi__todayline { stroke: rgba(76,211,138,.5); stroke-width: 1; stroke-dasharray: 2 3; }
+.kpi__model { fill: none; stroke: #4cd38a; stroke-width: 2.2; }
+.kpi__proj { stroke: #4cd38a; stroke-width: 1.6; stroke-dasharray: 3 4; opacity: .8; }
+.kpi__k--model { border-top: 2px solid #4cd38a; height: 0; }

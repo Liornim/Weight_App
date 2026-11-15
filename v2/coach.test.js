@@ -437,7 +437,7 @@ test('מדדים: מסלול יעד מהשקילה הראשונה', () => {
     const d = new Date(Date.UTC(2026, 10, 1 + i)).toISOString().slice(0, 10);
     rows.push({ date: d, weightKg: 90 - i * 0.1, kcal: 1800, steps: 10000 });
   }
-  const k = Coach.kpiOf(rows, { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 }, '2026-12-31', '2026-11-14', 85);
+  const k = Coach.kpiOf(rows, { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 }, '2026-12-31', '2026-11-14', 85, null, 'trend');
   const start = (90 + 89.9 + 89.8 + 89.7) / 4;
   const per = (start - 85) / 60;
   const pathNow = start - per * 13;
@@ -456,6 +456,20 @@ test('מדדים: תאריך הגעה ליעד ותחילת מסלול לבחי�
   if (k.path.start !== '2026-11-05') throw new Error('start ' + k.path.start);
   if (Math.abs(k.eta.byTrend.days - (k.nowKg - 85) / 0.1) > 1) throw new Error('trend ' + k.eta.byTrend.days);
   if (k.eta.byDeficit.days !== Math.ceil((k.nowKg - 85) * 7700 / 800)) throw new Error('deficit ' + k.eta.byDeficit.days);
+});
+
+
+test('מדדים: מסלול לפי הגירעון', () => {
+  const rows = [];
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(Date.UTC(2026, 10, 1 + i)).toISOString().slice(0, 10);
+    rows.push({ date: d, weightKg: 90 - i * 0.1, kcal: 1800, steps: 10000 });
+  }
+  const k = Coach.kpiOf(rows, { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 }, '2026-12-31', '2026-11-14', 85, null, 'deficit');
+  const start = (90 + 89.9 + 89.8 + 89.7) / 4;
+  const exp = start - 14 * 800 / 7700;
+  if (Math.abs(k.path.nowKg - exp) > 1e-6) throw new Error('model ' + k.path.nowKg);
+  if (Math.abs(k.path.paceWk - 800 * 7 / 7700) > 1e-6) throw new Error('pace');
 });
 
 // jsdom מפעיל את init בעצמו, וזה חייב להסתיים לפני הבדיקה הראשונה
