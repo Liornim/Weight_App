@@ -1469,3 +1469,7 @@ details.rx .body { padding: 0 18px 18px; }
 .kpi__k--dot { background: rgba(255,255,255,.75); border-radius: 50%; width: 8px; height: 8px; }
 .kpi__k--now { background: #4cd38a; border-radius: 50%; }
 .kpi__k--trip { background: rgba(127,127,127,.35); }
+.kpi__eta { margin-top: 12px; }
+.kpi__eta-row { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; margin-top: 6px; font-size: 14px; }
+.kpi__eta-row span { opacity: .75; min-width: 140px; }
+.kpi__eta-row b { font-size: 20px; font-family: var(--mono); }

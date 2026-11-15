@@ -1334,6 +1334,11 @@
   var KPI_DEFAULT_DATE = '2027-01-31';
   var GOAL_KG = 84;
   var KPI_GOAL_KEY = 'coach.goalKg';
+  var KPI_START_KEY = 'coach.pathStart';
+
+  function kpiStart() {
+    try { return root.localStorage.getItem(KPI_START_KEY) || null; } catch (e) { return null; }
+  }
 
   function kpiGoalKg() {
     try {
@@ -1365,7 +1370,7 @@
     return { slope: slope, at: function (x) { return my + slope * (x - mx); } };
   }
 
-  function kpiOf(rows, cfg, targetDate, todayIso, goalKg) {
+  function kpiOf(rows, cfg, targetDate, todayIso, goalKg, startDate) {
     var goal = typeof goalKg === 'number' ? goalKg : GOAL_KG;
     if (!cfg) return null;
     var closed = rows.filter(function (r) { return typeof r.kcal === 'number' && typeof r.steps === 'number'; });
@@ -1428,7 +1433,18 @@
       out.target.stepsRef = stepsRef;
     }
     // התקדמות מול מסלול היעד: קו ישר מהשקילה הראשונה ועד היעד בתאריך
-    var firstW = weighed[0];
+    var firstW = (startDate && weighed.filter(function (r) { return r.date === startDate; })[0]) || weighed[0];
+    // מתי מגיעים ליעד בקצב הנוכחי: לפי מגמת המשקל, ולפי הגירעון של 7 הימים
+    if (typeof out.nowKg === 'number' && lastW) {
+      var left = out.nowKg - goal, base0 = dayNum(lastW.date);
+      var iso = function (dn) { return new Date(dn * 864e5).toISOString().slice(0, 10); };
+      out.eta = { kgLeft: left };
+      if (left <= 0) out.eta.done = true;
+      else {
+        if (out.weekKg < 0) { var dw = Math.ceil(left / (-out.weekKg / 7)); out.eta.byTrend = { days: dw, date: iso(base0 + dw) }; }
+        if (out.deficit > 0) { var dd = Math.ceil(left * KCAL_PER_KG / out.deficit); out.eta.byDeficit = { days: dd, date: iso(base0 + dd) }; }
+      }
+    }
     if (firstW && typeof out.nowKg === 'number') {
       var s0 = dayNum(firstW.date), s1 = dayNum(targetDate), nowD = dayNum(lastW.date);
       if (s1 > s0) {
@@ -1485,7 +1501,8 @@
     var todayIso = new Date().toISOString().slice(0, 10);
     var tdate = kpiTargetDate();
     var goalKg = kpiGoalKg();
-    var k = kpiOf(rows, cfg, tdate, todayIso, goalKg);
+    var startDate = kpiStart();
+    var k = kpiOf(rows, cfg, tdate, todayIso, goalKg, startDate);
     if (!k || !k.days) return P.section('מדדים', P.card(null, null, P.empty('עוד אין ימים סגורים.')));
     var n = function (v, d) { return root.Fmt.n(Math.abs(v), d || 0); };
     var dash = '—';
@@ -1553,11 +1570,21 @@
           '<small class="kpi__sub kpi__sub--' + (good ? 'good' : 'bad') + '">' + (pt.aheadDays !== null ? 'כ-' + n(pt.aheadDays) + ' ימים ' + (good ? 'לפני' : 'אחרי') : '') +
           '. לפי המסלול היום: <bdi>' + n(pt.pathKg, 1) + '</bdi> ק״ג. המגמה: <bdi>' + n(pt.nowKg, 1) + '</bdi> ק״ג.</small>',
           'קו ישר מ-' + n(pt.startKg, 1) + ' (' + P.esc(root.Dates.short(pt.start)) + ') עד ' + n(pt.goal, 1) + ' (' + P.esc(root.Dates.short(pt.end)) + '). ' +
-          'חלק מהיתרון הוא ירידת מים בשבוע הראשון, ולכן הוא צפוי להצטמצם. בימי חו״ל צפויה עלייה זמנית.') +
-        pathChart(pt) + '</div>';
+          (rows.length && dayNum(pt.start) < dayNum(rows[0].date) + 7 ? 'המסלול מתחיל בשבוע המים, ולכן חלק מהיתרון צפוי להצטמצם. ' : '') + 'בימי חו״ל צפויה עלייה זמנית.') +
+        pathChart(pt) + startSel(rows, pt.start) + '</div>';
+    }
+    var t7 = '';
+    if (k.eta) {
+      var E = k.eta, when = function (e) { return e ? '<b>' + P.esc(root.Dates.short(e.date)) + '</b> <small>(בעוד ' + e.days + ' ימים)</small>' : '<b>—</b>'; };
+      var late = function (e) { return e && dayNum(e.date) > dayNum(k.target.date) ? ' <small class="kpi__sub--bad">אחרי היעד</small>' : (e ? ' <small class="kpi__sub--good">לפני היעד</small>' : ''); };
+      t7 = '<div class="kpi__tile kpi__eta"><div class="kpi__title">7 · מתי אגיע ל-' + n(goalKg, 1) + ' בקצב הנוכחי</div>' +
+        (E.done ? '<div class="kpi__big"><b>הושג</b></div>' :
+          '<div class="kpi__eta-row"><span>לפי מגמת המשקל</span>' + when(E.byTrend) + late(E.byTrend) + '</div>' +
+          '<div class="kpi__eta-row"><span>לפי הגירעון של 7 ימים</span>' + when(E.byDeficit) + late(E.byDeficit) + '</div>') +
+        '<div class="kpi__note">נשארו ' + n(E.kgLeft || 0, 1) + ' ק״ג ממשקל המגמה. המגמה כוללת עדיין ירידת מים ולכן אופטימית; הגירעון לא כולל מים, והוא ההערכה השמרנית יותר. לא כולל חו״ל.</div></div>';
     }
     return '<section class="cumul kpi"><div class="cumul__row"><h2 class="cumul__title">מדדים שבועיים</h2></div>' +
-      '<div class="kpi__grid">' + t1 + t2 + t3 + t4 + t5 + '</div>' + t6 + target + '</section>';
+      '<div class="kpi__grid">' + t1 + t2 + t3 + t4 + t5 + '</div>' + t6 + t7 + target + '</section>';
   }
 
   /** בחירת תאריך בלי לוח שנה של הטלפון: יום, חודש, שנה וקיצורי דרך */
@@ -1584,7 +1611,20 @@
       '<div class="kpi__chips">' + chips + '</div>';
   }
 
+  function startSel(rows, cur) {
+    var opts = rows.filter(function (r) { return typeof r.weightKg === 'number'; }).map(function (r) {
+      return '<option value="' + r.date + '"' + (r.date === cur ? ' selected' : '') + '>' + P.esc(root.Dates.short(r.date)) + ' · ' + root.Fmt.n(r.weightKg, 1) + '</option>';
+    }).join('');
+    return '<div class="kpi__row"><span>תחילת המסלול:</span><select class="kpi__sel" data-kpi-start>' + opts + '</select></div>';
+  }
+
   function bindKpi(view) {
+    view.querySelectorAll('[data-kpi-start]').forEach(function (el) {
+      el.addEventListener('change', function () {
+        try { root.localStorage.setItem(KPI_START_KEY, el.value); } catch (e) { /* בלי אחסון */ }
+        if (root.App && root.App.setState) root.App.setState({});
+      });
+    });
     var save = function (iso) {
       try { root.localStorage.setItem(KPI_DATE_KEY, iso); } catch (e) { /* בלי אחסון */ }
       if (root.App && root.App.setState) root.App.setState({});
