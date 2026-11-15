@@ -1477,21 +1477,58 @@
         (T.perDay > 1100 ? '<b>קצב אגרסיבי מדי</b> — מעל 1% לשבוע בערך.' : '') + ' לא כולל את ימי חו״ל.</p>';
     }
     var target = '<div class="kpi__target"><div class="kpi__row"><h3 class="kpi__h">יעד ' + GOAL_KG + ' ק״ג עד</h3>' +
-      '<input type="date" class="kpi__date" data-kpi-date value="' + P.esc(tdate) + '" min="' + todayIso + '"></div>' + body + '</div>';
+      dateControls(tdate, todayIso) + '</div>' + body + '</div>';
 
     return '<section class="cumul kpi"><div class="cumul__row"><h2 class="cumul__title">מדדים שבועיים</h2></div>' +
       '<div class="kpi__grid">' + t1 + t2 + t3 + t4 + t5 + '</div>' + target + '</section>';
   }
 
+  /** בחירת תאריך בלי לוח שנה של הטלפון: יום, חודש, שנה וקיצורי דרך */
+  function dateControls(tdate, todayIso) {
+    var parts = tdate.split('-').map(Number);
+    var y0 = Number(todayIso.slice(0, 4));
+    var MONTHS = ['ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני', 'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר'];
+    var sel = function (name, opts, cur) {
+      return '<select class="kpi__sel" data-kpi-part="' + name + '">' + opts.map(function (o) {
+        return '<option value="' + o[0] + '"' + (o[0] === cur ? ' selected' : '') + '>' + o[1] + '</option>';
+      }).join('') + '</select>';
+    };
+    var days = [], months = [], years = [];
+    for (var d = 1; d <= 31; d++) days.push([d, String(d)]);
+    MONTHS.forEach(function (m, i) { months.push([i + 1, m]); });
+    for (var y = y0; y <= y0 + 2; y++) years.push([y, String(y)]);
+    if (parts[0] < y0 || parts[0] > y0 + 2) years.push([parts[0], String(parts[0])]);
+    var base = Date.parse(todayIso);
+    var chips = [4, 6, 8, 10, 12, 16].map(function (w) {
+      var iso = new Date(base + w * 7 * 864e5).toISOString().slice(0, 10);
+      return '<button type="button" class="kpi__chip" data-kpi-set="' + iso + '" aria-pressed="' + (iso === tdate) + '">' + w + ' שב׳</button>';
+    }).join('');
+    return '<div class="kpi__dates">' + sel('d', days, parts[2]) + sel('m', months, parts[1]) + sel('y', years, parts[0]) + '</div>' +
+      '<div class="kpi__chips">' + chips + '</div>';
+  }
+
   function bindKpi(view) {
-    view.querySelectorAll('[data-kpi-date]').forEach(function (input) {
-      input.addEventListener('change', function () {
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(input.value)) return;
-        try { root.localStorage.setItem(KPI_DATE_KEY, input.value); } catch (e) { /* בלי אחסון */ }
-        if (root.App && root.App.setState) root.App.setState({});
+    var save = function (iso) {
+      try { root.localStorage.setItem(KPI_DATE_KEY, iso); } catch (e) { /* בלי אחסון */ }
+      if (root.App && root.App.setState) root.App.setState({});
+    };
+    view.querySelectorAll('[data-kpi-set]').forEach(function (b) {
+      b.addEventListener('click', function () { save(b.dataset.kpiSet); });
+    });
+    var box = view.querySelector('.kpi__dates');
+    if (!box) return;
+    box.querySelectorAll('[data-kpi-part]').forEach(function (el) {
+      el.addEventListener('change', function () {
+        var get = function (k) { return Number(box.querySelector('[data-kpi-part="' + k + '"]').value); };
+        var y = get('y'), m = get('m'), d = get('d');
+        var last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+        d = Math.min(d, last);
+        var pad = function (v) { return (v < 10 ? '0' : '') + v; };
+        save(y + '-' + pad(m) + '-' + pad(d));
       });
     });
   }
+
 
   /**
    * ייצוא לאקסל: גיליון לכל טאב. הספרייה (SheetJS) נטענת רק בלחיצה,

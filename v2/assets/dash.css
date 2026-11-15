@@ -1453,3 +1453,9 @@ details.rx .body { padding: 0 18px 18px; }
 .kpi__row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .kpi__h { margin: 0; font-size: 16px; }
 .kpi__date { font: inherit; padding: 4px 8px; border-radius: 8px; border: 1px solid rgba(127,127,127,.4); background: transparent; color: inherit; }
+.kpi__dates { display: flex; gap: 6px; flex-wrap: wrap; }
+.kpi__sel { font: inherit; font-size: 15px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(127,127,127,.4); background: rgba(255,255,255,.06); color: inherit; }
+.kpi__sel option { color: #000; }
+.kpi__chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; width: 100%; }
+.kpi__chip { font: inherit; font-size: 13px; padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(127,127,127,.4); background: transparent; color: inherit; }
+.kpi__chip[aria-pressed="true"] { background: rgba(76,211,138,.2); border-color: #4cd38a; }
