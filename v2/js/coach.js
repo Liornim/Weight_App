@@ -1576,11 +1576,16 @@
 
     var t6 = '';
     if (k.path) {
-      var pt = k.path, good = pt.aheadKg >= 0;
+      var pt = k.path, on = Math.abs(pt.aheadKg) < 0.05, good = pt.aheadKg >= 0;
+      var needWk = (pt.nowKg - pt.goal) / Math.max(1, dayNum(pt.end) - dayNum(pt.today)) * 7;
+      var paceLine = typeof k.weekKg === 'number'
+        ? '<br>מכאן והלאה צריך <bdi>' + n(needWk, 2) + '</bdi> ק״ג לשבוע. הקצב שלך במגמה: <bdi>' + n(-k.weekKg, 2) + '</bdi>' +
+          (-k.weekKg >= needWk ? ' — מספיק.' : ' — <b>איטי מדי</b>, ולכן התחזית למטה אחרי היעד.')
+        : '';
       t6 = '<div class="kpi__path-card">' +
-        tile('6 · התקדמות מול מסלול היעד', (good ? '' : '−') + n(pt.aheadKg, 1), ' ק״ג ' + (good ? 'לפני המסלול' : 'אחרי המסלול'),
-          '<small class="kpi__sub kpi__sub--' + (good ? 'good' : 'bad') + '">' + (pt.aheadDays !== null ? 'כ-' + n(pt.aheadDays) + ' ימים ' + (good ? 'לפני' : 'אחרי') : '') +
-          '. לפי המסלול היום: <bdi>' + n(pt.pathKg, 1) + '</bdi> ק״ג. המגמה: <bdi>' + n(pt.nowKg, 1) + '</bdi> ק״ג.</small>',
+        tile('6 · התקדמות מול מסלול היעד', on ? 'על' : (good ? '' : '−') + n(pt.aheadKg, 1), on ? ' המסלול בדיוק' : ' ק״ג ' + (good ? 'לפני המסלול' : 'אחרי המסלול'),
+          '<small class="kpi__sub kpi__sub--' + (good ? 'good' : 'bad') + '">' + (on ? 'בדיוק בזמן' : pt.aheadDays !== null ? 'כ-' + n(pt.aheadDays) + ' ימים ' + (good ? 'לפני' : 'אחרי') : '') +
+          '. לפי המסלול היום: <bdi>' + n(pt.pathKg, 1) + '</bdi> ק״ג. המגמה: <bdi>' + n(pt.nowKg, 1) + '</bdi> ק״ג.' + paceLine + '</small>',
           'קו ישר מ-' + n(pt.startKg, 1) + ' (' + P.esc(root.Dates.short(pt.start)) + ') עד ' + n(pt.goal, 1) + ' (' + P.esc(root.Dates.short(pt.end)) + '). ' +
           (rows.length && dayNum(pt.start) < dayNum(rows[0].date) + 7 ? 'המסלול מתחיל בשבוע המים, ולכן חלק מהיתרון צפוי להצטמצם. ' : '') + 'בימי חו״ל צפויה עלייה זמנית.') +
         pathChart(pt) + startSel(rows, pt.start) + '</div>';
