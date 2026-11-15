@@ -2857,6 +2857,15 @@
           "steps": 3131,
           "avgHr": 100,
           "deviceKcal": 199
+        },
+        {
+          "time": "21:00",
+          "km": 1.17,
+          "minutes": 16,
+          "seconds": 45,
+          "steps": 1730,
+          "avgHr": 108,
+          "deviceKcal": 98
         }
       ],
       "kcal": 962,
