@@ -1517,7 +1517,7 @@
       out.fwd = {
         from: firstW.date, fromDn: f0, win: avgWin || '14', wFrom: wList.length ? wList[0].date : null, todayDn: fNow, nowKg: nowKg2, nowIsTrend: typeof out.nowKg === 'number', goal: goal, kgLeft: kgLeft2,
         targetDn: dayNum(targetDate), target: targetDate,
-        def: { perDay: defPerDay, avg: avgDef, days: since.length, eta: eta(defPerDay) },
+        def: { perDay: defPerDay, avg: avgDef, days: since.length, lastDate: since.length ? since[since.length - 1].date : null, eta: eta(defPerDay) },
         wt: { perDay: wtPerDay, n: wN, eta: wfit ? eta(wtPerDay) : null }
       };
     }
@@ -1724,7 +1724,13 @@
       [['14', '14 ימים אחרונים'], ['7', '7 ימים אחרונים'], ['start', 'מתאריך']].map(function (o) {
         return '<button type="button" class="kpi__chip" data-kpi-win="' + o[0] + '" aria-pressed="' + (winSel === o[0]) + '">' + o[1] + '</button>';
       }).join('') + '</div></div>' +
-      (winSel === 'start' ? '<div class="kpi__row" style="margin-top:8px"><span>מתאריך:</span>' + startSel(rows, fromD) + '</div>' : '') + '</div>';
+      (winSel === 'start' ? '<div class="kpi__row" style="margin-top:8px"><span>מתאריך:</span>' + startSel(rows, fromD) + '</div>' : '') +
+      (k.fwd && k.fwd.def.avg !== null ? (function () {
+        var iso = function (dn) { return new Date(dn * 864e5).toISOString().slice(0, 10); };
+        var a = k.fwd.def.avg;
+        return '<div class="kpi__avg"><b dir="ltr">' + n(a) + '</b> ' + (a >= 0 ? 'גירעון' : 'עודף') + ' ממוצע ליום' +
+          '<small> · ' + k.fwd.def.days + ' ימים סגורים, <bdi dir="ltr" style="white-space:nowrap">' + P.esc(root.Dates.short(iso(Math.max(k.fwd.fromDn, dayNum(rows[0].date))))) + ' – ' + P.esc(root.Dates.short(k.fwd.def.lastDate || iso(k.fwd.todayDn))) + '</bdi></small></div>';
+      })() : '') + '</div>';
     var target = '<div class="kpi__target"><div class="kpi__row"><h3 class="kpi__h">משקל יעד</h3>' + goalSel + '<span>ק״ג</span></div>' +
       '<div class="kpi__row" style="margin-top:8px"><h3 class="kpi__h">עד תאריך</h3>' +
       dateControls(tdate, todayIso) + '</div>' + body + '</div>';
