@@ -1333,6 +1333,15 @@
   var KPI_DATE_KEY = 'coach.targetDate';
   var KPI_DEFAULT_DATE = '2027-01-31';
   var GOAL_KG = 84;
+  var KPI_GOAL_KEY = 'coach.goalKg';
+
+  function kpiGoalKg() {
+    try {
+      var v = Number(root.localStorage.getItem(KPI_GOAL_KEY));
+      if (v >= 40 && v <= 200) return v;
+    } catch (e) { /* בלי אחסון */ }
+    return GOAL_KG;
+  }
 
   function kpiTargetDate() {
     try {
@@ -1356,7 +1365,8 @@
     return { slope: slope, at: function (x) { return my + slope * (x - mx); } };
   }
 
-  function kpiOf(rows, cfg, targetDate, todayIso) {
+  function kpiOf(rows, cfg, targetDate, todayIso, goalKg) {
+    var goal = typeof goalKg === 'number' ? goalKg : GOAL_KG;
     if (!cfg) return null;
     var closed = rows.filter(function (r) { return typeof r.kcal === 'number' && typeof r.steps === 'number'; });
     var burn = function (r) { return cfg.baseBurn + r.steps * cfg.kcalPerStep; };
@@ -1407,9 +1417,9 @@
     // יעד בתאריך
     var start = typeof out.nowKg === 'number' ? out.nowKg : (lastW ? lastW.weightKg : null);
     var daysLeft = dayNum(targetDate) - dayNum(todayIso);
-    out.target = { date: targetDate, daysLeft: daysLeft, goal: GOAL_KG, fromKg: start };
+    out.target = { date: targetDate, daysLeft: daysLeft, goal: goal, fromKg: start };
     if (start !== null && daysLeft > 0) {
-      var kgLeft = start - GOAL_KG;
+      var kgLeft = start - goal;
       out.target.kgLeft = kgLeft;
       out.target.perDay = kgLeft > 0 ? kgLeft * KCAL_PER_KG / daysLeft : 0;
       out.target.perWeekKg = kgLeft > 0 ? kgLeft / daysLeft * 7 : 0;
@@ -1426,7 +1436,8 @@
     var rows = state.rows || [];
     var todayIso = new Date().toISOString().slice(0, 10);
     var tdate = kpiTargetDate();
-    var k = kpiOf(rows, cfg, tdate, todayIso);
+    var goalKg = kpiGoalKg();
+    var k = kpiOf(rows, cfg, tdate, todayIso, goalKg);
     if (!k || !k.days) return P.section('מדדים', P.card(null, null, P.empty('עוד אין ימים סגורים.')));
     var n = function (v, d) { return root.Fmt.n(Math.abs(v), d || 0); };
     var dash = '—';
@@ -1476,7 +1487,14 @@
         '<p class="kpi__note">' + n(T.kgLeft, 1) + ' ק״ג מ-' + n(T.fromKg, 1) + ' (משקל המגמה) עד ' + T.goal + ', ב-' + T.daysLeft + ' ימים. ' +
         (T.perDay > 1100 ? '<b>קצב אגרסיבי מדי</b> — מעל 1% לשבוע בערך.' : '') + ' לא כולל את ימי חו״ל.</p>';
     }
-    var target = '<div class="kpi__target"><div class="kpi__row"><h3 class="kpi__h">יעד ' + GOAL_KG + ' ק״ג עד</h3>' +
+    var goalOpts = [];
+    for (var g = 700; g <= 950; g += 5) goalOpts.push(g / 10);
+    if (goalOpts.indexOf(goalKg) < 0) goalOpts.push(goalKg);
+    var goalSel = '<select class="kpi__sel" data-kpi-goal>' + goalOpts.map(function (v) {
+      return '<option value="' + v + '"' + (v === goalKg ? ' selected' : '') + '>' + root.Fmt.n(v, 1) + '</option>';
+    }).join('') + '</select>';
+    var target = '<div class="kpi__target"><div class="kpi__row"><h3 class="kpi__h">משקל יעד</h3>' + goalSel + '<span>ק״ג</span></div>' +
+      '<div class="kpi__row" style="margin-top:8px"><h3 class="kpi__h">עד תאריך</h3>' +
       dateControls(tdate, todayIso) + '</div>' + body + '</div>';
 
     return '<section class="cumul kpi"><div class="cumul__row"><h2 class="cumul__title">מדדים שבועיים</h2></div>' +
@@ -1514,6 +1532,12 @@
     };
     view.querySelectorAll('[data-kpi-set]').forEach(function (b) {
       b.addEventListener('click', function () { save(b.dataset.kpiSet); });
+    });
+    view.querySelectorAll('[data-kpi-goal]').forEach(function (el) {
+      el.addEventListener('change', function () {
+        try { root.localStorage.setItem(KPI_GOAL_KEY, String(Number(el.value))); } catch (e) { /* בלי אחסון */ }
+        if (root.App && root.App.setState) root.App.setState({});
+      });
     });
     var box = view.querySelector('.kpi__dates');
     if (!box) return;
