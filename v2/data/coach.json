@@ -2795,11 +2795,11 @@
         },
         {
           "time": "צהריים",
-          "name": "סלט טונה, קוטג׳ ויוגורט GO עם ירקות",
-          "kcal": 548,
-          "proteinG": 70.3,
-          "carbG": 38.4,
-          "fatG": 12.8,
+          "name": "סלט טונה, קוטג׳ ויוגורט GO עם ירקות ופרוסת לחם",
+          "kcal": 673,
+          "proteinG": 74.8,
+          "carbG": 61.4,
+          "fatG": 13.8,
           "items": [
             {
               "cat": "fish",
@@ -2832,12 +2832,20 @@
               "proteinG": 25,
               "carbG": 8.8,
               "fatG": 4
+            },
+            {
+              "cat": "carb",
+              "name": "פרוסת לחם מחמצת/חיטה מלאה (~45 ג׳, הערכה)",
+              "kcal": 125,
+              "proteinG": 4.5,
+              "carbG": 23,
+              "fatG": 1
             }
           ],
           "basis": "partial",
           "basisNote": "טונה וקוטג׳ לפי ערכים מקובלים לאריזה; ירקות לפי גודל ממוצע. בלי שמן.",
-          "kcalLow": 510,
-          "kcalHigh": 600
+          "kcalLow": 620,
+          "kcalHigh": 730
         }
       ],
       "walks": [
@@ -2851,10 +2859,10 @@
           "deviceKcal": 199
         }
       ],
-      "kcal": 837,
-      "proteinG": 112.0,
-      "carbG": 55.6,
-      "fatG": 18.4
+      "kcal": 962,
+      "proteinG": 116.5,
+      "carbG": 78.6,
+      "fatG": 19.4
     }
   ],
   "summary": {
