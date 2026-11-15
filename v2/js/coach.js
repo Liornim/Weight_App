@@ -1489,7 +1489,10 @@
       }
     }
     // תחזית קדימה מהיום: שני קצבים, שניהם ממוצע מהתאריך שנבחר ועד עכשיו
-    if (firstW && lastW && typeof out.nowKg === 'number') {
+    if (firstW && lastW) {
+      // משקל היום: המגמה, ואם אין עדיין מספיק שקילות — ממוצע 3 השקילות האחרונות
+      var nowKg2 = typeof out.nowKg === 'number' ? out.nowKg
+        : weighed.slice(-3).reduce(function (a, r) { return a + r.weightKg; }, 0) / Math.min(3, weighed.length);
       var fNow = dayNum(lastW.date);
       // חלון הממוצע: מהתאריך שנבחר, או 7/14 הימים האחרונים
       var winN = avgWin === '7' ? 7 : avgWin === 'start' ? null : 14;
@@ -1501,7 +1504,7 @@
       var wList = weighed.filter(function (r) { return dayNum(r.date) >= wf0; });
       var wfit = regress(wList.map(function (r) { return { x: dayNum(r.date), y: r.weightKg }; }));
       var wN = wList.length;
-      var kgLeft2 = out.nowKg - goal;
+      var kgLeft2 = nowKg2 - goal;
       var isoOf = function (dn) { return new Date(dn * 864e5).toISOString().slice(0, 10); };
       var eta = function (perDay) {
         if (kgLeft2 <= 0) return { done: true };
@@ -1512,7 +1515,7 @@
       var defPerDay = avgDef !== null ? avgDef / KCAL_PER_KG : null;
       var wtPerDay = wfit ? -wfit.slope : null;
       out.fwd = {
-        from: firstW.date, fromDn: f0, win: avgWin || '14', wFrom: wList.length ? wList[0].date : null, todayDn: fNow, nowKg: out.nowKg, goal: goal, kgLeft: kgLeft2,
+        from: firstW.date, fromDn: f0, win: avgWin || '14', wFrom: wList.length ? wList[0].date : null, todayDn: fNow, nowKg: nowKg2, nowIsTrend: typeof out.nowKg === 'number', goal: goal, kgLeft: kgLeft2,
         targetDn: dayNum(targetDate), target: targetDate,
         def: { perDay: defPerDay, avg: avgDef, days: since.length, eta: eta(defPerDay) },
         wt: { perDay: wtPerDay, n: wN, eta: wfit ? eta(wtPerDay) : null }
@@ -1737,7 +1740,7 @@
         return '<div class="kpi__eta-row"><i class="kpi__k ' + cls + '"></i><span>' + title + '</span><b>' + when + '</b>' + tag + '</div>' +
           '<div class="kpi__note">' + pace + ' · ' + sub + '</div>';
       };
-      t6 = '<div class="kpi__tile kpi__eta' + (asOf ? ' kpi__eta--past' : '') + '"><div class="kpi__title">6 · מתי אגיע ל-' + n(F.goal, 1) + ' (' + (asOf ? 'נכון לסוף ' + P.esc(root.Dates.short(asOf)) : 'מהיום') + ', ' + n(F.nowKg, 1) + ' ק״ג במגמה)</div>' +
+      t6 = '<div class="kpi__tile kpi__eta' + (asOf ? ' kpi__eta--past' : '') + '"><div class="kpi__title">6 · מתי אגיע ל-' + n(F.goal, 1) + ' (' + (asOf ? 'נכון לסוף ' + P.esc(root.Dates.short(asOf)) : 'מהיום') + ', ' + n(F.nowKg, 1) + ' ק״ג ' + (F.nowIsTrend ? 'במגמה' : 'בממוצע 3 שקילות') + ')</div>' +
         '<div class="kpi__row"><span>מצב נכון ל:</span>' + asOfSel + '</div>' +
         row('לפי הגירעון', F.def.eta, F.def.perDay !== null ? n(F.def.perDay * 7, 2) + ' ק״ג לשבוע' : '—',
           'ממוצע ' + (F.def.avg !== null ? n(F.def.avg) : '—') + ' גירעון ליום ב-' + F.def.days + ' ימים סגורים', 'kpi__k--def') +
@@ -1750,6 +1753,11 @@
           }).join('') + '</div></div>' +
         (F.win === 'start' ? '<div class="kpi__row"><span>מתאריך:</span>' + startSel(rows, F.from) + '</div>' : '') +
         '<div class="kpi__note">שני הקצבים הם ממוצע על החלון שבחרת, וממשיכים קדימה מהמשקל של היום. בקצב המשקל לא נכלל השבוע הראשון (מים). לא כולל חו״ל ולא האטה.</div></div>';
+    }
+    if (!t6) {
+      t6 = '<div class="kpi__tile kpi__eta' + (asOf ? ' kpi__eta--past' : '') + '"><div class="kpi__title">6 · מתי אגיע ל-' + n(goalKg, 1) + '</div>' +
+        '<div class="kpi__row"><span>מצב נכון ל:</span>' + asOfSel + '</div>' +
+        '<div class="kpi__note">אין מספיק נתונים לתאריך הזה. בחר תאריך מאוחר יותר.</div></div>';
     }
     var t7 = '';
     return '<section class="cumul kpi"><div class="cumul__row"><h2 class="cumul__title">מדדים שבועיים</h2></div>' +
