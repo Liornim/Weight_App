@@ -1494,3 +1494,5 @@ details.rx .body { padding: 0 18px 18px; }
 .kpi__table td.n { font-family: var(--mono); white-space: nowrap; }
 .kpi__ch { font-size: 12px; } .kpi__ch--good { color: #4cd38a; } .kpi__ch--bad { color: #ff7a6b; }
 .kpi__eta--past { border-color: #f5c26b; }
+.kpi__win { margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(127,127,127,.25); }
+.kpi__win + .kpi__target { border-top: 0; margin-top: 12px; padding-top: 0; }

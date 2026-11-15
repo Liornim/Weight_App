@@ -1719,6 +1719,12 @@
     var goalSel = '<select class="kpi__sel" data-kpi-goal>' + goalOpts.map(function (v) {
       return '<option value="' + v + '"' + (v === goalKg ? ' selected' : '') + '>' + root.Fmt.n(v, 1) + '</option>';
     }).join('') + '</select>';
+    var fromD = k.fwd ? k.fwd.from : (startDate || (rows[0] && rows[0].date));
+    var winCtl = '<div class="kpi__win"><div class="kpi__row"><h3 class="kpi__h">ממוצע של</h3><div class="kpi__chips" style="margin:0;width:auto">' +
+      [['14', '14 ימים אחרונים'], ['7', '7 ימים אחרונים'], ['start', 'מתאריך']].map(function (o) {
+        return '<button type="button" class="kpi__chip" data-kpi-win="' + o[0] + '" aria-pressed="' + (winSel === o[0]) + '">' + o[1] + '</button>';
+      }).join('') + '</div></div>' +
+      (winSel === 'start' ? '<div class="kpi__row" style="margin-top:8px"><span>מתאריך:</span>' + startSel(rows, fromD) + '</div>' : '') + '</div>';
     var target = '<div class="kpi__target"><div class="kpi__row"><h3 class="kpi__h">משקל יעד</h3>' + goalSel + '<span>ק״ג</span></div>' +
       '<div class="kpi__row" style="margin-top:8px"><h3 class="kpi__h">עד תאריך</h3>' +
       dateControls(tdate, todayIso) + '</div>' + body + '</div>';
@@ -1747,11 +1753,6 @@
         row('לפי המשקל בפועל', F.wt.eta, F.wt.perDay !== null ? n(F.wt.perDay * 7, 2) + ' ק״ג לשבוע' : '—',
           'מגמת ' + F.wt.n + ' שקילות' + (F.wFrom ? ' מ-' + P.esc(root.Dates.short(F.wFrom)) : ''), 'kpi__k--wt') +
         fwdChart(F) +
-        '<div class="kpi__row"><span>ממוצע של:</span><div class="kpi__chips" style="margin:0;width:auto">' +
-          [['14', '14 ימים אחרונים'], ['7', '7 ימים אחרונים'], ['start', 'מתאריך']].map(function (o) {
-            return '<button type="button" class="kpi__chip" data-kpi-win="' + o[0] + '" aria-pressed="' + (F.win === o[0]) + '">' + o[1] + '</button>';
-          }).join('') + '</div></div>' +
-        (F.win === 'start' ? '<div class="kpi__row"><span>מתאריך:</span>' + startSel(rows, F.from) + '</div>' : '') +
         '<div class="kpi__note">שני הקצבים הם ממוצע על החלון שבחרת, וממשיכים קדימה מהמשקל של היום. בקצב המשקל לא נכלל השבוע הראשון (מים). לא כולל חו״ל ולא האטה.</div></div>';
     }
     if (!t6) {
@@ -1761,7 +1762,7 @@
     }
     var t7 = '';
     return '<section class="cumul kpi"><div class="cumul__row"><h2 class="cumul__title">מדדים שבועיים</h2></div>' +
-      '<div class="kpi__grid">' + t1 + t2 + t3 + t4 + t5 + '</div>' + target + t6 + t7 + '</section>';
+      '<div class="kpi__grid">' + t1 + t2 + t3 + t4 + t5 + '</div>' + winCtl + target + t6 + t7 + '</section>';
   }
 
   /** בחירת תאריך בלי לוח שנה של הטלפון: יום, חודש, שנה וקיצורי דרך */
