@@ -1502,6 +1502,12 @@
       // במשקל: השבוע הראשון של המעקב הוא מים, ולכן לא נכנס לקצב
       var wf0 = Math.max(f0, rows.length ? dayNum(rows[0].date) + 7 : f0);
       var wList = weighed.filter(function (r) { return dayNum(r.date) >= wf0; });
+      var wWater = false;
+      // אם אחרי שבוע המים אין עדיין 3 שקילות, לוקחים את כל החלון (כולל מים) ומסמנים
+      if (wList.length < 3) {
+        var wAll = weighed.filter(function (r) { return dayNum(r.date) >= f0; });
+        if (wAll.length >= 3) { wList = wAll; wWater = true; }
+      }
       var wfit = regress(wList.map(function (r) { return { x: dayNum(r.date), y: r.weightKg }; }));
       var wN = wList.length;
       var kgLeft2 = nowKg2 - goal;
@@ -1518,7 +1524,7 @@
         from: firstW.date, fromDn: f0, win: avgWin || '14', wFrom: wList.length ? wList[0].date : null, todayDn: fNow, nowKg: nowKg2, nowIsTrend: typeof out.nowKg === 'number', goal: goal, kgLeft: kgLeft2,
         targetDn: dayNum(targetDate), target: targetDate,
         def: { perDay: defPerDay, avg: avgDef, days: since.length, lastDate: since.length ? since[since.length - 1].date : null, eta: eta(defPerDay) },
-        wt: { perDay: wtPerDay, n: wN, eta: wfit ? eta(wtPerDay) : null }
+        wt: { perDay: wtPerDay, n: wN, water: wWater, eta: wfit ? eta(wtPerDay) : null }
       };
     }
     return out;
@@ -1598,9 +1604,9 @@
     var tgt = f.targetDn <= d1 ? '<line class="kpi__target-line" x1="' + x(f.targetDn).toFixed(1) + '" x2="' + x(f.targetDn).toFixed(1) + '" y1="' + T + '" y2="' + (H - B) + '"/>' +
       '<text class="kpi__lbl" x="' + (x(f.targetDn) - 3).toFixed(1) + '" y="' + (T + 10) + '" style="text-anchor:end">יעד</text>' : '';
     var line = function (e, perDay, cls) {
-      if (!e || !(perDay > 0)) return '';
+      if (!e || perDay === null || isNaN(perDay)) return '';
       var endD = e.dn ? Math.min(e.dn, d1) : d1;
-      var endKg = f.nowKg - perDay * (endD - d0);
+      var endKg = Math.max(lo, Math.min(hi, f.nowKg - perDay * (endD - d0)));
       return '<line class="' + cls + '" x1="' + x(d0).toFixed(1) + '" y1="' + y(f.nowKg).toFixed(1) + '" x2="' + x(endD).toFixed(1) + '" y2="' + y(endKg).toFixed(1) + '"/>' +
         (e.dn && e.dn <= d1 ? '<circle class="' + cls + '-end" cx="' + x(e.dn).toFixed(1) + '" cy="' + y(f.goal).toFixed(1) + '" r="4"/>' : '');
     };
@@ -1628,7 +1634,7 @@
       var k = kpiOf(upto, cfg, targetDate, r.date, goalKg, startDate, 'deficit', avgWin);
       if (!k || !k.fwd) return;
       out.push({ date: r.date, def: k.fwd.def.eta, wt: k.fwd.wt.eta, kg: k.fwd.nowKg, avg: k.fwd.def.avg,
-        wtWk: k.fwd.wt.perDay !== null ? k.fwd.wt.perDay * 7 : null, defWk: k.fwd.def.perDay !== null ? k.fwd.def.perDay * 7 : null });
+        wtWk: k.fwd.wt.perDay !== null ? k.fwd.wt.perDay * 7 : null, water: k.fwd.wt.water, defWk: k.fwd.def.perDay !== null ? k.fwd.def.perDay * 7 : null });
     });
     out.forEach(function (h, i) {
       var p = out[i - 1];
@@ -1648,27 +1654,33 @@
     };
     var body = list.map(function (h) {
       return '<tr><td>' + P.esc(root.Dates.short(h.date)) + '</td><td class="n"><b>' + d(h.def) + '</b></td>' + ch(h.dDef) +
-        '<td class="n">' + d(h.wt) + '</td>' + ch(h.dWt) + '</tr>';
+        '<td class="n">' + d(h.wt) + (h.water && h.wt ? '*' : '') + '</td>' + ch(h.dWt) + '</tr>';
     }).join('');
     return '<div class="kpi__hist"><div class="kpi__title">איך התחזית השתנתה מיום ליום</div>' +
       '<table class="kpi__table"><thead><tr><th>בסוף יום</th><th>לפי גירעון</th><th>שינוי</th><th>לפי משקל</th><th>שינוי</th></tr></thead><tbody>' + body + '</tbody></table>' +
       '<div class="kpi__note">כל שורה = התחזית לפי מה שהיה ידוע בסוף אותו יום. ירוק = התקרבת, אדום = התרחקת. מחושב מחדש לפי היעד והתאריך שבחרת עכשיו.</div></div>';
   }
 
+  /** תאריך קצר, ועם שנה כשהיא לא השנה של היום */
+  function shortY(iso) {
+    var y = iso.slice(2, 4), cur = new Date().toISOString().slice(2, 4);
+    return root.Dates.short(iso) + (y !== cur ? '/' + y : '');
+  }
+
   function historyTable(list) {
     if (!list.length) return '';
     var n = function (v, d) { return root.Fmt.n(Math.abs(v), d || 0); };
-    var d = function (e) { return !e ? '—' : e.done ? 'הושג' : e.never ? '—' : P.esc(root.Dates.short(e.date)); };
+    var d = function (e) { return !e ? '—' : e.done ? 'הושג' : e.never ? '—' : P.esc(shortY(e.date)); };
     var body = list.map(function (h) {
       return '<tr><td>' + P.esc(root.Dates.short(h.date)) + '</td>' +
         '<td class="n">' + (h.avg === null ? '—' : h.avg < 0 ? '<bdi dir="ltr" class="kpi__ch--bad">+' + n(h.avg) + '</bdi> עודף' : n(h.avg)) + '</td>' +
         '<td class="n"><b>' + d(h.def) + '</b></td>' +
         '<td class="n">' + d(h.wt) + '</td>' +
-        '<td class="n">' + (h.wtWk === null ? '—' : h.wtWk < 0 ? '<bdi dir="ltr">+' + n(h.wtWk, 2) + '</bdi>' : n(h.wtWk, 2)) + '</td></tr>';
+        '<td class="n">' + (h.wtWk === null ? '—' : (h.wtWk < 0 ? '<bdi dir="ltr">+' + n(h.wtWk, 2) + '</bdi>' : n(h.wtWk, 2)) + (h.water ? '*' : '')) + '</td></tr>';
     }).join('');
     return '<div class="kpi__hist"><div class="kpi__title">היסטוריה</div>' +
       '<table class="kpi__table"><thead><tr><th>מצב נכון ל</th><th>גירעון ממוצע</th><th>לפי גירעון</th><th>לפי משקל</th><th>ק״ג לשבוע</th></tr></thead><tbody>' + body + '</tbody></table>' +
-      '<div class="kpi__note">כל שורה מחושבת לפי מה שהיה ידוע בסוף אותו יום, עם היעד והממוצע שבחרת למעלה. ק״ג לשבוע = הירידה בפועל במשקל.</div></div>';
+      '<div class="kpi__note">כל שורה מחושבת לפי מה שהיה ידוע בסוף אותו יום, עם היעד והממוצע שבחרת למעלה. ק״ג לשבוע = הירידה בפועל במשקל. * = כולל את שבוע המים הראשון, ולכן מנופח.</div></div>';
   }
 
   function kpi() {
@@ -1764,7 +1776,7 @@
     if (kF && kF.fwd) {
       var F = kF.fwd;
       var row = function (title, e, pace, sub, cls) {
-        var when = !e ? '—' : e.done ? 'הושג' : e.never ? 'לא בקצב הזה' : P.esc(root.Dates.short(e.date));
+        var when = !e ? '—' : e.done ? 'הושג' : e.never ? 'לא בקצב הזה' : P.esc(shortY(e.date));
         var tag = e && e.dn ? (e.dn <= F.targetDn ? '<span class="kpi__tag kpi__tag--good">לפני היעד ב-' + (F.targetDn - e.dn) + ' ימים</span>' : '<span class="kpi__tag kpi__tag--bad">אחרי היעד ב-' + (e.dn - F.targetDn) + ' ימים</span>') : '';
         return '<div class="kpi__eta-row"><i class="kpi__k ' + cls + '"></i><span>' + title + '</span><b>' + when + '</b>' + tag + '</div>' +
           '<div class="kpi__note">' + pace + ' · ' + sub + '</div>';
@@ -1774,7 +1786,7 @@
         row('לפי הגירעון', F.def.eta, F.def.perDay !== null ? n(F.def.perDay * 7, 2) + ' ק״ג לשבוע' : '—',
           'ממוצע ' + (F.def.avg !== null ? n(F.def.avg) : '—') + ' גירעון ליום ב-' + F.def.days + ' ימים סגורים', 'kpi__k--def') +
         row('לפי המשקל בפועל', F.wt.eta, F.wt.perDay !== null ? n(F.wt.perDay * 7, 2) + ' ק״ג לשבוע' : '—',
-          'מגמת ' + F.wt.n + ' שקילות' + (F.wFrom ? ' מ-' + P.esc(root.Dates.short(F.wFrom)) : ''), 'kpi__k--wt') +
+          'מגמת ' + F.wt.n + ' שקילות' + (F.wFrom ? ' מ-' + P.esc(root.Dates.short(F.wFrom)) : '') + (F.wt.water ? ' · <b>כולל שבוע המים</b>, מנופח' : ''), 'kpi__k--wt') +
         fwdChart(F) +
         '<div class="kpi__note">שני הקצבים הם ממוצע על החלון שבחרת, וממשיכים קדימה מהמשקל של היום. בקצב המשקל לא נכלל השבוע הראשון (מים). לא כולל חו״ל ולא האטה.</div></div>';
     }
