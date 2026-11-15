@@ -2732,6 +2732,15 @@
       },
       "walks": [
         {
+          "time": "16:53",
+          "km": 0.93,
+          "minutes": 14,
+          "seconds": 31,
+          "steps": 1461,
+          "avgHr": 100,
+          "deviceKcal": 86
+        },
+        {
           "time": "20:30",
           "km": 1.1,
           "minutes": 17,
