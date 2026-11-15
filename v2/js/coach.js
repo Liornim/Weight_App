@@ -1488,8 +1488,19 @@
     var nd = dayNum(pt.today);
     var now = '<circle class="kpi__now kpi__now--' + (pt.aheadKg >= 0 ? 'good' : 'bad') + '" cx="' + x(nd).toFixed(1) + '" cy="' + y(pt.nowKg).toFixed(1) + '" r="5"/>';
     var lab = function (d, anchor) { return '<text class="cumul__tick" x="' + x(d).toFixed(1) + '" y="' + (H - 6) + '" style="text-anchor:' + anchor + '">' + P.esc(root.Dates.short(new Date(d * 864e5).toISOString().slice(0, 10))) + '</text>'; };
+    var ticksX = function () {
+      var span = d1 - d0, step = Math.max(7, Math.ceil(span / 6 / 7) * 7), out = '';
+      for (var d = d0; d <= d1 - step * 0.5; d += step) {
+        out += '<line class="cumul__grid" x1="' + x(d).toFixed(1) + '" x2="' + x(d).toFixed(1) + '" y1="' + (H - B) + '" y2="' + (H - B + 4) + '"/>' +
+          lab(d, d === d0 ? 'start' : 'middle');
+      }
+      out += '<line class="cumul__grid" x1="' + x(d1).toFixed(1) + '" x2="' + x(d1).toFixed(1) + '" y1="' + (H - B) + '" y2="' + (H - B + 4) + '"/>' + lab(d1, 'end');
+      var nd2 = dayNum(pt.today);
+      out += '<line class="kpi__todayline" x1="' + x(nd2).toFixed(1) + '" x2="' + x(nd2).toFixed(1) + '" y1="' + T + '" y2="' + (H - B) + '"/>';
+      return out;
+    };
     return '<svg class="cumul__chart" direction="ltr" style="direction:ltr" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="משקל מול מסלול היעד">' +
-      grid + trips + plan + dots + now + lab(d0, 'start') + lab(d1, 'end') + '</svg>' +
+      grid + trips + plan + dots + now + ticksX() + '</svg>' +
       '<div class="cumul__legend"><span><i class="kpi__k kpi__k--path"></i>מסלול</span><span><i class="kpi__k kpi__k--dot"></i>שקילה</span>' +
       '<span><i class="kpi__k kpi__k--now"></i>משקל המגמה היום</span><span><i class="kpi__k kpi__k--trip"></i>חו״ל</span></div>';
   }
