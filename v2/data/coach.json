@@ -2758,10 +2758,10 @@
         {
           "time": "בוקר",
           "name": "יוגורט GO טבעי, פסטרמה ומלפפונים",
-          "kcal": 311,
-          "proteinG": 45.5,
-          "carbG": 17.8,
-          "fatG": 6,
+          "kcal": 289,
+          "proteinG": 41.7,
+          "carbG": 17.2,
+          "fatG": 5.6,
           "items": [
             {
               "cat": "dairy",
@@ -2773,11 +2773,11 @@
             },
             {
               "cat": "meat",
-              "name": "פרוסות פסטרמה/חזה הודו, ~5 פרוסות (~100 ג׳, הערכה)",
-              "kcal": 110,
-              "proteinG": 19,
-              "carbG": 3,
-              "fatG": 2
+              "name": "4 פרוסות פסטרמה (~80 ג׳)",
+              "kcal": 88,
+              "proteinG": 15.2,
+              "carbG": 2.4,
+              "fatG": 1.6
             },
             {
               "cat": "veg",
@@ -2789,9 +2789,9 @@
             }
           ],
           "basis": "partial",
-          "basisNote": "יוגורט לפי תווית. כמות הפסטרמה לפי התמונה, הערכה.",
-          "kcalLow": 285,
-          "kcalHigh": 350
+          "basisNote": "יוגורט לפי תווית. 4 פרוסות פסטרמה, ~20 ג׳ לפרוסה (הערכה).",
+          "kcalLow": 270,
+          "kcalHigh": 320
         }
       ],
       "walks": [
@@ -2805,10 +2805,10 @@
           "deviceKcal": 199
         }
       ],
-      "kcal": 311,
-      "proteinG": 45.5,
-      "carbG": 17.8,
-      "fatG": 6
+      "kcal": 289,
+      "proteinG": 41.7,
+      "carbG": 17.2,
+      "fatG": 5.6
     }
   ],
   "summary": {
