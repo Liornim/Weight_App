@@ -438,8 +438,9 @@ test('מדדים: מסלול יעד מהשקילה הראשונה', () => {
     rows.push({ date: d, weightKg: 90 - i * 0.1, kcal: 1800, steps: 10000 });
   }
   const k = Coach.kpiOf(rows, { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 }, '2026-12-31', '2026-11-14', 85);
-  const per = 5 / 60;
-  const pathNow = 90 - per * 13;
+  const start = (90 + 89.9 + 89.8 + 89.7) / 4;
+  const per = (start - 85) / 60;
+  const pathNow = start - per * 13;
   if (Math.abs(k.path.pathKg - pathNow) > 1e-6) throw new Error('path ' + k.path.pathKg);
   if (Math.abs(k.path.aheadKg - (pathNow - k.nowKg)) > 1e-6) throw new Error('ahead');
 });
