@@ -1439,7 +1439,7 @@
       out.target.kgLeft = kgLeft;
       out.target.perDay = kgLeft > 0 ? kgLeft * KCAL_PER_KG / daysLeft : 0;
       out.target.perWeekKg = kgLeft > 0 ? kgLeft / daysLeft * 7 : 0;
-      var stepsRef = out.steps || 0;
+      var stepsRef = 10000; // הנחה שמרנית קבועה, לא הממוצע בפועל
       out.target.kcal = cfg.baseBurn + stepsRef * cfg.kcalPerStep - out.target.perDay;
       out.target.stepsRef = stepsRef;
     }
@@ -1708,7 +1708,7 @@
       body = '<div class="kpi__grid kpi__grid--3">' +
         tile('גירעון נדרש', n(T.perDay), ' ליום', '<small class="kpi__sub kpi__sub--' + (gap >= 0 ? 'good' : 'bad') + '">בפועל ב-7 ימים: ' + n(k.deficit) + ' (' + (gap >= 0 ? 'מעל ב-' : 'חסר ') + n(gap) + ')</small>', '') +
         tile('קצב נדרש', n(T.perWeekKg, 2), ' ק״ג לשבוע', '<small class="kpi__sub">' + n(T.perWeekKg / T.fromKg * 100, 2) + '% לשבוע</small>', '') +
-        tile('קלוריות ליום', n(T.kcal), ' קק״ל', '<small class="kpi__sub">בהנחת ' + n(T.stepsRef) + ' צעדים (ממוצע 7 ימים)</small>', '') +
+        tile('קלוריות ליום', n(T.kcal), ' קק״ל', '<small class="kpi__sub">בהנחה של ' + n(T.stepsRef) + ' צעדים ביום</small>', '') +
         '</div>' +
         '<p class="kpi__note">' + n(T.kgLeft, 1) + ' ק״ג מ-' + n(T.fromKg, 1) + ' (משקל המגמה) עד ' + T.goal + ', ב-' + T.daysLeft + ' ימים. ' +
         (T.perDay > 1100 ? '<b>קצב אגרסיבי מדי</b> — מעל 1% לשבוע בערך.' : '') + ' לא כולל את ימי חו״ל.</p>';
