@@ -1601,6 +1601,45 @@
       '<span><i class="kpi__k kpi__k--goal"></i>משקל יעד</span><span><i class="kpi__k kpi__k--trip"></i>חו״ל</span></div>';
   }
 
+  /**
+   * היסטוריית התחזית: לכל יום סגור, מתי הייתי מגיע ליעד לפי מה שהיה ידוע
+   * בסוף אותו יום. מחושב מחדש מהנתונים, ולכן לא צריך לשמור כלום.
+   */
+  function etaHistory(rows, cfg, targetDate, goalKg, startDate, limit) {
+    var closedRows = rows.filter(function (r) { return typeof r.kcal === 'number' && typeof r.steps === 'number'; });
+    var out = [];
+    closedRows.forEach(function (r) {
+      if (startDate && r.date < startDate) return;
+      var upto = rows.filter(function (x) { return x.date <= r.date; });
+      var k = kpiOf(upto, cfg, targetDate, r.date, goalKg, startDate, 'deficit');
+      if (!k || !k.fwd) return;
+      out.push({ date: r.date, def: k.fwd.def.eta, wt: k.fwd.wt.eta, kg: k.fwd.nowKg });
+    });
+    out.forEach(function (h, i) {
+      var p = out[i - 1];
+      h.dDef = p && p.def && h.def && p.def.dn && h.def.dn ? h.def.dn - p.def.dn : null;
+      h.dWt = p && p.wt && h.wt && p.wt.dn && h.wt.dn ? h.wt.dn - p.wt.dn : null;
+    });
+    return out.slice(-(limit || 10)).reverse();
+  }
+
+  function historyBlock(list) {
+    if (!list.length) return '';
+    var d = function (e) { return !e ? '—' : e.done ? 'הושג' : e.never ? '—' : P.esc(root.Dates.short(e.date)); };
+    var ch = function (v) {
+      if (v === null) return '<td class="n"></td>';
+      if (v === 0) return '<td class="n kpi__ch">=</td>';
+      return '<td class="n kpi__ch kpi__ch--' + (v < 0 ? 'good' : 'bad') + '">' + (v < 0 ? '−' : '+') + (Math.abs(v) === 1 ? 'יום' : Math.abs(v) + ' ימים') + '</td>';
+    };
+    var body = list.map(function (h) {
+      return '<tr><td>' + P.esc(root.Dates.short(h.date)) + '</td><td class="n"><b>' + d(h.def) + '</b></td>' + ch(h.dDef) +
+        '<td class="n">' + d(h.wt) + '</td>' + ch(h.dWt) + '</tr>';
+    }).join('');
+    return '<div class="kpi__hist"><div class="kpi__title">איך התחזית השתנתה מיום ליום</div>' +
+      '<table class="kpi__table"><thead><tr><th>בסוף יום</th><th>לפי גירעון</th><th>שינוי</th><th>לפי משקל</th><th>שינוי</th></tr></thead><tbody>' + body + '</tbody></table>' +
+      '<div class="kpi__note">כל שורה = התחזית לפי מה שהיה ידוע בסוף אותו יום. ירוק = התקרבת, אדום = התרחקת. מחושב מחדש לפי היעד והתאריך שבחרת עכשיו.</div></div>';
+  }
+
   function kpi() {
     var state = read();
     var cfg = state.balance;
@@ -1684,6 +1723,7 @@
         row('לפי המשקל בפועל', F.wt.eta, F.wt.perDay !== null ? n(F.wt.perDay * 7, 2) + ' ק״ג לשבוע' : '—',
           'מגמת ' + F.wt.n + ' שקילות', 'kpi__k--wt') +
         fwdChart(F) +
+        historyBlock(etaHistory(rows, cfg, tdate, goalKg, startDate, 10)) +
         '<div class="kpi__row"><span>ממוצע מתאריך:</span>' + startSel(rows, F.from) + '</div>' +
         '<div class="kpi__note">שני הקצבים הם ממוצע מהתאריך שבחרת ועד היום, וממשיכים קדימה מהמשקל של היום. לא כולל חו״ל ולא האטה.</div></div>';
     }
@@ -1968,5 +2008,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, macros: macros, macroOf: macroOf, scorecard: scorecard, scoresOf: scoresOf, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, breakEvenOf: breakEvenOf, bindBreakEven: bindBreakEven, kpi: kpi, kpiOf: kpiOf, bindKpi: bindKpi, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, macros: macros, macroOf: macroOf, scorecard: scorecard, scoresOf: scoresOf, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, breakEvenOf: breakEvenOf, bindBreakEven: bindBreakEven, kpi: kpi, kpiOf: kpiOf, etaHistory: etaHistory, bindKpi: bindKpi, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);

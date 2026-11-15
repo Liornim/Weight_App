@@ -1487,3 +1487,9 @@ details.rx .body { padding: 0 18px 18px; }
 .kpi__tag { font-size: 12px; padding: 1px 8px; border-radius: 999px; }
 .kpi__tag--good { background: rgba(76,211,138,.18); color: #4cd38a; } .kpi__tag--bad { background: rgba(255,122,107,.18); color: #ff7a6b; }
 .kpi__eta .kpi__eta-row { align-items: center; }
+.kpi__hist { margin-top: 12px; }
+.kpi__table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 6px; }
+.kpi__table th { font-weight: 400; opacity: .7; text-align: right; padding: 4px 4px; border-bottom: 1px solid rgba(127,127,127,.3); }
+.kpi__table td { padding: 5px 4px; border-bottom: 1px solid rgba(127,127,127,.12); }
+.kpi__table td.n { font-family: var(--mono); white-space: nowrap; }
+.kpi__ch { font-size: 12px; } .kpi__ch--good { color: #4cd38a; } .kpi__ch--bad { color: #ff7a6b; }
