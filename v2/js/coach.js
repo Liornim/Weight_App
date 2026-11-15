@@ -1336,6 +1336,7 @@
   var KPI_GOAL_KEY = 'coach.goalKg';
   var KPI_START_KEY = 'coach.pathStart';
   var KPI_MODE_KEY = 'coach.pathMode';
+  var kpiAsOf = null; // תאריך לצפייה בעבר; לא נשמר, כדי שמחר ייפתח על היום
 
   function kpiMode() {
     try { return root.localStorage.getItem(KPI_MODE_KEY) === 'trend' ? 'trend' : 'deficit'; } catch (e) { return 'deficit'; }
@@ -1709,21 +1710,29 @@
       dateControls(tdate, todayIso) + '</div>' + body + '</div>';
 
     var t6 = '';
-    if (k.fwd) {
-      var F = k.fwd;
+    var closedDates = rows.filter(function (r) { return typeof r.kcal === 'number' && typeof r.steps === 'number'; }).map(function (r) { return r.date; });
+    var lastDate = rows.length ? rows[rows.length - 1].date : null;
+    var asOf = kpiAsOf && kpiAsOf < (lastDate || '') ? kpiAsOf : null;
+    var kF = asOf ? kpiOf(rows.filter(function (r) { return r.date <= asOf; }), cfg, tdate, asOf, goalKg, startDate, 'deficit') : k;
+    var asOfSel = '<select class="kpi__sel" data-kpi-asof><option value="">היום (' + P.esc(root.Dates.short(lastDate)) + ')</option>' +
+      closedDates.slice().reverse().filter(function (d) { return d !== lastDate; }).map(function (d) {
+        return '<option value="' + d + '"' + (d === asOf ? ' selected' : '') + '>סוף יום ' + P.esc(root.Dates.short(d)) + '</option>';
+      }).join('') + '</select>';
+    if (kF && kF.fwd) {
+      var F = kF.fwd;
       var row = function (title, e, pace, sub, cls) {
         var when = !e ? '—' : e.done ? 'הושג' : e.never ? 'לא בקצב הזה' : P.esc(root.Dates.short(e.date));
         var tag = e && e.dn ? (e.dn <= F.targetDn ? '<span class="kpi__tag kpi__tag--good">לפני היעד ב-' + (F.targetDn - e.dn) + ' ימים</span>' : '<span class="kpi__tag kpi__tag--bad">אחרי היעד ב-' + (e.dn - F.targetDn) + ' ימים</span>') : '';
         return '<div class="kpi__eta-row"><i class="kpi__k ' + cls + '"></i><span>' + title + '</span><b>' + when + '</b>' + tag + '</div>' +
           '<div class="kpi__note">' + pace + ' · ' + sub + '</div>';
       };
-      t6 = '<div class="kpi__tile kpi__eta"><div class="kpi__title">6 · מתי אגיע ל-' + n(F.goal, 1) + ' (מהיום, ' + n(F.nowKg, 1) + ' ק״ג במגמה)</div>' +
+      t6 = '<div class="kpi__tile kpi__eta' + (asOf ? ' kpi__eta--past' : '') + '"><div class="kpi__title">6 · מתי אגיע ל-' + n(F.goal, 1) + ' (' + (asOf ? 'נכון לסוף ' + P.esc(root.Dates.short(asOf)) : 'מהיום') + ', ' + n(F.nowKg, 1) + ' ק״ג במגמה)</div>' +
+        '<div class="kpi__row"><span>מצב נכון ל:</span>' + asOfSel + '</div>' +
         row('לפי הגירעון', F.def.eta, F.def.perDay !== null ? n(F.def.perDay * 7, 2) + ' ק״ג לשבוע' : '—',
           'ממוצע ' + (F.def.avg !== null ? n(F.def.avg) : '—') + ' גירעון ליום ב-' + F.def.days + ' ימים', 'kpi__k--def') +
         row('לפי המשקל בפועל', F.wt.eta, F.wt.perDay !== null ? n(F.wt.perDay * 7, 2) + ' ק״ג לשבוע' : '—',
           'מגמת ' + F.wt.n + ' שקילות', 'kpi__k--wt') +
         fwdChart(F) +
-        historyBlock(etaHistory(rows, cfg, tdate, goalKg, startDate, 10)) +
         '<div class="kpi__row"><span>ממוצע מתאריך:</span>' + startSel(rows, F.from) + '</div>' +
         '<div class="kpi__note">שני הקצבים הם ממוצע מהתאריך שבחרת ועד היום, וממשיכים קדימה מהמשקל של היום. לא כולל חו״ל ולא האטה.</div></div>';
     }
@@ -1764,6 +1773,12 @@
   }
 
   function bindKpi(view) {
+    view.querySelectorAll('[data-kpi-asof]').forEach(function (el) {
+      el.addEventListener('change', function () {
+        kpiAsOf = el.value || null;
+        if (root.App && root.App.setState) root.App.setState({});
+      });
+    });
     view.querySelectorAll('[data-kpi-mode]').forEach(function (b) {
       b.addEventListener('click', function () {
         try { root.localStorage.setItem(KPI_MODE_KEY, b.dataset.kpiMode); } catch (e) { /* בלי אחסון */ }
