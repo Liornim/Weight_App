@@ -467,8 +467,7 @@ test('מדדים: מסלול לפי הגירעון', () => {
   }
   const k = Coach.kpiOf(rows, { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 }, '2026-12-31', '2026-11-14', 85, null, 'deficit');
   const start = (90 + 89.9 + 89.8 + 89.7) / 4;
-  const exp = start - 14 * 800 / 7700;
-  if (Math.abs(k.path.nowKg - exp) > 1e-6) throw new Error('model ' + k.path.nowKg);
+  if (Math.abs(k.path.nowKg - k.nowKg) > 1e-9) throw new Error('now must be trend weight');
   if (Math.abs(k.path.paceWk - 800 * 7 / 7700) > 1e-6) throw new Error('pace');
 });
 

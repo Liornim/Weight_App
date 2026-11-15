@@ -1469,7 +1469,8 @@
         });
         var mLast = model[model.length - 1];
         var useDef = mode === 'deficit';
-        var curD = useDef ? mLast.dn : nowD, curKg = useDef ? mLast.kg : out.nowKg;
+        // המיקום היום הוא תמיד המשקל האמיתי (משקל המגמה). השיטה משנה רק את הקצב קדימה.
+        var curD = nowD, curKg = out.nowKg;
         var ahead = pathAt(curD) - curKg;
         var paceWk = useDef ? (out.deficit || 0) * 7 / KCAL_PER_KG : (typeof out.weekKg === 'number' ? -out.weekKg : 0);
         out.path = {
@@ -1511,10 +1512,7 @@
     }).join('');
     var nd = pt.todayDn;
     var modelLine = '';
-    if (pt.mode === 'deficit' && pt.model.length > 1) {
-      modelLine = '<path class="kpi__model" d="' + pt.model.filter(function (m) { return m.dn <= d1; }).map(function (m, i) {
-        return (i ? 'L' : 'M') + x(m.dn).toFixed(1) + ' ' + y(m.kg).toFixed(1);
-      }).join(' ') + '"/>';
+    if (pt.model.length) {
       if (pt.paceWk > 0 && nd < d1) {
         var endKg = pt.nowKg - pt.paceWk / 7 * (d1 - nd);
         modelLine += '<line class="kpi__proj" x1="' + x(nd).toFixed(1) + '" y1="' + y(pt.nowKg).toFixed(1) + '" x2="' + x(d1).toFixed(1) + '" y2="' + y(Math.max(endKg, lo)).toFixed(1) + '"/>';
@@ -1536,7 +1534,7 @@
     return '<svg class="cumul__chart" direction="ltr" style="direction:ltr" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="משקל מול מסלול היעד">' +
       grid + trips + plan + dots + now + ticksX() + '</svg>' +
       '<div class="cumul__legend"><span><i class="kpi__k kpi__k--path"></i>מסלול</span><span><i class="kpi__k kpi__k--dot"></i>שקילה</span>' +
-      (pt.mode === 'deficit' ? '<span><i class="kpi__k kpi__k--model"></i>לפי הגירעון + המשך בקצב הנוכחי</span>' : '') + '<span><i class="kpi__k kpi__k--now"></i>' + (pt.mode === 'deficit' ? 'מיקום לפי הגירעון' : 'משקל המגמה היום') + '</span><span><i class="kpi__k kpi__k--trip"></i>חו״ל</span></div>';
+      '<span><i class="kpi__k kpi__k--model"></i>המשך בקצב ' + (pt.mode === 'deficit' ? 'הגירעון' : 'המגמה') + '</span><span><i class="kpi__k kpi__k--now"></i>המשקל שלך היום (מגמה)</span><span><i class="kpi__k kpi__k--trip"></i>חו״ל</span></div>';
   }
 
   function kpi() {
@@ -1618,7 +1616,7 @@
       t6 = '<div class="kpi__path-card">' + modeBtns +
         tile('6 · התקדמות מול מסלול היעד', on ? '✓' : (good ? '' : '−') + n(pt.aheadKg, 1), on ? ' על המסלול בדיוק' : ' ק״ג ' + (good ? 'לפני המסלול' : 'אחרי המסלול'),
           '<small class="kpi__sub kpi__sub--' + (good ? 'good' : 'bad') + '">' + (on ? 'בדיוק בזמן' : pt.aheadDays !== null ? 'כ-' + n(pt.aheadDays) + ' ימים ' + (good ? 'לפני' : 'אחרי') : '') +
-          '. לפי המסלול: <bdi>' + n(pt.pathKg, 1) + '</bdi> ק״ג. ' + curName + ': <bdi>' + n(pt.nowKg, 1) + '</bdi> ק״ג' + (pt.mode === 'deficit' ? ' (המשקל במגמה: <bdi>' + n(pt.trendKg, 1) + '</bdi>)' : '') + '.' + paceLine + '</small>',
+          '. לפי המסלול: <bdi>' + n(pt.pathKg, 1) + '</bdi> ק״ג. אתה (מגמה): <bdi>' + n(pt.nowKg, 1) + '</bdi> ק״ג.' + paceLine + '</small>',
           'קו ישר מ-' + n(pt.startKg, 1) + ' (' + P.esc(root.Dates.short(pt.start)) + (pt.startN > 1 ? ', ממוצע ' + pt.startN + ' שקילות סביב התאריך' : '') + ') עד ' + n(pt.goal, 1) + ' (' + P.esc(root.Dates.short(pt.end)) + '). ' +
           (rows.length && dayNum(pt.start) < dayNum(rows[0].date) + 7 ? 'המסלול מתחיל בשבוע המים, ולכן חלק מהיתרון צפוי להצטמצם. ' : '') + 'בימי חו״ל צפויה עלייה זמנית.') +
         pathChart(pt) + startSel(rows, pt.start) + '</div>';
