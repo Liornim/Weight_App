@@ -1459,3 +1459,13 @@ details.rx .body { padding: 0 18px 18px; }
 .kpi__chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; width: 100%; }
 .kpi__chip { font: inherit; font-size: 13px; padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(127,127,127,.4); background: transparent; color: inherit; }
 .kpi__chip[aria-pressed="true"] { background: rgba(76,211,138,.2); border-color: #4cd38a; }
+.kpi__path-card { margin-top: 12px; display: grid; gap: 8px; }
+.kpi__path { stroke: #8ab4ff; stroke-width: 2; stroke-dasharray: 5 4; }
+.kpi__dot { fill: rgba(255,255,255,.75); }
+.kpi__now--good { fill: #4cd38a; } .kpi__now--bad { fill: #ff7a6b; }
+.kpi__trip { fill: rgba(127,127,127,.18); }
+.kpi__k { display: inline-block; width: 12px; height: 10px; margin-left: 4px; vertical-align: middle; border-radius: 2px; }
+.kpi__k--path { border-top: 2px dashed #8ab4ff; height: 0; }
+.kpi__k--dot { background: rgba(255,255,255,.75); border-radius: 50%; width: 8px; height: 8px; }
+.kpi__k--now { background: #4cd38a; border-radius: 50%; }
+.kpi__k--trip { background: rgba(127,127,127,.35); }

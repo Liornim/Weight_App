@@ -430,6 +430,20 @@ test('מדדים: מגמה, שריפה בפועל ויעד בתאריך', () => 
   if (Math.abs(k.target.perDay - exp) > 0.5) throw new Error('perDay ' + k.target.perDay);
 });
 
+
+test('מדדים: מסלול יעד מהשקילה הראשונה', () => {
+  const rows = [];
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(Date.UTC(2026, 10, 1 + i)).toISOString().slice(0, 10);
+    rows.push({ date: d, weightKg: 90 - i * 0.1, kcal: 1800, steps: 10000 });
+  }
+  const k = Coach.kpiOf(rows, { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 }, '2026-12-31', '2026-11-14', 85);
+  const per = 5 / 60;
+  const pathNow = 90 - per * 13;
+  if (Math.abs(k.path.pathKg - pathNow) > 1e-6) throw new Error('path ' + k.path.pathKg);
+  if (Math.abs(k.path.aheadKg - (pathNow - k.nowKg)) > 1e-6) throw new Error('ahead');
+});
+
 // jsdom מפעיל את init בעצמו, וזה חייב להסתיים לפני הבדיקה הראשונה
 const ready = new Promise((done) => setTimeout(done, 200));
 queue.reduce((chain, item) => chain.then(() => item.fn()).then(() => { passed++; },

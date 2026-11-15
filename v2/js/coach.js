@@ -1427,7 +1427,55 @@
       out.target.kcal = cfg.baseBurn + stepsRef * cfg.kcalPerStep - out.target.perDay;
       out.target.stepsRef = stepsRef;
     }
+    // התקדמות מול מסלול היעד: קו ישר מהשקילה הראשונה ועד היעד בתאריך
+    var firstW = weighed[0];
+    if (firstW && typeof out.nowKg === 'number') {
+      var s0 = dayNum(firstW.date), s1 = dayNum(targetDate), nowD = dayNum(lastW.date);
+      if (s1 > s0) {
+        var perDayKg = (firstW.weightKg - goal) / (s1 - s0);
+        var pathAt = function (dn) { return firstW.weightKg - perDayKg * (dn - s0); };
+        var ahead = pathAt(nowD) - out.nowKg;
+        out.path = {
+          start: firstW.date, startKg: firstW.weightKg, end: targetDate, goal: goal,
+          today: lastW.date, pathKg: pathAt(nowD), nowKg: out.nowKg, aheadKg: ahead,
+          aheadDays: perDayKg > 0 ? ahead / perDayKg : null,
+          weights: weighed.map(function (r) { return { date: r.date, kg: r.weightKg }; })
+        };
+      }
+    }
     return out;
+  }
+
+  var TRIPS = [['2026-11-20', '2026-11-23'], ['2026-12-01', '2026-12-08']];
+
+  function pathChart(pt) {
+    var W = 340, H = 200, L = 34, R = 10, T = 10, B = 24;
+    var d0 = dayNum(pt.start), d1 = dayNum(pt.end);
+    var kgs = pt.weights.map(function (w) { return w.kg; }).concat([pt.startKg, pt.goal]);
+    var lo = Math.floor(Math.min.apply(null, kgs) - 0.5), hi = Math.ceil(Math.max.apply(null, kgs) + 0.5);
+    var x = function (d) { return L + (d - d0) / (d1 - d0) * (W - L - R); };
+    var y = function (k) { return T + (hi - k) / (hi - lo) * (H - T - B); };
+    var grid = '';
+    for (var k = lo; k <= hi; k++) {
+      grid += '<line class="cumul__grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(k).toFixed(1) + '" y2="' + y(k).toFixed(1) + '"/>' +
+        '<text class="cumul__tick" x="' + (L - 4) + '" y="' + (y(k) + 4).toFixed(1) + '" text-anchor="end">' + k + '</text>';
+    }
+    var trips = TRIPS.map(function (t) {
+      var a = Math.max(dayNum(t[0]), d0), b = Math.min(dayNum(t[1]) + 1, d1);
+      if (b <= a) return '';
+      return '<rect class="kpi__trip" x="' + x(a).toFixed(1) + '" y="' + T + '" width="' + (x(b) - x(a)).toFixed(1) + '" height="' + (H - T - B) + '"><title>חו״ל</title></rect>';
+    }).join('');
+    var plan = '<line class="kpi__path" x1="' + x(d0).toFixed(1) + '" y1="' + y(pt.startKg).toFixed(1) + '" x2="' + x(d1).toFixed(1) + '" y2="' + y(pt.goal).toFixed(1) + '"/>';
+    var dots = pt.weights.map(function (w) {
+      return '<circle class="kpi__dot" cx="' + x(dayNum(w.date)).toFixed(1) + '" cy="' + y(w.kg).toFixed(1) + '" r="2.6"/>';
+    }).join('');
+    var nd = dayNum(pt.today);
+    var now = '<circle class="kpi__now kpi__now--' + (pt.aheadKg >= 0 ? 'good' : 'bad') + '" cx="' + x(nd).toFixed(1) + '" cy="' + y(pt.nowKg).toFixed(1) + '" r="5"/>';
+    var lab = function (d, anchor) { return '<text class="cumul__tick" x="' + x(d).toFixed(1) + '" y="' + (H - 6) + '" style="text-anchor:' + anchor + '">' + P.esc(root.Dates.short(new Date(d * 864e5).toISOString().slice(0, 10))) + '</text>'; };
+    return '<svg class="cumul__chart" direction="ltr" style="direction:ltr" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="משקל מול מסלול היעד">' +
+      grid + trips + plan + dots + now + lab(d0, 'start') + lab(d1, 'end') + '</svg>' +
+      '<div class="cumul__legend"><span><i class="kpi__k kpi__k--path"></i>מסלול</span><span><i class="kpi__k kpi__k--dot"></i>שקילה</span>' +
+      '<span><i class="kpi__k kpi__k--now"></i>משקל המגמה היום</span><span><i class="kpi__k kpi__k--trip"></i>חו״ל</span></div>';
   }
 
   function kpi() {
@@ -1497,8 +1545,19 @@
       '<div class="kpi__row" style="margin-top:8px"><h3 class="kpi__h">עד תאריך</h3>' +
       dateControls(tdate, todayIso) + '</div>' + body + '</div>';
 
+    var t6 = '';
+    if (k.path) {
+      var pt = k.path, good = pt.aheadKg >= 0;
+      t6 = '<div class="kpi__path-card">' +
+        tile('6 · התקדמות מול מסלול היעד', (good ? '' : '−') + n(pt.aheadKg, 1), ' ק״ג ' + (good ? 'לפני המסלול' : 'אחרי המסלול'),
+          '<small class="kpi__sub kpi__sub--' + (good ? 'good' : 'bad') + '">' + (pt.aheadDays !== null ? 'כ-' + n(pt.aheadDays) + ' ימים ' + (good ? 'לפני' : 'אחרי') : '') +
+          '. לפי המסלול היום: <bdi>' + n(pt.pathKg, 1) + '</bdi> ק״ג. המגמה: <bdi>' + n(pt.nowKg, 1) + '</bdi> ק״ג.</small>',
+          'קו ישר מ-' + n(pt.startKg, 1) + ' (' + P.esc(root.Dates.short(pt.start)) + ') עד ' + n(pt.goal, 1) + ' (' + P.esc(root.Dates.short(pt.end)) + '). ' +
+          'חלק מהיתרון הוא ירידת מים בשבוע הראשון, ולכן הוא צפוי להצטמצם. בימי חו״ל צפויה עלייה זמנית.') +
+        pathChart(pt) + '</div>';
+    }
     return '<section class="cumul kpi"><div class="cumul__row"><h2 class="cumul__title">מדדים שבועיים</h2></div>' +
-      '<div class="kpi__grid">' + t1 + t2 + t3 + t4 + t5 + '</div>' + target + '</section>';
+      '<div class="kpi__grid">' + t1 + t2 + t3 + t4 + t5 + '</div>' + t6 + target + '</section>';
   }
 
   /** בחירת תאריך בלי לוח שנה של הטלפון: יום, חודש, שנה וקיצורי דרך */
