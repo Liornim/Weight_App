@@ -1619,15 +1619,16 @@
    * היסטוריית התחזית: לכל יום סגור, מתי הייתי מגיע ליעד לפי מה שהיה ידוע
    * בסוף אותו יום. מחושב מחדש מהנתונים, ולכן לא צריך לשמור כלום.
    */
-  function etaHistory(rows, cfg, targetDate, goalKg, startDate, limit) {
+  function etaHistory(rows, cfg, targetDate, goalKg, startDate, limit, avgWin) {
     var closedRows = rows.filter(function (r) { return typeof r.kcal === 'number' && typeof r.steps === 'number'; });
     var out = [];
     closedRows.forEach(function (r) {
       if (startDate && r.date < startDate) return;
       var upto = rows.filter(function (x) { return x.date <= r.date; });
-      var k = kpiOf(upto, cfg, targetDate, r.date, goalKg, startDate, 'deficit');
+      var k = kpiOf(upto, cfg, targetDate, r.date, goalKg, startDate, 'deficit', avgWin);
       if (!k || !k.fwd) return;
-      out.push({ date: r.date, def: k.fwd.def.eta, wt: k.fwd.wt.eta, kg: k.fwd.nowKg });
+      out.push({ date: r.date, def: k.fwd.def.eta, wt: k.fwd.wt.eta, kg: k.fwd.nowKg, avg: k.fwd.def.avg,
+        wtWk: k.fwd.wt.perDay !== null ? k.fwd.wt.perDay * 7 : null, defWk: k.fwd.def.perDay !== null ? k.fwd.def.perDay * 7 : null });
     });
     out.forEach(function (h, i) {
       var p = out[i - 1];
@@ -1652,6 +1653,22 @@
     return '<div class="kpi__hist"><div class="kpi__title">איך התחזית השתנתה מיום ליום</div>' +
       '<table class="kpi__table"><thead><tr><th>בסוף יום</th><th>לפי גירעון</th><th>שינוי</th><th>לפי משקל</th><th>שינוי</th></tr></thead><tbody>' + body + '</tbody></table>' +
       '<div class="kpi__note">כל שורה = התחזית לפי מה שהיה ידוע בסוף אותו יום. ירוק = התקרבת, אדום = התרחקת. מחושב מחדש לפי היעד והתאריך שבחרת עכשיו.</div></div>';
+  }
+
+  function historyTable(list) {
+    if (!list.length) return '';
+    var n = function (v, d) { return root.Fmt.n(Math.abs(v), d || 0); };
+    var d = function (e) { return !e ? '—' : e.done ? 'הושג' : e.never ? '—' : P.esc(root.Dates.short(e.date)); };
+    var body = list.map(function (h) {
+      return '<tr><td>' + P.esc(root.Dates.short(h.date)) + '</td>' +
+        '<td class="n">' + (h.avg === null ? '—' : h.avg < 0 ? '<bdi dir="ltr" class="kpi__ch--bad">+' + n(h.avg) + '</bdi> עודף' : n(h.avg)) + '</td>' +
+        '<td class="n"><b>' + d(h.def) + '</b></td>' +
+        '<td class="n">' + d(h.wt) + '</td>' +
+        '<td class="n">' + (h.wtWk === null ? '—' : h.wtWk < 0 ? '<bdi dir="ltr">+' + n(h.wtWk, 2) + '</bdi>' : n(h.wtWk, 2)) + '</td></tr>';
+    }).join('');
+    return '<div class="kpi__hist"><div class="kpi__title">היסטוריה</div>' +
+      '<table class="kpi__table"><thead><tr><th>מצב נכון ל</th><th>גירעון ממוצע</th><th>לפי גירעון</th><th>לפי משקל</th><th>ק״ג לשבוע</th></tr></thead><tbody>' + body + '</tbody></table>' +
+      '<div class="kpi__note">כל שורה מחושבת לפי מה שהיה ידוע בסוף אותו יום, עם היעד והממוצע שבחרת למעלה. ק״ג לשבוע = הירידה בפועל במשקל.</div></div>';
   }
 
   function kpi() {
@@ -1768,7 +1785,8 @@
     }
     var t7 = '';
     return '<section class="cumul kpi"><div class="cumul__row"><h2 class="cumul__title">מדדים שבועיים</h2></div>' +
-      '<div class="kpi__grid">' + t1 + t2 + t3 + t4 + t5 + '</div>' + winCtl + target + t6 + t7 + '</section>';
+      '<div class="kpi__grid">' + t1 + t2 + t3 + t4 + t5 + '</div>' + winCtl + target + t6 + t7 +
+      historyTable(etaHistory(rows, cfg, tdate, goalKg, startDate, 60, winSel)) + '</section>';
   }
 
   /** בחירת תאריך בלי לוח שנה של הטלפון: יום, חודש, שנה וקיצורי דרך */
