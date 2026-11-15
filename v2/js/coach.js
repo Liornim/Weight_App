@@ -1467,7 +1467,8 @@
   function pathChart(pt) {
     var W = 340, H = 200, L = 34, R = 10, T = 10, B = 24;
     var d0 = dayNum(pt.start), d1 = dayNum(pt.end);
-    var kgs = pt.weights.map(function (w) { return w.kg; }).concat([pt.startKg, pt.goal]);
+    var ws = pt.weights.filter(function (w) { var dn = dayNum(w.date); return dn >= d0 && dn <= d1; });
+    var kgs = ws.map(function (w) { return w.kg; }).concat([pt.startKg, pt.goal]);
     var lo = Math.floor(Math.min.apply(null, kgs) - 0.5), hi = Math.ceil(Math.max.apply(null, kgs) + 0.5);
     var x = function (d) { return L + (d - d0) / (d1 - d0) * (W - L - R); };
     var y = function (k) { return T + (hi - k) / (hi - lo) * (H - T - B); };
@@ -1482,7 +1483,7 @@
       return '<rect class="kpi__trip" x="' + x(a).toFixed(1) + '" y="' + T + '" width="' + (x(b) - x(a)).toFixed(1) + '" height="' + (H - T - B) + '"><title>חו״ל</title></rect>';
     }).join('');
     var plan = '<line class="kpi__path" x1="' + x(d0).toFixed(1) + '" y1="' + y(pt.startKg).toFixed(1) + '" x2="' + x(d1).toFixed(1) + '" y2="' + y(pt.goal).toFixed(1) + '"/>';
-    var dots = pt.weights.map(function (w) {
+    var dots = ws.map(function (w) {
       return '<circle class="kpi__dot" cx="' + x(dayNum(w.date)).toFixed(1) + '" cy="' + y(w.kg).toFixed(1) + '" r="2.6"/>';
     }).join('');
     var nd = dayNum(pt.today);
