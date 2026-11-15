@@ -1324,6 +1324,175 @@
   }
 
 
+
+  /**
+   * טאב המדדים: חמישה מדדים בחלון מתגלגל, ותאריך יעד שאפשר לשנות.
+   * המגמה היא רגרסיה על שקילות 14 הימים האחרונים, כי ממוצע מול ממוצע
+   * רועש מדי בשבועות הראשונים. השריפה בפועל = אוכל + ירידה × 7,700.
+   */
+  var KPI_DATE_KEY = 'coach.targetDate';
+  var KPI_DEFAULT_DATE = '2027-01-31';
+  var GOAL_KG = 84;
+
+  function kpiTargetDate() {
+    try {
+      var v = root.localStorage.getItem(KPI_DATE_KEY);
+      if (v && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+    } catch (e) { /* בלי אחסון */ }
+    return KPI_DEFAULT_DATE;
+  }
+
+  function dayNum(iso) { return Math.round(Date.parse(iso) / 864e5); }
+
+  function regress(points) {
+    if (points.length < 3) return null;
+    var n = points.length, mx = 0, my = 0;
+    points.forEach(function (p) { mx += p.x; my += p.y; });
+    mx /= n; my /= n;
+    var sxy = 0, sxx = 0;
+    points.forEach(function (p) { sxy += (p.x - mx) * (p.y - my); sxx += (p.x - mx) * (p.x - mx); });
+    if (!sxx) return null;
+    var slope = sxy / sxx;
+    return { slope: slope, at: function (x) { return my + slope * (x - mx); } };
+  }
+
+  function kpiOf(rows, cfg, targetDate, todayIso) {
+    if (!cfg) return null;
+    var closed = rows.filter(function (r) { return typeof r.kcal === 'number' && typeof r.steps === 'number'; });
+    var burn = function (r) { return cfg.baseBurn + r.steps * cfg.kcalPerStep; };
+    var mean = function (list, f) { return list.length ? list.reduce(function (a, r) { return a + f(r); }, 0) / list.length : null; };
+    var last7 = closed.slice(-7), prev7 = closed.slice(-14, -7);
+    var out = {
+      days: last7.length,
+      kcal: mean(last7, function (r) { return r.kcal; }),
+      kcalPrev: prev7.length === 7 ? mean(prev7, function (r) { return r.kcal; }) : null,
+      deficit: mean(last7, function (r) { return burn(r) - r.kcal; }),
+      deficitPrev: prev7.length === 7 ? mean(prev7, function (r) { return burn(r) - r.kcal; }) : null,
+      steps: mean(last7, function (r) { return r.steps; })
+    };
+
+    // מגמה: שקילות ב-14 הימים האחרונים
+    var weighed = rows.filter(function (r) { return typeof r.weightKg === 'number'; });
+    var lastW = weighed.length ? weighed[weighed.length - 1] : null;
+    if (lastW) {
+      var end = dayNum(lastW.date);
+      // השבוע הראשון של המעקב הוא בעיקר מים וגליקוגן, ולכן לא נכנס למגמה
+      var skip = rows.length ? dayNum(rows[0].date) + 7 : -Infinity;
+      var win = weighed.filter(function (r) { return dayNum(r.date) > end - 14 && dayNum(r.date) >= skip; });
+      var fit = regress(win.map(function (r) { return { x: dayNum(r.date), y: r.weightKg }; }));
+      out.weighIns = win.length;
+      out.from = win[0] ? win[0].date : null;
+      if (fit) {
+        out.weekKg = fit.slope * 7;
+        out.nowKg = fit.at(end);
+        out.weekPct = out.weekKg / out.nowKg * 100;
+        // שריפה בפועל: באותו חלון, ימים סגורים בלבד
+        var inWin = closed.filter(function (r) { return dayNum(r.date) > end - 14 && dayNum(r.date) >= skip && dayNum(r.date) <= end; });
+        if (inWin.length >= 5) {
+          var eat = mean(inWin, function (r) { return r.kcal; });
+          out.tdee = eat - fit.slope * KCAL_PER_KG;
+          out.model = mean(inWin, burn);
+          out.tdeeDays = inWin.length;
+        }
+      }
+    }
+
+    // אמינות הרישום: רוחב הטווח הממוצע ליום, ואחוז הקלוריות מהערכה
+    var widths = last7.map(function (r) { var d = dayRange(r); return d ? d[1] - d[0] : 0; });
+    out.rangeWidth = widths.length ? widths.reduce(function (a, b) { return a + b; }, 0) / widths.length : null;
+    var b = basisOf(last7);
+    out.estimatePct = b.total ? (b.estimate + b.none) / b.total * 100 : null;
+    out.exactPct = b.total ? b.exact / b.total * 100 : null;
+
+    // יעד בתאריך
+    var start = typeof out.nowKg === 'number' ? out.nowKg : (lastW ? lastW.weightKg : null);
+    var daysLeft = dayNum(targetDate) - dayNum(todayIso);
+    out.target = { date: targetDate, daysLeft: daysLeft, goal: GOAL_KG, fromKg: start };
+    if (start !== null && daysLeft > 0) {
+      var kgLeft = start - GOAL_KG;
+      out.target.kgLeft = kgLeft;
+      out.target.perDay = kgLeft > 0 ? kgLeft * KCAL_PER_KG / daysLeft : 0;
+      out.target.perWeekKg = kgLeft > 0 ? kgLeft / daysLeft * 7 : 0;
+      var stepsRef = out.steps || 0;
+      out.target.kcal = cfg.baseBurn + stepsRef * cfg.kcalPerStep - out.target.perDay;
+      out.target.stepsRef = stepsRef;
+    }
+    return out;
+  }
+
+  function kpi() {
+    var state = read();
+    var cfg = state.balance;
+    var rows = state.rows || [];
+    var todayIso = new Date().toISOString().slice(0, 10);
+    var tdate = kpiTargetDate();
+    var k = kpiOf(rows, cfg, tdate, todayIso);
+    if (!k || !k.days) return P.section('מדדים', P.card(null, null, P.empty('עוד אין ימים סגורים.')));
+    var n = function (v, d) { return root.Fmt.n(Math.abs(v), d || 0); };
+    var dash = '—';
+    var vs = function (cur, prev, lowerBetter, d, unit) {
+      if (typeof prev !== 'number') return '<small class="kpi__sub">אין עדיין 7 ימים קודמים להשוואה</small>';
+      var diff = cur - prev;
+      var good = lowerBetter ? diff < 0 : diff > 0;
+      return '<small class="kpi__sub kpi__sub--' + (good ? 'good' : 'bad') + '"><bdi dir="ltr">' + (diff >= 0 ? '+' : '−') + n(diff, d) + '</bdi>' + (unit || '') + ' מול 7 הימים הקודמים</small>';
+    };
+    var tile = function (title, big, unit, sub, note) {
+      return '<div class="kpi__tile"><div class="kpi__title">' + title + '</div>' +
+        '<div class="kpi__big"><b dir="ltr">' + big + '</b><span>' + unit + '</span></div>' + (sub || '') +
+        (note ? '<div class="kpi__note">' + note + '</div>' : '') + '</div>';
+    };
+
+    var t1 = typeof k.weekKg === 'number'
+      ? tile('1 · קצב ירידה שבועי', (k.weekKg <= 0 ? '−' : '+') + n(k.weekKg, 2), ' ק״ג לשבוע',
+          '<small class="kpi__sub kpi__sub--' + (k.weekKg <= 0 ? 'good' : 'bad') + '"><bdi dir="ltr">' + (k.weekKg <= 0 ? '−' : '+') + n(k.weekPct, 2) + '%</bdi> ממשקל הגוף לשבוע</small>',
+          'מגמה (רגרסיה) על ' + k.weighIns + ' שקילות מ-' + P.esc(root.Dates.short(k.from)) + '. משקל לפי המגמה היום: ' + n(k.nowKg, 1) + ' ק״ג. טווח בריא: 0.5%–1% לשבוע.')
+      : tile('1 · קצב ירידה שבועי', dash, '', '', 'צריך לפחות 3 שקילות.');
+    var t2 = tile('2 · ממוצע קלוריות', n(k.kcal), ' קק״ל ליום', vs(k.kcal, k.kcalPrev, true, 0, ' קק״ל'),
+      k.days + ' הימים הסגורים האחרונים.');
+    var t3 = tile('3 · גירעון ממוצע', (k.deficit >= 0 ? '' : '+') + n(k.deficit), ' ' + (k.deficit >= 0 ? 'גירעון' : 'עודף') + ' ליום',
+      vs(k.deficit, k.deficitPrev, false, 0, ' קק״ל'),
+      'תוכנית: ' + n(cfg.plannedDeficit) + '. לפי המודל: ' + n(cfg.baseBurn) + ' + צעדים × ' + cfg.kcalPerStep + '.');
+    var t4 = typeof k.tdee === 'number'
+      ? tile('4 · שריפה בפועל מול המודל', n(k.tdee), ' קק״ל ליום',
+          '<small class="kpi__sub kpi__sub--' + (k.tdee >= k.model ? 'good' : 'bad') + '">המודל: ' + n(k.model) + ' · ' + (k.tdee >= k.model ? 'שורף יותר ב-' : 'שורף פחות ב-') + n(k.tdee - k.model) + '</small>',
+          'ממוצע אוכל ב-' + k.tdeeDays + ' ימים + ירידה במגמה × 7,700. בשבועיים הראשונים מים מנפחים את המספר; אמין יותר מ-20.11.')
+      : tile('4 · שריפה בפועל מול המודל', dash, '', '', 'צריך לפחות 5 ימים סגורים בחלון השקילות.');
+    var t5 = tile('5 · אמינות הרישום', '±' + n((k.rangeWidth || 0) / 2), ' קק״ל ליום',
+      '<small class="kpi__sub">' + n(k.estimatePct || 0) + '% מהקלוריות מהערכה · ' + n(k.exactPct || 0) + '% מדויק</small>',
+      'חצי מרוחב הטווח הממוצע ביום. ככל שקטן יותר, הגירעון אמין יותר.');
+
+    var T = k.target, body;
+    if (!(T.daysLeft > 0)) {
+      body = '<p class="kpi__note">התאריך כבר עבר. בחר תאריך עתידי.</p>';
+    } else if (!(T.kgLeft > 0)) {
+      body = '<p class="kpi__note">כבר במשקל היעד לפי המגמה.</p>';
+    } else {
+      var gap = k.deficit - T.perDay;
+      body = '<div class="kpi__grid kpi__grid--3">' +
+        tile('גירעון נדרש', n(T.perDay), ' ליום', '<small class="kpi__sub kpi__sub--' + (gap >= 0 ? 'good' : 'bad') + '">בפועל ב-7 ימים: ' + n(k.deficit) + ' (' + (gap >= 0 ? 'מעל ב-' : 'חסר ') + n(gap) + ')</small>', '') +
+        tile('קצב נדרש', n(T.perWeekKg, 2), ' ק״ג לשבוע', '<small class="kpi__sub">' + n(T.perWeekKg / T.fromKg * 100, 2) + '% לשבוע</small>', '') +
+        tile('קלוריות ליום', n(T.kcal), ' קק״ל', '<small class="kpi__sub">בהנחת ' + n(T.stepsRef) + ' צעדים (ממוצע 7 ימים)</small>', '') +
+        '</div>' +
+        '<p class="kpi__note">' + n(T.kgLeft, 1) + ' ק״ג מ-' + n(T.fromKg, 1) + ' (משקל המגמה) עד ' + T.goal + ', ב-' + T.daysLeft + ' ימים. ' +
+        (T.perDay > 1100 ? '<b>קצב אגרסיבי מדי</b> — מעל 1% לשבוע בערך.' : '') + ' לא כולל את ימי חו״ל.</p>';
+    }
+    var target = '<div class="kpi__target"><div class="kpi__row"><h3 class="kpi__h">יעד ' + GOAL_KG + ' ק״ג עד</h3>' +
+      '<input type="date" class="kpi__date" data-kpi-date value="' + P.esc(tdate) + '" min="' + todayIso + '"></div>' + body + '</div>';
+
+    return '<section class="cumul kpi"><div class="cumul__row"><h2 class="cumul__title">מדדים שבועיים</h2></div>' +
+      '<div class="kpi__grid">' + t1 + t2 + t3 + t4 + t5 + '</div>' + target + '</section>';
+  }
+
+  function bindKpi(view) {
+    view.querySelectorAll('[data-kpi-date]').forEach(function (input) {
+      input.addEventListener('change', function () {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(input.value)) return;
+        try { root.localStorage.setItem(KPI_DATE_KEY, input.value); } catch (e) { /* בלי אחסון */ }
+        if (root.App && root.App.setState) root.App.setState({});
+      });
+    });
+  }
+
   /**
    * ייצוא לאקסל: גיליון לכל טאב. הספרייה (SheetJS) נטענת רק בלחיצה,
    * כדי לא להכביד על כל פתיחה של האתר.
@@ -1528,5 +1697,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, macros: macros, macroOf: macroOf, scorecard: scorecard, scoresOf: scoresOf, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, breakEvenOf: breakEvenOf, bindBreakEven: bindBreakEven, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, macros: macros, macroOf: macroOf, scorecard: scorecard, scoresOf: scoresOf, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, breakEvenOf: breakEvenOf, bindBreakEven: bindBreakEven, kpi: kpi, kpiOf: kpiOf, bindKpi: bindKpi, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);

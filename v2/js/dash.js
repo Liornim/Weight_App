@@ -600,6 +600,7 @@
     { value: 'groups', label: 'קבוצות' },
     { value: 'macros', label: 'מאקרו' },
     { value: 'split', label: 'פירוק' },
+    { value: 'kpi', label: 'מדדים' },
     { value: 'trend', label: 'מגמה' },
     { value: 'score', label: 'ציונים' },
     { value: 'budget', label: 'תקציב' },
@@ -639,6 +640,7 @@
       : state.tab === 'groups' ? root.Coach.groups()
       : state.tab === 'macros' ? root.Coach.macros()
       : state.tab === 'split' ? root.Coach.split()
+      : state.tab === 'kpi' ? root.Coach.kpi()
       : state.tab === 'trend' ? root.Coach.trend()
       : state.tab === 'score' ? root.Coach.scorecard()
       : state.tab === 'recipes' ? root.RecipesTab.render()

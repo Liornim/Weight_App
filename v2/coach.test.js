@@ -414,6 +414,22 @@ test('break even: 2150 + צעדים × 0.035 פחות מה שנאכל', () => {
   if (be.left !== 1560) throw new Error('left ' + be.left);
 });
 
+
+test('מדדים: מגמה, שריפה בפועל ויעד בתאריך', () => {
+  const rows = [];
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(Date.UTC(2026, 10, 1 + i)).toISOString().slice(0, 10);
+    rows.push({ date: d, weightKg: 90 - i * 0.1, kcal: 1800, steps: 10000 });
+  }
+  const k = Coach.kpiOf(rows, { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 }, '2026-12-31', '2026-11-14');
+  if (Math.abs(k.weekKg + 0.7) > 1e-6) throw new Error('weekKg ' + k.weekKg);
+  if (Math.round(k.deficit) !== 800) throw new Error('deficit ' + k.deficit);
+  if (Math.round(k.tdee) !== 2570) throw new Error('tdee ' + k.tdee);
+  if (k.target.daysLeft !== 47) throw new Error('days ' + k.target.daysLeft);
+  const exp = (88.7 - 84) * 7700 / 47;
+  if (Math.abs(k.target.perDay - exp) > 0.5) throw new Error('perDay ' + k.target.perDay);
+});
+
 // jsdom מפעיל את init בעצמו, וזה חייב להסתיים לפני הבדיקה הראשונה
 const ready = new Promise((done) => setTimeout(done, 200));
 queue.reduce((chain, item) => chain.then(() => item.fn()).then(() => { passed++; },
