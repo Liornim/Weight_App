@@ -1629,7 +1629,7 @@
     var ch = function (v) {
       if (v === null) return '<td class="n"></td>';
       if (v === 0) return '<td class="n kpi__ch">=</td>';
-      return '<td class="n kpi__ch kpi__ch--' + (v < 0 ? 'good' : 'bad') + '">' + (v < 0 ? '−' : '+') + (Math.abs(v) === 1 ? 'יום' : Math.abs(v) + ' ימים') + '</td>';
+      return '<td class="n kpi__ch kpi__ch--' + (v < 0 ? 'good' : 'bad') + '">' + (Math.abs(v) === 1 ? (v < 0 ? 'יום פחות' : 'יום יותר') : '<bdi dir="ltr">' + (v < 0 ? '−' : '+') + Math.abs(v) + '</bdi> ימים') + '</td>';
     };
     var body = list.map(function (h) {
       return '<tr><td>' + P.esc(root.Dates.short(h.date)) + '</td><td class="n"><b>' + d(h.def) + '</b></td>' + ch(h.dDef) +
