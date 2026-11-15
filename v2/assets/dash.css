@@ -1477,3 +1477,13 @@ details.rx .body { padding: 0 18px 18px; }
 .kpi__model { fill: none; stroke: #4cd38a; stroke-width: 2.2; }
 .kpi__proj { stroke: #4cd38a; stroke-width: 1.6; stroke-dasharray: 3 4; opacity: .8; }
 .kpi__k--model { border-top: 2px solid #4cd38a; height: 0; }
+.kpi__l-def { stroke: #4cd38a; stroke-width: 2.4; }
+.kpi__l-wt { stroke: #8ab4ff; stroke-width: 2.4; stroke-dasharray: 6 4; }
+.kpi__l-def-end { fill: #4cd38a; } .kpi__l-wt-end { fill: #8ab4ff; }
+.kpi__goal { stroke: #f5c26b; stroke-width: 1.5; }
+.kpi__target-line { stroke: #f5c26b; stroke-width: 1; stroke-dasharray: 3 3; }
+.kpi__lbl { fill: #f5c26b; font-size: 10px; }
+.kpi__k--def { background: #4cd38a; height: 3px; } .kpi__k--wt { border-top: 3px dashed #8ab4ff; height: 0; } .kpi__k--goal { background: #f5c26b; height: 2px; }
+.kpi__tag { font-size: 12px; padding: 1px 8px; border-radius: 999px; }
+.kpi__tag--good { background: rgba(76,211,138,.18); color: #4cd38a; } .kpi__tag--bad { background: rgba(255,122,107,.18); color: #ff7a6b; }
+.kpi__eta .kpi__eta-row { align-items: center; }

@@ -1483,6 +1483,30 @@
         };
       }
     }
+    // תחזית קדימה מהיום: שני קצבים, שניהם ממוצע מהתאריך שנבחר ועד עכשיו
+    if (firstW && lastW && typeof out.nowKg === 'number') {
+      var f0 = dayNum(firstW.date), fNow = dayNum(lastW.date);
+      var since = closed.filter(function (r) { return dayNum(r.date) >= f0; });
+      var avgDef = since.length ? since.reduce(function (a, r) { return a + burn(r) - r.kcal; }, 0) / since.length : null;
+      var wfit = regress(weighed.filter(function (r) { return dayNum(r.date) >= f0; }).map(function (r) { return { x: dayNum(r.date), y: r.weightKg }; }));
+      var wN = weighed.filter(function (r) { return dayNum(r.date) >= f0; }).length;
+      var kgLeft2 = out.nowKg - goal;
+      var isoOf = function (dn) { return new Date(dn * 864e5).toISOString().slice(0, 10); };
+      var eta = function (perDay) {
+        if (kgLeft2 <= 0) return { done: true };
+        if (!(perDay > 0)) return { never: true };
+        var d = Math.ceil(kgLeft2 / perDay);
+        return { days: d, dn: fNow + d, date: isoOf(fNow + d) };
+      };
+      var defPerDay = avgDef !== null ? avgDef / KCAL_PER_KG : null;
+      var wtPerDay = wfit ? -wfit.slope : null;
+      out.fwd = {
+        from: firstW.date, fromDn: f0, todayDn: fNow, nowKg: out.nowKg, goal: goal, kgLeft: kgLeft2,
+        targetDn: dayNum(targetDate), target: targetDate,
+        def: { perDay: defPerDay, avg: avgDef, days: since.length, eta: eta(defPerDay) },
+        wt: { perDay: wtPerDay, n: wN, eta: wfit ? eta(wtPerDay) : null }
+      };
+    }
     return out;
   }
 
@@ -1535,6 +1559,46 @@
       grid + trips + plan + dots + now + ticksX() + '</svg>' +
       '<div class="cumul__legend"><span><i class="kpi__k kpi__k--path"></i>מסלול</span><span><i class="kpi__k kpi__k--dot"></i>שקילה</span>' +
       '<span><i class="kpi__k kpi__k--model"></i>המשך בקצב ' + (pt.mode === 'deficit' ? 'הגירעון' : 'המגמה') + '</span><span><i class="kpi__k kpi__k--now"></i>המשקל שלך היום (מגמה)</span><span><i class="kpi__k kpi__k--trip"></i>חו״ל</span></div>';
+  }
+
+  function fwdChart(f) {
+    var W = 340, H = 210, L = 34, R = 12, T = 12, B = 24;
+    var d0 = f.todayDn;
+    var ends = [f.targetDn];
+    [f.def.eta, f.wt.eta].forEach(function (e) { if (e && e.dn) ends.push(e.dn); });
+    var d1 = Math.min(Math.max.apply(null, ends) + 3, d0 + 365);
+    var lo = Math.floor(Math.min(f.goal, f.nowKg) - 0.5), hi = Math.ceil(f.nowKg + 0.5);
+    var x = function (d) { return L + (d - d0) / (d1 - d0) * (W - L - R); };
+    var y = function (k) { return T + (hi - k) / (hi - lo) * (H - T - B); };
+    var grid = '';
+    for (var k = lo; k <= hi; k++) {
+      grid += '<line class="cumul__grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(k).toFixed(1) + '" y2="' + y(k).toFixed(1) + '"/>' +
+        '<text class="cumul__tick" x="' + (L - 4) + '" y="' + (y(k) + 4).toFixed(1) + '" style="text-anchor:end">' + k + '</text>';
+    }
+    var lab = function (d, anchor) { return '<text class="cumul__tick" x="' + x(d).toFixed(1) + '" y="' + (H - 6) + '" style="text-anchor:' + anchor + '">' + P.esc(root.Dates.short(new Date(d * 864e5).toISOString().slice(0, 10))) + '</text>'; };
+    var trips = TRIPS.map(function (t) {
+      var a = Math.max(dayNum(t[0]), d0), b = Math.min(dayNum(t[1]) + 1, d1);
+      return b > a ? '<rect class="kpi__trip" x="' + x(a).toFixed(1) + '" y="' + T + '" width="' + (x(b) - x(a)).toFixed(1) + '" height="' + (H - T - B) + '"/>' : '';
+    }).join('');
+    var goalLine = '<line class="kpi__goal" x1="' + L + '" x2="' + (W - R) + '" y1="' + y(f.goal).toFixed(1) + '" y2="' + y(f.goal).toFixed(1) + '"/>';
+    var tgt = f.targetDn <= d1 ? '<line class="kpi__target-line" x1="' + x(f.targetDn).toFixed(1) + '" x2="' + x(f.targetDn).toFixed(1) + '" y1="' + T + '" y2="' + (H - B) + '"/>' +
+      '<text class="kpi__lbl" x="' + (x(f.targetDn) - 3).toFixed(1) + '" y="' + (T + 10) + '" style="text-anchor:end">יעד</text>' : '';
+    var line = function (e, perDay, cls) {
+      if (!e || !(perDay > 0)) return '';
+      var endD = e.dn ? Math.min(e.dn, d1) : d1;
+      var endKg = f.nowKg - perDay * (endD - d0);
+      return '<line class="' + cls + '" x1="' + x(d0).toFixed(1) + '" y1="' + y(f.nowKg).toFixed(1) + '" x2="' + x(endD).toFixed(1) + '" y2="' + y(endKg).toFixed(1) + '"/>' +
+        (e.dn && e.dn <= d1 ? '<circle class="' + cls + '-end" cx="' + x(e.dn).toFixed(1) + '" cy="' + y(f.goal).toFixed(1) + '" r="4"/>' : '');
+    };
+    var ticks = lab(d0, 'start');
+    var step = Math.max(7, Math.ceil((d1 - d0) / 5 / 7) * 7);
+    for (var d = d0 + step; d <= d1 - step * 0.6; d += step) ticks += lab(d, 'middle');
+    ticks += lab(d1, 'end');
+    return '<svg class="cumul__chart" style="direction:ltr" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="מתי אגיע ליעד">' +
+      grid + trips + goalLine + tgt + line(f.def.eta, f.def.perDay, 'kpi__l-def') + line(f.wt.eta, f.wt.perDay, 'kpi__l-wt') +
+      '<circle class="kpi__now kpi__now--good" cx="' + x(d0).toFixed(1) + '" cy="' + y(f.nowKg).toFixed(1) + '" r="5"/>' + ticks + '</svg>' +
+      '<div class="cumul__legend"><span><i class="kpi__k kpi__k--def"></i>לפי הגירעון</span><span><i class="kpi__k kpi__k--wt"></i>לפי המשקל בפועל</span>' +
+      '<span><i class="kpi__k kpi__k--goal"></i>משקל יעד</span><span><i class="kpi__k kpi__k--trip"></i>חו״ל</span></div>';
   }
 
   function kpi() {
@@ -1606,33 +1670,26 @@
       dateControls(tdate, todayIso) + '</div>' + body + '</div>';
 
     var t6 = '';
-    if (k.path) {
-      var pt = k.path, on = Math.abs(pt.aheadKg) < 0.05, good = pt.aheadKg >= 0;
-      var needWk = pt.needWk, curName = pt.mode === 'deficit' ? 'לפי הגירעון' : 'המגמה';
-      var paceLine = '</small><small class="kpi__sub kpi__sub--' + (pt.paceWk >= needWk ? 'good' : 'bad') + '">מכאן והלאה צריך <bdi>' + n(needWk, 2) + '</bdi> ק״ג לשבוע. הקצב שלך ' + (pt.mode === 'deficit' ? 'לפי הגירעון' : 'במגמה') + ': <bdi>' + n(pt.paceWk, 2) + '</bdi>' +
-          (pt.paceWk >= needWk ? ' — מספיק.' : ' — <b>איטי מדי</b>.');
-      var modeBtns = '<div class="kpi__chips"><button type="button" class="kpi__chip" data-kpi-mode="deficit" aria-pressed="' + (pt.mode === 'deficit') + '">לפי הגירעון של 7 ימים</button>' +
-        '<button type="button" class="kpi__chip" data-kpi-mode="trend" aria-pressed="' + (pt.mode === 'trend') + '">לפי מגמת המשקל</button></div>';
-      t6 = '<div class="kpi__path-card">' + modeBtns +
-        tile('6 · התקדמות מול מסלול היעד', on ? '✓' : (good ? '' : '−') + n(pt.aheadKg, 1), on ? ' על המסלול בדיוק' : ' ק״ג ' + (good ? 'לפני המסלול' : 'אחרי המסלול'),
-          '<small class="kpi__sub kpi__sub--' + (good ? 'good' : 'bad') + '">' + (on ? 'בדיוק בזמן' : pt.aheadDays !== null ? 'כ-' + n(pt.aheadDays) + ' ימים ' + (good ? 'לפני' : 'אחרי') : '') +
-          '. לפי המסלול: <bdi>' + n(pt.pathKg, 1) + '</bdi> ק״ג. אתה (מגמה): <bdi>' + n(pt.nowKg, 1) + '</bdi> ק״ג.' + paceLine + '</small>',
-          'קו ישר מ-' + n(pt.startKg, 1) + ' (' + P.esc(root.Dates.short(pt.start)) + (pt.startN > 1 ? ', ממוצע ' + pt.startN + ' שקילות סביב התאריך' : '') + ') עד ' + n(pt.goal, 1) + ' (' + P.esc(root.Dates.short(pt.end)) + '). ' +
-          (rows.length && dayNum(pt.start) < dayNum(rows[0].date) + 7 ? 'המסלול מתחיל בשבוע המים, ולכן חלק מהיתרון צפוי להצטמצם. ' : '') + 'בימי חו״ל צפויה עלייה זמנית.') +
-        pathChart(pt) + startSel(rows, pt.start) + '</div>';
+    if (k.fwd) {
+      var F = k.fwd;
+      var row = function (title, e, pace, sub, cls) {
+        var when = !e ? '—' : e.done ? 'הושג' : e.never ? 'לא בקצב הזה' : P.esc(root.Dates.short(e.date));
+        var tag = e && e.dn ? (e.dn <= F.targetDn ? '<span class="kpi__tag kpi__tag--good">לפני היעד ב-' + (F.targetDn - e.dn) + ' ימים</span>' : '<span class="kpi__tag kpi__tag--bad">אחרי היעד ב-' + (e.dn - F.targetDn) + ' ימים</span>') : '';
+        return '<div class="kpi__eta-row"><i class="kpi__k ' + cls + '"></i><span>' + title + '</span><b>' + when + '</b>' + tag + '</div>' +
+          '<div class="kpi__note">' + pace + ' · ' + sub + '</div>';
+      };
+      t6 = '<div class="kpi__tile kpi__eta"><div class="kpi__title">6 · מתי אגיע ל-' + n(F.goal, 1) + ' (מהיום, ' + n(F.nowKg, 1) + ' ק״ג במגמה)</div>' +
+        row('לפי הגירעון', F.def.eta, F.def.perDay !== null ? n(F.def.perDay * 7, 2) + ' ק״ג לשבוע' : '—',
+          'ממוצע ' + (F.def.avg !== null ? n(F.def.avg) : '—') + ' גירעון ליום ב-' + F.def.days + ' ימים', 'kpi__k--def') +
+        row('לפי המשקל בפועל', F.wt.eta, F.wt.perDay !== null ? n(F.wt.perDay * 7, 2) + ' ק״ג לשבוע' : '—',
+          'מגמת ' + F.wt.n + ' שקילות', 'kpi__k--wt') +
+        fwdChart(F) +
+        '<div class="kpi__row"><span>ממוצע מתאריך:</span>' + startSel(rows, F.from) + '</div>' +
+        '<div class="kpi__note">שני הקצבים הם ממוצע מהתאריך שבחרת ועד היום, וממשיכים קדימה מהמשקל של היום. לא כולל חו״ל ולא האטה.</div></div>';
     }
     var t7 = '';
-    if (k.eta) {
-      var E = k.eta, when = function (e) { return e ? '<b>' + P.esc(root.Dates.short(e.date)) + '</b> <small>(בעוד ' + e.days + ' ימים)</small>' : '<b>—</b>'; };
-      var late = function (e) { return e && dayNum(e.date) > dayNum(k.target.date) ? ' <small class="kpi__sub--bad">אחרי היעד</small>' : (e ? ' <small class="kpi__sub--good">לפני היעד</small>' : ''); };
-      t7 = '<div class="kpi__tile kpi__eta"><div class="kpi__title">7 · מתי אגיע ל-' + n(goalKg, 1) + ' בקצב הנוכחי</div>' +
-        (E.done ? '<div class="kpi__big"><b>הושג</b></div>' :
-          '<div class="kpi__eta-row"><span>לפי מגמת המשקל</span>' + when(E.byTrend) + late(E.byTrend) + '</div>' +
-          '<div class="kpi__eta-row"><span>לפי הגירעון של 7 ימים</span>' + when(E.byDeficit) + late(E.byDeficit) + '</div>') +
-        '<div class="kpi__note">נשארו ' + n(E.kgLeft || 0, 1) + ' ק״ג ממשקל המגמה. המגמה כוללת עדיין ירידת מים ולכן אופטימית; הגירעון לא כולל מים, והוא ההערכה השמרנית יותר. לא כולל חו״ל.</div></div>';
-    }
     return '<section class="cumul kpi"><div class="cumul__row"><h2 class="cumul__title">מדדים שבועיים</h2></div>' +
-      '<div class="kpi__grid">' + t1 + t2 + t3 + t4 + t5 + '</div>' + t6 + t7 + target + '</section>';
+      '<div class="kpi__grid">' + t1 + t2 + t3 + t4 + t5 + '</div>' + target + t6 + t7 + '</section>';
   }
 
   /** בחירת תאריך בלי לוח שנה של הטלפון: יום, חודש, שנה וקיצורי דרך */
@@ -1663,7 +1720,7 @@
     var opts = rows.filter(function (r) { return typeof r.weightKg === 'number'; }).map(function (r) {
       return '<option value="' + r.date + '"' + (r.date === cur ? ' selected' : '') + '>' + P.esc(root.Dates.short(r.date)) + ' · ' + root.Fmt.n(r.weightKg, 1) + '</option>';
     }).join('');
-    return '<div class="kpi__row"><span>תחילת המסלול:</span><select class="kpi__sel" data-kpi-start>' + opts + '</select></div>';
+    return '<select class="kpi__sel" data-kpi-start>' + opts + '</select>';
   }
 
   function bindKpi(view) {
