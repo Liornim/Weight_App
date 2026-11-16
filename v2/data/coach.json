@@ -3077,27 +3077,27 @@
             },
             {
               "cat": "veg",
-              "name": "מהקיסר: 3 עלי חסה עם רוטב, רבע ביצה רכה ופירורים",
-              "kcal": 100,
-              "proteinG": 3,
-              "carbG": 3,
-              "fatG": 8
+              "name": "מהקיסר: 6 עלי חסה עם רוטב, חצי ביצה רכה ופירורים (2 סבבים)",
+              "kcal": 200,
+              "proteinG": 6,
+              "carbG": 6,
+              "fatG": 16
             }
           ],
           "basis": "estimate",
           "basisNote": "מסעדה, הערכה מתמונות. סלמון כמו ב-10.11 (בלי העור).",
-          "kcalLow": 880,
-          "kcalHigh": 1110,
-          "kcal": 1005,
-          "proteinG": 53,
-          "carbG": 23,
-          "fatG": 42
+          "kcalLow": 980,
+          "kcalHigh": 1230,
+          "kcal": 1105,
+          "proteinG": 56,
+          "carbG": 26,
+          "fatG": 50
         }
       ],
-      "kcal": 2031,
-      "proteinG": 156.6,
-      "carbG": 90.0,
-      "fatG": 76.6
+      "kcal": 2131,
+      "proteinG": 159.6,
+      "carbG": 93.0,
+      "fatG": 84.6
     }
   ],
   "summary": {
