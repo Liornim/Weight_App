@@ -1636,6 +1636,13 @@
       out.push({ date: r.date, def: k.fwd.def.eta, wt: k.fwd.wt.eta, kg: k.fwd.nowKg, avg: k.fwd.def.avg,
         wtWk: k.fwd.wt.perDay !== null ? k.fwd.wt.perDay * 7 : null, water: k.fwd.wt.water, defWk: k.fwd.def.perDay !== null ? k.fwd.def.perDay * 7 : null });
     });
+    // היום הפתוח: מצב נכון לעכשיו (כולל שקילת הבוקר), גם לפני שהיום נסגר
+    var last = rows.length ? rows[rows.length - 1] : null;
+    if (last && !(typeof last.kcal === 'number' && typeof last.steps === 'number')) {
+      var kL = kpiOf(rows, cfg, targetDate, last.date, goalKg, startDate, 'deficit', avgWin);
+      if (kL && kL.fwd) out.push({ date: last.date, live: true, def: kL.fwd.def.eta, wt: kL.fwd.wt.eta, kg: kL.fwd.nowKg, avg: kL.fwd.def.avg,
+        wtWk: kL.fwd.wt.perDay !== null ? kL.fwd.wt.perDay * 7 : null, water: kL.fwd.wt.water });
+    }
     out.forEach(function (h, i) {
       var p = out[i - 1];
       h.dDef = p && p.def && h.def && p.def.dn && h.def.dn ? h.def.dn - p.def.dn : null;
@@ -1672,7 +1679,7 @@
     var n = function (v, d) { return root.Fmt.n(Math.abs(v), d || 0); };
     var d = function (e) { return !e ? '—' : e.done ? 'הושג' : e.never ? '—' : P.esc(shortY(e.date)); };
     var body = list.map(function (h) {
-      return '<tr><td>' + P.esc(root.Dates.short(h.date)) + '</td>' +
+      return '<tr' + (h.live ? ' class="kpi__live"' : '') + '><td>' + P.esc(root.Dates.short(h.date)) + (h.live ? ' <small>עכשיו</small>' : '') + '</td>' +
         '<td class="n">' + (h.avg === null ? '—' : h.avg < 0 ? '<bdi dir="ltr" class="kpi__ch--bad">+' + n(h.avg) + '</bdi> עודף' : n(h.avg)) + '</td>' +
         '<td class="n"><b>' + d(h.def) + '</b></td>' +
         '<td class="n">' + d(h.wt) + '</td>' +
@@ -1680,7 +1687,7 @@
     }).join('');
     return '<div class="kpi__hist"><div class="kpi__title">היסטוריה</div>' +
       '<table class="kpi__table"><thead><tr><th>מצב נכון ל</th><th>גירעון ממוצע</th><th>לפי גירעון</th><th>לפי משקל</th><th>ק״ג לשבוע</th></tr></thead><tbody>' + body + '</tbody></table>' +
-      '<div class="kpi__note">כל שורה מחושבת לפי מה שהיה ידוע בסוף אותו יום, עם היעד והממוצע שבחרת למעלה. ק״ג לשבוע = הירידה בפועל במשקל. * = כולל את שבוע המים הראשון, ולכן מנופח.</div></div>';
+      '<div class="kpi__note">השורה "עכשיו" כוללת את שקילת הבוקר והאוכל שנרשם עד כה, ותתעדכן עד שהיום ייסגר. כל שאר השורות מחושבות לפי מה שהיה ידוע בסוף אותו יום, עם היעד והממוצע שבחרת למעלה. ק״ג לשבוע = הירידה בפועל במשקל. * = כולל את שבוע המים הראשון, ולכן מנופח.</div></div>';
   }
 
   function kpi() {

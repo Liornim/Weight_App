@@ -1497,3 +1497,4 @@ details.rx .body { padding: 0 18px 18px; }
 .kpi__win { margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(127,127,127,.25); }
 .kpi__win + .kpi__target { border-top: 0; margin-top: 12px; padding-top: 0; }
 .kpi__avg { margin-top: 10px; font-size: 15px; } .kpi__avg b { font-size: 22px; font-family: var(--mono); color: #4cd38a; } .kpi__avg small { opacity: .7; font-size: 12.5px; }
+.kpi__live td { background: rgba(245,194,107,.08); } .kpi__live small { color: #f5c26b; font-size: 11px; }
