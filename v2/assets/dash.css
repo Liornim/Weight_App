@@ -1498,3 +1498,7 @@ details.rx .body { padding: 0 18px 18px; }
 .kpi__win + .kpi__target { border-top: 0; margin-top: 12px; padding-top: 0; }
 .kpi__avg { margin-top: 10px; font-size: 15px; } .kpi__avg b { font-size: 22px; font-family: var(--mono); color: #4cd38a; } .kpi__avg small { opacity: .7; font-size: 12.5px; }
 .kpi__live td { background: rgba(245,194,107,.08); } .kpi__live small { color: #f5c26b; font-size: 11px; }
+.wchart__reg { stroke: #8ab4ff; stroke-width: 1.8; stroke-dasharray: 6 4; }
+.wchart__half { stroke: #c792ea; stroke-width: 2.2; opacity: .85; }
+.wchart__k--reg { border-top: 2px dashed #8ab4ff; height: 0; }
+.wchart__k--half { background: #c792ea; height: 2px; }
