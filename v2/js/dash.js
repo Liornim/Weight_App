@@ -596,11 +596,11 @@
    */
   var TABS = [
     { value: 'home', label: 'ראשי' },
+    { value: 'kpi', label: 'מדדים' },
     { value: 'meals', label: 'ארוחות' },
     { value: 'groups', label: 'קבוצות' },
     { value: 'macros', label: 'מאקרו' },
     { value: 'split', label: 'פירוק' },
-    { value: 'kpi', label: 'מדדים' },
     { value: 'trend', label: 'מגמה' },
     { value: 'score', label: 'ציונים' },
     { value: 'budget', label: 'תקציב' },
