@@ -3041,7 +3041,7 @@
         },
         {
           "time": "ערב",
-          "name": "נאפו: פילה סלמון בלי עור, ירקות ירוקים, אנשובי ויין",
+          "name": "נאפו: פילה סלמון בלי עור, ירקות ירוקים, אנשובי, קצת קיסר ויין",
           "items": [
             {
               "cat": "fish",
@@ -3074,22 +3074,30 @@
               "proteinG": 0,
               "carbG": 10,
               "fatG": 0
+            },
+            {
+              "cat": "veg",
+              "name": "מהקיסר: 3 עלי חסה עם רוטב, רבע ביצה רכה ופירורים",
+              "kcal": 100,
+              "proteinG": 3,
+              "carbG": 3,
+              "fatG": 8
             }
           ],
           "basis": "estimate",
           "basisNote": "מסעדה, הערכה מתמונות. סלמון כמו ב-10.11 (בלי העור).",
-          "kcalLow": 810,
-          "kcalHigh": 990,
-          "kcal": 905,
-          "proteinG": 50,
-          "carbG": 20,
-          "fatG": 34
+          "kcalLow": 880,
+          "kcalHigh": 1110,
+          "kcal": 1005,
+          "proteinG": 53,
+          "carbG": 23,
+          "fatG": 42
         }
       ],
-      "kcal": 1931,
-      "proteinG": 153.6,
-      "carbG": 87.0,
-      "fatG": 68.6
+      "kcal": 2031,
+      "proteinG": 156.6,
+      "carbG": 90.0,
+      "fatG": 76.6
     }
   ],
   "summary": {
