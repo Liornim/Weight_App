@@ -373,13 +373,6 @@
         regEnd = fit.at(b.x);
         extra += '<line class="wchart__reg" x1="' + x(a.i).toFixed(1) + '" y1="' + y(fit.at(a.x)).toFixed(1) + '" x2="' + x(b.i).toFixed(1) + '" y2="' + y(regEnd).toFixed(1) + '"/>';
       }
-      var n = pts.length, h = Math.floor(n / 2);
-      if (h >= 2) {
-        var m = function (arr) { return arr.reduce(function (t, p) { return t + p.y; }, 0) / arr.length; };
-        var A = pts.slice(0, h), Bh = pts.slice(n - h);
-        var seg = function (arr, v) { return '<line class="wchart__half" x1="' + x(arr[0].i).toFixed(1) + '" x2="' + x(arr[arr.length - 1].i).toFixed(1) + '" y1="' + y(v).toFixed(1) + '" y2="' + y(v).toFixed(1) + '"/>'; };
-        extra += seg(A, m(A)) + seg(Bh, m(Bh));
-      }
     }
     var path = function (key) {
       return series.map(function (p, i) { return (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(p[key]).toFixed(1); }).join(' ');
@@ -408,7 +401,7 @@
       extra + '<path class="wchart__a3" d="' + path('avg3') + '"/><path class="wchart__a7" d="' + path('avg7') + '"/>' + dots + ticks + ends + '</svg>' +
       '<div class="wchart__legend"><span><i class="wchart__k wchart__k--a7"></i>ממוצע 7</span>' +
       '<span><i class="wchart__k wchart__k--a3"></i>ממוצע 3</span><span><i class="wchart__k wchart__k--dot"></i>שקילה</span>' +
-      (extra ? '<span><i class="wchart__k wchart__k--reg"></i>מגמה (רגרסיה)' + (regEnd !== null ? ' · ' + root.Fmt.n(regEnd, 1) : '') + '</span><span><i class="wchart__k wchart__k--half"></i>ממוצע חצאים</span>' : '') +
+      (extra ? '<span><i class="wchart__k wchart__k--reg"></i>מגמה (רגרסיה)' + (regEnd !== null ? ' · ' + root.Fmt.n(regEnd, 1) : '') + '</span>' : '') +
       '<span>קו לכל חצי ק״ג</span></div>';
   }
 
