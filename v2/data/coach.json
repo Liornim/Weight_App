@@ -3214,6 +3214,18 @@
           "kcalLow": 355,
           "kcalHigh": 365
         }
+      ],
+      "walks": [
+        {
+          "time": "22:40",
+          "minutes": 30,
+          "seconds": 41,
+          "steps": 2796,
+          "kmh": 3.6,
+          "avgHr": 100,
+          "deviceKcal": 184,
+          "climbM": 11
+        }
       ]
     }
   ],
