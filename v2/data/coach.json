@@ -3224,7 +3224,8 @@
           "kmh": 3.6,
           "avgHr": 100,
           "deviceKcal": 184,
-          "climbM": 11
+          "climbM": 11,
+          "km": 1.88
         }
       ]
     }
