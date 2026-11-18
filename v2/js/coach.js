@@ -1282,6 +1282,43 @@
       P.hint('הימים שעברו לפי המודל הרגיל (' + root.Fmt.n(cfg0(state).baseBurn, 0) + ' + צעדים × ' + cfg0(state).kcalPerStep + '). הימים שנשארו בהנחה שמרנית: ' + root.Fmt.n(list[0].stepsRef, 0) + ' צעדים × ' + COMP_KPS + '. כל צעד מעבר לזה הוא בונוס. חלבון לא נכנס: הוא יעד יומי.'));
   }
 
+  /** טאב שעות צעדים: לכל יום רצועה של 48 חצאי שעה, וממוצע לפי שעה בכל הימים */
+  function stepsTab() {
+    var state = read();
+    var days = (state.rows || []).filter(function (r) { return r.stepsByHalfHour && typeof r.steps === 'number'; })
+      .sort(function (a, b) { return a.date < b.date ? 1 : -1; });
+    if (!days.length) return P.section('שעות צעדים', P.card(null, null, P.empty('עוד אין פירוט שעות. שלח צילום של "צעדים לפי השעה ביום" מהשעון.')));
+    var n0 = function (v) { return root.Fmt.n(v, 0); };
+    var slots = []; for (var i = 0; i < 48; i++) slots.push(('0' + Math.floor(i / 2)).slice(-2) + ':' + (i % 2 ? '30' : '00'));
+    var bars = function (vals, max, h) {
+      return '<div class="stp__bars" style="height:' + h + 'px">' + vals.map(function (v, i) {
+        var pct = max ? Math.max(v > 0 ? 3 : 0, v / max * 100) : 0;
+        return '<i title="' + slots[i] + ' · ' + n0(v) + '" style="height:' + pct + '%"></i>';
+      }).join('') + '</div><div class="stp__axis"><span>0</span><span>6</span><span>12</span><span>18</span><span>24</span></div>';
+    };
+    var parts = function (vals) {
+      var sum = function (a, b) { return vals.slice(a * 2, b * 2).reduce(function (x, y) { return x + y; }, 0); };
+      return [['בוקר', sum(5, 12)], ['צהריים', sum(12, 18)], ['ערב', sum(18, 24)], ['לילה', sum(0, 5)]];
+    };
+    // ממוצע לפי שעה
+    var avg = slots.map(function (sl) { return days.reduce(function (a, r) { return a + (r.stepsByHalfHour[sl] || 0); }, 0) / days.length; });
+    var avgMax = Math.max.apply(null, avg);
+    var tot = avg.reduce(function (a, b) { return a + b; }, 0);
+    var avgParts = parts(avg).map(function (p) { return '<span class="comp__chip">' + p[0] + ': <b>' + Math.round(p[1] / (tot || 1) * 100) + '%</b></span>'; }).join('');
+    var avgCard = P.card('ממוצע לפי שעה', days.length + ' ימים עם פירוט. כל עמודה = חצי שעה.',
+      bars(avg, avgMax, 120) + '<div class="comp__now">' + avgParts + '</div>');
+    var dayCards = days.map(function (r) {
+      var vals = slots.map(function (sl) { return r.stepsByHalfHour[sl] || 0; });
+      var max = Math.max.apply(null, vals), peak = slots[vals.indexOf(max)];
+      var ps = parts(vals).map(function (p) { return '<span class="comp__chip">' + p[0] + ': <b>' + n0(p[1]) + '</b></span>'; }).join('');
+      return '<div class="comp__w"><div class="comp__h"><b>' + P.esc(root.Dates.short(r.date)) + '</b> · ' + n0(r.steps) + ' צעדים · שיא ' + peak + ' (' + n0(max) + ')</div>' +
+        bars(vals, max, 70) + '<div class="comp__now">' + ps + '</div>' +
+        (r.stepsByHalfHourNote ? '<div class="comp__t" style="opacity:.6">' + P.esc(r.stepsByHalfHourNote) + '</div>' : '') + '</div>';
+    }).join('');
+    return P.section('שעות צעדים', avgCard + P.card('לפי יום', 'החדש למעלה.', dayCards) +
+      P.hint('בוקר = 5:00–12:00, צהריים = 12:00–18:00, ערב = 18:00–24:00, לילה = 0:00–5:00.'));
+  }
+
   // סימולציה: נשמר בזיכרון בלבד, כדי שמחר ייפתח נקי
   var compSim = { d0: {}, d1: {} };
 
@@ -2382,5 +2419,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, macros: macros, macroOf: macroOf, scorecard: scorecard, scoresOf: scoresOf, compSheetOf: compSheetOf, compHistoryOf: compHistoryOf, compTab: compTab, simTab: simTab, bindComp: bindComp, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, breakEvenOf: breakEvenOf, bindBreakEven: bindBreakEven, kpi: kpi, kpiOf: kpiOf, etaHistory: etaHistory, bindKpi: bindKpi, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, macros: macros, macroOf: macroOf, scorecard: scorecard, scoresOf: scoresOf, compSheetOf: compSheetOf, compHistoryOf: compHistoryOf, compTab: compTab, simTab: simTab, stepsTab: stepsTab, bindComp: bindComp, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, breakEvenOf: breakEvenOf, bindBreakEven: bindBreakEven, kpi: kpi, kpiOf: kpiOf, etaHistory: etaHistory, bindKpi: bindKpi, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);

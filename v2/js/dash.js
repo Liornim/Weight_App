@@ -605,6 +605,7 @@
     { value: 'score', label: 'ציונים' },
     { value: 'comp', label: 'פיצויים' },
     { value: 'sim', label: 'סימולציה' },
+    { value: 'steps', label: 'שעות צעדים' },
     { value: 'budget', label: 'תקציב' },
     { value: 'weight', label: 'משקל' },
     { value: 'data', label: 'נתונים' },
@@ -647,6 +648,7 @@
       : state.tab === 'score' ? root.Coach.scorecard()
       : state.tab === 'comp' ? root.Coach.compTab()
       : state.tab === 'sim' ? root.Coach.simTab()
+      : state.tab === 'steps' ? root.Coach.stepsTab()
       : state.tab === 'recipes' ? root.RecipesTab.render()
       : root.BudgetTab.render(state);
 
