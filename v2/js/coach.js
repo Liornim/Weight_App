@@ -1143,8 +1143,48 @@
     var short = { kcal: 'קל׳', deficit: 'גירעון 550+', protein: 'חלבון', fat: 'שומן', steps: '6.7K', steps10: '10K', dry: 'בלי אלכ׳' };
     var dayCard = P.card('לפי בלוק', '✓ עמד · % ניקוד חלקי · ✗ לא עמד · סה״כ = נקודות מ-100',
       P.table(['ימים'].concat(sc.goals.map(function (g) { return short[g.key] || g.label; })).concat(['סה״כ']), dayRows));
-    return P.section('ציונים', head + statCard + dayCard +
+    return P.section('ציונים', head + compSheet(state) + statCard + dayCard +
       P.hint('רק ימים סגורים (עם צעדים). הבלוקים קבועים ולא זזים; בלוק נספר רק כשכל 3 הימים בו סגורים. גירעון לפי החשבון הנוכחי: ' + root.Fmt.n(cfg0(state).baseBurn, 0) + ' + צעדים × ' + cfg0(state).kcalPerStep + '.'));
+  }
+
+  /**
+   * גיליון פיצויים: לכל אורך חלון (3–7 ימים, בגבולות קבועים מהיום הראשון של המעקב),
+   * החלון הפתוח הנוכחי — כמה גירעון נצבר, כמה חסר מול התוכנית, ומה צריך בכל יום שנשאר.
+   */
+  function compSheetOf(state, todayIso, lens) {
+    var cfg = cfg0(state);
+    var rows = (state.rows || []).filter(function (r) { return typeof r.kcal === 'number' && typeof r.steps === 'number'; });
+    if (!rows.length) return [];
+    var by = {};
+    rows.forEach(function (r) { by[dayNum(r.date)] = r; });
+    var s0 = dayNum(state.startDate || rows[0].date), today = dayNum(todayIso);
+    var iso = function (dn) { return new Date(dn * 864e5).toISOString().slice(0, 10); };
+    var stepsRef = (state.targets && state.targets.stepsGoal) || 10000;
+    return (lens || [3, 4, 5, 6, 7]).map(function (N) {
+      var a = s0 + Math.floor((today - s0) / N) * N, b = a + N - 1, sum = 0, n = 0;
+      for (var x = a; x <= b; x++) if (by[x]) { sum += cfg.baseBurn + by[x].steps * cfg.kcalPerStep - by[x].kcal; n++; }
+      var rem = N - n, goal = cfg.plannedDeficit * N, need = goal - sum;
+      var per = rem ? need / rem : null;
+      return { n: N, from: iso(a), to: iso(b), closed: n, left: rem, sum: sum, behind: cfg.plannedDeficit * n - sum,
+        needPerDay: per, kcalAt: per === null ? null : cfg.baseBurn + stepsRef * cfg.kcalPerStep - per, stepsRef: stepsRef };
+    });
+  }
+
+  function compSheet(state) {
+    var list = compSheetOf(state, root.Dates.today());
+    if (!list.length) return '';
+    var n0 = function (v) { return root.Fmt.n(Math.abs(v), 0); };
+    var rows = list.map(function (w) {
+      var range = '<bdi dir="ltr" style="white-space:nowrap">' + P.esc(root.Dates.short(w.from)) + '–' + P.esc(root.Dates.short(w.to)) + '</bdi>';
+      var st = w.behind > 0 ? '<span class="score__mark--no">חוב ' + n0(w.behind) + '</span>' : '<span class="score__mark--ok">' + (w.closed ? 'לפני ב-' + n0(w.behind) : '—') + '</span>';
+      var per = w.needPerDay === null ? '—' : (w.needPerDay <= 0 ? 'אין צורך' : n0(w.needPerDay));
+      var kc = w.kcalAt === null ? '—' : '<b>' + n0(w.kcalAt) + '</b>';
+      return '<tr><td class="n">' + w.n + ' ימים<small>' + range + '</small></td><td class="n">' + w.closed + '/' + w.n + '</td>' +
+        '<td class="n">' + st + '</td><td class="n">' + w.left + '</td><td class="n">' + per + '</td><td class="n">' + kc + '</td></tr>';
+    });
+    return P.card('גיליון פיצויים', 'החלון הפתוח לכל אורך, בגבולות קבועים מ-' + P.esc(root.Dates.short(state.startDate || list[0].from)) + '. כמה צריך בכל יום שנשאר כדי לסגור את החלון על גירעון ממוצע של ' + cfg0(state).plannedDeficit + '.',
+      P.table(['חלון', 'סגורים', 'מצב מול התוכנית', 'ימים שנשארו', 'גירעון נדרש ליום', 'קק״ל ליום ב-' + root.Fmt.n(list[0].stepsRef, 0) + ' צעדים'], rows) +
+      P.hint('החוב/העודף לפי הימים הסגורים בחלון בלבד. היום הנוכחי נספר כיום שנשאר עד שנסגר. לפי המודל: ' + root.Fmt.n(cfg0(state).baseBurn, 0) + ' + צעדים × ' + cfg0(state).kcalPerStep + '.'));
   }
 
   function cfg0(state) { return state.balance || { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 }; }
@@ -2157,5 +2197,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, macros: macros, macroOf: macroOf, scorecard: scorecard, scoresOf: scoresOf, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, breakEvenOf: breakEvenOf, bindBreakEven: bindBreakEven, kpi: kpi, kpiOf: kpiOf, etaHistory: etaHistory, bindKpi: bindKpi, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, macros: macros, macroOf: macroOf, scorecard: scorecard, scoresOf: scoresOf, compSheetOf: compSheetOf, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, breakEvenOf: breakEvenOf, bindBreakEven: bindBreakEven, kpi: kpi, kpiOf: kpiOf, etaHistory: etaHistory, bindKpi: bindKpi, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);
