@@ -1134,7 +1134,7 @@
     var dayRows = sc.blocks.slice().reverse().map(function (d) {
       var label = P.esc(root.Dates.short(d.date)) + (d.to !== d.date ? '–' + P.esc(root.Dates.short(d.to)) : '');
       return '<tr' + (d.full ? '' : ' style="opacity:.55"') + '><td class="n"><bdi dir="ltr" style="white-space:nowrap">' + label + '</bdi>' +
-        '<small>גירעון ' + root.Fmt.n(d.agg.def, 0) + (d.full ? '' : d.open ? ' · בתהליך (' + d.n + '/3), עוד לא נספר' : ' · חלקי, לא נספר') + '</small></td>' +
+        '<small>' + (d.agg.def < 0 ? 'עודף ' : 'גירעון ') + root.Fmt.n(Math.abs(d.agg.def), 0) + (d.full ? '' : d.open ? ' · בתהליך (' + d.n + '/3), עוד לא נספר' : ' · חלקי, לא נספר') + '</small></td>' +
         '<td class="n"><b>' + Math.round(d.pts) + '</b></td>' +
         sc.goals.map(function (g) {
           var c = d.credit[g.key], pts = Math.round(c * g.weight);
@@ -1212,7 +1212,7 @@
       var rows = list.slice().reverse().map(function (w) {
         var range = '<bdi dir="ltr" style="white-space:nowrap">' + P.esc(root.Dates.short(w.from)) + '–' + P.esc(root.Dates.short(w.to)) + '</bdi>';
         return '<tr' + (w.full ? '' : ' style="opacity:.6"') + '><td class="n">' + range + '<small>' + (w.full ? w.hits + '/4 יעדים' : 'פתוח · ' + w.closed + '/' + N) + '</small></td>' +
-          c(w.ok.def, n0(w.def)) + c(w.ok.kcal, n0(w.kcal)) + c(w.ok.fat, n0(w.fat)) + c(w.ok.steps, n0(w.steps)) + '</tr>';
+          c(w.ok.def, w.def < 0 ? 'עודף ' + root.Fmt.n(-w.def, 0) : n0(w.def)) + c(w.ok.kcal, n0(w.kcal)) + c(w.ok.fat, n0(w.fat)) + c(w.ok.steps, n0(w.steps)) + '</tr>';
       }).join('');
       return '<details class="comph"' + (N === 3 ? ' open' : '') + '><summary><b>' + N + ' ימים</b> · ' + good + '/' + full.length + ' חלונות סגורים בגירעון ' + cfg0(state).plannedDeficit + '+</summary>' +
         P.table(['חלון', 'גירעון ממוצע', 'קק״ל ממוצע', 'שומן ממוצע', 'צעדים ממוצע'], [rows]) + '</details>';
