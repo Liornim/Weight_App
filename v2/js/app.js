@@ -13,7 +13,7 @@
   var App = {
     BUILD: 'd127',
     // גרסה גלויה למשתמש, עולה באחד בכל עדכון שמשנה את האתר
-    VERSION: 'V70',
+    VERSION: 'V71',
     state: {
       date: Dates.today(),
       tab: 'home',         // הטאב הראשי נפתח ראשון

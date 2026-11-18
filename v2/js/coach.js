@@ -1175,7 +1175,8 @@
       var left = function (cap, used) { return rem && typeof cap === 'number' ? (cap * N - used) / rem : null; };
       return { n: N, from: iso(a), to: iso(b), closed: n, left: rem, sum: sum, behind: cfg.plannedDeficit * n - sum,
         needPerDay: per, kcalAt: per === null ? null : cfg.baseBurn + stepsRef * COMP_KPS - per, /* קדימה: שמרני */ stepsRef: stepsRef,
-        kcalCap: left(t.kcal, kc), fatCap: left(t.fatG, fat), stepsNeed: left(stepsGoal, st), kps: COMP_KPS };
+        kcalCap: left(t.kcal, kc), fatCap: left(t.fatG, fat), stepsNeed: left(stepsGoal, st), kps: COMP_KPS, stepsGoal: stepsGoal,
+        now: n ? { def: sum / n, kcal: kc / n, fat: fat / n, steps: st / n } : null };
     });
   }
 
@@ -1229,6 +1230,10 @@
     if (!list.length) return '';
     var n0 = function (v) { return root.Fmt.n(Math.abs(v), 0); };
     var plan = cfg0(state).plannedDeficit, cap = (state.targets || {}).kcal || 1900;
+    var chip = function (label, v, ok, signed) {
+      var txt = signed && v < 0 ? 'עודף ' + n0(v) : n0(v);
+      return '<span class="comp__chip comp__chip--' + (ok ? 'ok' : 'no') + '">' + label + ' <b>' + txt + '</b></span>';
+    };
     var kcalOf = function (w) { return w.kcalAt === null ? null : Math.min(w.kcalAt, w.kcalCap === null ? Infinity : w.kcalCap); };
     var open = list.filter(function (w) { return w.left > 0; });
     var tight = open.slice().sort(function (x, y) { return kcalOf(x) - kcalOf(y); })[0];
@@ -1245,7 +1250,10 @@
         ? 'המגבלה: שממוצע הקלוריות בחלון יישאר עד ' + n0(cap) + '.'
         : 'המגבלה: שהגירעון הממוצע בחלון יישאר ' + n0(plan) + ' (מספיק גירעון של ' + n0(Math.max(0, w.needPerDay)) + ' ביום, בהנחה של ' + n0(w.stepsRef) + ' צעדים).';
       return '<div class="comp__w"><div class="comp__h"><b>' + w.n + ' ימים</b> · ' + range + ' · נשארו ' + w.left + ' ' + (w.left === 1 ? 'יום' : 'ימים') + '</div>' +
-        '<div class="comp__big">עד <b>' + n0(kcal) + '</b> קק״ל ביום</div>' +
+        (w.now ? '<div class="comp__now"><span>עד עכשיו (' + w.closed + ' ' + (w.closed === 1 ? 'יום' : 'ימים') + ', ממוצע):</span>' +
+          chip('גירעון', w.now.def, w.now.def >= plan, true) + chip('קק״ל', w.now.kcal, Math.round(w.now.kcal) <= cap) +
+          chip('שומן', w.now.fat, Math.round(w.now.fat) <= ((state.targets || {}).fatG || 65)) + chip('צעדים', w.now.steps, Math.round(w.now.steps) >= w.stepsGoal) + '</div>' : '') +
+        '<div class="comp__big">' + (w.closed ? 'מכאן: ' : '') + 'עד <b>' + n0(kcal) + '</b> קק״ל ביום</div>' +
         '<div class="comp__t">' + balTxt + ' ' + why + '</div>' +
         '<div class="comp__t">שומן עד <b>' + n0(w.fatCap) + '</b> ג׳ ביום · צעדים לפחות <b>' + n0(w.stepsNeed) + '</b> ביום.</div></div>';
     }).join('');

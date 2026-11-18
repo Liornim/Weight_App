@@ -1514,3 +1514,9 @@ details.comph[open] > summary { padding-bottom: 6px; }
 .comp__big { font-size: 16px; margin: 4px 0; }
 .comp__big b { font-size: 22px; font-family: var(--mono, monospace); }
 .comp__t { font-size: 13px; line-height: 1.5; opacity: .85; }
+.comp__now { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0 2px; font-size: 12px; }
+.comp__now > span:first-child { opacity: .7; width: 100%; }
+.comp__chip { padding: 3px 8px; border-radius: 999px; font-size: 12px; }
+.comp__chip b { font-family: var(--mono, monospace); }
+.comp__chip--ok { background: rgba(31,143,95,.12); color: #1F8F5F; }
+.comp__chip--no { background: rgba(200,70,58,.12); color: #C8463A; }
