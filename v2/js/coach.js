@@ -1055,9 +1055,8 @@
     if (typeof t.stepsGoal === 'number') G.push({ key: 'steps10', label: 'צעדים ממוצע ' + root.Fmt.n(t.stepsGoal, 0) + ' לפחות', credit: function (b) { return bin(Math.round(b.steps) >= t.stepsGoal); } });
     if (typeof t.steps === 'number') G.push({ key: 'steps', label: 'צעדים ממוצע ' + root.Fmt.n(t.steps, 0) + ' לפחות', credit: function (b) { return bin(Math.round(b.steps) >= t.steps); } });
     if (typeof t.fatG === 'number') G.push({ key: 'fat', label: 'שומן ממוצע עד ' + t.fatG, credit: function (b) { return bin(Math.round(b.fat) <= t.fatG); } });
-    G.push({ key: 'dry', label: 'ימים בלי אלכוהול', credit: function (b) { return b.dry; } });
-    // מדרג: גירעון 50, חלבון 15, קלוריות 10, 10K 10, השאר 5 (סה״כ 100)
-    var W = { deficit: 50, protein: 15, kcal: 10, steps10: 10, steps: 5, fat: 5, dry: 5 };
+    // מדרג: גירעון 55, חלבון 15, קלוריות 10, 10K 10, השאר 5 (סה״כ 100). אלכוהול לא נספר — הוא כבר בתוך הגירעון.
+    var W = { deficit: 55, protein: 15, kcal: 10, steps10: 10, steps: 5, fat: 5 };
     G.forEach(function (g) { g.weight = W[g.key] || 5; });
     return G;
   }
@@ -1119,7 +1118,7 @@
     var head = '<section class="cumul">' +
       '<div class="cumul__row"><h2 class="cumul__title">דף ציונים</h2><span class="cumul__stamp">' + nFull + ' בלוקים של 3 ימים</span></div>' +
       '<div class="score__big score--' + grade + '">' + sc.score + '<small>/100</small></div>' +
-      '<div class="cumul__gap">ממוצע הניקוד של הבלוקים. כל בלוק = 3 ימים בגבולות קבועים, מהיום הראשון של המעקב; המטרות נבדקות על ממוצע הבלוק, כך שפיצוי בתוך הבלוק נספר. גירעון 50 (חלקי), חלבון 15, קלוריות 10, 10K 10, השאר 5. בלי משקלים: ' + sc.flat + '</div>' +
+      '<div class="cumul__gap">ממוצע הניקוד של הבלוקים. כל בלוק = 3 ימים בגבולות קבועים, מהיום הראשון של המעקב; המטרות נבדקות על ממוצע הבלוק, כך שפיצוי בתוך הבלוק נספר. גירעון 55 (חלקי), חלבון 15, קלוריות 10, 10K 10, השאר 5. אלכוהול לא נספר בנפרד. בלי משקלים: ' + sc.flat + '</div>' +
     '</section>';
     var statRows = sc.stats.map(function (s) {
       var cls = s.pct >= 80 ? 'good' : s.pct >= 50 ? 'warn' : 'bad';
