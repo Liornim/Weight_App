@@ -1236,14 +1236,16 @@
       var txt = signed && v < 0 ? 'עודף ' + n0(v) : n0(v);
       return '<span class="comp__chip comp__chip--' + (ok ? 'ok' : 'no') + '">' + label + ' <b>' + txt + '</b></span>';
     };
+    // צבע לפי היעד: פחות מ-1,900 ביום = צריך להדק (אדום), 1,900 ומעלה = מרווח (ירוק)
+    var kc = function (v) { return '<b class="score__mark--' + (v < cap ? 'no' : 'ok') + '">' + n0(Math.max(0, v)) + '</b>'; };
     var kcalOf = function (w) { return w.kcalAt === null ? null : Math.min(w.kcalAt, w.kcalCap === null ? Infinity : w.kcalCap); };
     var open = list.filter(function (w) { return w.left > 0; });
     var tight = open.slice().sort(function (x, y) { return kcalOf(x) - kcalOf(y); })[0];
     var gl = open.filter(function (w) { return w.closed && w.greenToday !== null; });
     var green = gl.length ? Math.min.apply(null, gl.map(function (w) { return w.greenToday; })) : null;
-    var top = tight ? '<div class="comp__top">' + (sim ? 'אחרי הסימולציה, מ-' + P.esc(root.Dates.short(new Date((dayNum(sim) + 1) * 864e5).toISOString().slice(0, 10))) + ': ' : 'מהיום: ') + '<b>עד ' + n0(kcalOf(tight)) + ' קק״ל ביום</b>' +
+    var top = tight ? '<div class="comp__top">' + (sim ? 'אחרי הסימולציה, מ-' + P.esc(root.Dates.short(new Date((dayNum(sim) + 1) * 864e5).toISOString().slice(0, 10))) + ': ' : 'מהיום: ') + '<b>עד ' + kc(kcalOf(tight)) + ' קק״ל ביום</b>' +
       '<small>אם תעמוד בזה בכל יום עד סוף החלון המחמיר, כל החלונות ייסגרו על היעדים. החלון המחמיר: ' + tight.n + ' ימים (<bdi dir="ltr">' + P.esc(root.Dates.short(tight.from)) + '–' + P.esc(root.Dates.short(tight.to)) + '</bdi>).</small>' +
-      (green !== null && !sim ? '<div style="margin-top:8px">כדי שמחר בבוקר הכל יהיה ירוק: <b>היום עד ' + n0(Math.max(0, green)) + ' קק״ל</b></div>' : '') + '</div>' : '';
+      (green !== null && !sim ? '<div style="margin-top:8px">כדי שמחר בבוקר הכל יהיה ירוק: <b>היום עד ' + kc(green) + ' קק״ל</b></div>' : '') + '</div>' : '';
     var items = list.map(function (w) {
       var range = '<bdi dir="ltr" style="white-space:nowrap">' + P.esc(root.Dates.short(w.from)) + '–' + P.esc(root.Dates.short(w.to)) + '</bdi>';
       var bal = -w.behind, kcal = kcalOf(w);
@@ -1265,7 +1267,7 @@
         : 'המגבלה: שהגירעון הממוצע בחלון יישאר ' + n0(plan) + ' (מספיק גירעון של ' + n0(Math.max(0, w.needPerDay)) + ' ביום, בהנחה של ' + n0(w.stepsRef) + ' צעדים).';
       return '<div class="comp__w"><div class="comp__h"><b>' + w.n + ' ימים</b> · ' + range + ' · נשארו ' + w.left + ' ' + (w.left === 1 ? 'יום' : 'ימים') + '</div>' +
         (w.now ? nowChips((sim ? 'כולל הסימולציה' : 'עד עכשיו') + ' (' + w.closed + ' ' + (w.closed === 1 ? 'יום' : 'ימים') + ', ממוצע):') : '') +
-        '<div class="comp__big">' + (w.closed ? 'מכאן: ' : '') + 'עד <b>' + n0(kcal) + '</b> קק״ל ביום</div>' +
+        '<div class="comp__big">' + (w.closed ? 'מכאן: ' : '') + 'עד ' + kc(kcal) + ' קק״ל ביום</div>' +
         (w.greenToday !== null && w.closed && !sim ? '<div class="comp__t">כדי שמחר בבוקר ממוצע הקלוריות יהיה ירוק: <b>היום עד ' + n0(Math.max(0, w.greenToday)) + '</b> קק״ל.</div>' : '') +
         '<div class="comp__t">' + balTxt + ' ' + why + '</div>' +
         '<div class="comp__t">שומן עד <b>' + n0(w.fatCap) + '</b> ג׳ ביום · צעדים לפחות <b>' + n0(w.stepsNeed) + '</b> ביום.</div></div>';
