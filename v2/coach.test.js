@@ -320,8 +320,9 @@ test('ציונים: כמה ימים עמד בכל מטרה, ורצף', async () 
   await Coach.load();
   const sc = Coach.scoresOf(Coach.__state ? Coach.__state() : JSON.parse(w.localStorage.getItem(Coach.KEY)));
   const k = sc.stats.find(s => s.key === 'kcal'), dry = sc.stats.find(s => s.key === 'dry');
-  // בלוק אחד של 3 ימים (7–9): ממוצע 2,195 קק״ל, 2 מ-3 ימים בלי אלכוהול
-  assert(sc.blocks.length === 1 && sc.blocks[0].full && k.hit === 0 && k.of === 1 && dry.hit === 0 && Math.round(sc.blocks[0].credit.dry * 3) === 2, JSON.stringify(sc.stats));
+  // בלוקים קבועים (…6–8, 9–11…): 7–8 בבלוק 6–8 (חלקי), 9 בבלוק 9–11 (בתהליך); אף בלוק לא נספר
+  assert(sc.blocks.length === 2 && sc.blocks[0].n === 2 && !sc.blocks[0].full && sc.blocks[1].open && k.of === 0 && dry.of === 0
+    && sc.blocks[0].credit.dry === 0.5, JSON.stringify(sc.blocks));
   assert(Coach.scorecard().includes('דף ציונים'), 'תצוגה');
 });
 

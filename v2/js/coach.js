@@ -1041,9 +1041,8 @@
 
 
   /**
-   * דף ציונים בבלוקים של 3 ימים, מהיום האחרון שנסגר אחורה. כל יום שייך לבלוק אחד בלבד,
+   * דף ציונים בבלוקים קבועים של 3 ימים (מיושרים ל-SCORE_ANCHOR). כל יום שייך לבלוק אחד בלבד,
    * ולכן אין כפל; פיצוי בתוך הבלוק נספר מעצמו. כל המטרות נבדקות על ממוצע הבלוק.
-   * הגבולות זזים כשנסגר יום חדש — הבלוק הראשון הוא תמיד 3 הימים האחרונים.
    */
   function goalsOf(state) {
     var t = state.targets || {};
@@ -1063,6 +1062,8 @@
     return G;
   }
 
+  var SCORE_ANCHOR = '2026-11-17'; // יום שסוגר בלוק; כל הבלוקים מיושרים אליו
+
   function isDry(r) {
     return !(r.meals || []).some(function (m) { return (m.items || []).some(function (i) { return i.cat === 'alcohol' && i.kcal > 0; }); });
   }
@@ -1075,8 +1076,10 @@
     rows.forEach(function (r) { byDn[dayNum(r.date)] = r; });
     var blocks = [];
     if (rows.length) {
-      var first = dayNum(rows[0].date);
-      for (var end = dayNum(rows[rows.length - 1].date); end >= first; end -= 3) {
+      // גבולות קבועים: בלוק נגמר ב-17.11, וכל 3 ימים לפני ואחרי. הם לא זזים כשנסגר יום חדש.
+      var anchor = dayNum(SCORE_ANCHOR), lastDn = dayNum(rows[rows.length - 1].date);
+      var endOf = function (dn) { return anchor + Math.ceil((dn - anchor) / 3) * 3; };
+      for (var end = endOf(dayNum(rows[0].date)); end <= endOf(lastDn); end += 3) {
         var list = [end - 2, end - 1, end].map(function (dn) { return byDn[dn]; }).filter(Boolean);
         if (!list.length) continue;
         var m = function (f) { return list.reduce(function (a, r) { return a + f(r); }, 0) / list.length; };
@@ -1089,7 +1092,8 @@
         var res = {}, cr = {}, pts = 0, max = 0;
         goals.forEach(function (g) { cr[g.key] = g.credit(agg); res[g.key] = cr[g.key] >= 1; pts += g.weight * cr[g.key]; max += g.weight; });
         var hit = goals.filter(function (g) { return res[g.key]; }).length;
-        blocks.unshift({ date: list[0].date, to: list[list.length - 1].date, n: list.length, full: list.length === 3,
+        var iso = function (dn) { return new Date(dn * 864e5).toISOString().slice(0, 10); };
+        blocks.push({ date: iso(end - 2), to: iso(end), n: list.length, full: list.length === 3, open: end > lastDn,
           agg: agg, res: res, credit: cr, hit: hit, of: goals.length, pts: max ? pts / max * 100 : 0 });
       }
     }
@@ -1117,7 +1121,7 @@
     var head = '<section class="cumul">' +
       '<div class="cumul__row"><h2 class="cumul__title">דף ציונים</h2><span class="cumul__stamp">' + nFull + ' בלוקים של 3 ימים</span></div>' +
       '<div class="score__big score--' + grade + '">' + sc.score + '<small>/100</small></div>' +
-      '<div class="cumul__gap">ממוצע הניקוד של הבלוקים. כל בלוק = 3 ימים, מהיום האחרון שנסגר אחורה; המטרות נבדקות על ממוצע הבלוק, כך שפיצוי בתוך הבלוק נספר. גירעון 50 (חלקי), חלבון 15, קלוריות 10, 10K 10, השאר 5. בלי משקלים: ' + sc.flat + '</div>' +
+      '<div class="cumul__gap">ממוצע הניקוד של הבלוקים. כל בלוק = 3 ימים בגבולות קבועים (…, 12–14, 15–17, 18–20…); המטרות נבדקות על ממוצע הבלוק, כך שפיצוי בתוך הבלוק נספר. גירעון 50 (חלקי), חלבון 15, קלוריות 10, 10K 10, השאר 5. בלי משקלים: ' + sc.flat + '</div>' +
     '</section>';
     var statRows = sc.stats.map(function (s) {
       var cls = s.pct >= 80 ? 'good' : s.pct >= 50 ? 'warn' : 'bad';
@@ -1131,7 +1135,7 @@
     var dayRows = sc.blocks.slice().reverse().map(function (d) {
       var label = P.esc(root.Dates.short(d.date)) + (d.to !== d.date ? '–' + P.esc(root.Dates.short(d.to)) : '');
       return '<tr' + (d.full ? '' : ' style="opacity:.55"') + '><td class="n"><bdi dir="ltr" style="white-space:nowrap">' + label + '</bdi>' +
-        '<small>גירעון ' + root.Fmt.n(d.agg.def, 0) + (d.full ? '' : ' · חלקי, לא נספר') + '</small></td>' +
+        '<small>גירעון ' + root.Fmt.n(d.agg.def, 0) + (d.full ? '' : d.open ? ' · בתהליך (' + d.n + '/3), עוד לא נספר' : ' · חלקי, לא נספר') + '</small></td>' +
         sc.goals.map(function (g) {
           var c = d.credit[g.key], part = !d.res[g.key] && c > 0;
           return '<td class="score__mark score__mark--' + (d.res[g.key] ? 'ok' : part ? 'part' : 'no') + '">' + (d.res[g.key] ? '✓' : part ? Math.round(c * 100) + '%' : '✗') + '</td>';
@@ -1142,7 +1146,7 @@
     var dayCard = P.card('לפי בלוק', '✓ עמד · % ניקוד חלקי · ✗ לא עמד · סה״כ = נקודות מ-100',
       P.table(['ימים'].concat(sc.goals.map(function (g) { return short[g.key] || g.label; })).concat(['סה״כ']), dayRows));
     return P.section('ציונים', head + statCard + dayCard +
-      P.hint('רק ימים סגורים (עם צעדים). כשנסגר יום חדש הבלוקים זזים ביום. גירעון לפי החשבון הנוכחי: ' + root.Fmt.n(cfg0(state).baseBurn, 0) + ' + צעדים × ' + cfg0(state).kcalPerStep + '.'));
+      P.hint('רק ימים סגורים (עם צעדים). הבלוקים קבועים ולא זזים; בלוק נספר רק כשכל 3 הימים בו סגורים. גירעון לפי החשבון הנוכחי: ' + root.Fmt.n(cfg0(state).baseBurn, 0) + ' + צעדים × ' + cfg0(state).kcalPerStep + '.'));
   }
 
   function cfg0(state) { return state.balance || { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 }; }
