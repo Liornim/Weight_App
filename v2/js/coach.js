@@ -1041,95 +1041,70 @@
 
 
   /**
-   * דף ציונים: לכל יום סגור, האם עמד בכל מטרה; ספירה, אחוז ורצף נוכחי.
+   * דף ציונים בבלוקים של 3 ימים, מהיום האחרון שנסגר אחורה. כל יום שייך לבלוק אחד בלבד,
+   * ולכן אין כפל; פיצוי בתוך הבלוק נספר מעצמו. כל המטרות נבדקות על ממוצע הבלוק.
+   * הגבולות זזים כשנסגר יום חדש — הבלוק הראשון הוא תמיד 3 הימים האחרונים.
    */
-  function compOf(cfg) {
-    var cache = null, key = null;
-    return function (rows) {
-      var k = rows.map(function (r) { return r.date + ':' + r.kcal + ':' + r.steps; }).join('|');
-      if (k === key) return cache;
-      var plan = cfg.plannedDeficit, out = {}, debts = [];
-      rows.forEach(function (r) {
-        var dn = dayNum(r.date), d = cfg.baseBurn + r.steps * cfg.kcalPerStep - r.kcal;
-        var o = { def: d, got: 0, gave: 0, open: false };
-        out[r.date] = o;
-        var extra = d - plan;
-        if (extra < 0) { debts.push({ dn: dn, date: r.date, left: -extra }); return; }
-        // משלם חובות של היומיים הקודמים בלבד, הישן קודם
-        debts.forEach(function (b) {
-          if (extra <= 0 || b.left <= 0 || dn - b.dn > 2 || dn <= b.dn) return;
-          var pay = Math.min(extra, b.left);
-          b.left -= pay; extra -= pay; out[b.date].got += pay; o.gave += pay;
-        });
-      });
-      var last = rows.length ? dayNum(rows[rows.length - 1].date) : 0;
-      rows.forEach(function (r) {
-        var o = out[r.date];
-        o.credit = Math.max(0, Math.min(1, (o.def + o.got) / plan));
-        o.open = o.credit < 1 && last - dayNum(r.date) < 2; // עוד אפשר לפצות עליו
-      });
-      key = k; cache = out;
-      return out;
-    };
-  }
-
   function goalsOf(state) {
     var t = state.targets || {};
     var cfg = state.balance || { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 };
     var G = [];
-    if (typeof t.kcal === 'number') G.push({ key: 'kcal', label: 'קלוריות עד ' + root.Fmt.n(t.kcal, 0), test: function (r) { return r.kcal <= t.kcal; } });
-    G.push({ key: 'deficit', label: 'גירעון של ' + cfg.plannedDeficit + ' לפחות', test: function (r) { return cfg.baseBurn + r.steps * cfg.kcalPerStep - r.kcal >= cfg.plannedDeficit; },
-      // ניקוד חלקי: גירעון בין 0 ל-550 מקבל חלק יחסי מהנקודות
-      credit: function (r) { var d = cfg.baseBurn + r.steps * cfg.kcalPerStep - r.kcal; return Math.max(0, Math.min(1, d / cfg.plannedDeficit)); } });
-    /**
-     * פיצוי: יום שחסר בו גירעון יוצר חוב. עודף גירעון (מעל 550) ביומיים שאחריו
-     * משלם את החוב, הישן קודם. כל קלוריה של עודף נספרת פעם אחת בלבד, ורק אחורה —
-     * אין "חיסכון מראש". יום שלא חסר בו כלום מקבל את הנקודות בעצמו.
-     */
-    var comp = compOf(cfg);
-    G.push({ key: 'comp', label: 'פיצוי: גירעון ' + cfg.plannedDeficit + '+ אחרי השלמה מהיומיים שאחרי',
-      test: function (r, rows) { return comp(rows)[r.date].credit >= 1; },
-      credit: function (r, rows) { return comp(rows)[r.date].credit; } });
-    if (typeof t.proteinG === 'number') G.push({ key: 'protein', label: 'חלבון ' + t.proteinG + ' לפחות', test: function (r) { return (r.proteinG || 0) >= t.proteinG; } });
-    if (typeof t.fatG === 'number') G.push({ key: 'fat', label: 'שומן עד ' + t.fatG, test: function (r) { return (r.fatG || 0) <= t.fatG; } });
-    if (typeof t.steps === 'number') G.push({ key: 'steps', label: 'צעדים ' + root.Fmt.n(t.steps, 0) + ' לפחות', test: function (r) { return r.steps >= t.steps; } });
-    if (typeof t.stepsGoal === 'number') G.push({ key: 'steps10', label: 'צעדים ' + root.Fmt.n(t.stepsGoal, 0) + ' לפחות', test: function (r) { return r.steps >= t.stepsGoal; } });
-    G.push({ key: 'dry', label: 'בלי אלכוהול', test: function (r) {
-      return !(r.meals || []).some(function (m) { return (m.items || []).some(function (i) { return i.cat === 'alcohol' && i.kcal > 0; }); });
-    } });
-    // מדרג: גירעון יומי 25, פיצוי 25, חלבון 15, קלוריות 10, 10K 10, השאר 5 (סה״כ 100 כשכל המטרות קיימות)
-    var W = { deficit: 25, comp: 25, protein: 15, kcal: 10, steps10: 10, steps: 5, fat: 5, dry: 5 };
+    var bin = function (ok) { return ok ? 1 : 0; };
+    G.push({ key: 'deficit', label: 'גירעון ממוצע ' + cfg.plannedDeficit + ' לפחות', credit: function (b) { return Math.max(0, Math.min(1, b.def / cfg.plannedDeficit)); } });
+    if (typeof t.proteinG === 'number') G.push({ key: 'protein', label: 'חלבון ממוצע ' + t.proteinG + ' לפחות', credit: function (b) { return bin(Math.round(b.protein) >= t.proteinG); } });
+    if (typeof t.kcal === 'number') G.push({ key: 'kcal', label: 'קלוריות ממוצע עד ' + root.Fmt.n(t.kcal, 0), credit: function (b) { return bin(Math.round(b.kcal) <= t.kcal); } });
+    if (typeof t.stepsGoal === 'number') G.push({ key: 'steps10', label: 'צעדים ממוצע ' + root.Fmt.n(t.stepsGoal, 0) + ' לפחות', credit: function (b) { return bin(Math.round(b.steps) >= t.stepsGoal); } });
+    if (typeof t.steps === 'number') G.push({ key: 'steps', label: 'צעדים ממוצע ' + root.Fmt.n(t.steps, 0) + ' לפחות', credit: function (b) { return bin(Math.round(b.steps) >= t.steps); } });
+    if (typeof t.fatG === 'number') G.push({ key: 'fat', label: 'שומן ממוצע עד ' + t.fatG, credit: function (b) { return bin(Math.round(b.fat) <= t.fatG); } });
+    G.push({ key: 'dry', label: 'ימים בלי אלכוהול', credit: function (b) { return b.dry; } });
+    // מדרג: גירעון 50, חלבון 15, קלוריות 10, 10K 10, השאר 5 (סה״כ 100)
+    var W = { deficit: 50, protein: 15, kcal: 10, steps10: 10, steps: 5, fat: 5, dry: 5 };
     G.forEach(function (g) { g.weight = W[g.key] || 5; });
     return G;
   }
 
+  function isDry(r) {
+    return !(r.meals || []).some(function (m) { return (m.items || []).some(function (i) { return i.cat === 'alcohol' && i.kcal > 0; }); });
+  }
+
   function scoresOf(state) {
+    var cfg = state.balance || { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 };
     var rows = (state.rows || []).filter(function (r) { return typeof r.kcal === 'number' && typeof r.steps === 'number'; });
     var goals = goalsOf(state);
-    var days = rows.map(function (r) {
-      var res = {}, cr = {}, pts = 0, max = 0;
-      goals.forEach(function (g) {
-        res[g.key] = !!g.test(r, rows);
-        cr[g.key] = g.credit ? g.credit(r, rows) : (res[g.key] ? 1 : 0);
-        pts += g.weight * cr[g.key];
-        max += g.weight;
-      });
-      var hit = goals.filter(function (g) { return res[g.key]; }).length;
-      var cg = goals.filter(function (g) { return g.key === 'comp'; })[0];
-      var open = cg ? (function () { var c = compOf(state.balance || { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 })(rows)[r.date]; return c.open; })() : false;
-      return { date: r.date, res: res, credit: cr, hit: hit, of: goals.length, open: open, pts: max ? pts / max * 100 : 0 };
-    });
+    var byDn = {};
+    rows.forEach(function (r) { byDn[dayNum(r.date)] = r; });
+    var blocks = [];
+    if (rows.length) {
+      var first = dayNum(rows[0].date);
+      for (var end = dayNum(rows[rows.length - 1].date); end >= first; end -= 3) {
+        var list = [end - 2, end - 1, end].map(function (dn) { return byDn[dn]; }).filter(Boolean);
+        if (!list.length) continue;
+        var m = function (f) { return list.reduce(function (a, r) { return a + f(r); }, 0) / list.length; };
+        var agg = {
+          def: m(function (r) { return cfg.baseBurn + r.steps * cfg.kcalPerStep - r.kcal; }),
+          kcal: m(function (r) { return r.kcal; }), protein: m(function (r) { return r.proteinG || 0; }),
+          fat: m(function (r) { return r.fatG || 0; }), steps: m(function (r) { return r.steps; }),
+          dry: m(function (r) { return isDry(r) ? 1 : 0; })
+        };
+        var res = {}, cr = {}, pts = 0, max = 0;
+        goals.forEach(function (g) { cr[g.key] = g.credit(agg); res[g.key] = cr[g.key] >= 1; pts += g.weight * cr[g.key]; max += g.weight; });
+        var hit = goals.filter(function (g) { return res[g.key]; }).length;
+        blocks.unshift({ date: list[0].date, to: list[list.length - 1].date, n: list.length, full: list.length === 3,
+          agg: agg, res: res, credit: cr, hit: hit, of: goals.length, pts: max ? pts / max * 100 : 0 });
+      }
+    }
+    var scored = blocks.filter(function (b) { return b.full; });
     var stats = goals.map(function (g) {
-      var hit = days.filter(function (d) { return d.res[g.key]; }).length;
+      var hit = scored.filter(function (d) { return d.res[g.key]; }).length;
       var streak = 0;
-      for (var i = days.length - 1; i >= 0 && days[i].res[g.key]; i--) streak++;
+      for (var i = scored.length - 1; i >= 0 && scored[i].res[g.key]; i--) streak++;
       var best = 0, run = 0;
-      days.forEach(function (d) { run = d.res[g.key] ? run + 1 : 0; best = Math.max(best, run); });
-      return { key: g.key, label: g.label, weight: g.weight, hit: hit, of: days.length, pct: days.length ? Math.round(hit / days.length * 100) : 0, streak: streak, best: best };
+      scored.forEach(function (d) { run = d.res[g.key] ? run + 1 : 0; best = Math.max(best, run); });
+      return { key: g.key, label: g.label, weight: g.weight, hit: hit, of: scored.length, pct: scored.length ? Math.round(hit / scored.length * 100) : 0, streak: streak, best: best };
     });
-    var total = days.reduce(function (a, d) { return a + d.pts; }, 0);
-    var hits = days.reduce(function (a, d) { return a + d.hit; }, 0), possible = days.length * goals.length;
-    return { goals: goals, days: days, stats: stats, score: days.length ? Math.round(total / days.length) : 0,
+    var total = scored.reduce(function (a, d) { return a + d.pts; }, 0);
+    var hits = scored.reduce(function (a, d) { return a + d.hit; }, 0), possible = scored.length * goals.length;
+    return { goals: goals, days: blocks, blocks: blocks, stats: stats, score: scored.length ? Math.round(total / scored.length) : 0,
       flat: possible ? Math.round(hits / possible * 100) : 0 };
   }
 
@@ -1137,11 +1112,12 @@
     var state = read();
     var sc = scoresOf(state);
     if (!sc.days.length) return P.section('ציונים', P.card(null, null, P.empty('עוד אין ימים סגורים.')));
+    var nFull = sc.blocks.filter(function (b) { return b.full; }).length;
     var grade = sc.score >= 80 ? 'good' : sc.score >= 60 ? 'warn' : 'bad';
     var head = '<section class="cumul">' +
-      '<div class="cumul__row"><h2 class="cumul__title">דף ציונים</h2><span class="cumul__stamp">' + sc.days.length + ' ימים סגורים</span></div>' +
+      '<div class="cumul__row"><h2 class="cumul__title">דף ציונים</h2><span class="cumul__stamp">' + nFull + ' בלוקים של 3 ימים</span></div>' +
       '<div class="score__big score--' + grade + '">' + sc.score + '<small>/100</small></div>' +
-      '<div class="cumul__gap">ממוצע הניקוד היומי. כל מטרה במשקל לפי חשיבותה (גירעון יומי 25, פיצוי 25, חלבון 15, קלוריות 10…), וגירעון חלקי מקבל ניקוד חלקי. בלי משקלים: ' + sc.flat + '</div>' +
+      '<div class="cumul__gap">ממוצע הניקוד של הבלוקים. כל בלוק = 3 ימים, מהיום האחרון שנסגר אחורה; המטרות נבדקות על ממוצע הבלוק, כך שפיצוי בתוך הבלוק נספר. גירעון 50 (חלקי), חלבון 15, קלוריות 10, 10K 10, השאר 5. בלי משקלים: ' + sc.flat + '</div>' +
     '</section>';
     var statRows = sc.stats.map(function (s) {
       var cls = s.pct >= 80 ? 'good' : s.pct >= 50 ? 'warn' : 'bad';
@@ -1150,23 +1126,26 @@
         '<td class="n">' + s.streak + '</td><td class="n">' + s.best + '</td>' +
         '<td><div class="score__bar"><i class="score--' + cls + '" style="width:' + s.pct + '%"></i></div></td></tr>';
     });
-    var statCard = P.card('לפי מטרה', 'כמה ימים עמדת בכל מטרה',
-      P.table(['מטרה', 'נק׳', 'ימים', 'רצף נוכחי', 'רצף שיא', ''], statRows));
-    var dayRows = sc.days.slice().reverse().map(function (d) {
-      return '<tr><td class="n">' + P.esc(root.Dates.short(d.date)) + '<small>' + P.esc(weekday(d.date).replace('יום ', '')) + '</small></td>' +
+    var statCard = P.card('לפי מטרה', 'בכמה בלוקים עמדת בכל מטרה',
+      P.table(['מטרה', 'נק׳', 'בלוקים', 'רצף נוכחי', 'רצף שיא', ''], statRows));
+    var dayRows = sc.blocks.slice().reverse().map(function (d) {
+      var label = P.esc(root.Dates.short(d.date)) + (d.to !== d.date ? '–' + P.esc(root.Dates.short(d.to)) : '');
+      return '<tr' + (d.full ? '' : ' style="opacity:.55"') + '><td class="n"><bdi dir="ltr" style="white-space:nowrap">' + label + '</bdi>' +
+        '<small>גירעון ' + root.Fmt.n(d.agg.def, 0) + (d.full ? '' : ' · חלקי, לא נספר') + '</small></td>' +
         sc.goals.map(function (g) {
           var c = d.credit[g.key], part = !d.res[g.key] && c > 0;
-          var open = g.key === 'comp' && d.open;
-          return '<td class="score__mark score__mark--' + (d.res[g.key] ? 'ok' : (part || open) ? 'part' : 'no') + '">' + (d.res[g.key] ? '✓' : (open ? '⏳' : '') + (part || open ? Math.round(c * 100) + '%' : '✗')) + '</td>';
+          return '<td class="score__mark score__mark--' + (d.res[g.key] ? 'ok' : part ? 'part' : 'no') + '">' + (d.res[g.key] ? '✓' : part ? Math.round(c * 100) + '%' : '✗') + '</td>';
         }).join('') +
         '<td class="n"><b>' + Math.round(d.pts) + '</b><small>' + d.hit + '/' + d.of + '</small></td></tr>';
     });
-    var short = { kcal: 'קל׳', deficit: 'גירעון 550+', comp: 'פיצוי', balance: 'בלי עודף', protein: 'חלבון', fat: 'שומן', steps: '6.7K', steps10: '10K', dry: 'בלי אלכ׳' };
-    var dayCard = P.card('לפי יום', '✓ עמד · % ניקוד חלקי בגירעון · ✗ לא עמד · פיצוי = הגירעון של היום + מה שהיומיים שאחריו השלימו (⏳ = עוד אפשר לפצות) · סה״כ = נקודות מ-100',
-      P.table(['תאריך'].concat(sc.goals.map(function (g) { return short[g.key] || g.label; })).concat(['סה״כ']), dayRows));
+    var short = { kcal: 'קל׳', deficit: 'גירעון 550+', protein: 'חלבון', fat: 'שומן', steps: '6.7K', steps10: '10K', dry: 'בלי אלכ׳' };
+    var dayCard = P.card('לפי בלוק', '✓ עמד · % ניקוד חלקי · ✗ לא עמד · סה״כ = נקודות מ-100',
+      P.table(['ימים'].concat(sc.goals.map(function (g) { return short[g.key] || g.label; })).concat(['סה״כ']), dayRows));
     return P.section('ציונים', head + statCard + dayCard +
-      P.hint('רק ימים סגורים (עם צעדים). גירעון לפי החשבון הנוכחי: ' + root.Fmt.n((state.balance || {}).baseBurn || 2150, 0) + ' + צעדים × ' + ((state.balance || {}).kcalPerStep || 0.045) + '.'));
+      P.hint('רק ימים סגורים (עם צעדים). כשנסגר יום חדש הבלוקים זזים ביום. גירעון לפי החשבון הנוכחי: ' + root.Fmt.n(cfg0(state).baseBurn, 0) + ' + צעדים × ' + cfg0(state).kcalPerStep + '.'));
   }
+
+  function cfg0(state) { return state.balance || { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 }; }
 
   /** שם היום בשבוע, לפי תאריך ISO ובלי תלות באזור הזמן של הדפדפן */
   function weekday(iso) {
@@ -2069,12 +2048,12 @@
     });
 
     var sc = scoresOf(state);
-    var scoreRows = [['מטרה', 'ימים שעמד', 'מתוך', 'אחוז', 'רצף נוכחי', 'רצף שיא']];
+    var scoreRows = [['מטרה', 'בלוקים שעמד', 'מתוך', 'אחוז', 'רצף נוכחי', 'רצף שיא']];
     sc.stats.forEach(function (st) { scoreRows.push([st.label, st.hit, st.of, st.pct, st.streak, st.best]); });
     scoreRows.push(['', ''], ['ציון כולל', sc.score], ['', '']);
-    scoreRows.push(['תאריך'].concat(sc.goals.map(function (g) { return g.label; })).concat(['סה״כ']));
+    scoreRows.push(['מ-', 'עד'].concat(sc.goals.map(function (g) { return g.label; })).concat(['נקודות', 'מטרות']));
     sc.days.forEach(function (dd) {
-      scoreRows.push([dd.date].concat(sc.goals.map(function (g) { return dd.res[g.key] ? '✓' : '✗'; })).concat([dd.hit + '/' + dd.of]));
+      scoreRows.push([dd.date, dd.to].concat(sc.goals.map(function (g) { return dd.res[g.key] ? '✓' : Math.round(dd.credit[g.key] * 100) + '%'; })).concat([Math.round(dd.pts), dd.hit + '/' + dd.of]));
     });
 
     var settings = [['הגדרה', 'ערך'],
