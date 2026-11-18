@@ -1166,15 +1166,7 @@
     // הקלוריות המותרות מחושבות לפי המינימום הנדרש (6,700), לא לפי 10,000
     var stepsRef = (state.targets && state.targets.steps) || 6700;
     var stepsGoal = (state.targets && state.targets.stepsGoal) || 10000;
-    var total = (function () {
-      var sum = 0, n = 0, kc = 0, fat = 0, st = 0;
-      rows.forEach(function (r) { var dn = dayNum(r.date); if (dn < s0 || dn > today) return; sum += cfg.baseBurn + r.steps * cfg.kcalPerStep - r.kcal; kc += r.kcal; fat += r.fatG || 0; st += r.steps; n++; });
-      var debt = cfg.plannedDeficit * n - sum;
-      var burn = cfg.baseBurn + stepsRef * COMP_KPS;
-      var close = [2, 4, 7].map(function (k) { var need = cfg.plannedDeficit + Math.max(0, debt) / k; return { days: k, until: iso(today + k - 1), need: need, kcal: burn - need }; });
-      return { total: true, from: iso(s0), closed: n, behind: debt, now: n ? { def: sum / n, kcal: kc / n, fat: fat / n, steps: st / n } : null, close: close, stepsRef: stepsRef, stepsGoal: stepsGoal };
-    })();
-    var out = (lens || [3, 4, 5, 6, 7]).map(function (N) {
+    return (lens || [3, 4, 5, 6, 7]).map(function (N) {
       var a = s0 + Math.floor((today - s0) / N) * N, b = a + N - 1, sum = 0, n = 0, kc = 0, fat = 0, st = 0;
       for (var x = a; x <= b; x++) if (by[x]) { sum += cfg.baseBurn + by[x].steps * cfg.kcalPerStep - by[x].kcal; kc += by[x].kcal; fat += by[x].fatG || 0; st += by[x].steps; n++; }
       var rem = N - n, goal = cfg.plannedDeficit * N, need = goal - sum;
@@ -1186,8 +1178,6 @@
         kcalCap: left(t.kcal, kc), fatCap: left(t.fatG, fat), stepsNeed: left(stepsGoal, st), kps: COMP_KPS, stepsGoal: stepsGoal,
         now: n ? { def: sum / n, kcal: kc / n, fat: fat / n, steps: st / n } : null };
     });
-    out.total = total;
-    return out;
   }
 
   /** היסטוריית חלונות באורך N, בגבולות הקבועים: ממוצעים ומה עמד ביעד */
@@ -1267,18 +1257,6 @@
         '<div class="comp__t">' + balTxt + ' ' + why + '</div>' +
         '<div class="comp__t">שומן עד <b>' + n0(w.fatCap) + '</b> ג׳ ביום · צעדים לפחות <b>' + n0(w.stepsNeed) + '</b> ביום.</div></div>';
     }).join('');
-    var T = list.total, totalHtml = '';
-    if (T && T.closed) {
-      var tb = -T.behind;
-      totalHtml = '<div class="comp__w comp__w--total"><div class="comp__h"><b>מתחילת הדרך</b> · מ-<bdi dir="ltr">' + P.esc(root.Dates.short(T.from)) + '</bdi> · ' + T.closed + ' ימים סגורים</div>' +
-        '<div class="comp__now"><span>ממוצע:</span>' + chip('גירעון', T.now.def, T.now.def >= plan, true) + chip('קק״ל', T.now.kcal, Math.round(T.now.kcal) <= cap) +
-          chip('שומן', T.now.fat, Math.round(T.now.fat) <= ((state.targets || {}).fatG || 65)) + chip('צעדים', T.now.steps, Math.round(T.now.steps) >= T.stepsGoal) + '</div>' +
-        '<div class="comp__big">' + (tb >= 0 ? 'לפני התוכנית ב-<b class="score__mark--ok">' + n0(tb) + '</b> קק״ל' : 'חוב של <b class="score__mark--no">' + n0(tb) + '</b> קק״ל מול התוכנית') + '</div>' +
-        (tb < 0 ? '<div class="comp__t">כדי לסגור את החוב (גירעון ' + n0(plan) + ' ועוד החוב, בהנחה של ' + n0(T.stepsRef) + ' צעדים):</div><div class="comp__now">' +
-          T.close.map(function (c) { return '<span class="comp__chip">ב-' + c.days + ' ימים (עד <bdi dir="ltr">' + P.esc(root.Dates.short(c.until)) + '</bdi>): עד <b>' + n0(c.kcal) + '</b> ביום</span>'; }).join('') + '</div>'
-          : '<div class="comp__t">אין חוב מצטבר. ממשיכים לפי התוכנית.</div>') + '</div>';
-    }
-    items += totalHtml;
     return P.card('גיליון פיצויים', 'לכל אורך חלון (3–7 ימים, בגבולות קבועים מ-' + P.esc(root.Dates.short(state.startDate || list[0].from)) + '): כמה מותר לאכול בכל יום שנשאר כדי שהחלון ייסגר על היעדים.',
       top + items +
       P.hint('הימים שעברו לפי המודל הרגיל (' + root.Fmt.n(cfg0(state).baseBurn, 0) + ' + צעדים × ' + cfg0(state).kcalPerStep + '). הימים שנשארו בהנחה שמרנית: ' + root.Fmt.n(list[0].stepsRef, 0) + ' צעדים × ' + COMP_KPS + '. כל צעד מעבר לזה הוא בונוס. חלבון לא נכנס: הוא יעד יומי.'));

@@ -1520,4 +1520,3 @@ details.comph[open] > summary { padding-bottom: 6px; }
 .comp__chip b { font-family: var(--mono, monospace); }
 .comp__chip--ok { background: rgba(31,143,95,.12); color: #1F8F5F; }
 .comp__chip--no { background: rgba(200,70,58,.12); color: #C8463A; }
-.comp__w--total { border-top: 2px solid rgba(127,127,127,.45); margin-top: 6px; }
