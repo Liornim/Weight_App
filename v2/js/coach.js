@@ -1268,7 +1268,7 @@
       return '<div class="comp__w"><div class="comp__h"><b>' + w.n + ' ימים</b> · ' + range + ' · נשארו ' + w.left + ' ' + (w.left === 1 ? 'יום' : 'ימים') + '</div>' +
         (w.now ? nowChips((sim ? 'כולל הסימולציה' : 'עד עכשיו') + ' (' + w.closed + ' ' + (w.closed === 1 ? 'יום' : 'ימים') + ', ממוצע):') : '') +
         '<div class="comp__big">' + (w.closed ? 'מכאן: ' : '') + 'עד ' + kc(kcal) + ' קק״ל ביום</div>' +
-        (w.greenToday !== null && w.closed && !sim ? '<div class="comp__t">כדי שמחר בבוקר ממוצע הקלוריות יהיה ירוק: <b>היום עד ' + n0(Math.max(0, w.greenToday)) + '</b> קק״ל.</div>' : '') +
+        (w.greenToday !== null && w.closed && !sim ? '<div class="comp__t">כדי שמחר בבוקר ממוצע הקלוריות יהיה ירוק: <b>היום עד ' + kc(w.greenToday) + '</b> קק״ל.</div>' : '') +
         '<div class="comp__t">' + balTxt + ' ' + why + '</div>' +
         '<div class="comp__t">שומן עד <b>' + n0(w.fatCap) + '</b> ג׳ ביום · צעדים לפחות <b>' + n0(w.stepsNeed) + '</b> ביום.</div></div>';
     }).join('');
