@@ -603,6 +603,7 @@
     { value: 'split', label: 'פירוק' },
     { value: 'trend', label: 'מגמה' },
     { value: 'score', label: 'ציונים' },
+    { value: 'comp', label: 'פיצויים' },
     { value: 'budget', label: 'תקציב' },
     { value: 'weight', label: 'משקל' },
     { value: 'data', label: 'נתונים' },
@@ -643,6 +644,7 @@
       : state.tab === 'kpi' ? root.Coach.kpi()
       : state.tab === 'trend' ? root.Coach.trend()
       : state.tab === 'score' ? root.Coach.scorecard()
+      : state.tab === 'comp' ? root.Coach.compTab()
       : state.tab === 'recipes' ? root.RecipesTab.render()
       : root.BudgetTab.render(state);
 

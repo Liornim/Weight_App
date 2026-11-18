@@ -1143,7 +1143,7 @@
     var short = { kcal: 'קל׳', deficit: 'גירעון 550+', protein: 'חלבון', fat: 'שומן', steps: '6.7K', steps10: '10K', dry: 'בלי אלכ׳' };
     var dayCard = P.card('לפי בלוק', '✓ עמד · % ניקוד חלקי · ✗ לא עמד · סה״כ = נקודות מ-100',
       P.table(['ימים'].concat(sc.goals.map(function (g) { return short[g.key] || g.label; })).concat(['סה״כ']), dayRows));
-    return P.section('ציונים', head + compSheet(state) + compHistory(state) + statCard + dayCard +
+    return P.section('ציונים', head + statCard + dayCard +
       P.hint('רק ימים סגורים (עם צעדים). הבלוקים קבועים ולא זזים; בלוק נספר רק כשכל 3 הימים בו סגורים. גירעון לפי החשבון הנוכחי: ' + root.Fmt.n(cfg0(state).baseBurn, 0) + ' + צעדים × ' + cfg0(state).kcalPerStep + '.'));
   }
 
@@ -1237,6 +1237,13 @@
     return P.card('גיליון פיצויים', 'החלון הפתוח לכל אורך, בגבולות קבועים מ-' + P.esc(root.Dates.short(state.startDate || list[0].from)) + '. מה מותר/נדרש בכל יום שנשאר כדי לסגור את החלון בממוצע על כל היעדים.',
       P.table(['חלון', 'מצב מול התוכנית', 'קק״ל ליום (מקס׳)', 'שומן ליום (מקס׳, ג׳)', 'צעדים ליום (מינ׳)'], rows) +
       P.hint('קק״ל ליום = הנמוך מבין: (1) מה שמשאיר גירעון ממוצע של ' + cfg0(state).plannedDeficit + ' בחלון, ב-' + root.Fmt.n(list[0].stepsRef, 0) + ' צעדים; (2) ממוצע ' + root.Fmt.n((state.targets || {}).kcal || 1900, 0) + ' בחלון. חלבון לא נכנס: הוא יעד יומי. היום הנוכחי נספר כיום שנשאר עד שנסגר. לפי המודל: ' + root.Fmt.n(cfg0(state).baseBurn, 0) + ' + צעדים × ' + cfg0(state).kcalPerStep + '.'));
+  }
+
+  function compTab() {
+    var state = read();
+    var sheet = compSheet(state);
+    if (!sheet) return P.section('פיצויים', P.card(null, null, P.empty('עוד אין ימים סגורים.')));
+    return P.section('פיצויים', sheet + compHistory(state));
   }
 
   function cfg0(state) { return state.balance || { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 }; }
@@ -2249,5 +2256,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, macros: macros, macroOf: macroOf, scorecard: scorecard, scoresOf: scoresOf, compSheetOf: compSheetOf, compHistoryOf: compHistoryOf, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, breakEvenOf: breakEvenOf, bindBreakEven: bindBreakEven, kpi: kpi, kpiOf: kpiOf, etaHistory: etaHistory, bindKpi: bindKpi, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, macros: macros, macroOf: macroOf, scorecard: scorecard, scoresOf: scoresOf, compSheetOf: compSheetOf, compHistoryOf: compHistoryOf, compTab: compTab, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, breakEvenOf: breakEvenOf, bindBreakEven: bindBreakEven, kpi: kpi, kpiOf: kpiOf, etaHistory: etaHistory, bindKpi: bindKpi, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);
