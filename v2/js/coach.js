@@ -1059,8 +1059,8 @@
     G.push({ key: 'dry', label: 'בלי אלכוהול', test: function (r) {
       return !(r.meals || []).some(function (m) { return (m.items || []).some(function (i) { return i.cat === 'alcohol' && i.kcal > 0; }); });
     } });
-    // מדרג: גירעון 30, קלוריות 20, חלבון 15, 10K ובלי עודף 10, השאר 5 (סה״כ 100 כשכל המטרות קיימות)
-    var W = { deficit: 30, kcal: 20, protein: 15, steps10: 10, balance: 10, steps: 5, fat: 5, dry: 5 };
+    // מדרג: גירעון 40, קלוריות 10, חלבון 15, 10K ובלי עודף 10, השאר 5 (סה״כ 100 כשכל המטרות קיימות)
+    var W = { deficit: 40, kcal: 10, protein: 15, steps10: 10, balance: 10, steps: 5, fat: 5, dry: 5 };
     G.forEach(function (g) { g.weight = W[g.key] || 5; });
     return G;
   }
@@ -1101,7 +1101,7 @@
     var head = '<section class="cumul">' +
       '<div class="cumul__row"><h2 class="cumul__title">דף ציונים</h2><span class="cumul__stamp">' + sc.days.length + ' ימים סגורים</span></div>' +
       '<div class="score__big score--' + grade + '">' + sc.score + '<small>/100</small></div>' +
-      '<div class="cumul__gap">ממוצע הניקוד היומי. כל מטרה במשקל לפי חשיבותה (גירעון 30, קלוריות 20, חלבון 15…), וגירעון חלקי מקבל ניקוד חלקי. בלי משקלים: ' + sc.flat + '</div>' +
+      '<div class="cumul__gap">ממוצע הניקוד היומי. כל מטרה במשקל לפי חשיבותה (גירעון 40, חלבון 15, קלוריות 10…), וגירעון חלקי מקבל ניקוד חלקי. בלי משקלים: ' + sc.flat + '</div>' +
     '</section>';
     var statRows = sc.stats.map(function (s) {
       var cls = s.pct >= 80 ? 'good' : s.pct >= 50 ? 'warn' : 'bad';
