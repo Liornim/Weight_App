@@ -1402,13 +1402,26 @@
     var closed = rows.filter(function (r) { return typeof r.kcal === 'number' && typeof r.steps === 'number'; });
     var burn = function (r) { return cfg.baseBurn + r.steps * cfg.kcalPerStep; };
     var mean = function (list, f) { return list.length ? list.reduce(function (a, r) { return a + f(r); }, 0) / list.length : null; };
-    var last7 = closed.slice(-7), prev7 = closed.slice(-14, -7);
+    // חלון הממוצע לכרטיסים 2, 3, 5 — אותו חלון שנבחר ב"ממוצע של": 14/7 ימים קלנדריים עד היום האחרון, או מתאריך ההתחלה
+    var wRows0 = rows.filter(function (r) { return typeof r.weightKg === 'number'; });
+    var endDn0 = wRows0.length ? dayNum(wRows0[wRows0.length - 1].date) : 0;
+    if (closed.length) endDn0 = Math.max(endDn0, dayNum(closed[closed.length - 1].date));
+    var winLen = avgWin === '7' ? 7 : avgWin === 'start' ? null : 14;
+    var startDn0 = startDate ? dayNum(startDate) : (rows.length ? dayNum(rows[0].date) : endDn0);
+    var wf = winLen ? endDn0 - winLen + 1 : startDn0;
+    var inRange = function (a, b) { return closed.filter(function (r) { var dn = dayNum(r.date); return dn >= a && dn <= b; }); };
+    var last7 = inRange(wf, endDn0);
+    var prev7 = winLen ? inRange(wf - winLen, wf - 1) : [];
+    var prevOk = !!winLen && prev7.length >= winLen - 1;
     var out = {
       days: last7.length,
+      win: winLen ? String(winLen) : 'start',
+      winFrom: last7.length ? last7[0].date : null,
+      winTo: last7.length ? last7[last7.length - 1].date : null,
       kcal: mean(last7, function (r) { return r.kcal; }),
-      kcalPrev: prev7.length === 7 ? mean(prev7, function (r) { return r.kcal; }) : null,
+      kcalPrev: prevOk ? mean(prev7, function (r) { return r.kcal; }) : null,
       deficit: mean(last7, function (r) { return burn(r) - r.kcal; }),
-      deficitPrev: prev7.length === 7 ? mean(prev7, function (r) { return burn(r) - r.kcal; }) : null,
+      deficitPrev: prevOk ? mean(prev7, function (r) { return burn(r) - r.kcal; }) : null,
       steps: mean(last7, function (r) { return r.steps; })
     };
 
@@ -1719,11 +1732,13 @@
     var n = function (v, d) { return root.Fmt.n(Math.abs(v), d || 0); };
     var dash = '—';
     var vs = function (cur, prev, lowerBetter, d, unit) {
-      if (typeof prev !== 'number') return '<small class="kpi__sub">אין עדיין 7 ימים קודמים להשוואה</small>';
+      if (k.win === 'start') return '<small class="kpi__sub">מתחילת התקופה (בלי השוואה)</small>';
+      if (typeof prev !== 'number') return '<small class="kpi__sub">אין עדיין ' + k.win + ' ימים קודמים להשוואה</small>';
       var diff = cur - prev;
       var good = lowerBetter ? diff < 0 : diff > 0;
-      return '<small class="kpi__sub kpi__sub--' + (good ? 'good' : 'bad') + '"><bdi dir="ltr">' + (diff >= 0 ? '+' : '−') + n(diff, d) + '</bdi>' + (unit || '') + ' מול 7 הימים הקודמים</small>';
+      return '<small class="kpi__sub kpi__sub--' + (good ? 'good' : 'bad') + '"><bdi dir="ltr">' + (diff >= 0 ? '+' : '−') + n(diff, d) + '</bdi>' + (unit || '') + ' מול ' + k.win + ' הימים הקודמים</small>';
     };
+    var winTxt = k.days + ' ימים סגורים, <bdi dir="ltr" style="white-space:nowrap">' + P.esc(root.Dates.short(k.winFrom)) + ' – ' + P.esc(root.Dates.short(k.winTo)) + '</bdi> (לפי "ממוצע של").';
     var tile = function (title, big, unit, sub, note) {
       return '<div class="kpi__tile"><div class="kpi__title">' + title + '</div>' +
         '<div class="kpi__big"><b dir="ltr">' + big + '</b><span>' + unit + '</span></div>' + (sub || '') +
@@ -1736,10 +1751,10 @@
           'מגמה (רגרסיה) על ' + k.weighIns + ' שקילות מ-' + P.esc(root.Dates.short(k.from)) + '. משקל לפי המגמה היום: ' + n(k.nowKg, 1) + ' ק״ג. טווח בריא: 0.5%–1% לשבוע.')
       : tile('1 · קצב ירידה שבועי', dash, '', '', 'צריך לפחות 3 שקילות.');
     var t2 = tile('2 · ממוצע קלוריות', n(k.kcal), ' קק״ל ליום', vs(k.kcal, k.kcalPrev, true, 0, ' קק״ל'),
-      k.days + ' הימים הסגורים האחרונים.');
+      winTxt);
     var t3 = tile('3 · גירעון ממוצע', (k.deficit >= 0 ? '' : '+') + n(k.deficit), ' ' + (k.deficit >= 0 ? 'גירעון' : 'עודף') + ' ליום',
       vs(k.deficit, k.deficitPrev, false, 0, ' קק״ל'),
-      'תוכנית: ' + n(cfg.plannedDeficit) + '. לפי המודל: ' + n(cfg.baseBurn) + ' + צעדים × ' + cfg.kcalPerStep + '.');
+      winTxt + ' תוכנית: ' + n(cfg.plannedDeficit) + '. לפי המודל: ' + n(cfg.baseBurn) + ' + צעדים × ' + cfg.kcalPerStep + '.');
     var t4 = typeof k.tdee === 'number'
       ? tile('4 · שריפה בפועל מול המודל', n(k.tdee), ' קק״ל ליום',
           '<small class="kpi__sub kpi__sub--' + (k.tdee >= k.model ? 'good' : 'bad') + '">המודל: ' + n(k.model) + ' · ' + (k.tdee >= k.model ? 'שורף יותר ב-' : 'שורף פחות ב-') + n(k.tdee - k.model) + '</small>',
@@ -1747,7 +1762,7 @@
       : tile('4 · שריפה בפועל מול המודל', dash, '', '', 'צריך לפחות 5 ימים סגורים בחלון השקילות.');
     var t5 = tile('5 · אמינות הרישום', '±' + n((k.rangeWidth || 0) / 2), ' קק״ל ליום',
       '<small class="kpi__sub">' + n(k.estimatePct || 0) + '% מהקלוריות מהערכה · ' + n(k.exactPct || 0) + '% מדויק</small>',
-      'חצי מרוחב הטווח הממוצע ביום. ככל שקטן יותר, הגירעון אמין יותר.');
+      'חצי מרוחב הטווח הממוצע ביום, בחלון שנבחר. ככל שקטן יותר, הגירעון אמין יותר.');
 
     var T = k.target, body;
     if (!(T.daysLeft > 0)) {
@@ -1757,7 +1772,7 @@
     } else {
       var gap = k.deficit - T.perDay;
       body = '<div class="kpi__grid kpi__grid--3">' +
-        tile('גירעון נדרש', n(T.perDay), ' ליום', '<small class="kpi__sub kpi__sub--' + (gap >= 0 ? 'good' : 'bad') + '">בפועל ב-7 ימים: ' + n(k.deficit) + ' (' + (gap >= 0 ? 'מעל ב-' : 'חסר ') + n(gap) + ')</small>', '') +
+        tile('גירעון נדרש', n(T.perDay), ' ליום', '<small class="kpi__sub kpi__sub--' + (gap >= 0 ? 'good' : 'bad') + '">בפועל בחלון: ' + n(k.deficit) + ' (' + (gap >= 0 ? 'מעל ב-' : 'חסר ') + n(gap) + ')</small>', '') +
         tile('קצב נדרש', n(T.perWeekKg, 2), ' ק״ג לשבוע', '<small class="kpi__sub">' + n(T.perWeekKg / T.fromKg * 100, 2) + '% לשבוע</small>', '') +
         tile('קלוריות ליום', n(T.kcal), ' קק״ל', '<small class="kpi__sub">בהנחה של ' + n(T.stepsRef) + ' צעדים ביום</small>', '') +
         '</div>' +
@@ -1819,7 +1834,7 @@
     }
     var t7 = '';
     return '<section class="cumul kpi"><div class="cumul__row"><h2 class="cumul__title">מדדים שבועיים</h2></div>' +
-      '<div class="kpi__grid">' + t1 + t2 + t3 + t4 + t5 + '</div>' + winCtl + target + t6 + t7 +
+      winCtl + '<div class="kpi__grid">' + t1 + t2 + t3 + t4 + t5 + '</div>' + target + t6 + t7 +
       historyTable(etaHistory(rows, cfg, tdate, goalKg, startDate, 60, winSel)) + '</section>';
   }
 
