@@ -3237,7 +3237,20 @@
     {
       "date": "2026-11-18",
       "weightKg": 88,
-      "meals": []
+      "meals": [],
+      "walks": [
+        {
+          "time": "08:45",
+          "km": 1.73,
+          "minutes": 26,
+          "seconds": 32,
+          "steps": 2454,
+          "kmh": 3.9,
+          "avgHr": 93,
+          "deviceKcal": 155,
+          "climbM": 18
+        }
+      ]
     }
   ],
   "summary": {
