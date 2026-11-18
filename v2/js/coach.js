@@ -1047,11 +1047,22 @@
     var t = state.targets || {};
     var cfg = state.balance || { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 };
     var G = [];
-    if (typeof t.kcal === 'number') G.push({ key: 'kcal', label: 'קלוריות עד ' + root.Fmt.n(t.kcal, 0), test: function (r) { return r.kcal <= t.kcal; } });
+    // רצפה של 1,200: יום "רעב" אחרי ימים כבדים לא מקבל את נקודות הקלוריות
+    var KCAL_FLOOR = 1200;
+    if (typeof t.kcal === 'number') G.push({ key: 'kcal', label: 'קלוריות ' + root.Fmt.n(KCAL_FLOOR, 0) + '–' + root.Fmt.n(t.kcal, 0), test: function (r) { return r.kcal <= t.kcal && r.kcal >= KCAL_FLOOR; } });
     G.push({ key: 'deficit', label: 'גירעון של ' + cfg.plannedDeficit + ' לפחות', test: function (r) { return cfg.baseBurn + r.steps * cfg.kcalPerStep - r.kcal >= cfg.plannedDeficit; },
       // ניקוד חלקי: גירעון בין 0 ל-550 מקבל חלק יחסי מהנקודות
       credit: function (r) { var d = cfg.baseBurn + r.steps * cfg.kcalPerStep - r.kcal; return Math.max(0, Math.min(1, d / cfg.plannedDeficit)); } });
-    G.push({ key: 'balance', label: 'בלי עודף (גירעון כלשהו)', test: function (r) { return cfg.baseBurn + r.steps * cfg.kcalPerStep - r.kcal >= 0; } });
+    // פיצוי: ממוצע הגירעון ביום הזה ובשני הימים הקלנדריים שלפניו (ימים סגורים בלבד), עם ניקוד חלקי
+    var def = function (r) { return cfg.baseBurn + r.steps * cfg.kcalPerStep - r.kcal; };
+    var avg3 = function (r, rows) {
+      var dn = dayNum(r.date);
+      var w = (rows || [r]).filter(function (x) { var d = dayNum(x.date); return d <= dn && d > dn - 3; });
+      return w.reduce(function (a, x) { return a + def(x); }, 0) / w.length;
+    };
+    G.push({ key: 'avg3', label: 'גירעון ממוצע 3 ימים ' + cfg.plannedDeficit + '+ (פיצוי)',
+      test: function (r, rows) { return avg3(r, rows) >= cfg.plannedDeficit; },
+      credit: function (r, rows) { return Math.max(0, Math.min(1, avg3(r, rows) / cfg.plannedDeficit)); } });
     if (typeof t.proteinG === 'number') G.push({ key: 'protein', label: 'חלבון ' + t.proteinG + ' לפחות', test: function (r) { return (r.proteinG || 0) >= t.proteinG; } });
     if (typeof t.fatG === 'number') G.push({ key: 'fat', label: 'שומן עד ' + t.fatG, test: function (r) { return (r.fatG || 0) <= t.fatG; } });
     if (typeof t.steps === 'number') G.push({ key: 'steps', label: 'צעדים ' + root.Fmt.n(t.steps, 0) + ' לפחות', test: function (r) { return r.steps >= t.steps; } });
@@ -1059,8 +1070,8 @@
     G.push({ key: 'dry', label: 'בלי אלכוהול', test: function (r) {
       return !(r.meals || []).some(function (m) { return (m.items || []).some(function (i) { return i.cat === 'alcohol' && i.kcal > 0; }); });
     } });
-    // מדרג: גירעון 40, קלוריות 10, חלבון 15, 10K ובלי עודף 10, השאר 5 (סה״כ 100 כשכל המטרות קיימות)
-    var W = { deficit: 40, kcal: 10, protein: 15, steps10: 10, balance: 10, steps: 5, fat: 5, dry: 5 };
+    // מדרג: גירעון יומי 25, גירעון 3 ימים 25, חלבון 15, קלוריות 10, 10K 10, השאר 5 (סה״כ 100 כשכל המטרות קיימות)
+    var W = { deficit: 25, avg3: 25, protein: 15, kcal: 10, steps10: 10, steps: 5, fat: 5, dry: 5 };
     G.forEach(function (g) { g.weight = W[g.key] || 5; });
     return G;
   }
@@ -1071,8 +1082,8 @@
     var days = rows.map(function (r) {
       var res = {}, cr = {}, pts = 0, max = 0;
       goals.forEach(function (g) {
-        res[g.key] = !!g.test(r);
-        cr[g.key] = g.credit ? g.credit(r) : (res[g.key] ? 1 : 0);
+        res[g.key] = !!g.test(r, rows);
+        cr[g.key] = g.credit ? g.credit(r, rows) : (res[g.key] ? 1 : 0);
         pts += g.weight * cr[g.key];
         max += g.weight;
       });
@@ -1101,7 +1112,7 @@
     var head = '<section class="cumul">' +
       '<div class="cumul__row"><h2 class="cumul__title">דף ציונים</h2><span class="cumul__stamp">' + sc.days.length + ' ימים סגורים</span></div>' +
       '<div class="score__big score--' + grade + '">' + sc.score + '<small>/100</small></div>' +
-      '<div class="cumul__gap">ממוצע הניקוד היומי. כל מטרה במשקל לפי חשיבותה (גירעון 40, חלבון 15, קלוריות 10…), וגירעון חלקי מקבל ניקוד חלקי. בלי משקלים: ' + sc.flat + '</div>' +
+      '<div class="cumul__gap">ממוצע הניקוד היומי. כל מטרה במשקל לפי חשיבותה (גירעון יומי 25, גירעון 3 ימים 25, חלבון 15, קלוריות 10…), וגירעון חלקי מקבל ניקוד חלקי. בלי משקלים: ' + sc.flat + '</div>' +
     '</section>';
     var statRows = sc.stats.map(function (s) {
       var cls = s.pct >= 80 ? 'good' : s.pct >= 50 ? 'warn' : 'bad';
@@ -1120,8 +1131,8 @@
         }).join('') +
         '<td class="n"><b>' + Math.round(d.pts) + '</b><small>' + d.hit + '/' + d.of + '</small></td></tr>';
     });
-    var short = { kcal: 'קל׳', deficit: 'גירעון 550+', balance: 'בלי עודף', protein: 'חלבון', fat: 'שומן', steps: '6.7K', steps10: '10K', dry: 'בלי אלכ׳' };
-    var dayCard = P.card('לפי יום', '✓ עמד · % ניקוד חלקי בגירעון · ✗ לא עמד · סה״כ = נקודות מ-100',
+    var short = { kcal: 'קל׳', deficit: 'גירעון 550+', avg3: '3 ימים', balance: 'בלי עודף', protein: 'חלבון', fat: 'שומן', steps: '6.7K', steps10: '10K', dry: 'בלי אלכ׳' };
+    var dayCard = P.card('לפי יום', '✓ עמד · % ניקוד חלקי בגירעון · ✗ לא עמד · 3 ימים = ממוצע הגירעון עם היומיים הקודמים · סה״כ = נקודות מ-100',
       P.table(['תאריך'].concat(sc.goals.map(function (g) { return short[g.key] || g.label; })).concat(['סה״כ']), dayRows));
     return P.section('ציונים', head + statCard + dayCard +
       P.hint('רק ימים סגורים (עם צעדים). גירעון לפי החשבון הנוכחי: ' + root.Fmt.n((state.balance || {}).baseBurn || 2150, 0) + ' + צעדים × ' + ((state.balance || {}).kcalPerStep || 0.045) + '.'));
