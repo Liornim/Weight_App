@@ -1527,3 +1527,5 @@ details.comph[open] > summary { padding-bottom: 6px; }
 .stp__bars { display: flex; align-items: flex-end; gap: 1px; direction: ltr; margin: 8px 0 2px; }
 .stp__bars i { flex: 1; background: #3DB51F; border-radius: 2px 2px 0 0; min-height: 0; }
 .stp__axis { display: flex; justify-content: space-between; direction: ltr; font-size: 10px; opacity: .6; margin-bottom: 4px; }
+.comp__mid { font-size: 14px; margin: 2px 0; }
+.comp__mid b { font-family: var(--mono, monospace); }
