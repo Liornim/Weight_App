@@ -1294,8 +1294,15 @@
 
   function compTab() {
     var state = read();
+    var sheet = compSheet(state);
+    if (!sheet) return P.section('פיצויים', P.card(null, null, P.empty('עוד אין ימים סגורים.')));
+    return P.section('פיצויים', sheet + compHistory(state));
+  }
+
+  function simTab() {
+    var state = read();
     if (!(state.rows || []).some(function (r) { return typeof r.kcal === 'number' && typeof r.steps === 'number'; }))
-      return P.section('פיצויים', P.card(null, null, P.empty('עוד אין ימים סגורים.')));
+      return P.section('סימולציה', P.card(null, null, P.empty('עוד אין ימים סגורים.')));
     var S = simRows(state);
     var simDates = S.days.map(function (r) { return r.date; });
     var rows2 = (state.rows || []).filter(function (r) { return simDates.indexOf(r.date) < 0; }).concat(S.days)
@@ -1336,7 +1343,7 @@
 
     var simCard = P.card('סימולציה: מה יהיה המצב', 'הכנס מה אתה מצפה לאכול וללכת. החישוב לפי המודל הרגיל (צעד = ' + cfg.kcalPerStep + '), בדיוק כמו שהיום ייסגר באתר. שדה ריק = ברירת מחדל: קק״ל = היעד (או מה שכבר רשום היום, אם יותר), צעדים 10,000, חלבון 150, שומן = מה שרשום או 30 ג׳ לכל 1,000 קק״ל.',
       inputs + (S.logged.k ? '<div class="comp__t">רשום היום עד עכשיו: ' + n0(S.logged.k) + ' קק״ל, חלבון ' + n0(S.logged.p) + '.</div>' : '') + dayLines + blkHtml);
-    return P.section('פיצויים', simCard + compSheet(st2, last, last) + compHistory(state));
+    return P.section('סימולציה', simCard + compSheet(st2, last, last));
   }
 
   function bindComp(view) {
@@ -2362,5 +2369,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, macros: macros, macroOf: macroOf, scorecard: scorecard, scoresOf: scoresOf, compSheetOf: compSheetOf, compHistoryOf: compHistoryOf, compTab: compTab, bindComp: bindComp, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, breakEvenOf: breakEvenOf, bindBreakEven: bindBreakEven, kpi: kpi, kpiOf: kpiOf, etaHistory: etaHistory, bindKpi: bindKpi, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, macros: macros, macroOf: macroOf, scorecard: scorecard, scoresOf: scoresOf, compSheetOf: compSheetOf, compHistoryOf: compHistoryOf, compTab: compTab, simTab: simTab, bindComp: bindComp, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, breakEvenOf: breakEvenOf, bindBreakEven: bindBreakEven, kpi: kpi, kpiOf: kpiOf, etaHistory: etaHistory, bindKpi: bindKpi, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);
