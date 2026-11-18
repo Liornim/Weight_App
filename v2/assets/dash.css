@@ -1503,3 +1503,6 @@ details.rx .body { padding: 0 18px 18px; }
 .wchart__half { stroke: #c792ea; stroke-width: 2.2; opacity: .85; }
 .wchart__k--reg { border-top: 2px dashed #8ab4ff; height: 0; }
 .wchart__k--half { background: #c792ea; height: 2px; }
+details.comph { border-top: 1px solid var(--line, rgba(127,127,127,.2)); }
+details.comph > summary { padding: 10px 2px; cursor: pointer; font-size: 14px; }
+details.comph[open] > summary { padding-bottom: 6px; }
