@@ -1224,18 +1224,24 @@
     var n0 = function (v) { return root.Fmt.n(Math.abs(v), 0); };
     var rows = list.map(function (w) {
       var range = '<bdi dir="ltr" style="white-space:nowrap">' + P.esc(root.Dates.short(w.from)) + '–' + P.esc(root.Dates.short(w.to)) + '</bdi>';
-      var st = w.behind > 0 ? '<span class="score__mark--no">חוב ' + n0(w.behind) + '</span>' : '<span class="score__mark--ok">' + (w.closed ? 'לפני ב-' + n0(w.behind) : '—') + '</span>';
+      var bal = -w.behind; // יתרה: פלוס = לפני התוכנית
+      var st = !w.closed ? '<span>0</span>' : '<span class="score__mark--' + (bal >= 0 ? 'ok' : 'no') + '"><bdi dir="ltr">' + (bal >= 0 ? '+' : '−') + n0(bal) + '</bdi></span>';
+      st += '<small>' + (!w.closed ? 'החלון מתחיל היום' : bal >= 0 ? 'לפני התוכנית' : 'חוב מול התוכנית') + '</small>';
       var v = function (x, bad) { return x === null ? '—' : '<span class="' + (bad ? 'score__mark--no' : '') + '">' + (x < 0 ? '<bdi dir="ltr">−' + n0(x) + '</bdi>' : n0(x)) + '</span>'; };
+      var need = w.needPerDay === null ? '—'
+        : w.needPerDay <= 0 ? '<b>0</b><small>מותר עודף של עד ' + n0(w.needPerDay) + ' ליום</small>'
+        : '<b>' + n0(w.needPerDay) + '</b><small>במקום ' + n0(cfg0(state).plannedDeficit) + ', ב-' + w.left + ' ' + (w.left === 1 ? 'היום שנשאר' : 'הימים שנשארו') + '</small>';
       // קק״ל ליום: הנמוך מבין התקרה (ממוצע 1,900) והמותר לפי הגירעון ב-10K צעדים
       var kcal = w.kcalAt === null ? null : Math.min(w.kcalAt, w.kcalCap === null ? Infinity : w.kcalCap);
       return '<tr><td class="n">' + w.n + ' ימים<small>' + range + ' · ' + w.closed + '/' + w.n + ' סגורים</small></td>' +
         '<td class="n">' + st + '</td>' +
-        '<td class="n"><b>' + v(kcal, kcal !== null && kcal < 1200) + '</b><small>גירעון ' + v(w.kcalAt) + ' · תקרה ' + v(w.kcalCap) + '</small></td>' +
+        '<td class="n">' + need + '</td>' +
+        '<td class="n"><b>' + v(kcal, kcal !== null && kcal < 1200) + '</b><small>לפי גירעון ' + v(w.kcalAt) + ' · לפי ממוצע ' + root.Fmt.n((state.targets || {}).kcal || 1900, 0) + ': ' + v(w.kcalCap) + '</small></td>' +
         '<td class="n">' + v(w.fatCap, w.fatCap !== null && w.fatCap < 20) + '</td>' +
         '<td class="n">' + v(w.stepsNeed, w.stepsNeed !== null && w.stepsNeed > 15000) + '</td></tr>';
     });
-    return P.card('גיליון פיצויים', 'החלון הפתוח לכל אורך, בגבולות קבועים מ-' + P.esc(root.Dates.short(state.startDate || list[0].from)) + '. מה מותר/נדרש בכל יום שנשאר כדי לסגור את החלון בממוצע על כל היעדים.',
-      P.table(['חלון', 'מצב מול התוכנית', 'קק״ל ליום (מקס׳)', 'שומן ליום (מקס׳, ג׳)', 'צעדים ליום (מינ׳)'], rows) +
+    return P.card('גיליון פיצויים', 'החלון הפתוח לכל אורך, בגבולות קבועים מ-' + P.esc(root.Dates.short(state.startDate || list[0].from)) + '. יתרה = כמה גירעון עשית מעבר לתוכנית (' + cfg0(state).plannedDeficit + ' ליום) בימים הסגורים. גירעון נדרש = כמה גירעון מספיק בכל יום שנשאר כדי לסגור את החלון על התוכנית.',
+      P.table(['חלון', 'יתרה', 'גירעון נדרש ליום', 'קק״ל ליום (מקס׳)', 'שומן ליום (מקס׳, ג׳)', 'צעדים ליום (מינ׳)'], rows) +
       P.hint('קק״ל ליום = הנמוך מבין: (1) מה שמשאיר גירעון ממוצע של ' + cfg0(state).plannedDeficit + ' בחלון, ב-' + root.Fmt.n(list[0].stepsRef, 0) + ' צעדים; (2) ממוצע ' + root.Fmt.n((state.targets || {}).kcal || 1900, 0) + ' בחלון. חלבון לא נכנס: הוא יעד יומי. היום הנוכחי נספר כיום שנשאר עד שנסגר. לפי המודל: ' + root.Fmt.n(cfg0(state).baseBurn, 0) + ' + צעדים × ' + cfg0(state).kcalPerStep + '.'));
   }
 
