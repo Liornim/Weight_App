@@ -1174,7 +1174,7 @@
       var t = state.targets || {};
       var left = function (cap, used) { return rem && typeof cap === 'number' ? (cap * N - used) / rem : null; };
       return { n: N, from: iso(a), to: iso(b), closed: n, left: rem, sum: sum, behind: cfg.plannedDeficit * n - sum,
-        needPerDay: per, kcalAt: per === null ? null : cfg.baseBurn + stepsRef * COMP_KPS - per, // קדימה: שמרני stepsRef: stepsRef,
+        needPerDay: per, kcalAt: per === null ? null : cfg.baseBurn + stepsRef * COMP_KPS - per, /* קדימה: שמרני */ stepsRef: stepsRef,
         kcalCap: left(t.kcal, kc), fatCap: left(t.fatG, fat), stepsNeed: left(stepsGoal, st), kps: COMP_KPS };
     });
   }
@@ -1228,27 +1228,30 @@
     var list = compSheetOf(state, root.Dates.today());
     if (!list.length) return '';
     var n0 = function (v) { return root.Fmt.n(Math.abs(v), 0); };
-    var rows = list.map(function (w) {
+    var plan = cfg0(state).plannedDeficit, cap = (state.targets || {}).kcal || 1900;
+    var kcalOf = function (w) { return w.kcalAt === null ? null : Math.min(w.kcalAt, w.kcalCap === null ? Infinity : w.kcalCap); };
+    var open = list.filter(function (w) { return w.left > 0; });
+    var tight = open.slice().sort(function (x, y) { return kcalOf(x) - kcalOf(y); })[0];
+    var top = tight ? '<div class="comp__top">מהיום: <b>עד ' + n0(kcalOf(tight)) + ' קק״ל ביום</b>' +
+      '<small>אם תעמוד בזה בכל יום עד סוף החלון המחמיר, כל החלונות ייסגרו על היעדים. החלון המחמיר: ' + tight.n + ' ימים (<bdi dir="ltr">' + P.esc(root.Dates.short(tight.from)) + '–' + P.esc(root.Dates.short(tight.to)) + '</bdi>).</small></div>' : '';
+    var items = list.map(function (w) {
       var range = '<bdi dir="ltr" style="white-space:nowrap">' + P.esc(root.Dates.short(w.from)) + '–' + P.esc(root.Dates.short(w.to)) + '</bdi>';
-      var bal = -w.behind; // יתרה: פלוס = לפני התוכנית
-      var st = !w.closed ? '<span>0</span>' : '<span class="score__mark--' + (bal >= 0 ? 'ok' : 'no') + '"><bdi dir="ltr">' + (bal >= 0 ? '+' : '−') + n0(bal) + '</bdi></span>';
-      st += '<small>' + (!w.closed ? 'החלון מתחיל היום' : bal >= 0 ? 'לפני התוכנית' : 'חוב מול התוכנית') + '</small>';
-      var v = function (x, bad) { return x === null ? '—' : '<span class="' + (bad ? 'score__mark--no' : '') + '">' + (x < 0 ? '<bdi dir="ltr">−' + n0(x) + '</bdi>' : n0(x)) + '</span>'; };
-      var need = w.needPerDay === null ? '—'
-        : w.needPerDay <= 0 ? '<b>0</b><small>מותר עודף של עד ' + n0(w.needPerDay) + ' ליום</small>'
-        : '<b>' + n0(w.needPerDay) + '</b><small>במקום ' + n0(cfg0(state).plannedDeficit) + ', ב-' + w.left + ' ' + (w.left === 1 ? 'היום שנשאר' : 'הימים שנשארו') + '</small>';
-      // קק״ל ליום: הנמוך מבין התקרה (ממוצע 1,900) והמותר לפי הגירעון ב-10K צעדים
-      var kcal = w.kcalAt === null ? null : Math.min(w.kcalAt, w.kcalCap === null ? Infinity : w.kcalCap);
-      return '<tr><td class="n">' + w.n + ' ימים<small>' + range + ' · ' + w.closed + '/' + w.n + ' סגורים</small></td>' +
-        '<td class="n">' + st + '</td>' +
-        '<td class="n">' + need + '</td>' +
-        '<td class="n"><b>' + v(kcal, kcal !== null && kcal < 1200) + '</b><small>לפי גירעון ' + v(w.kcalAt) + ' · לפי ממוצע ' + root.Fmt.n((state.targets || {}).kcal || 1900, 0) + ': ' + v(w.kcalCap) + '</small></td>' +
-        '<td class="n">' + v(w.fatCap, w.fatCap !== null && w.fatCap < 20) + '</td>' +
-        '<td class="n">' + v(w.stepsNeed, w.stepsNeed !== null && w.stepsNeed > 15000) + '</td></tr>';
-    });
-    return P.card('גיליון פיצויים', 'החלון הפתוח לכל אורך, בגבולות קבועים מ-' + P.esc(root.Dates.short(state.startDate || list[0].from)) + '. יתרה = כמה גירעון עשית מעבר לתוכנית (' + cfg0(state).plannedDeficit + ' ליום) בימים הסגורים. גירעון נדרש = כמה גירעון מספיק בכל יום שנשאר כדי לסגור את החלון על התוכנית.',
-      P.table(['חלון', 'יתרה', 'גירעון נדרש ליום', 'קק״ל ליום (מקס׳)', 'שומן ליום (מקס׳, ג׳)', 'צעדים ליום (מינ׳)'], rows) +
-      P.hint('יתרה = הימים שכבר נסגרו, לפי המודל הרגיל (' + root.Fmt.n(cfg0(state).baseBurn, 0) + ' + צעדים × ' + cfg0(state).kcalPerStep + '). הימים שנשארו מחושבים שמרני: צעדים × ' + COMP_KPS + '. קק״ל ליום = הנמוך מבין: (1) מה שמשאיר גירעון ממוצע של ' + cfg0(state).plannedDeficit + ' בחלון, בהנחה של ' + root.Fmt.n(list[0].stepsRef, 0) + ' צעדים בלבד (המינימום); (2) ממוצע ' + root.Fmt.n((state.targets || {}).kcal || 1900, 0) + ' בחלון. צעדים ליום = מה שצריך לממוצע ' + root.Fmt.n((state.targets || {}).stepsGoal || 10000, 0) + '. חלבון לא נכנס: הוא יעד יומי. היום הנוכחי נספר כיום שנשאר עד שנסגר.'));
+      var bal = -w.behind, kcal = kcalOf(w);
+      if (!w.left) return '';
+      var balTxt = !w.closed ? 'החלון מתחיל היום, אין עדיין יתרה.'
+        : bal >= 0 ? 'בימים שעברו עשית <b class="score__mark--ok">' + n0(bal) + '</b> גירעון יותר מהתוכנית.'
+        : 'בימים שעברו חסרו <b class="score__mark--no">' + n0(bal) + '</b> גירעון מול התוכנית.';
+      var why = w.kcalCap !== null && w.kcalCap <= w.kcalAt
+        ? 'המגבלה: שממוצע הקלוריות בחלון יישאר עד ' + n0(cap) + '.'
+        : 'המגבלה: שהגירעון הממוצע בחלון יישאר ' + n0(plan) + ' (מספיק גירעון של ' + n0(Math.max(0, w.needPerDay)) + ' ביום, בהנחה של ' + n0(w.stepsRef) + ' צעדים).';
+      return '<div class="comp__w"><div class="comp__h"><b>' + w.n + ' ימים</b> · ' + range + ' · נשארו ' + w.left + ' ' + (w.left === 1 ? 'יום' : 'ימים') + '</div>' +
+        '<div class="comp__big">עד <b>' + n0(kcal) + '</b> קק״ל ביום</div>' +
+        '<div class="comp__t">' + balTxt + ' ' + why + '</div>' +
+        '<div class="comp__t">שומן עד <b>' + n0(w.fatCap) + '</b> ג׳ ביום · צעדים לפחות <b>' + n0(w.stepsNeed) + '</b> ביום.</div></div>';
+    }).join('');
+    return P.card('גיליון פיצויים', 'לכל אורך חלון (3–7 ימים, בגבולות קבועים מ-' + P.esc(root.Dates.short(state.startDate || list[0].from)) + '): כמה מותר לאכול בכל יום שנשאר כדי שהחלון ייסגר על היעדים.',
+      top + items +
+      P.hint('הימים שעברו לפי המודל הרגיל (' + root.Fmt.n(cfg0(state).baseBurn, 0) + ' + צעדים × ' + cfg0(state).kcalPerStep + '). הימים שנשארו בהנחה שמרנית: ' + root.Fmt.n(list[0].stepsRef, 0) + ' צעדים × ' + COMP_KPS + '. כל צעד מעבר לזה הוא בונוס. חלבון לא נכנס: הוא יעד יומי.'));
   }
 
   function compTab() {

@@ -1506,3 +1506,11 @@ details.rx .body { padding: 0 18px 18px; }
 details.comph { border-top: 1px solid var(--line, rgba(127,127,127,.2)); }
 details.comph > summary { padding: 10px 2px; cursor: pointer; font-size: 14px; }
 details.comph[open] > summary { padding-bottom: 6px; }
+.comp__top { padding: 12px 14px; border-radius: 12px; background: rgba(31,143,95,.10); margin-bottom: 12px; font-size: 15px; }
+.comp__top b { font-size: 18px; }
+.comp__top small { display: block; margin-top: 4px; opacity: .75; font-size: 12px; }
+.comp__w { padding: 12px 0; border-top: 1px solid rgba(127,127,127,.2); }
+.comp__h { font-size: 13px; opacity: .8; }
+.comp__big { font-size: 16px; margin: 4px 0; }
+.comp__big b { font-size: 22px; font-family: var(--mono, monospace); }
+.comp__t { font-size: 13px; line-height: 1.5; opacity: .85; }
