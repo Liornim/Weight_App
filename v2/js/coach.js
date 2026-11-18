@@ -1527,15 +1527,10 @@
       var f0 = winN ? fNow - winN + 1 : dayNum(firstW.date);
       var since = closed.filter(function (r) { var dn = dayNum(r.date); return dn >= f0 && dn <= fNow; });
       var avgDef = since.length ? since.reduce(function (a, r) { return a + burn(r) - r.kcal; }, 0) / since.length : null;
-      // במשקל: השבוע הראשון של המעקב הוא מים, ולכן לא נכנס לקצב
-      var wf0 = Math.max(f0, rows.length ? dayNum(rows[0].date) + 7 : f0);
+      // במשקל: מהתאריך שנבחר, כמו הגירעון. אם החלון כולל את השבוע הראשון (מים) — מסמנים שהקצב מנופח
+      var wf0 = f0;
       var wList = weighed.filter(function (r) { return dayNum(r.date) >= wf0; });
-      var wWater = false;
-      // אם אחרי שבוע המים אין עדיין 3 שקילות, לוקחים את כל החלון (כולל מים) ומסמנים
-      if (wList.length < 3) {
-        var wAll = weighed.filter(function (r) { return dayNum(r.date) >= f0; });
-        if (wAll.length >= 3) { wList = wAll; wWater = true; }
-      }
+      var wWater = rows.length ? wf0 < dayNum(rows[0].date) + 7 : false;
       var wfit = regress(wList.map(function (r) { return { x: dayNum(r.date), y: r.weightKg }; }));
       var wN = wList.length;
       var kgLeft2 = nowKg2 - goal;
@@ -1825,7 +1820,7 @@
         row('לפי המשקל בפועל', F.wt.eta, F.wt.perDay !== null ? n(F.wt.perDay * 7, 2) + ' ק״ג לשבוע' : '—',
           'מגמת ' + F.wt.n + ' שקילות' + (F.wFrom ? ' מ-' + P.esc(root.Dates.short(F.wFrom)) : '') + (F.wt.water ? ' · <b>כולל שבוע המים</b>, מנופח' : ''), 'kpi__k--wt') +
         fwdChart(F) +
-        '<div class="kpi__note">שני הקצבים הם ממוצע על החלון שבחרת, וממשיכים קדימה מהמשקל של היום. בקצב המשקל לא נכלל השבוע הראשון (מים). לא כולל חו״ל ולא האטה.</div></div>';
+        '<div class="kpi__note">שני הקצבים הם ממוצע על החלון שבחרת, וממשיכים קדימה מהמשקל של היום. לא כולל חו״ל ולא האטה.</div></div>';
     }
     if (!t6) {
       t6 = '<div class="kpi__tile kpi__eta' + (asOf ? ' kpi__eta--past' : '') + '"><div class="kpi__title">6 · מתי אגיע ל-' + n(goalKg, 1) + '</div>' +
