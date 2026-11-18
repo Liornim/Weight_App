@@ -1399,6 +1399,7 @@ td small { display: block; font-size: 10px; color: #8a8f98; font-weight: 400; }
 .score__bar .score--good { background: #2E9E6B; } .score__bar .score--warn { background: #D9A23A; } .score__bar .score--bad { background: #C8385A; }
 .score__mark { text-align: center; font-weight: 700; }
 .score__mark--ok { color: #1F8F5F; } .score__mark--no { color: #C8463A; opacity: .8; }
+.score__mark--part { color: #C88A1E; font-size: 11px; font-weight: 700; }
 
 /* מתכונים */
 
