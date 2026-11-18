@@ -1041,7 +1041,7 @@
 
 
   /**
-   * דף ציונים בבלוקים קבועים של 3 ימים (מיושרים ל-SCORE_ANCHOR). כל יום שייך לבלוק אחד בלבד,
+   * דף ציונים בבלוקים קבועים של 3 ימים (מהיום הראשון של המעקב, כל 3 ימים). כל יום שייך לבלוק אחד בלבד,
    * ולכן אין כפל; פיצוי בתוך הבלוק נספר מעצמו. כל המטרות נבדקות על ממוצע הבלוק.
    */
   function goalsOf(state) {
@@ -1062,8 +1062,6 @@
     return G;
   }
 
-  var SCORE_ANCHOR = '2026-11-17'; // יום שסוגר בלוק; כל הבלוקים מיושרים אליו
-
   function isDry(r) {
     return !(r.meals || []).some(function (m) { return (m.items || []).some(function (i) { return i.cat === 'alcohol' && i.kcal > 0; }); });
   }
@@ -1076,8 +1074,8 @@
     rows.forEach(function (r) { byDn[dayNum(r.date)] = r; });
     var blocks = [];
     if (rows.length) {
-      // גבולות קבועים: בלוק נגמר ב-17.11, וכל 3 ימים לפני ואחרי. הם לא זזים כשנסגר יום חדש.
-      var anchor = dayNum(SCORE_ANCHOR), lastDn = dayNum(rows[rows.length - 1].date);
+      // גבולות קבועים: הבלוק הראשון מתחיל ביום הראשון של המעקב, וכל 3 ימים משם. לא זזים כשנסגר יום חדש.
+      var anchor = dayNum(state.startDate || rows[0].date) + 2, lastDn = dayNum(rows[rows.length - 1].date);
       var endOf = function (dn) { return anchor + Math.ceil((dn - anchor) / 3) * 3; };
       for (var end = endOf(dayNum(rows[0].date)); end <= endOf(lastDn); end += 3) {
         var list = [end - 2, end - 1, end].map(function (dn) { return byDn[dn]; }).filter(Boolean);
@@ -1121,7 +1119,7 @@
     var head = '<section class="cumul">' +
       '<div class="cumul__row"><h2 class="cumul__title">דף ציונים</h2><span class="cumul__stamp">' + nFull + ' בלוקים של 3 ימים</span></div>' +
       '<div class="score__big score--' + grade + '">' + sc.score + '<small>/100</small></div>' +
-      '<div class="cumul__gap">ממוצע הניקוד של הבלוקים. כל בלוק = 3 ימים בגבולות קבועים (…, 12–14, 15–17, 18–20…); המטרות נבדקות על ממוצע הבלוק, כך שפיצוי בתוך הבלוק נספר. גירעון 50 (חלקי), חלבון 15, קלוריות 10, 10K 10, השאר 5. בלי משקלים: ' + sc.flat + '</div>' +
+      '<div class="cumul__gap">ממוצע הניקוד של הבלוקים. כל בלוק = 3 ימים בגבולות קבועים, מהיום הראשון של המעקב; המטרות נבדקות על ממוצע הבלוק, כך שפיצוי בתוך הבלוק נספר. גירעון 50 (חלקי), חלבון 15, קלוריות 10, 10K 10, השאר 5. בלי משקלים: ' + sc.flat + '</div>' +
     '</section>';
     var statRows = sc.stats.map(function (s) {
       var cls = s.pct >= 80 ? 'good' : s.pct >= 50 ? 'warn' : 'bad';
