@@ -13,7 +13,7 @@
   var App = {
     BUILD: 'd127',
     // גרסה גלויה למשתמש, עולה באחד בכל עדכון שמשנה את האתר
-    VERSION: 'V73',
+    VERSION: 'V74',
     state: {
       date: Dates.today(),
       tab: 'home',         // הטאב הראשי נפתח ראשון
@@ -86,6 +86,7 @@
 
     if (root.Coach && root.Coach.bindBreakEven) root.Coach.bindBreakEven(view);
     if (root.Coach && root.Coach.bindKpi) root.Coach.bindKpi(view);
+    if (root.Coach && root.Coach.bindComp) root.Coach.bindComp(view);
 
     view.querySelectorAll('[data-coach-export]').forEach(function (button) {
       button.addEventListener('click', function () {

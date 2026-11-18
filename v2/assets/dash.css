@@ -1520,3 +1520,7 @@ details.comph[open] > summary { padding-bottom: 6px; }
 .comp__chip b { font-family: var(--mono, monospace); }
 .comp__chip--ok { background: rgba(31,143,95,.12); color: #1F8F5F; }
 .comp__chip--no { background: rgba(200,70,58,.12); color: #C8463A; }
+.sim__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
+.sim__day { display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 12px; background: rgba(127,127,127,.08); }
+.sim__f { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 13px; }
+.sim__f input { width: 84px; padding: 6px 8px; border-radius: 8px; border: 1px solid rgba(127,127,127,.35); background: transparent; color: inherit; font: inherit; text-align: left; direction: ltr; }

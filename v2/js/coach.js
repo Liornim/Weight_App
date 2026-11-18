@@ -1225,8 +1225,8 @@
     return body ? P.card('היסטוריית חלונות', 'כל החלונות מאז ההתחלה, בגבולות הקבועים. ירוק = עמד ביעד (גירעון ' + cfg0(state).plannedDeficit + '+, עד ' + root.Fmt.n((state.targets || {}).kcal || 1900, 0) + ' קק״ל, שומן עד ' + ((state.targets || {}).fatG || 65) + ', ' + root.Fmt.n((state.targets || {}).stepsGoal || 10000, 0) + ' צעדים).', body) : '';
   }
 
-  function compSheet(state) {
-    var list = compSheetOf(state, root.Dates.today());
+  function compSheet(state, asOfIso, sim) {
+    var list = compSheetOf(state, asOfIso || root.Dates.today());
     if (!list.length) return '';
     var n0 = function (v) { return root.Fmt.n(Math.abs(v), 0); };
     var plan = cfg0(state).plannedDeficit, cap = (state.targets || {}).kcal || 1900;
@@ -1237,12 +1237,21 @@
     var kcalOf = function (w) { return w.kcalAt === null ? null : Math.min(w.kcalAt, w.kcalCap === null ? Infinity : w.kcalCap); };
     var open = list.filter(function (w) { return w.left > 0; });
     var tight = open.slice().sort(function (x, y) { return kcalOf(x) - kcalOf(y); })[0];
-    var top = tight ? '<div class="comp__top">מהיום: <b>עד ' + n0(kcalOf(tight)) + ' קק״ל ביום</b>' +
+    var top = tight ? '<div class="comp__top">' + (sim ? 'אחרי הסימולציה, מ-' + P.esc(root.Dates.short(new Date((dayNum(sim) + 1) * 864e5).toISOString().slice(0, 10))) + ': ' : 'מהיום: ') + '<b>עד ' + n0(kcalOf(tight)) + ' קק״ל ביום</b>' +
       '<small>אם תעמוד בזה בכל יום עד סוף החלון המחמיר, כל החלונות ייסגרו על היעדים. החלון המחמיר: ' + tight.n + ' ימים (<bdi dir="ltr">' + P.esc(root.Dates.short(tight.from)) + '–' + P.esc(root.Dates.short(tight.to)) + '</bdi>).</small></div>' : '';
     var items = list.map(function (w) {
       var range = '<bdi dir="ltr" style="white-space:nowrap">' + P.esc(root.Dates.short(w.from)) + '–' + P.esc(root.Dates.short(w.to)) + '</bdi>';
       var bal = -w.behind, kcal = kcalOf(w);
-      if (!w.left) return '';
+      var nowChips = function (lbl) {
+        return '<div class="comp__now"><span>' + lbl + '</span>' +
+          chip('גירעון', w.now.def, w.now.def >= plan, true) + chip('קק״ל', w.now.kcal, Math.round(w.now.kcal) <= cap) +
+          chip('שומן', w.now.fat, Math.round(w.now.fat) <= ((state.targets || {}).fatG || 65)) + chip('צעדים', w.now.steps, Math.round(w.now.steps) >= w.stepsGoal) + '</div>';
+      };
+      if (!w.left) {
+        var okAll = w.now.def >= plan && Math.round(w.now.kcal) <= cap;
+        return '<div class="comp__w"><div class="comp__h"><b>' + w.n + ' ימים</b> · ' + range + ' · <b class="score__mark--' + (okAll ? 'ok' : 'no') + '">נסגר ' + (okAll ? 'ביעד' : 'מחוץ ליעד') + '</b></div>' +
+          nowChips('ממוצע סופי:') + '<div class="comp__t">' + (bal >= 0 ? 'נסגר לפני התוכנית ב-' + n0(bal) + '.' : 'נסגר עם חוב של ' + n0(bal) + ' מול התוכנית.') + '</div></div>';
+      }
       var balTxt = !w.closed ? 'החלון מתחיל היום, אין עדיין יתרה.'
         : bal >= 0 ? 'בימים שעברו עשית <b class="score__mark--ok">' + n0(bal) + '</b> גירעון יותר מהתוכנית.'
         : 'בימים שעברו חסרו <b class="score__mark--no">' + n0(bal) + '</b> גירעון מול התוכנית.';
@@ -1250,9 +1259,7 @@
         ? 'המגבלה: שממוצע הקלוריות בחלון יישאר עד ' + n0(cap) + '.'
         : 'המגבלה: שהגירעון הממוצע בחלון יישאר ' + n0(plan) + ' (מספיק גירעון של ' + n0(Math.max(0, w.needPerDay)) + ' ביום, בהנחה של ' + n0(w.stepsRef) + ' צעדים).';
       return '<div class="comp__w"><div class="comp__h"><b>' + w.n + ' ימים</b> · ' + range + ' · נשארו ' + w.left + ' ' + (w.left === 1 ? 'יום' : 'ימים') + '</div>' +
-        (w.now ? '<div class="comp__now"><span>עד עכשיו (' + w.closed + ' ' + (w.closed === 1 ? 'יום' : 'ימים') + ', ממוצע):</span>' +
-          chip('גירעון', w.now.def, w.now.def >= plan, true) + chip('קק״ל', w.now.kcal, Math.round(w.now.kcal) <= cap) +
-          chip('שומן', w.now.fat, Math.round(w.now.fat) <= ((state.targets || {}).fatG || 65)) + chip('צעדים', w.now.steps, Math.round(w.now.steps) >= w.stepsGoal) + '</div>' : '') +
+        (w.now ? nowChips((sim ? 'כולל הסימולציה' : 'עד עכשיו') + ' (' + w.closed + ' ' + (w.closed === 1 ? 'יום' : 'ימים') + ', ממוצע):') : '') +
         '<div class="comp__big">' + (w.closed ? 'מכאן: ' : '') + 'עד <b>' + n0(kcal) + '</b> קק״ל ביום</div>' +
         '<div class="comp__t">' + balTxt + ' ' + why + '</div>' +
         '<div class="comp__t">שומן עד <b>' + n0(w.fatCap) + '</b> ג׳ ביום · צעדים לפחות <b>' + n0(w.stepsNeed) + '</b> ביום.</div></div>';
@@ -1262,11 +1269,87 @@
       P.hint('הימים שעברו לפי המודל הרגיל (' + root.Fmt.n(cfg0(state).baseBurn, 0) + ' + צעדים × ' + cfg0(state).kcalPerStep + '). הימים שנשארו בהנחה שמרנית: ' + root.Fmt.n(list[0].stepsRef, 0) + ' צעדים × ' + COMP_KPS + '. כל צעד מעבר לזה הוא בונוס. חלבון לא נכנס: הוא יעד יומי.'));
   }
 
+  // סימולציה: נשמר בזיכרון בלבד, כדי שמחר ייפתח נקי
+  var compSim = { d0: {}, d1: {} };
+
+  function simRows(state) {
+    var today = root.Dates.today(), dn0 = dayNum(today);
+    var iso = function (dn) { return new Date(dn * 864e5).toISOString().slice(0, 10); };
+    var todayRow = (state.rows || []).filter(function (r) { return r.date === today; })[0] || {};
+    var logged = (todayRow.meals || []).reduce(function (a, m) { return { k: a.k + (m.kcal || 0), p: a.p + (m.proteinG || 0), f: a.f + (m.fatG || 0) }; }, { k: 0, p: 0, f: 0 });
+    var num = function (v) { return v === '' || v === undefined || v === null || isNaN(Number(v)) ? null : Number(v); };
+    var mk = function (d, date, isToday) {
+      var kcal = num(d.kcal), steps = num(d.steps);
+      if (!isToday && kcal === null) return null;
+      if (kcal === null) kcal = Math.max(Math.round(logged.k), (state.targets && state.targets.kcal) || 1900);
+      if (steps === null) steps = 10000;
+      var fat = num(d.fat), protein = num(d.protein);
+      if (fat === null) fat = Math.round(isToday ? Math.max(logged.f, kcal * 0.03) : kcal * 0.03);
+      if (protein === null) protein = 150;
+      return { date: date, kcal: kcal, steps: steps, fatG: fat, proteinG: protein, meals: [], sim: true };
+    };
+    var r0 = mk(compSim.d0, today, true), r1 = mk(compSim.d1, iso(dn0 + 1), false);
+    return { today: today, logged: logged, days: [r0].concat(r1 ? [r1] : []) };
+  }
+
   function compTab() {
     var state = read();
-    var sheet = compSheet(state);
-    if (!sheet) return P.section('פיצויים', P.card(null, null, P.empty('עוד אין ימים סגורים.')));
-    return P.section('פיצויים', sheet + compHistory(state));
+    if (!(state.rows || []).some(function (r) { return typeof r.kcal === 'number' && typeof r.steps === 'number'; }))
+      return P.section('פיצויים', P.card(null, null, P.empty('עוד אין ימים סגורים.')));
+    var S = simRows(state);
+    var simDates = S.days.map(function (r) { return r.date; });
+    var rows2 = (state.rows || []).filter(function (r) { return simDates.indexOf(r.date) < 0; }).concat(S.days)
+      .sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    var st2 = Object.assign({}, state, { rows: rows2 });
+    var last = S.days[S.days.length - 1].date;
+    var n0 = function (v) { return root.Fmt.n(Math.abs(v), 0); };
+    var cfg = cfg0(state);
+
+    // קלט
+    var field = function (day, key, label, ph) {
+      var v = compSim[day][key];
+      return '<label class="sim__f"><span>' + label + '</span><input type="number" inputmode="numeric" data-sim="' + day + ':' + key + '" value="' + (v === undefined ? '' : P.esc(String(v))) + '" placeholder="' + ph + '"></label>';
+    };
+    var d0 = S.days[0];
+    var inputs = '<div class="sim__grid"><div class="sim__day"><b>היום</b>' +
+      field('d0', 'kcal', 'קק״ל', String(d0.kcal)) + field('d0', 'steps', 'צעדים', '10000') +
+      field('d0', 'protein', 'חלבון', '150') + field('d0', 'fat', 'שומן', String(d0.fatG)) + '</div>' +
+      '<div class="sim__day"><b>מחר</b> <small>(לא חובה)</small>' +
+      field('d1', 'kcal', 'קק״ל', '—') + field('d1', 'steps', 'צעדים', '10000') +
+      field('d1', 'protein', 'חלבון', '150') + field('d1', 'fat', 'שומן', 'אוטו׳') + '</div></div>' +
+      '<button type="button" class="kpi__chip" data-sim-reset>איפוס</button>';
+
+    // תוצאת היום/ימים
+    var dayLines = S.days.map(function (r) {
+      var def = cfg.baseBurn + r.steps * cfg.kcalPerStep - r.kcal;
+      return '<div class="comp__t"><b>' + P.esc(root.Dates.short(r.date)) + '</b>: ' + n0(r.kcal) + ' קק״ל, ' + n0(r.steps) + ' צעדים → ' +
+        (def >= 0 ? 'גירעון ' : 'עודף ') + '<b class="score__mark--' + (def >= cfg.plannedDeficit ? 'ok' : 'no') + '">' + n0(def) + '</b> (שומן ' + n0(r.fatG) + ', חלבון ' + n0(r.proteinG) + ')</div>';
+    }).join('');
+
+    // ציון צפוי לבלוק
+    var sc = scoresOf(st2);
+    var blk = sc.blocks.filter(function (b) { return b.date <= last && b.to >= last; })[0];
+    var short = { kcal: 'קל׳', deficit: 'גירעון', protein: 'חלבון', fat: 'שומן', steps: '6.7K', steps10: '10K' };
+    var blkHtml = blk ? '<div class="comp__now"><span>ציון צפוי לבלוק <bdi dir="ltr">' + P.esc(root.Dates.short(blk.date)) + '–' + P.esc(root.Dates.short(blk.to)) + '</bdi>' +
+      (blk.full ? '' : ' (' + blk.n + '/3 ימים, עוד לא נסגר)') + ': <b>' + Math.round(blk.pts) + '</b>/100</span>' +
+      sc.goals.map(function (g) { var c = blk.credit[g.key]; return '<span class="comp__chip comp__chip--' + (c >= 1 ? 'ok' : 'no') + '">' + (short[g.key] || g.key) + ' <b>' + Math.round(c * g.weight) + '/' + g.weight + '</b></span>'; }).join('') + '</div>' : '';
+
+    var simCard = P.card('סימולציה: מה יהיה המצב', 'הכנס מה אתה מצפה לאכול וללכת. החישוב לפי המודל הרגיל (צעד = ' + cfg.kcalPerStep + '), בדיוק כמו שהיום ייסגר באתר. שדה ריק = ברירת מחדל: קק״ל = היעד (או מה שכבר רשום היום, אם יותר), צעדים 10,000, חלבון 150, שומן = מה שרשום או 30 ג׳ לכל 1,000 קק״ל.',
+      inputs + (S.logged.k ? '<div class="comp__t">רשום היום עד עכשיו: ' + n0(S.logged.k) + ' קק״ל, חלבון ' + n0(S.logged.p) + '.</div>' : '') + dayLines + blkHtml);
+    return P.section('פיצויים', simCard + compSheet(st2, last, last) + compHistory(state));
+  }
+
+  function bindComp(view) {
+    view.querySelectorAll('[data-sim]').forEach(function (el) {
+      el.addEventListener('change', function () {
+        var k = el.dataset.sim.split(':');
+        if (el.value === '') delete compSim[k[0]][k[1]]; else compSim[k[0]][k[1]] = el.value;
+        if (root.App && root.App.setState) root.App.setState({});
+      });
+    });
+    view.querySelectorAll('[data-sim-reset]').forEach(function (b) {
+      b.addEventListener('click', function () { compSim = { d0: {}, d1: {} }; if (root.App && root.App.setState) root.App.setState({}); });
+    });
   }
 
   function cfg0(state) { return state.balance || { baseBurn: 2150, kcalPerStep: 0.045, plannedDeficit: 550 }; }
@@ -2279,5 +2362,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, macros: macros, macroOf: macroOf, scorecard: scorecard, scoresOf: scoresOf, compSheetOf: compSheetOf, compHistoryOf: compHistoryOf, compTab: compTab, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, breakEvenOf: breakEvenOf, bindBreakEven: bindBreakEven, kpi: kpi, kpiOf: kpiOf, etaHistory: etaHistory, bindKpi: bindKpi, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, macros: macros, macroOf: macroOf, scorecard: scorecard, scoresOf: scoresOf, compSheetOf: compSheetOf, compHistoryOf: compHistoryOf, compTab: compTab, bindComp: bindComp, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, breakEvenOf: breakEvenOf, bindBreakEven: bindBreakEven, kpi: kpi, kpiOf: kpiOf, etaHistory: etaHistory, bindKpi: bindKpi, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);
