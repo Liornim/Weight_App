@@ -1101,7 +1101,8 @@
       for (var i = scored.length - 1; i >= 0 && scored[i].res[g.key]; i--) streak++;
       var best = 0, run = 0;
       scored.forEach(function (d) { run = d.res[g.key] ? run + 1 : 0; best = Math.max(best, run); });
-      return { key: g.key, label: g.label, weight: g.weight, hit: hit, of: scored.length, pct: scored.length ? Math.round(hit / scored.length * 100) : 0, streak: streak, best: best };
+      var avgPts = scored.length ? scored.reduce(function (a, d) { return a + d.credit[g.key]; }, 0) / scored.length * g.weight : 0;
+      return { key: g.key, label: g.label, weight: g.weight, avgPts: avgPts, hit: hit, of: scored.length, pct: scored.length ? Math.round(hit / scored.length * 100) : 0, streak: streak, best: best };
     });
     var total = scored.reduce(function (a, d) { return a + d.pts; }, 0);
     var hits = scored.reduce(function (a, d) { return a + d.hit; }, 0), possible = scored.length * goals.length;
@@ -1122,26 +1123,28 @@
     '</section>';
     var statRows = sc.stats.map(function (s) {
       var cls = s.pct >= 80 ? 'good' : s.pct >= 50 ? 'warn' : 'bad';
-      return '<tr><td>' + P.esc(s.label) + '</td><td class="n">' + s.weight + '</td>' +
+      var pc = s.weight ? s.avgPts / s.weight : 0, pcls = pc >= 0.8 ? 'good' : pc >= 0.5 ? 'warn' : 'bad';
+      return '<tr><td>' + P.esc(s.label) + '</td><td class="n score__cell--' + pcls + '"><b>' + root.Fmt.n(s.avgPts, 0) + '/' + s.weight + '</b><small>בממוצע</small></td>' +
         '<td class="n score__cell--' + cls + '"><b>' + s.hit + '/' + s.of + '</b><small>' + s.pct + '%</small></td>' +
         '<td class="n">' + s.streak + '</td><td class="n">' + s.best + '</td>' +
         '<td><div class="score__bar"><i class="score--' + cls + '" style="width:' + s.pct + '%"></i></div></td></tr>';
     });
-    var statCard = P.card('לפי מטרה', 'בכמה בלוקים עמדת בכל מטרה',
-      P.table(['מטרה', 'נק׳', 'בלוקים', 'רצף נוכחי', 'רצף שיא', ''], statRows));
+    var statCard = P.card('לפי מטרה', 'נקודות בממוצע לבלוק (כולל ניקוד חלקי), ובכמה בלוקים עמדת ביעד במלואו',
+      P.table(['מטרה', 'נקודות', 'בלוקים מלאים', 'רצף נוכחי', 'רצף שיא', ''], statRows));
     var dayRows = sc.blocks.slice().reverse().map(function (d) {
       var label = P.esc(root.Dates.short(d.date)) + (d.to !== d.date ? '–' + P.esc(root.Dates.short(d.to)) : '');
       return '<tr' + (d.full ? '' : ' style="opacity:.55"') + '><td class="n"><bdi dir="ltr" style="white-space:nowrap">' + label + '</bdi>' +
         '<small>גירעון ' + root.Fmt.n(d.agg.def, 0) + (d.full ? '' : d.open ? ' · בתהליך (' + d.n + '/3), עוד לא נספר' : ' · חלקי, לא נספר') + '</small></td>' +
+        '<td class="n"><b>' + Math.round(d.pts) + '</b></td>' +
         sc.goals.map(function (g) {
-          var c = d.credit[g.key], part = !d.res[g.key] && c > 0;
-          return '<td class="score__mark score__mark--' + (d.res[g.key] ? 'ok' : part ? 'part' : 'no') + '">' + (d.res[g.key] ? '✓' : part ? Math.round(c * 100) + '%' : '✗') + '</td>';
-        }).join('') +
-        '<td class="n"><b>' + Math.round(d.pts) + '</b><small>' + d.hit + '/' + d.of + '</small></td></tr>';
+          var c = d.credit[g.key], pts = Math.round(c * g.weight);
+          var cls = c >= 1 ? 'ok' : c > 0 ? 'part' : 'no';
+          return '<td class="score__mark score__mark--' + cls + '">' + (c >= 1 ? '✓' : c > 0 ? pts + '/' + g.weight : '✗') + '</td>';
+        }).join('') + '</tr>';
     });
     var short = { kcal: 'קל׳', deficit: 'גירעון 550+', protein: 'חלבון', fat: 'שומן', steps: '6.7K', steps10: '10K', dry: 'בלי אלכ׳' };
-    var dayCard = P.card('לפי בלוק', '✓ עמד · % ניקוד חלקי · ✗ לא עמד · סה״כ = נקודות מ-100',
-      P.table(['ימים'].concat(sc.goals.map(function (g) { return short[g.key] || g.label; })).concat(['סה״כ']), dayRows));
+    var dayCard = P.card('לפי בלוק', 'ציון = נקודות מ-100 · ✓ נקודות מלאות · 30/55 ניקוד חלקי · ✗ אפס',
+      P.table(['ימים', 'ציון'].concat(sc.goals.map(function (g) { return (short[g.key] || g.label) + ' (' + g.weight + ')'; })), dayRows));
     return P.section('ציונים', head + statCard + dayCard +
       P.hint('רק ימים סגורים (עם צעדים). הבלוקים קבועים ולא זזים; בלוק נספר רק כשכל 3 הימים בו סגורים. גירעון לפי החשבון הנוכחי: ' + root.Fmt.n(cfg0(state).baseBurn, 0) + ' + צעדים × ' + cfg0(state).kcalPerStep + '.'));
   }
