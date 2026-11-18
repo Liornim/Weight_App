@@ -1245,7 +1245,7 @@
     var kcalOf = function (w) { return w.kcalAt === null ? null : Math.min(w.kcalAt, w.kcalCap === null ? Infinity : w.kcalCap); };
     var open = list.filter(function (w) { return w.left > 0; });
     var tight = open.slice().sort(function (x, y) { return kcalOf(x) - kcalOf(y); })[0];
-    var gl = open.filter(function (w) { return w.greenToday !== null; }); // כולל חלונות שמתחילים היום: אז היום לבד צריך לעמוד ביעד
+    var gl = open.filter(function (w) { return w.closed && w.greenToday !== null; }); // חלון שמתחיל היום לא נספר: מחר יהיה בו רק יום אחד
     var green = gl.length ? Math.min.apply(null, gl.map(function (w) { return w.greenToday; })) : null;
     var greenFat = gl.length ? Math.min.apply(null, gl.map(function (w) { return w.greenFat === null ? Infinity : w.greenFat; })) : null;
     var greenSteps = gl.length ? Math.max.apply(null, gl.map(function (w) { return w.greenSteps === null ? 0 : w.greenSteps; })) : null;
@@ -1277,7 +1277,7 @@
           '<span class="comp__chip comp__chip--' + (w.kcalOver > 0 ? 'no' : 'ok') + '">קק״ל מול ' + n0(cap) + ' ליום: <b>' + (w.kcalOver > 0 ? 'עודף ' : 'חוסר ') + n0(w.kcalOver) + '</b></span>' +
           '<span class="comp__chip comp__chip--' + (bal >= 0 ? 'ok' : 'no') + '">גירעון מול ' + n0(plan) + ' ליום: <b>' + (bal >= 0 ? 'יתרה ' : 'חוב ') + n0(bal) + '</b></span></div>' : '') +
         '<div class="comp__big">' + (w.closed ? 'מכאן: ' : '') + 'עד ' + kc(kcal) + ' קק״ל ביום</div>' +
-        (w.greenToday !== null && !sim ? '<div class="comp__t">כדי שמחר בבוקר החלון יהיה ירוק, היום: <b>עד ' + kc(w.greenToday) + '</b> קק״ל · שומן עד <b>' + n0(Math.max(0, w.greenFat)) + '</b> ג׳ · לפחות <b>' + n0(Math.max(0, w.greenSteps)) + '</b> צעדים.</div>' : '') +
+        (w.greenToday !== null && w.closed && !sim ? '<div class="comp__t">כדי שמחר בבוקר החלון יהיה ירוק, היום: <b>עד ' + kc(w.greenToday) + '</b> קק״ל · שומן עד <b>' + n0(Math.max(0, w.greenFat)) + '</b> ג׳ · לפחות <b>' + n0(Math.max(0, w.greenSteps)) + '</b> צעדים.</div>' : '') +
         '<div class="comp__t">' + balTxt + ' ' + why + '</div>' +
         '<div class="comp__t">שומן עד <b>' + n0(w.fatCap) + '</b> ג׳ ביום · צעדים לפחות <b>' + n0(w.stepsNeed) + '</b> ביום.</div></div>';
     }).join('');
