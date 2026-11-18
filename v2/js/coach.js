@@ -1156,7 +1156,7 @@
   var COMP_KPS = 0.035; // בגיליון הפיצויים: קק״ל לצעד שמרני, כי השריפה מצעדים היא רק הערכה
 
   function compSheetOf(state, todayIso, lens) {
-    var cfg = Object.assign({}, cfg0(state), { kcalPerStep: COMP_KPS });
+    var cfg = cfg0(state); // בפועל: לפי המודל הרגיל, כמו בשאר האתר
     var rows = (state.rows || []).filter(function (r) { return typeof r.kcal === 'number' && typeof r.steps === 'number'; });
     if (!rows.length) return [];
     var by = {};
@@ -1174,14 +1174,14 @@
       var t = state.targets || {};
       var left = function (cap, used) { return rem && typeof cap === 'number' ? (cap * N - used) / rem : null; };
       return { n: N, from: iso(a), to: iso(b), closed: n, left: rem, sum: sum, behind: cfg.plannedDeficit * n - sum,
-        needPerDay: per, kcalAt: per === null ? null : cfg.baseBurn + stepsRef * cfg.kcalPerStep - per, stepsRef: stepsRef,
+        needPerDay: per, kcalAt: per === null ? null : cfg.baseBurn + stepsRef * COMP_KPS - per, // קדימה: שמרני stepsRef: stepsRef,
         kcalCap: left(t.kcal, kc), fatCap: left(t.fatG, fat), stepsNeed: left(stepsGoal, st), kps: COMP_KPS };
     });
   }
 
   /** היסטוריית חלונות באורך N, בגבולות הקבועים: ממוצעים ומה עמד ביעד */
   function compHistoryOf(state, N) {
-    var cfg = Object.assign({}, cfg0(state), { kcalPerStep: COMP_KPS }), t = state.targets || {};
+    var cfg = cfg0(state), t = state.targets || {};
     var rows = (state.rows || []).filter(function (r) { return typeof r.kcal === 'number' && typeof r.steps === 'number'; });
     if (!rows.length) return [];
     var by = {};
@@ -1221,7 +1221,7 @@
       return '<details class="comph"' + (N === 3 ? ' open' : '') + '><summary><b>' + N + ' ימים</b> · ' + good + '/' + full.length + ' חלונות סגורים בגירעון ' + cfg0(state).plannedDeficit + '+</summary>' +
         P.table(['חלון', 'גירעון ממוצע', 'קק״ל ממוצע', 'שומן ממוצע', 'צעדים ממוצע'], [rows]) + '</details>';
     }).join('');
-    return body ? P.card('היסטוריית חלונות', 'כל החלונות מאז ההתחלה, בגבולות הקבועים. גירעון בחישוב השמרני (צעד = ' + COMP_KPS + '). ירוק = עמד ביעד (גירעון ' + cfg0(state).plannedDeficit + '+, עד ' + root.Fmt.n((state.targets || {}).kcal || 1900, 0) + ' קק״ל, שומן עד ' + ((state.targets || {}).fatG || 65) + ', ' + root.Fmt.n((state.targets || {}).stepsGoal || 10000, 0) + ' צעדים).', body) : '';
+    return body ? P.card('היסטוריית חלונות', 'כל החלונות מאז ההתחלה, בגבולות הקבועים. ירוק = עמד ביעד (גירעון ' + cfg0(state).plannedDeficit + '+, עד ' + root.Fmt.n((state.targets || {}).kcal || 1900, 0) + ' קק״ל, שומן עד ' + ((state.targets || {}).fatG || 65) + ', ' + root.Fmt.n((state.targets || {}).stepsGoal || 10000, 0) + ' צעדים).', body) : '';
   }
 
   function compSheet(state) {
@@ -1248,7 +1248,7 @@
     });
     return P.card('גיליון פיצויים', 'החלון הפתוח לכל אורך, בגבולות קבועים מ-' + P.esc(root.Dates.short(state.startDate || list[0].from)) + '. יתרה = כמה גירעון עשית מעבר לתוכנית (' + cfg0(state).plannedDeficit + ' ליום) בימים הסגורים. גירעון נדרש = כמה גירעון מספיק בכל יום שנשאר כדי לסגור את החלון על התוכנית.',
       P.table(['חלון', 'יתרה', 'גירעון נדרש ליום', 'קק״ל ליום (מקס׳)', 'שומן ליום (מקס׳, ג׳)', 'צעדים ליום (מינ׳)'], rows) +
-      P.hint('חישוב שמרני: ' + root.Fmt.n(cfg0(state).baseBurn, 0) + ' + צעדים × ' + COMP_KPS + ' (ולא ' + cfg0(state).kcalPerStep + '), גם ביתרה וגם בימים שנשארו. קק״ל ליום = הנמוך מבין: (1) מה שמשאיר גירעון ממוצע של ' + cfg0(state).plannedDeficit + ' בחלון, בהנחה של ' + root.Fmt.n(list[0].stepsRef, 0) + ' צעדים בלבד (המינימום); (2) ממוצע ' + root.Fmt.n((state.targets || {}).kcal || 1900, 0) + ' בחלון. צעדים ליום = מה שצריך לממוצע ' + root.Fmt.n((state.targets || {}).stepsGoal || 10000, 0) + '. חלבון לא נכנס: הוא יעד יומי. היום הנוכחי נספר כיום שנשאר עד שנסגר.'));
+      P.hint('יתרה = הימים שכבר נסגרו, לפי המודל הרגיל (' + root.Fmt.n(cfg0(state).baseBurn, 0) + ' + צעדים × ' + cfg0(state).kcalPerStep + '). הימים שנשארו מחושבים שמרני: צעדים × ' + COMP_KPS + '. קק״ל ליום = הנמוך מבין: (1) מה שמשאיר גירעון ממוצע של ' + cfg0(state).plannedDeficit + ' בחלון, בהנחה של ' + root.Fmt.n(list[0].stepsRef, 0) + ' צעדים בלבד (המינימום); (2) ממוצע ' + root.Fmt.n((state.targets || {}).kcal || 1900, 0) + ' בחלון. צעדים ליום = מה שצריך לממוצע ' + root.Fmt.n((state.targets || {}).stepsGoal || 10000, 0) + '. חלבון לא נכנס: הוא יעד יומי. היום הנוכחי נספר כיום שנשאר עד שנסגר.'));
   }
 
   function compTab() {
