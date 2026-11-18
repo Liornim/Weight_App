@@ -1178,7 +1178,9 @@
         kcalCap: left(t.kcal, kc), fatCap: left(t.fatG, fat), stepsNeed: left(stepsGoal, st), kps: COMP_KPS, stepsGoal: stepsGoal,
         now: n ? { def: sum / n, kcal: kc / n, fat: fat / n, steps: st / n } : null,
         // כמה לאכול היום כדי שמחר ממוצע הקלוריות בחלון יהיה ירוק (עד היעד)
-        greenToday: typeof t.kcal === 'number' && rem > 0 ? t.kcal * (n + 1) - kc : null };
+        greenToday: typeof t.kcal === 'number' && rem > 0 ? t.kcal * (n + 1) - kc : null,
+        // קלוריות מול התקציב (1,900 ליום) בימים הסגורים: פלוס = עודף
+        kcalOver: typeof t.kcal === 'number' ? kc - t.kcal * n : null };
     });
   }
 
@@ -1267,6 +1269,9 @@
         : 'המגבלה: שהגירעון הממוצע בחלון יישאר ' + n0(plan) + ' (מספיק גירעון של ' + n0(Math.max(0, w.needPerDay)) + ' ביום, בהנחה של ' + n0(w.stepsRef) + ' צעדים).';
       return '<div class="comp__w"><div class="comp__h"><b>' + w.n + ' ימים</b> · ' + range + ' · נשארו ' + w.left + ' ' + (w.left === 1 ? 'יום' : 'ימים') + '</div>' +
         (w.now ? nowChips((sim ? 'כולל הסימולציה' : 'עד עכשיו') + ' (' + w.closed + ' ' + (w.closed === 1 ? 'יום' : 'ימים') + ', ממוצע):') : '') +
+        (w.closed ? '<div class="comp__now"><span>סה״כ עד עכשיו:</span>' +
+          '<span class="comp__chip comp__chip--' + (w.kcalOver > 0 ? 'no' : 'ok') + '">קק״ל מול ' + n0(cap) + ' ליום: <b>' + (w.kcalOver > 0 ? 'עודף ' : 'חוסר ') + n0(w.kcalOver) + '</b></span>' +
+          '<span class="comp__chip comp__chip--' + (bal >= 0 ? 'ok' : 'no') + '">גירעון מול ' + n0(plan) + ' ליום: <b>' + (bal >= 0 ? 'יתרה ' : 'חוב ') + n0(bal) + '</b></span></div>' : '') +
         '<div class="comp__big">' + (w.closed ? 'מכאן: ' : '') + 'עד ' + kc(kcal) + ' קק״ל ביום</div>' +
         (w.greenToday !== null && w.closed && !sim ? '<div class="comp__t">כדי שמחר בבוקר ממוצע הקלוריות יהיה ירוק: <b>היום עד ' + kc(w.greenToday) + '</b> קק״ל.</div>' : '') +
         '<div class="comp__t">' + balTxt + ' ' + why + '</div>' +
