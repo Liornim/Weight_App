@@ -1341,6 +1341,7 @@
     var days = [], d = dayNum(trip.from), end = dayNum(trip.to);
     var iso = function (dn) { return new Date(dn * 864e5).toISOString().slice(0, 10); };
     var left = { lo: spare, mid: spare, hi: spare };
+    var leftPlan = { lo: planBal, mid: planBal, hi: planBal };
     for (; d <= end; d++) {
       var date = iso(d), r = all.filter(function (x) { return x.date === date; })[0];
       var closed = r && typeof r.kcal === 'number' && typeof r.steps === 'number';
@@ -1354,12 +1355,16 @@
         // שימוש בספייר = עודף מעל השריפה (מינימום קלוריות = שימוש מינימלי)
         day.use = { lo: lo - day.burn, mid: r.kcal - day.burn, hi: hi - day.burn };
         left = { lo: left.lo - day.use.lo, mid: left.mid - day.use.mid, hi: left.hi - day.use.hi };
+        var p = cfg.plannedDeficit;
+        leftPlan = { lo: leftPlan.lo - day.use.lo - p, mid: leftPlan.mid - day.use.mid - p, hi: leftPlan.hi - day.use.hi - p };
       }
       day.left = { lo: left.lo, mid: left.mid, hi: left.hi };
+      day.leftPlan = { lo: leftPlan.lo, mid: leftPlan.mid, hi: leftPlan.hi };
       days.push(day);
     }
     var budgetTotal = days.reduce(function (a, x) { return a + x.budgetUse; }, 0);
-    return { trip: trip, spare: spare, planBal: planBal, days: days, budgetTotal: budgetTotal, left: left };
+    return { trip: trip, spare: spare, planBal: planBal, days: days, budgetTotal: budgetTotal, left: left, leftPlan: leftPlan,
+      budgetPlanTotal: budgetTotal + cfg.plannedDeficit * days.length };
   }
 
   function tripTab() {
@@ -1376,9 +1381,11 @@
       var pct = function (v) { return T.spare > 0 ? Math.round(v / T.spare * 100) : 0; };
       var head = '<div class="comp__top">' +
         '<div>ספייר ביציאה (גירעון מצטבר מול break even, עד <bdi dir="ltr">' + sd(new Date((dayNum(trip.from) - 1) * 864e5).toISOString().slice(0, 10)) + '</bdi>): <b>' + n0(T.spare) + ' קק״ל</b> (~' + (T.spare / 7700).toFixed(2) + ' ק״ג)</div>' +
-        '<small>תקציב: ' + n0(trip.budgetKcal) + ' קק״ל ליום, ' + n0(trip.stepsAssumed || 10000) + ' צעדים → עודף מתוכנן ' + n0(T.days[0].budgetUse) + ' ליום, ' + n0(T.budgetTotal) + ' לכל הנסיעה (' + pct(T.budgetTotal) + '% מהספייר).</small>' +
+        '<div>מול התוכנית (גירעון ' + n0(cfg0(state).plannedDeficit) + ' ליום) ביציאה: <b class="score__mark--' + (T.planBal >= 0 ? 'ok' : 'no') + '">' + (T.planBal >= 0 ? 'לפני ב-' : 'מאחור ב-') + n0(Math.abs(T.planBal)) + '</b></div>' +
+        '<small>תקציב: ' + n0(trip.budgetKcal) + ' קק״ל ליום, ' + n0(trip.stepsAssumed || 10000) + ' צעדים → עודף מתוכנן ' + n0(T.days[0].budgetUse) + ' ליום, ' + n0(T.budgetTotal) + ' לכל הנסיעה (' + pct(T.budgetTotal) + '% מהספייר). מול התוכנית הנסיעה עולה ' + n0(T.budgetPlanTotal) + ' → בחזרה: ' + (T.planBal - T.budgetPlanTotal >= 0 ? 'לפני ב-' : 'מאחור ב-') + n0(Math.abs(T.planBal - T.budgetPlanTotal)) + '.</small>' +
         (closedN ? '<div style="margin-top:8px">עד עכשיו (' + closedN + ' ' + (closedN === 1 ? 'יום' : 'ימים') + '): נגרעו <b>' + n0(used.mid) + '</b> <small>(בין ' + n0(used.lo) + ' ל-' + n0(used.hi) + ')</small> · לפי התקציב: ' + n0(budgetSoFar) + '</div>' +
-          '<div>נשאר בספייר: <b>' + n0(T.left.mid) + '</b> <small>(בין ' + n0(T.left.hi) + ' ל-' + n0(T.left.lo) + ')</small></div>' : '') +
+          '<div>נשאר בספייר: <b>' + n0(T.left.mid) + '</b> <small>(בין ' + n0(T.left.hi) + ' ל-' + n0(T.left.lo) + ')</small></div>' +
+          '<div>מול התוכנית: <b class="score__mark--' + (T.leftPlan.mid >= 0 ? 'ok' : 'no') + '">' + n0(T.leftPlan.mid) + '</b> <small>(בין ' + n0(T.leftPlan.hi) + ' ל-' + n0(T.leftPlan.lo) + ')</small></div>' : '') +
       '</div>';
       var three = function (lbl, lo, mid, hi, cls) {
         var cell = function (name, v, k) { return '<span class="comp__chip' + (cls ? ' comp__chip--' + cls(k) : '') + '">' + name + ' <b>' + n0(v) + '</b></span>'; };
@@ -1390,11 +1397,12 @@
         return '<div class="comp__w"><div class="comp__h"><b>' + sd(x.date) + '</b> · ' + n0(x.steps) + ' צעדים · שריפה ' + n0(x.burn) + ' · תקציב: עד ' + n0(x.budgetUse) + ' מהספייר</div>' +
           three('אכלת (קק״ל):', x.kcal.lo, x.kcal.mid, x.kcal.hi) +
           three('נגרע מהספייר:', x.use.lo, x.use.mid, x.use.hi, ok) +
-          three('נשאר בספייר:', x.left.lo, x.left.mid, x.left.hi) + '</div>';
+          three('נשאר בספייר:', x.left.lo, x.left.mid, x.left.hi) +
+          three('מול התוכנית:', x.leftPlan.lo, x.leftPlan.mid, x.leftPlan.hi, function (k) { return x.leftPlan[k] >= 0 ? 'ok' : 'no'; }) + '</div>';
       }).join('');
       return P.card('תקציב נסיעה: ' + (trip.name || ''), root.Dates.short(trip.from) + ' עד ' + root.Dates.short(trip.to) + ' · מינימום / אמצע / מקסימום לפי טווחי הארוחות',
         head + rows) +
-        P.hint('ספייר = כל הגירעון מול break even (שריפה = ' + root.Fmt.n(cfg0(state).baseBurn, 0) + ' + צעדים × ' + cfg0(state).kcalPerStep + ') מתחילת המעקב עד יום לפני הנסיעה. ירוק = בתוך התקציב היומי. מול התוכנית (550 ליום) ביציאה: ' + n0(T.planBal) + '.');
+        P.hint('ספייר = כל הגירעון מול break even (שריפה = ' + root.Fmt.n(cfg0(state).baseBurn, 0) + ' + צעדים × ' + cfg0(state).kcalPerStep + ') מתחילת המעקב עד יום לפני הנסיעה. ירוק = בתוך התקציב היומי.');
     }).join('');
     return P.section('נסיעה', html);
   }

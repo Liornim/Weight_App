@@ -11,9 +11,9 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'v85b',
+    BUILD: 'v86',
     // גרסה גלויה למשתמש, עולה באחד בכל עדכון שמשנה את האתר
-    VERSION: 'V85',
+    VERSION: 'V86',
     state: {
       date: Dates.today(),
       tab: 'home',         // הטאב הראשי נפתח ראשון
