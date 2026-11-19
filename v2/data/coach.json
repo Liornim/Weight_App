@@ -3473,5 +3473,14 @@
     "baseBurn": 2150,
     "kcalPerStep": 0.045,
     "plannedDeficit": 550
-  }
+  },
+  "trips": [
+    {
+      "name": "סופיה",
+      "from": "2026-11-20",
+      "to": "2026-11-22",
+      "budgetKcal": 4000,
+      "stepsAssumed": 10000
+    }
+  ]
 }

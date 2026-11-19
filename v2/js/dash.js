@@ -598,6 +598,7 @@
     { value: 'home', label: 'ראשי' },
     { value: 'kpi', label: 'מדדים' },
     { value: 'comp', label: 'פיצויים' },
+    { value: 'trip', label: 'נסיעה' },
     { value: 'meals', label: 'ארוחות' },
     { value: 'groups', label: 'קבוצות' },
     { value: 'macros', label: 'מאקרו' },
@@ -647,6 +648,7 @@
       : state.tab === 'trend' ? root.Coach.trend()
       : state.tab === 'score' ? root.Coach.scorecard()
       : state.tab === 'comp' ? root.Coach.compTab()
+      : state.tab === 'trip' ? root.Coach.tripTab()
       : state.tab === 'sim' ? root.Coach.simTab()
       : state.tab === 'steps' ? root.Coach.stepsTab()
       : state.tab === 'recipes' ? root.RecipesTab.render()

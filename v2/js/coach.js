@@ -115,7 +115,8 @@
         summary: data.summary || null,
         rows: validEntries(data),
         targets: data.targets || null,
-        balance: data.balance || null
+        balance: data.balance || null,
+        trips: data.trips || null
       };
       Object.keys(view).forEach(function (key) {
         if (JSON.stringify(state[key] === undefined ? null : state[key]) !== JSON.stringify(view[key])) {
@@ -1325,6 +1326,79 @@
       P.hint('בוקר = 5:00–12:00, צהריים = 12:00–18:00, ערב = 18:00–24:00, לילה = 0:00–5:00.'));
   }
 
+  /**
+   * תקציב נסיעה: הספייר = כל הגירעון שנצבר מתחילת המעקב ועד היום שלפני הנסיעה (מול break even).
+   * כל יום בנסיעה גורע ממנו, בשלושה תרחישים: מינימום / אמצע / מקסימום (לפי טווחי הארוחות).
+   */
+  function tripOf(state, trip) {
+    var cfg = cfg0(state);
+    var rows = (state.rows || []).filter(function (r) { return typeof r.kcal === 'number' && typeof r.steps === 'number'; });
+    var burn = function (r) { return cfg.baseBurn + r.steps * cfg.kcalPerStep; };
+    var before = rows.filter(function (r) { return r.date < trip.from && (!state.startDate || r.date >= state.startDate); });
+    var spare = before.reduce(function (a, r) { return a + burn(r) - r.kcal; }, 0);
+    var planBal = before.reduce(function (a, r) { return a + burn(r) - r.kcal - cfg.plannedDeficit; }, 0);
+    var all = state.rows || [];
+    var days = [], d = dayNum(trip.from), end = dayNum(trip.to);
+    var iso = function (dn) { return new Date(dn * 864e5).toISOString().slice(0, 10); };
+    var left = { lo: spare, mid: spare, hi: spare };
+    for (; d <= end; d++) {
+      var date = iso(d), r = all.filter(function (x) { return x.date === date; })[0];
+      var closed = r && typeof r.kcal === 'number' && typeof r.steps === 'number';
+      var meals = (r && r.meals) || [];
+      var lo = closed ? meals.reduce(function (a, m) { return a + (typeof m.kcalLow === 'number' ? m.kcalLow : m.kcal * 0.85); }, 0) : null;
+      var hi = closed ? meals.reduce(function (a, m) { return a + (typeof m.kcalHigh === 'number' ? m.kcalHigh : m.kcal * 1.15); }, 0) : null;
+      var day = { date: date, closed: closed, steps: closed ? r.steps : null, burn: closed ? burn(r) : null,
+        kcal: closed ? { lo: lo, mid: r.kcal, hi: hi } : null,
+        budgetUse: trip.budgetKcal - (cfg.baseBurn + (trip.stepsAssumed || 10000) * cfg.kcalPerStep) };
+      if (closed) {
+        // שימוש בספייר = עודף מעל השריפה (מינימום קלוריות = שימוש מינימלי)
+        day.use = { lo: lo - day.burn, mid: r.kcal - day.burn, hi: hi - day.burn };
+        left = { lo: left.lo - day.use.lo, mid: left.mid - day.use.mid, hi: left.hi - day.use.hi };
+      }
+      day.left = { lo: left.lo, mid: left.mid, hi: left.hi };
+      days.push(day);
+    }
+    var budgetTotal = days.reduce(function (a, x) { return a + x.budgetUse; }, 0);
+    return { trip: trip, spare: spare, planBal: planBal, days: days, budgetTotal: budgetTotal, left: left };
+  }
+
+  function tripTab() {
+    var state = read();
+    var trips = state.trips || [];
+    if (!trips.length) return P.section('נסיעה', P.card(null, null, P.empty('אין נסיעה מוגדרת.')));
+    var n0 = function (v) { return (v < 0 ? '−' : '') + root.Fmt.n(Math.abs(v), 0); };
+    var sd = function (x) { return P.esc(root.Dates.short(x)); };
+    var html = trips.map(function (trip) {
+      var T = tripOf(state, trip);
+      var used = { lo: T.spare - T.left.hi, mid: T.spare - T.left.mid, hi: T.spare - T.left.lo };
+      var closedN = T.days.filter(function (x) { return x.closed; }).length;
+      var budgetSoFar = T.days.filter(function (x) { return x.closed; }).reduce(function (a, x) { return a + x.budgetUse; }, 0);
+      var pct = function (v) { return T.spare > 0 ? Math.round(v / T.spare * 100) : 0; };
+      var head = '<div class="comp__top">' +
+        '<div>ספייר ביציאה (גירעון מצטבר מול break even, עד <bdi dir="ltr">' + sd(new Date((dayNum(trip.from) - 1) * 864e5).toISOString().slice(0, 10)) + '</bdi>): <b>' + n0(T.spare) + ' קק״ל</b> (~' + (T.spare / 7700).toFixed(2) + ' ק״ג)</div>' +
+        '<small>תקציב: ' + n0(trip.budgetKcal) + ' קק״ל ליום, ' + n0(trip.stepsAssumed || 10000) + ' צעדים → עודף מתוכנן ' + n0(T.days[0].budgetUse) + ' ליום, ' + n0(T.budgetTotal) + ' לכל הנסיעה (' + pct(T.budgetTotal) + '% מהספייר).</small>' +
+        (closedN ? '<div style="margin-top:8px">עד עכשיו (' + closedN + ' ' + (closedN === 1 ? 'יום' : 'ימים') + '): נגרעו <b>' + n0(used.mid) + '</b> <small>(בין ' + n0(used.lo) + ' ל-' + n0(used.hi) + ')</small> · לפי התקציב: ' + n0(budgetSoFar) + '</div>' +
+          '<div>נשאר בספייר: <b>' + n0(T.left.mid) + '</b> <small>(בין ' + n0(T.left.hi) + ' ל-' + n0(T.left.lo) + ')</small></div>' : '') +
+      '</div>';
+      var three = function (lbl, lo, mid, hi, cls) {
+        var cell = function (name, v, k) { return '<span class="comp__chip' + (cls ? ' comp__chip--' + cls(k) : '') + '">' + name + ' <b>' + n0(v) + '</b></span>'; };
+        return '<div class="comp__now"><span>' + lbl + '</span>' + cell('מינימום', lo, 'lo') + cell('אמצע', mid, 'mid') + cell('מקסימום', hi, 'hi') + '</div>';
+      };
+      var rows = T.days.map(function (x) {
+        if (!x.closed) return '<div class="comp__w" style="opacity:.6"><div class="comp__h"><b>' + sd(x.date) + '</b> · עוד לא נסגר · לפי התקציב ייגרעו ' + n0(x.budgetUse) + '</div></div>';
+        var ok = function (k) { return x.use[k] <= x.budgetUse ? 'ok' : 'no'; };
+        return '<div class="comp__w"><div class="comp__h"><b>' + sd(x.date) + '</b> · ' + n0(x.steps) + ' צעדים · שריפה ' + n0(x.burn) + ' · תקציב: עד ' + n0(x.budgetUse) + ' מהספייר</div>' +
+          three('אכלת (קק״ל):', x.kcal.lo, x.kcal.mid, x.kcal.hi) +
+          three('נגרע מהספייר:', x.use.lo, x.use.mid, x.use.hi, ok) +
+          three('נשאר בספייר:', x.left.lo, x.left.mid, x.left.hi) + '</div>';
+      }).join('');
+      return P.card('תקציב נסיעה: ' + (trip.name || ''), root.Dates.short(trip.from) + ' עד ' + root.Dates.short(trip.to) + ' · מינימום / אמצע / מקסימום לפי טווחי הארוחות',
+        head + rows) +
+        P.hint('ספייר = כל הגירעון מול break even (שריפה = ' + root.Fmt.n(cfg0(state).baseBurn, 0) + ' + צעדים × ' + cfg0(state).kcalPerStep + ') מתחילת המעקב עד יום לפני הנסיעה. ירוק = בתוך התקציב היומי. מול התוכנית (550 ליום) ביציאה: ' + n0(T.planBal) + '.');
+    }).join('');
+    return P.section('נסיעה', html);
+  }
+
   // סימולציה: נשמר בזיכרון בלבד, כדי שמחר ייפתח נקי
   var compSim = { d0: {}, d1: {} };
 
@@ -2425,5 +2499,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, macros: macros, macroOf: macroOf, scorecard: scorecard, scoresOf: scoresOf, compSheetOf: compSheetOf, compHistoryOf: compHistoryOf, compTab: compTab, simTab: simTab, stepsTab: stepsTab, bindComp: bindComp, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, breakEvenOf: breakEvenOf, bindBreakEven: bindBreakEven, kpi: kpi, kpiOf: kpiOf, etaHistory: etaHistory, bindKpi: bindKpi, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, macros: macros, macroOf: macroOf, scorecard: scorecard, scoresOf: scoresOf, compSheetOf: compSheetOf, compHistoryOf: compHistoryOf, compTab: compTab, simTab: simTab, stepsTab: stepsTab, tripTab: tripTab, tripOf: tripOf, bindComp: bindComp, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, breakEvenOf: breakEvenOf, bindBreakEven: bindBreakEven, kpi: kpi, kpiOf: kpiOf, etaHistory: etaHistory, bindKpi: bindKpi, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);
