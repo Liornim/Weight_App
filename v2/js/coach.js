@@ -1153,7 +1153,6 @@
    * גיליון פיצויים: לכל אורך חלון (3–7 ימים, בגבולות קבועים מהיום הראשון של המעקב),
    * החלון הפתוח הנוכחי — כמה גירעון נצבר, כמה חסר מול התוכנית, ומה צריך בכל יום שנשאר.
    */
-  var COMP_KPS = 0.035; // בגיליון הפיצויים: קק״ל לצעד שמרני, כי השריפה מצעדים היא רק הערכה
 
   function compSheetOf(state, todayIso, lens) {
     var cfg = cfg0(state); // בפועל: לפי המודל הרגיל, כמו בשאר האתר
@@ -1174,8 +1173,8 @@
       var t = state.targets || {};
       var left = function (cap, used) { return rem && typeof cap === 'number' ? (cap * N - used) / rem : null; };
       return { n: N, from: iso(a), to: iso(b), closed: n, left: rem, sum: sum, behind: cfg.plannedDeficit * n - sum,
-        needPerDay: per, kcalAt: per === null ? null : cfg.baseBurn + stepsRef * COMP_KPS - per, /* קדימה: שמרני */ stepsRef: stepsRef,
-        kcalCap: left(t.kcal, kc), fatCap: left(t.fatG, fat), stepsNeed: left(stepsGoal, st), kps: COMP_KPS, stepsGoal: stepsGoal,
+        needPerDay: per, kcalAt: per === null ? null : cfg.baseBurn + stepsRef * cfg.kcalPerStep - per, /* קדימה: אותו מודל, במינימום צעדים */ stepsRef: stepsRef,
+        kcalCap: left(t.kcal, kc), fatCap: left(t.fatG, fat), stepsNeed: left(stepsGoal, st), kps: cfg.kcalPerStep, stepsGoal: stepsGoal,
         now: n ? { def: sum / n, kcal: kc / n, fat: fat / n, steps: st / n } : null,
         // כמה לאכול היום כדי שמחר ממוצע הקלוריות בחלון יהיה ירוק (עד היעד)
         greenToday: typeof t.kcal === 'number' && rem > 0 ? t.kcal * (n + 1) - kc : null,
@@ -1286,7 +1285,7 @@
     }).join('');
     return P.card('גיליון פיצויים', 'לכל אורך חלון (3–7 ימים, בגבולות קבועים מ-' + P.esc(root.Dates.short(state.startDate || list[0].from)) + '): כמה מותר לאכול בכל יום שנשאר כדי שהחלון ייסגר על היעדים.',
       top + items +
-      P.hint('הימים שעברו לפי המודל הרגיל (' + root.Fmt.n(cfg0(state).baseBurn, 0) + ' + צעדים × ' + cfg0(state).kcalPerStep + '). הימים שנשארו בהנחה שמרנית: ' + root.Fmt.n(list[0].stepsRef, 0) + ' צעדים × ' + COMP_KPS + '. כל צעד מעבר לזה הוא בונוס. חלבון לא נכנס: הוא יעד יומי.'));
+      P.hint('לפי המודל (' + root.Fmt.n(cfg0(state).baseBurn, 0) + ' + צעדים × ' + cfg0(state).kcalPerStep + '). בימים שנשארו מניחים רק ' + root.Fmt.n(list[0].stepsRef, 0) + ' צעדים (המינימום); כל צעד מעבר לזה הוא בונוס. חלבון לא נכנס: הוא יעד יומי.'));
   }
 
   /** טאב שעות צעדים: לכל יום רצועה של 48 חצאי שעה, וממוצע לפי שעה בכל הימים */
