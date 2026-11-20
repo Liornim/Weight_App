@@ -1,3722 +1,3722 @@
 {
- "updatedAt": "2026-11-20T02:46:49.180Z",
- "startDate": "2026-11-02",
- "entries": [
-  {
-   "date": "2026-11-02",
-   "weightKg": 90.8,
-   "walks": [
+  "updatedAt": "2026-11-20T09:30:01.000Z",
+  "startDate": "2026-11-02",
+  "entries": [
     {
-     "minutes": 34,
-     "seconds": 21,
-     "steps": 3461,
-     "kmh": 3.9,
-     "avgHr": 92,
-     "deviceKcal": 257,
-     "climbM": 11
+      "date": "2026-11-02",
+      "weightKg": 90.8,
+      "walks": [
+        {
+          "minutes": 34,
+          "seconds": 21,
+          "steps": 3461,
+          "kmh": 3.9,
+          "avgHr": 92,
+          "deviceKcal": 257,
+          "climbM": 11
+        }
+      ],
+      "meals": [
+        {
+          "time": "11:17",
+          "name": "גמבה עם קוטג' 5% ו-2 פרוסות צהובה 9%",
+          "kcal": 235,
+          "proteinG": 27,
+          "carbG": 11,
+          "fatG": 10,
+          "items": [
+            {
+              "cat": "veg",
+              "name": "גמבה",
+              "kcal": 35,
+              "proteinG": 1,
+              "carbG": 7,
+              "fatG": 0
+            },
+            {
+              "cat": "dairy",
+              "name": "קוטג׳ וצהובה",
+              "kcal": 200,
+              "proteinG": 26,
+              "carbG": 4,
+              "fatG": 10
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "התוויות של הקוטג׳ והצהובה ידועות; כמות הקוטג׳ והגמבה הערכה.",
+          "kcalLow": 200,
+          "kcalHigh": 260
+        },
+        {
+          "time": "15:50",
+          "name": "סלט מיקסי גדול בלי טחינה ולחם, 2 ביצים קטנות, בולגרית 5%, קופסת טונה במים",
+          "kcal": 605,
+          "proteinG": 62,
+          "carbG": 55,
+          "fatG": 16,
+          "items": [
+            {
+              "cat": "veg",
+              "name": "ירקות",
+              "kcal": 90,
+              "proteinG": 5,
+              "carbG": 17,
+              "fatG": 1
+            },
+            {
+              "cat": "grains",
+              "name": "בטטה, תפוח אדמה, בורגול",
+              "kcal": 145,
+              "proteinG": 4,
+              "carbG": 31,
+              "fatG": 0
+            },
+            {
+              "cat": "veg",
+              "name": "אדממה",
+              "kcal": 50,
+              "proteinG": 5,
+              "carbG": 4,
+              "fatG": 2
+            },
+            {
+              "cat": "dairy",
+              "name": "ביצים ובולגרית",
+              "kcal": 210,
+              "proteinG": 23,
+              "carbG": 3,
+              "fatG": 12
+            },
+            {
+              "cat": "meat",
+              "name": "טונה",
+              "kcal": 110,
+              "proteinG": 25,
+              "carbG": 0,
+              "fatG": 1
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "סלט מסעדה; הכמויות וגודל המנות הערכה שלי.",
+          "kcalLow": 480,
+          "kcalHigh": 700
+        },
+        {
+          "time": "17:30",
+          "name": "2 פרוסות פסטרמה הודו ביתית",
+          "kcal": 80,
+          "proteinG": 14,
+          "carbG": 1,
+          "fatG": 2,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "פסטרמה הודו",
+              "kcal": 80,
+              "proteinG": 14,
+              "carbG": 1,
+              "fatG": 2
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "משקל הפרוסות הערכה.",
+          "kcalLow": 50,
+          "kcalHigh": 90
+        },
+        {
+          "time": "ערב",
+          "name": "קיסו: 4 נאמס, פופקורן שרימפס, 10 קוביות אגאדשי טופו, נגרוני",
+          "kcal": 1570,
+          "proteinG": 60,
+          "carbG": 113,
+          "fatG": 78,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "שרימפס ומילוי הנאמס",
+              "kcal": 230,
+              "proteinG": 38,
+              "carbG": 2,
+              "fatG": 8
+            },
+            {
+              "cat": "veg",
+              "name": "טופו (~150 ג׳)",
+              "kcal": 120,
+              "proteinG": 15,
+              "carbG": 3,
+              "fatG": 7
+            },
+            {
+              "cat": "grains",
+              "name": "ציפוי ועטיפות (בצק, עמילן)",
+              "kcal": 330,
+              "proteinG": 7,
+              "carbG": 72,
+              "fatG": 1
+            },
+            {
+              "cat": "fat",
+              "name": "שמן טיגון ורטבים (מיונז חריף, צ׳ילי מתוק)",
+              "kcal": 690,
+              "proteinG": 0,
+              "carbG": 28,
+              "fatG": 62
+            },
+            {
+              "cat": "alcohol",
+              "name": "נגרוני",
+              "kcal": 200,
+              "proteinG": 0,
+              "carbG": 8,
+              "fatG": 0
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "מנות מסעדה בלי ערכים; הפירוק לשרימפס, ציפוי ושמן הוא ניחוש שלי.",
+          "kcalLow": 1200,
+          "kcalHigh": 1800
+        }
+      ],
+      "kcal": 2490,
+      "proteinG": 163,
+      "carbG": 180,
+      "fatG": 106,
+      "steps": 11870
+    },
+    {
+      "date": "2026-11-03",
+      "weightKg": 90.8,
+      "walks": [
+        {
+          "minutes": 35,
+          "seconds": 7,
+          "steps": 3691,
+          "kmh": 4.3,
+          "avgHr": 97,
+          "deviceKcal": 319,
+          "climbM": 15
+        }
+      ],
+      "meals": [
+        {
+          "time": "15:30",
+          "name": "סלט: ירקות, 145 ג׳ קוטג׳, 101 ג׳ בולגרית 5%, 154 ג׳ שייטל, שמן בתרסיס",
+          "kcal": 764,
+          "proteinG": 93,
+          "carbG": 52,
+          "fatG": 24,
+          "items": [
+            {
+              "cat": "veg",
+              "name": "ירקות",
+              "kcal": 225,
+              "proteinG": 15,
+              "carbG": 45,
+              "fatG": 2
+            },
+            {
+              "cat": "dairy",
+              "name": "קוטג׳ ובולגרית",
+              "kcal": 255,
+              "proteinG": 32,
+              "carbG": 7,
+              "fatG": 12
+            },
+            {
+              "cat": "meat",
+              "name": "שייטל",
+              "kcal": 257,
+              "proteinG": 46,
+              "carbG": 0,
+              "fatG": 7
+            },
+            {
+              "cat": "fat",
+              "name": "3 שפריצים שמן (9 קל׳ לשפריץ)",
+              "kcal": 27,
+              "proteinG": 0,
+              "carbG": 0,
+              "fatG": 3
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "הקוטג׳ והבולגרית לפי תווית ושקילה; כמה שמן ספג השניצל לא ידוע.",
+          "kcalLow": 720,
+          "kcalHigh": 860
+        },
+        {
+          "time": "ערב",
+          "name": "מנגל: 150 ג׳ נתח קצבים, חצי טי-בון, כ-455 ג׳ נא אנטריקוט",
+          "kcal": 1810,
+          "proteinG": 139,
+          "carbG": 0,
+          "fatG": 139,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "נתח קצבים, טי-בון, אנטריקוט",
+              "kcal": 1810,
+              "proteinG": 139,
+              "carbG": 0,
+              "fatG": 139
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "משקלי הבשר מהאריזות; כמה מזה נאכל הערכה.",
+          "kcalLow": 1550,
+          "kcalHigh": 2000
+        },
+        {
+          "time": "ערב",
+          "name": "250 מ״ל ערק",
+          "kcal": 555,
+          "proteinG": 0,
+          "carbG": 0,
+          "fatG": 0,
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "ערק",
+              "kcal": 555,
+              "proteinG": 0,
+              "carbG": 0,
+              "fatG": 0
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "כמות ידועה (250 מ״ל) וערך סטנדרטי.",
+          "kcalLow": 540,
+          "kcalHigh": 570
+        }
+      ],
+      "kcal": 3129,
+      "proteinG": 232,
+      "carbG": 52,
+      "fatG": 163,
+      "steps": 8627
+    },
+    {
+      "date": "2026-11-04",
+      "weightKg": 91.2,
+      "walks": [
+        {
+          "minutes": 24,
+          "seconds": 27,
+          "steps": 2555,
+          "km": 1.8,
+          "kmh": 4.4,
+          "avgHr": 94,
+          "deviceKcal": 163,
+          "climbM": 16
+        },
+        {
+          "minutes": 19,
+          "seconds": 33,
+          "steps": 1922,
+          "km": 1.38,
+          "kmh": 4.2,
+          "avgHr": 95,
+          "deviceKcal": 132,
+          "climbM": 8
+        }
+      ],
+      "meals": [
+        {
+          "time": "14:29",
+          "name": "149 ג׳ כבד עוף עם בצל מטוגן",
+          "kcal": 275,
+          "proteinG": 30,
+          "carbG": 6,
+          "fatG": 14,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "כבד עוף",
+              "kcal": 195,
+              "proteinG": 29,
+              "carbG": 1,
+              "fatG": 8
+            },
+            {
+              "cat": "fat",
+              "name": "בצל מטוגן",
+              "kcal": 80,
+              "proteinG": 1,
+              "carbG": 5,
+              "fatG": 6
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "המשקל נשקל; כמה שמן בבצל ובכבד לא ידוע.",
+          "kcalLow": 230,
+          "kcalHigh": 340
+        },
+        {
+          "time": "14:30",
+          "name": "106 ג׳ קציצות בשר (2)",
+          "kcal": 255,
+          "proteinG": 20,
+          "carbG": 6,
+          "fatG": 17,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "קציצות בשר",
+              "kcal": 255,
+              "proteinG": 20,
+              "carbG": 6,
+              "fatG": 17
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "המשקל נשקל; אחוז השומן בבשר, הלחם בתערובת והטיגון לא ידועים.",
+          "kcalLow": 200,
+          "kcalHigh": 310
+        },
+        {
+          "time": "14:32",
+          "name": "152 ג׳ פתיתים מבושלים",
+          "kcal": 290,
+          "proteinG": 8,
+          "carbG": 50,
+          "fatG": 6,
+          "items": [
+            {
+              "cat": "grains",
+              "name": "פתיתים",
+              "kcal": 290,
+              "proteinG": 8,
+              "carbG": 50,
+              "fatG": 6
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "המשקל נשקל; כמה שמן בפתיתים לא ידוע.",
+          "kcalLow": 250,
+          "kcalHigh": 330
+        },
+        {
+          "time": "14:45",
+          "name": "עוד 137 ג׳ כבד עוף עם בצל",
+          "kcal": 253,
+          "proteinG": 28,
+          "carbG": 5,
+          "fatG": 13,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "כבד עוף",
+              "kcal": 180,
+              "proteinG": 27,
+              "carbG": 1,
+              "fatG": 7
+            },
+            {
+              "cat": "fat",
+              "name": "בצל מטוגן",
+              "kcal": 73,
+              "proteinG": 1,
+              "carbG": 4,
+              "fatG": 6
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "המשקל נשקל; כמה שמן בבצל ובכבד לא ידוע.",
+          "kcalLow": 210,
+          "kcalHigh": 315
+        },
+        {
+          "time": "21:41",
+          "name": "כ-60 ג׳ חזה עוף (הערכה שלך), 2 שפריצים שמן, כף פירורי לחם, כף אורז, כף פתיתים",
+          "kcal": 227,
+          "proteinG": 22,
+          "carbG": 21,
+          "fatG": 5,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "חזה עוף",
+              "kcal": 100,
+              "proteinG": 19,
+              "carbG": 0,
+              "fatG": 2
+            },
+            {
+              "cat": "fat",
+              "name": "2 שפריצים שמן (9 קל׳ לשפריץ)",
+              "kcal": 18,
+              "proteinG": 0,
+              "carbG": 0,
+              "fatG": 2
+            },
+            {
+              "cat": "grains",
+              "name": "פירורי לחם, אורז, פתיתים",
+              "kcal": 109,
+              "proteinG": 3,
+              "carbG": 21,
+              "fatG": 1
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "כמות החזה הערכה שלך, לא שקילה; הכפות והשמן הערכה.",
+          "kcalLow": 160,
+          "kcalHigh": 300
+        },
+        {
+          "time": "22:12",
+          "name": "58 ג׳ אבקת חלבון",
+          "kcal": 219,
+          "proteinG": 42,
+          "carbG": 6,
+          "fatG": 2,
+          "items": [
+            {
+              "cat": "protein",
+              "name": "אבקת חלבון",
+              "kcal": 219,
+              "proteinG": 42,
+              "carbG": 6,
+              "fatG": 2
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "שקילה ותווית.",
+          "kcalLow": 215,
+          "kcalHigh": 225
+        }
+      ],
+      "kcal": 1519,
+      "proteinG": 150,
+      "carbG": 94,
+      "fatG": 57,
+      "steps": 8607
+    },
+    {
+      "date": "2026-11-05",
+      "weightKg": 90,
+      "walks": [
+        {
+          "minutes": 23,
+          "seconds": 9,
+          "steps": 2420,
+          "kmh": 4.4,
+          "avgHr": 95,
+          "deviceKcal": 140,
+          "climbM": 8
+        },
+        {
+          "type": "אליפטיקל",
+          "minutes": 31,
+          "seconds": 19,
+          "totalMinutes": 51,
+          "totalSeconds": 19,
+          "avgHr": 96,
+          "maxHr": 111,
+          "deviceKcal": 202,
+          "deviceTotalKcal": 228
+        }
+      ],
+      "meals": [
+        {
+          "time": "10:37",
+          "name": "גביע GO של תנובה בטעם תות (200 ג׳)",
+          "kcal": 190,
+          "proteinG": 20,
+          "carbG": 12,
+          "fatG": 6,
+          "items": [
+            {
+              "cat": "dairy",
+              "name": "GO",
+              "kcal": 190,
+              "proteinG": 20,
+              "carbG": 12,
+              "fatG": 6
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "תווית ומנה ארוזה.",
+          "kcalLow": 190,
+          "kcalHigh": 190
+        },
+        {
+          "time": "14:57",
+          "name": "צ׳ומה: חזה עוף על האש, אפונה ברוטב, קוסקוס עם ירקות ומרק",
+          "kcal": 805,
+          "proteinG": 70,
+          "carbG": 83,
+          "fatG": 21,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "חזה עוף",
+              "kcal": 315,
+              "proteinG": 52,
+              "carbG": 0,
+              "fatG": 12
+            },
+            {
+              "cat": "veg",
+              "name": "אפונה",
+              "kcal": 190,
+              "proteinG": 9,
+              "carbG": 25,
+              "fatG": 6
+            },
+            {
+              "cat": "grains",
+              "name": "קוסקוס",
+              "kcal": 300,
+              "proteinG": 9,
+              "carbG": 58,
+              "fatG": 3
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "מגש מסעדה; הערכה מתמונה.",
+          "kcalLow": 600,
+          "kcalHigh": 900
+        },
+        {
+          "time": "15:03",
+          "name": "סלט כרוב לבן וגזר",
+          "kcal": 30,
+          "proteinG": 1,
+          "carbG": 6,
+          "fatG": 0,
+          "items": [
+            {
+              "cat": "veg",
+              "name": "כרוב",
+              "kcal": 30,
+              "proteinG": 1,
+              "carbG": 6,
+              "fatG": 0
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "הערכה מתמונה.",
+          "kcalLow": 20,
+          "kcalHigh": 50
+        },
+        {
+          "time": "18:42",
+          "name": "77 ג׳ אבקת חלבון",
+          "kcal": 295,
+          "proteinG": 59,
+          "carbG": 8,
+          "fatG": 3,
+          "items": [
+            {
+              "cat": "protein",
+              "name": "אבקת חלבון",
+              "kcal": 295,
+              "proteinG": 59,
+              "carbG": 8,
+              "fatG": 3
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "שקילה ותווית.",
+          "kcalLow": 290,
+          "kcalHigh": 300
+        },
+        {
+          "time": "ערב",
+          "name": "פוקר: 150 מ״ל וודקה, 2 חופנים קשיו ובוטנים, גלידונית, וופל לימון, 2 חופנים סניידרס",
+          "kcal": 1070,
+          "proteinG": 21,
+          "carbG": 56,
+          "fatG": 49,
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "וודקה",
+              "kcal": 330,
+              "proteinG": 0,
+              "carbG": 0,
+              "fatG": 0
+            },
+            {
+              "cat": "snacks",
+              "name": "אגוזים, סניידרס, גלידונית, וופל",
+              "kcal": 740,
+              "proteinG": 21,
+              "carbG": 56,
+              "fatG": 49
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "חופנים ונשנושים בלי שקילה; הערכה.",
+          "kcalLow": 750,
+          "kcalHigh": 1250
+        },
+        {
+          "time": "ערב",
+          "name": "מרווח ביטחון לערב הפוקר",
+          "kcal": 160,
+          "proteinG": 0,
+          "carbG": 8,
+          "fatG": 14,
+          "items": [
+            {
+              "cat": "snacks",
+              "name": "מרווח ביטחון",
+              "kcal": 160,
+              "proteinG": 0,
+              "carbG": 8,
+              "fatG": 14
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "מרווח שהוספתי בגלל אי־ודאות.",
+          "kcalLow": 0,
+          "kcalHigh": 160
+        }
+      ],
+      "kcal": 2550,
+      "proteinG": 171,
+      "carbG": 173,
+      "fatG": 93,
+      "steps": 12622
+    },
+    {
+      "date": "2026-11-06",
+      "weightKg": 89.6,
+      "walks": [
+        {
+          "type": "אליפטיקל",
+          "minutes": 45,
+          "seconds": 15,
+          "steps": 3531,
+          "km": 11.08,
+          "avgHr": 95,
+          "maxHr": 114,
+          "deviceKcal": 298,
+          "machineKcal": 242
+        }
+      ],
+      "meals": [
+        {
+          "time": "צהריים",
+          "name": "פלטת נקניקים: פסטרמה, פרושוטו, כל הסלמי, 3 פרוסות לחם, חצי רוטב, מלפפונים",
+          "kcal": 1210,
+          "proteinG": 77,
+          "carbG": 82,
+          "fatG": 59,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "פסטרמה, פרושוטו, סלמי",
+              "kcal": 750,
+              "proteinG": 64,
+              "carbG": 4,
+              "fatG": 51
+            },
+            {
+              "cat": "grains",
+              "name": "3 פרוסות לחם",
+              "kcal": 390,
+              "proteinG": 13,
+              "carbG": 75,
+              "fatG": 2
+            },
+            {
+              "cat": "fat",
+              "name": "רוטב ומלפפונים",
+              "kcal": 70,
+              "proteinG": 0,
+              "carbG": 3,
+              "fatG": 6
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "פלטת מסעדה; הערכה מתמונה.",
+          "kcalLow": 900,
+          "kcalHigh": 1350
+        },
+        {
+          "time": "צהריים",
+          "name": "גבינות: חצי מהגבינות, עגבניות, חצי מהזיתים, בלי לחם וממרחים",
+          "kcal": 545,
+          "proteinG": 29,
+          "carbG": 10,
+          "fatG": 42,
+          "items": [
+            {
+              "cat": "dairy",
+              "name": "גבינות",
+              "kcal": 440,
+              "proteinG": 27,
+              "carbG": 1,
+              "fatG": 36
+            },
+            {
+              "cat": "veg",
+              "name": "עגבניות",
+              "kcal": 40,
+              "proteinG": 2,
+              "carbG": 8,
+              "fatG": 0
+            },
+            {
+              "cat": "fat",
+              "name": "זיתים",
+              "kcal": 65,
+              "proteinG": 0,
+              "carbG": 1,
+              "fatG": 6
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "פלטת מסעדה; הערכה מתמונה.",
+          "kcalLow": 400,
+          "kcalHigh": 650
+        },
+        {
+          "time": "צהריים",
+          "name": "פלטת נקניקים נוספת: פסטרמה, פרושוטו, 4 עיגולי סלמי",
+          "kcal": 500,
+          "proteinG": 51,
+          "carbG": 2,
+          "fatG": 30,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "פסטרמה, פרושוטו, סלמי",
+              "kcal": 500,
+              "proteinG": 51,
+              "carbG": 2,
+              "fatG": 30
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "פלטת מסעדה; הערכה מתמונה.",
+          "kcalLow": 380,
+          "kcalHigh": 580
+        },
+        {
+          "time": "צהריים",
+          "name": "2 כוסות רוזה, 3 כוסות יין אדום",
+          "kcal": 625,
+          "proteinG": 0,
+          "carbG": 20,
+          "fatG": 0,
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "יין",
+              "kcal": 625,
+              "proteinG": 0,
+              "carbG": 20,
+              "fatG": 0
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "מספר הכוסות ידוע; גודל הכוס הערכה.",
+          "kcalLow": 550,
+          "kcalHigh": 750
+        }
+      ],
+      "kcal": 2880,
+      "proteinG": 157,
+      "carbG": 114,
+      "fatG": 131,
+      "steps": 9344
+    },
+    {
+      "date": "2026-11-07",
+      "weightKg": 90.1,
+      "meals": [
+        {
+          "time": "13:16",
+          "name": "נורדר: כבד קצוץ מלא, כ-60% קממבר וסלט ביצים, חצי סלסלת לחמים וחמאה, נגרוני",
+          "items": [
+            {
+              "cat": "dairy",
+              "name": "קממבר עם ריבת פלפלים ופירורי אגוזים, כ-60%",
+              "kcal": 290,
+              "proteinG": 13,
+              "carbG": 13,
+              "fatG": 21
+            },
+            {
+              "cat": "meat",
+              "name": "כבד קצוץ, מלא",
+              "kcal": 380,
+              "proteinG": 20,
+              "carbG": 8,
+              "fatG": 30
+            },
+            {
+              "cat": "dairy",
+              "name": "סלט ביצים, כ-60%",
+              "kcal": 240,
+              "proteinG": 10,
+              "carbG": 2,
+              "fatG": 22
+            },
+            {
+              "cat": "grains",
+              "name": "חצי סלסלת לחמים",
+              "kcal": 335,
+              "proteinG": 11,
+              "carbG": 63,
+              "fatG": 4
+            },
+            {
+              "cat": "fat",
+              "name": "חצי מהחמאה",
+              "kcal": 145,
+              "proteinG": 0,
+              "carbG": 0,
+              "fatG": 16
+            },
+            {
+              "cat": "alcohol",
+              "name": "נגרוני",
+              "kcal": 200,
+              "proteinG": 0,
+              "carbG": 8,
+              "fatG": 0
+            }
+          ],
+          "kcal": 1590,
+          "proteinG": 54,
+          "carbG": 94,
+          "fatG": 93,
+          "basis": "estimate",
+          "basisNote": "מנות מסעדה; הכמויות הערכה מתמונות.",
+          "kcalLow": 1250,
+          "kcalHigh": 1750
+        },
+        {
+          "time": "13:35",
+          "name": "נורדר: כ-30% ממקושקשת על לחם דגנים, אבוקדו, גרעינים, הולנדייז",
+          "items": [
+            {
+              "cat": "grains",
+              "name": "פרוסת לחם דגנים עבה",
+              "kcal": 99,
+              "proteinG": 4,
+              "carbG": 14,
+              "fatG": 3
+            },
+            {
+              "cat": "dairy",
+              "name": "ביצים מקושקשות",
+              "kcal": 81,
+              "proteinG": 5,
+              "carbG": 1,
+              "fatG": 6
+            },
+            {
+              "cat": "veg",
+              "name": "אבוקדו",
+              "kcal": 20,
+              "proteinG": 0,
+              "carbG": 1,
+              "fatG": 2
+            },
+            {
+              "cat": "snacks",
+              "name": "גרעינים",
+              "kcal": 9,
+              "proteinG": 0,
+              "carbG": 0,
+              "fatG": 1
+            },
+            {
+              "cat": "fat",
+              "name": "רוטב הולנדייז",
+              "kcal": 60,
+              "proteinG": 0,
+              "carbG": 1,
+              "fatG": 6
+            }
+          ],
+          "kcal": 269,
+          "proteinG": 9,
+          "carbG": 17,
+          "fatG": 18,
+          "basis": "estimate",
+          "basisNote": "מנת מסעדה; הערכה מתמונה.",
+          "kcalLow": 200,
+          "kcalHigh": 320
+        },
+        {
+          "time": "14:21",
+          "name": "קוקטייל אולד פאשן",
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "אולד פאשן",
+              "kcal": 180,
+              "proteinG": 0,
+              "carbG": 10,
+              "fatG": 0
+            }
+          ],
+          "kcal": 180,
+          "proteinG": 0,
+          "carbG": 10,
+          "fatG": 0,
+          "basis": "estimate",
+          "basisNote": "קוקטייל; ערך טיפוסי.",
+          "kcalLow": 150,
+          "kcalHigh": 220
+        },
+        {
+          "time": "20:00",
+          "name": "ערב גבינות: רבע מהגבינות הקשות, שישית לחם וגבינת שמנת, ירקות",
+          "kcal": 1071,
+          "proteinG": 54,
+          "carbG": 68,
+          "fatG": 67,
+          "items": [
+            {
+              "cat": "dairy",
+              "name": "גאודה עיזים כמהין 43 ג׳ (רבע)",
+              "kcal": 164,
+              "proteinG": 11,
+              "carbG": 0,
+              "fatG": 13
+            },
+            {
+              "cat": "dairy",
+              "name": "גאודה עיזים הולנדית 47 ג׳ (רבע)",
+              "kcal": 169,
+              "proteinG": 12,
+              "carbG": 0,
+              "fatG": 13
+            },
+            {
+              "cat": "dairy",
+              "name": "מנצ׳גו שום 43 ג׳ (רבע)",
+              "kcal": 172,
+              "proteinG": 11,
+              "carbG": 0,
+              "fatG": 14
+            },
+            {
+              "cat": "dairy",
+              "name": "מונטניולו 34 ג׳ (רבע)",
+              "kcal": 141,
+              "proteinG": 5,
+              "carbG": 0,
+              "fatG": 13.5
+            },
+            {
+              "cat": "grains",
+              "name": "לחם איטלקי 67 ג׳ (שישית כיכר)",
+              "kcal": 178,
+              "proteinG": 4.5,
+              "carbG": 33,
+              "fatG": 3.5
+            },
+            {
+              "cat": "dairy",
+              "name": "גבינת שמנת כמהין ~33 ג׳ (שישית גביע, הערכה)",
+              "kcal": 84,
+              "proteinG": 1.5,
+              "carbG": 1,
+              "fatG": 8
+            },
+            {
+              "cat": "veg",
+              "name": "15 עגבניות שרי",
+              "kcal": 41,
+              "proteinG": 2,
+              "carbG": 9,
+              "fatG": 0.5
+            },
+            {
+              "cat": "veg",
+              "name": "2 מלפפונים",
+              "kcal": 45,
+              "proteinG": 2,
+              "carbG": 10,
+              "fatG": 0.5
+            },
+            {
+              "cat": "veg",
+              "name": "גמבה אחת",
+              "kcal": 50,
+              "proteinG": 1.5,
+              "carbG": 11,
+              "fatG": 0.5
+            },
+            {
+              "cat": "veg",
+              "name": "6 פטריות (~120 ג׳)",
+              "kcal": 27,
+              "proteinG": 3.5,
+              "carbG": 4,
+              "fatG": 0.5
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "משקלי האריזות ידועים; החלק שנאכל (רבע/שישית) הערכה שלך.",
+          "kcalLow": 850,
+          "kcalHigh": 1250
+        },
+        {
+          "time": "20:30",
+          "name": "¾ בקבוק יין אדום",
+          "kcal": 490,
+          "proteinG": 0,
+          "carbG": 15,
+          "fatG": 0,
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "¾ בקבוק יין אדום (~560 מ״ל)",
+              "kcal": 490,
+              "proteinG": 0,
+              "carbG": 15,
+              "fatG": 0
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "¾ בקבוק ידוע; ערך יין סטנדרטי.",
+          "kcalLow": 450,
+          "kcalHigh": 530
+        }
+      ],
+      "walks": [
+        {
+          "type": "אליפטיקל",
+          "minutes": 60,
+          "seconds": 2,
+          "avgHr": 107,
+          "maxHr": 128,
+          "deviceKcal": 413,
+          "km": 14.97,
+          "machineKcal": 329
+        }
+      ],
+      "kcal": 3600,
+      "proteinG": 117,
+      "carbG": 204,
+      "fatG": 178,
+      "steps": 11219
+    },
+    {
+      "date": "2026-11-08",
+      "weightKg": 90.7,
+      "meals": [
+        {
+          "time": "10:45",
+          "name": "בננה",
+          "kcal": 110,
+          "proteinG": 1.3,
+          "carbG": 28,
+          "fatG": 0.4,
+          "items": [
+            {
+              "cat": "veg",
+              "name": "בננה בינונית",
+              "kcal": 110,
+              "proteinG": 1.3,
+              "carbG": 28,
+              "fatG": 0.4
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "פרי ידוע; הגודל הערכה.",
+          "kcalLow": 90,
+          "kcalHigh": 120
+        },
+        {
+          "time": "11:05",
+          "name": "יוגורט חלבון, פסטרמה הודו ו-3 מלפפונים",
+          "kcal": 278,
+          "proteinG": 36.5,
+          "carbG": 22.3,
+          "fatG": 5.5,
+          "items": [
+            {
+              "cat": "dairy",
+              "name": "יוגורט GO טבעי 200 ג׳ (תווית)",
+              "kcal": 171,
+              "proteinG": 25,
+              "carbG": 8.8,
+              "fatG": 4
+            },
+            {
+              "cat": "meat",
+              "name": "2 פרוסות פסטרמה הודו (~45 ג׳)",
+              "kcal": 50,
+              "proteinG": 9,
+              "carbG": 1.5,
+              "fatG": 1
+            },
+            {
+              "cat": "veg",
+              "name": "3 מלפפונים",
+              "kcal": 57,
+              "proteinG": 2.5,
+              "carbG": 12,
+              "fatG": 0.5
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "מוצרים ארוזים ומנות ידועות; טעות קטנה.",
+          "kcalLow": 260,
+          "kcalHigh": 300
+        },
+        {
+          "time": "13:45",
+          "name": "סלט בהרכבה 1000 מ״ל עם פטה, בלי רוטב ובלי לחם",
+          "kcal": 495,
+          "proteinG": 35.5,
+          "carbG": 74,
+          "fatG": 5.7,
+          "items": [
+            {
+              "cat": "grains",
+              "name": "קינואה",
+              "kcal": 70,
+              "proteinG": 2.5,
+              "carbG": 12,
+              "fatG": 1
+            },
+            {
+              "cat": "veg",
+              "name": "עדשים שחורות",
+              "kcal": 70,
+              "proteinG": 5,
+              "carbG": 11,
+              "fatG": 0.3
+            },
+            {
+              "cat": "veg",
+              "name": "עדשים ירוקות",
+              "kcal": 70,
+              "proteinG": 5,
+              "carbG": 11,
+              "fatG": 0.3
+            },
+            {
+              "cat": "veg",
+              "name": "שעועית מאש",
+              "kcal": 65,
+              "proteinG": 4.5,
+              "carbG": 11,
+              "fatG": 0.3
+            },
+            {
+              "cat": "veg",
+              "name": "אפונה ירוקה",
+              "kcal": 50,
+              "proteinG": 3.5,
+              "carbG": 8,
+              "fatG": 0.3
+            },
+            {
+              "cat": "veg",
+              "name": "סלק מבושל",
+              "kcal": 25,
+              "proteinG": 1,
+              "carbG": 5,
+              "fatG": 0
+            },
+            {
+              "cat": "veg",
+              "name": "ירקות קלים: עלה בייבי, עגבניות, מלפפון, גמבה, נבטים, שעועית ירוקה, כרוב לבן וסגול, פטריות, צנון",
+              "kcal": 90,
+              "proteinG": 6,
+              "carbG": 15,
+              "fatG": 1
+            },
+            {
+              "cat": "dairy",
+              "name": "פטה 5%",
+              "kcal": 55,
+              "proteinG": 8,
+              "carbG": 1,
+              "fatG": 2.5
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "סלט מסעדה בלי משקלים; הערכה גבוהה בכוונה.",
+          "kcalLow": 360,
+          "kcalHigh": 520
+        },
+        {
+          "time": "14:30",
+          "name": "טונה במים וחצי קוטג׳ לסלט",
+          "kcal": 240,
+          "proteinG": 38.8,
+          "carbG": 3.8,
+          "fatG": 7.8,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "קופסת טונה במים, מסוננת (~110 ג׳)",
+              "kcal": 120,
+              "proteinG": 26,
+              "carbG": 0,
+              "fatG": 1.5
+            },
+            {
+              "cat": "dairy",
+              "name": "חצי קוטג׳ 5% (125 ג׳)",
+              "kcal": 120,
+              "proteinG": 12.8,
+              "carbG": 3.8,
+              "fatG": 6.3
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "קופסה וחצי גביע; ערכי תווית.",
+          "kcalLow": 225,
+          "kcalHigh": 255
+        },
+        {
+          "time": "15:10",
+          "name": "2 ביסים של לחם",
+          "kcal": 80,
+          "proteinG": 2.7,
+          "carbG": 15,
+          "fatG": 1,
+          "items": [
+            {
+              "cat": "grains",
+              "name": "2 ביסים לחם מהסלט (~30 ג׳)",
+              "kcal": 80,
+              "proteinG": 2.7,
+              "carbG": 15,
+              "fatG": 1
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "גודל הביסים הערכה.",
+          "kcalLow": 50,
+          "kcalHigh": 90
+        },
+        {
+          "time": "21:05",
+          "name": "10 ענבים",
+          "kcal": 40,
+          "proteinG": 0.4,
+          "carbG": 10,
+          "fatG": 0.1,
+          "items": [
+            {
+              "cat": "veg",
+              "name": "10 ענבים (~55 ג׳)",
+              "kcal": 40,
+              "proteinG": 0.4,
+              "carbG": 10,
+              "fatG": 0.1
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "מספר ידוע; הגודל הערכה.",
+          "kcalLow": 30,
+          "kcalHigh": 50
+        },
+        {
+          "time": "22:40",
+          "name": "שייק חלבון עוגיות 45 ג׳",
+          "kcal": 172,
+          "proteinG": 34.7,
+          "carbG": 4.8,
+          "fatG": 1.6,
+          "items": [
+            {
+              "cat": "protein",
+              "name": "אבקת חלבון עוגיות 45 ג׳ (383/77 ל-100 ג׳)",
+              "kcal": 172,
+              "proteinG": 34.7,
+              "carbG": 4.8,
+              "fatG": 1.6
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "45 ג׳ ותווית.",
+          "kcalLow": 170,
+          "kcalHigh": 175
+        },
+        {
+          "time": "22:50",
+          "name": "חביתה מביצה אחת",
+          "kcal": 102,
+          "proteinG": 6.3,
+          "carbG": 0.5,
+          "fatG": 8,
+          "items": [
+            {
+              "cat": "dairy",
+              "name": "ביצה אחת",
+              "kcal": 75,
+              "proteinG": 6.3,
+              "carbG": 0.5,
+              "fatG": 5
+            },
+            {
+              "cat": "fat",
+              "name": "3 שפריצים שמן (9 קל׳ לשפריץ)",
+              "kcal": 27,
+              "proteinG": 0,
+              "carbG": 0,
+              "fatG": 3
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "ביצה בגודל רגיל; השמן לפי 9 קל׳ לשפריץ.",
+          "kcalLow": 95,
+          "kcalHigh": 110
+        }
+      ],
+      "walks": [
+        {
+          "type": "אליפטיקל",
+          "minutes": 19,
+          "seconds": 16,
+          "avgHr": 95,
+          "maxHr": 108,
+          "deviceKcal": 124
+        }
+      ],
+      "kcal": 1517,
+      "proteinG": 156,
+      "carbG": 158,
+      "fatG": 30,
+      "steps": 10822
+    },
+    {
+      "date": "2026-11-09",
+      "weightKg": 89.1,
+      "meals": [
+        {
+          "time": "12:45",
+          "name": "לברק בפתיתים, 168 ג׳ (כמעט רק דג)",
+          "kcal": 225,
+          "proteinG": 34.4,
+          "carbG": 5.8,
+          "fatG": 7.6,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "לברק מבושל ~140 ג׳",
+              "kcal": 193,
+              "proteinG": 33.5,
+              "carbG": 0,
+              "fatG": 7
+            },
+            {
+              "cat": "grains",
+              "name": "פתיתים ורוטב שנדבקו ~28 ג׳",
+              "kcal": 32,
+              "proteinG": 0.9,
+              "carbG": 5.8,
+              "fatG": 0.6
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "כל רכיבי הסיר נשקלו ולפי תוויות; הצלחת נשקלה; רק היחס דג/פתיתים בצלחת הערכה.",
+          "kcalLow": 205,
+          "kcalHigh": 250
+        },
+        {
+          "time": "12:50",
+          "name": "עוד מנה לברק בפתיתים, 242 ג׳ (בעיקר פתיתים)",
+          "kcal": 292,
+          "proteinG": 18.3,
+          "carbG": 40,
+          "fatG": 4.6,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "לברק מבושל ~50 ג׳",
+              "kcal": 69,
+              "proteinG": 12,
+              "carbG": 0,
+              "fatG": 2.5
+            },
+            {
+              "cat": "grains",
+              "name": "פתיתים ברוטב עגבניות ~192 ג׳",
+              "kcal": 223,
+              "proteinG": 6.3,
+              "carbG": 40,
+              "fatG": 2.1
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "כל רכיבי הסיר נשקלו ולפי תוויות; הצלחת נשקלה; רק היחס דג/פתיתים בצלחת הערכה.",
+          "kcalLow": 265,
+          "kcalHigh": 320
+        },
+        {
+          "time": "17:50",
+          "name": "שייק חלבון עוגיות 55 ג׳",
+          "kcal": 211,
+          "proteinG": 42.4,
+          "carbG": 5.9,
+          "fatG": 2,
+          "items": [
+            {
+              "cat": "protein",
+              "name": "אבקת חלבון עוגיות 55 ג׳ (383/77 ל-100 ג׳)",
+              "kcal": 211,
+              "proteinG": 42.4,
+              "carbG": 5.9,
+              "fatG": 2
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "55 ג׳ ותווית.",
+          "kcalLow": 208,
+          "kcalHigh": 214
+        },
+        {
+          "time": "18:40",
+          "name": "לברק בפתיתים, 310 ג׳ (חצי־חצי)",
+          "kcal": 394,
+          "proteinG": 42.3,
+          "carbG": 32.6,
+          "fatG": 9.5,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "לברק מבושל ~155 ג׳",
+              "kcal": 214,
+              "proteinG": 37.2,
+              "carbG": 0,
+              "fatG": 7.8
+            },
+            {
+              "cat": "grains",
+              "name": "פתיתים ברוטב עגבניות ~155 ג׳",
+              "kcal": 180,
+              "proteinG": 5.1,
+              "carbG": 32.6,
+              "fatG": 1.7
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "כל רכיבי הסיר נשקלו ולפי תוויות; הצלחת נשקלה; החלוקה חצי־חצי לפי מה שאמרת.",
+          "kcalLow": 355,
+          "kcalHigh": 430
+        },
+        {
+          "time": "18:50",
+          "name": "עוד לברק בפתיתים, 180 ג׳",
+          "kcal": 220,
+          "proteinG": 16.5,
+          "carbG": 27,
+          "fatG": 4,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "לברק מבושל ~51 ג׳ (לפי ממוצע הסיר)",
+              "kcal": 70,
+              "proteinG": 12.2,
+              "carbG": 0,
+              "fatG": 2.6
+            },
+            {
+              "cat": "grains",
+              "name": "פתיתים ברוטב עגבניות ~129 ג׳",
+              "kcal": 150,
+              "proteinG": 4.3,
+              "carbG": 27,
+              "fatG": 1.4
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "כל רכיבי הסיר נשקלו; הצלחת נשקלה; החלוקה דג/פתיתים לפי ממוצע הסיר.",
+          "kcalLow": 205,
+          "kcalHigh": 250
+        },
+        {
+          "time": "ערב",
+          "name": "ירקות ו-2 כפות מהתבשיל",
+          "kcal": 125,
+          "proteinG": 7.7,
+          "carbG": 20,
+          "fatG": 1.7,
+          "items": [
+            {
+              "cat": "veg",
+              "name": "6 עגבניות שרי",
+              "kcal": 16,
+              "proteinG": 0.8,
+              "carbG": 3.5,
+              "fatG": 0.2
+            },
+            {
+              "cat": "veg",
+              "name": "חצי מלפפון",
+              "kcal": 11,
+              "proteinG": 0.5,
+              "carbG": 2.5,
+              "fatG": 0.1
+            },
+            {
+              "cat": "veg",
+              "name": "חצי גמבה",
+              "kcal": 25,
+              "proteinG": 0.9,
+              "carbG": 5.5,
+              "fatG": 0.2
+            },
+            {
+              "cat": "grains",
+              "name": "2 כפות לברק בפתיתים (~60 ג׳, לפי ממוצע הסיר)",
+              "kcal": 73,
+              "proteinG": 5.5,
+              "carbG": 8.5,
+              "fatG": 1.2
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "גודל הירקות והכפות הערכה.",
+          "kcalLow": 95,
+          "kcalHigh": 150
+        }
+      ],
+      "walks": [
+        {
+          "time": "09:46",
+          "km": 1.51,
+          "minutes": 21,
+          "seconds": 28,
+          "steps": 2156,
+          "avgHr": 93,
+          "deviceKcal": 158
+        },
+        {
+          "type": "אליפטיקל",
+          "time": "17:05",
+          "minutes": 24,
+          "seconds": 8,
+          "avgHr": 94,
+          "maxHr": 103,
+          "deviceKcal": 153
+        },
+        {
+          "type": "אליפטיקל",
+          "time": "20:51",
+          "minutes": 60,
+          "seconds": 13,
+          "avgHr": 97,
+          "maxHr": 107,
+          "deviceKcal": 403
+        }
+      ],
+      "kcal": 1467,
+      "proteinG": 162,
+      "carbG": 131,
+      "fatG": 29,
+      "steps": 12304
+    },
+    {
+      "date": "2026-11-10",
+      "weightKg": 88.4,
+      "meals": [
+        {
+          "time": "11:40",
+          "name": "יוגורט GO, 4 פסטרמה הודו ו-3 מלפפונים",
+          "kcal": 328,
+          "proteinG": 45.5,
+          "carbG": 23.8,
+          "fatG": 6,
+          "items": [
+            {
+              "cat": "dairy",
+              "name": "יוגורט GO טבעי 200 ג׳ (תווית)",
+              "kcal": 171,
+              "proteinG": 25,
+              "carbG": 8.8,
+              "fatG": 4
+            },
+            {
+              "cat": "meat",
+              "name": "4 פרוסות פסטרמה הודו (~90 ג׳)",
+              "kcal": 100,
+              "proteinG": 18,
+              "carbG": 3,
+              "fatG": 1.5
+            },
+            {
+              "cat": "veg",
+              "name": "3 מלפפונים",
+              "kcal": 57,
+              "proteinG": 2.5,
+              "carbG": 12,
+              "fatG": 0.5
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "מוצרים ארוזים ומנות ידועות; משקל הפרוסות הערכה.",
+          "kcalLow": 300,
+          "kcalHigh": 360
+        },
+        {
+          "time": "צהריים",
+          "name": "לברק בפתיתים, ~300 ג׳ (חצי־חצי)",
+          "kcal": 381,
+          "proteinG": 41,
+          "carbG": 31.5,
+          "fatG": 9.1,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "לברק מבושל ~150 ג׳",
+              "kcal": 207,
+              "proteinG": 36,
+              "carbG": 0,
+              "fatG": 7.5
+            },
+            {
+              "cat": "grains",
+              "name": "פתיתים ברוטב עגבניות ~150 ג׳",
+              "kcal": 174,
+              "proteinG": 5,
+              "carbG": 31.5,
+              "fatG": 1.6
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "רכיבי הסיר נשקלו; 300 ג׳ לפי התוכנית; חצי־חצי לפי מה שאמרת.",
+          "kcalLow": 340,
+          "kcalHigh": 420
+        },
+        {
+          "time": "צהריים",
+          "name": "צלחת ירקות: עגבנייה, גמבה, מלפפונים",
+          "kcal": 89,
+          "proteinG": 3.5,
+          "carbG": 19.5,
+          "fatG": 0.8,
+          "items": [
+            {
+              "cat": "veg",
+              "name": "עגבנייה",
+              "kcal": 22,
+              "proteinG": 1,
+              "carbG": 4.5,
+              "fatG": 0.2
+            },
+            {
+              "cat": "veg",
+              "name": "גמבה אדומה",
+              "kcal": 40,
+              "proteinG": 1.5,
+              "carbG": 9,
+              "fatG": 0.4
+            },
+            {
+              "cat": "veg",
+              "name": "מלפפון וחצי",
+              "kcal": 27,
+              "proteinG": 1,
+              "carbG": 6,
+              "fatG": 0.2
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "גודל הירקות הערכה מהתמונה.",
+          "kcalLow": 70,
+          "kcalHigh": 110
+        },
+        {
+          "time": "ערב",
+          "name": "נאפו: פילה סלמון (בלי העור) עם ירקות ירוקים",
+          "kcal": 475,
+          "proteinG": 41,
+          "carbG": 10,
+          "fatG": 27.5,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "פילה סלמון צלוי, בלי העור (~165 ג׳)",
+              "kcal": 325,
+              "proteinG": 36,
+              "carbG": 0,
+              "fatG": 18
+            },
+            {
+              "cat": "veg",
+              "name": "ירקות ירוקים: ברוקולי, קישוא, אפונה",
+              "kcal": 90,
+              "proteinG": 5,
+              "carbG": 10,
+              "fatG": 3
+            },
+            {
+              "cat": "fat",
+              "name": "שמן/פסטו על הירקות",
+              "kcal": 60,
+              "proteinG": 0,
+              "carbG": 0,
+              "fatG": 6.5
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "מנת מסעדה; גודל הפילה והשמן הערכה מהתמונה.",
+          "kcalLow": 400,
+          "kcalHigh": 560
+        },
+        {
+          "time": "ערב",
+          "name": "נאפו: קצת מסלט ברי פחם המשותף (~רבע, בלי הגבינה)",
+          "kcal": 94,
+          "proteinG": 1.3,
+          "carbG": 8,
+          "fatG": 6.4,
+          "items": [
+            {
+              "cat": "veg",
+              "name": "עלים, תפוח פינק ליידי, בצל סגול",
+              "kcal": 28,
+              "proteinG": 0.5,
+              "carbG": 6,
+              "fatG": 0.2
+            },
+            {
+              "cat": "fat",
+              "name": "פקאנים קלויים ובלסמי לבן",
+              "kcal": 66,
+              "proteinG": 0.8,
+              "carbG": 2,
+              "fatG": 6.2
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "\"קצת\" לפי מה שאמרת; חישבתי כרבע מהקערה (~445 לכל הסלט, לפי התפריט והתמונה).",
+          "kcalLow": 45,
+          "kcalHigh": 140
+        },
+        {
+          "time": "ערב",
+          "name": "נאפו: חצי טרין כבד עוף, בלי לחם וריבה",
+          "kcal": 165,
+          "proteinG": 7.5,
+          "carbG": 1.5,
+          "fatG": 14,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "חצי טרין כבד עוף (~50 ג׳)",
+              "kcal": 165,
+              "proteinG": 7.5,
+              "carbG": 1.5,
+              "fatG": 14
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "גודל הטרין הערכה מהתמונה; החלק לפי מה שאמרת.",
+          "kcalLow": 130,
+          "kcalHigh": 200
+        },
+        {
+          "time": "ערב",
+          "name": "נאפו: קערת זיתים",
+          "kcal": 85,
+          "proteinG": 0.5,
+          "carbG": 2,
+          "fatG": 8.5,
+          "items": [
+            {
+              "cat": "fat",
+              "name": "~8 זיתים גדולים, ירוקים וקלמטה",
+              "kcal": 85,
+              "proteinG": 0.5,
+              "carbG": 2,
+              "fatG": 8.5
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "ספרתי מהתמונה; גודל הזיתים הערכה.",
+          "kcalLow": 65,
+          "kcalHigh": 100
+        },
+        {
+          "time": "ערב",
+          "name": "נאפו: יין אדום, חצי בקבוק ומעט יותר (~400 מ״ל)",
+          "kcal": 340,
+          "proteinG": 0,
+          "carbG": 10,
+          "fatG": 0,
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "יין אדום ~400 מ״ל",
+              "kcal": 340,
+              "proteinG": 0,
+              "carbG": 10,
+              "fatG": 0
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "הכמות לפי מה שאמרת; ערך יין סטנדרטי.",
+          "kcalLow": 320,
+          "kcalHigh": 385
+        },
+        {
+          "time": "ערב",
+          "name": "נאפו: שוט טקילה 30 מ״ל",
+          "kcal": 67,
+          "proteinG": 0,
+          "carbG": 0,
+          "fatG": 0,
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "טקילה 30 מ״ל",
+              "kcal": 67,
+              "proteinG": 0,
+              "carbG": 0,
+              "fatG": 0
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "כמות ידועה וערך סטנדרטי (40%).",
+          "kcalLow": 64,
+          "kcalHigh": 70
+        }
+      ],
+      "walks": [
+        {
+          "time": "08:41",
+          "km": 1.86,
+          "minutes": 23,
+          "seconds": 40,
+          "steps": 2555,
+          "avgHr": 93,
+          "deviceKcal": 159,
+          "kmh": 4.7
+        },
+        {
+          "time": "12:30",
+          "km": 1.6,
+          "minutes": 19,
+          "seconds": 32,
+          "steps": 2093,
+          "avgHr": 104,
+          "deviceKcal": 147,
+          "kmh": 4.9,
+          "climbM": 21
+        }
+      ],
+      "kcal": 2024,
+      "proteinG": 140,
+      "carbG": 106,
+      "fatG": 72,
+      "steps": 13863
+    },
+    {
+      "date": "2026-11-11",
+      "weightKg": 89.1,
+      "meals": [
+        {
+          "time": "11:30",
+          "name": "יוגורט GO, 4 פסטרמה הודו ו-3 מלפפונים",
+          "kcal": 328,
+          "proteinG": 45.5,
+          "carbG": 23.8,
+          "fatG": 6,
+          "items": [
+            {
+              "cat": "dairy",
+              "name": "יוגורט GO טבעי 200 ג׳ (תווית)",
+              "kcal": 171,
+              "proteinG": 25,
+              "carbG": 8.8,
+              "fatG": 4
+            },
+            {
+              "cat": "meat",
+              "name": "4 פרוסות פסטרמה הודו (~90 ג׳)",
+              "kcal": 100,
+              "proteinG": 18,
+              "carbG": 3,
+              "fatG": 1.5
+            },
+            {
+              "cat": "veg",
+              "name": "3 מלפפונים",
+              "kcal": 57,
+              "proteinG": 2.5,
+              "carbG": 12,
+              "fatG": 0.5
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "יוגורט לפי תווית; משקל הפרוסות והמלפפונים הערכה קטנה.",
+          "kcalLow": 310,
+          "kcalHigh": 350
+        },
+        {
+          "time": "צהריים",
+          "name": "לברק בפתיתים, 402 ג׳ (חצי־חצי)",
+          "kcal": 510,
+          "proteinG": 54.8,
+          "carbG": 42.2,
+          "fatG": 12.2,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "לברק מבושל ~201 ג׳",
+              "kcal": 277,
+              "proteinG": 48.2,
+              "carbG": 0,
+              "fatG": 10
+            },
+            {
+              "cat": "grains",
+              "name": "פתיתים ברוטב עגבניות ~201 ג׳",
+              "kcal": 233,
+              "proteinG": 6.6,
+              "carbG": 42.2,
+              "fatG": 2.2
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "הצלחת נשקלה (402 ג׳) ורכיבי הסיר נשקלו; חצי־חצי לפי מה שאמרת.",
+          "kcalLow": 460,
+          "kcalHigh": 560
+        },
+        {
+          "time": "צהריים",
+          "name": "ירקות: עגבנייה, 3 מלפפונים, גמבה",
+          "kcal": 119,
+          "proteinG": 5,
+          "carbG": 25.5,
+          "fatG": 1.1,
+          "items": [
+            {
+              "cat": "veg",
+              "name": "עגבנייה",
+              "kcal": 22,
+              "proteinG": 1,
+              "carbG": 4.5,
+              "fatG": 0.2
+            },
+            {
+              "cat": "veg",
+              "name": "3 מלפפונים",
+              "kcal": 57,
+              "proteinG": 2.5,
+              "carbG": 12,
+              "fatG": 0.5
+            },
+            {
+              "cat": "veg",
+              "name": "גמבה",
+              "kcal": 40,
+              "proteinG": 1.5,
+              "carbG": 9,
+              "fatG": 0.4
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "כמות ידועה; הגודל הערכה.",
+          "kcalLow": 95,
+          "kcalHigh": 140
+        },
+        {
+          "time": "20:00",
+          "name": "שייק חלבון שוקולד 62 ג׳",
+          "kcal": 234,
+          "proteinG": 45.3,
+          "carbG": 6.8,
+          "fatG": 2.5,
+          "items": [
+            {
+              "cat": "protein",
+              "name": "אבקת חלבון שוקולד 62 ג׳ (377/73 ל-100 ג׳)",
+              "kcal": 234,
+              "proteinG": 45.3,
+              "carbG": 6.8,
+              "fatG": 2.5
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "62 ג׳ ותווית.",
+          "kcalLow": 230,
+          "kcalHigh": 238
+        },
+        {
+          "time": "ערב",
+          "name": "ביס אחד מ-Shi-Shi Royal (לאפת אורז)",
+          "kcal": 60,
+          "proteinG": 3,
+          "carbG": 7,
+          "fatG": 2,
+          "items": [
+            {
+              "cat": "grains",
+              "name": "ביס מלאפת אורז סושי (אורז, דג, רוטב) ~30 ג׳",
+              "kcal": 60,
+              "proteinG": 3,
+              "carbG": 7,
+              "fatG": 2
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "ביס אחד, לא נשקל; פחות מעשירית מחצי. אורז סושי עם סוכר וחומץ, כ-170 קל׳ ל-100 ג׳ עם המילוי. הערכה כלפי מעלה.",
+          "kcalLow": 30,
+          "kcalHigh": 90
+        }
+      ],
+      "walks": [
+        {
+          "type": "אליפטיקל",
+          "time": "20:36",
+          "minutes": 60,
+          "seconds": 10,
+          "avgHr": 96,
+          "maxHr": 114,
+          "deviceKcal": 396
+        },
+        {
+          "time": "22:30",
+          "km": 1.07,
+          "minutes": 19,
+          "seconds": 31,
+          "steps": 1596,
+          "avgHr": 93,
+          "deviceKcal": 113
+        }
+      ],
+      "kcal": 1251,
+      "proteinG": 154,
+      "carbG": 105,
+      "fatG": 24,
+      "steps": 13986
+    },
+    {
+      "date": "2026-11-12",
+      "weightKg": 88.1,
+      "meals": [
+        {
+          "time": "צהריים",
+          "name": "לברק בפתיתים, 397 ג׳ (חצי־חצי)",
+          "kcal": 504,
+          "proteinG": 54.2,
+          "carbG": 41.7,
+          "fatG": 12.1,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "לברק מבושל ~199 ג׳",
+              "kcal": 274,
+              "proteinG": 47.6,
+              "carbG": 0,
+              "fatG": 9.9
+            },
+            {
+              "cat": "grains",
+              "name": "פתיתים ברוטב עגבניות ~199 ג׳",
+              "kcal": 230,
+              "proteinG": 6.6,
+              "carbG": 41.7,
+              "fatG": 2.2
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "הצלחת נשקלה: 553 ג׳, ואחרי שהורדת פתיתים 397 ג׳. רכיבי הסיר נשקלו. חצי־חצי לפי מה שאמרת.",
+          "kcalLow": 440,
+          "kcalHigh": 580
+        },
+        {
+          "time": "ערב",
+          "name": "יוגורט GO תות 0%",
+          "kcal": 108,
+          "proteinG": 20,
+          "carbG": 6.2,
+          "fatG": 0,
+          "items": [
+            {
+              "cat": "dairy",
+              "name": "יוגורט GO תות 0% (תווית: 108 קל׳, 20 ח׳)",
+              "kcal": 108,
+              "proteinG": 20,
+              "carbG": 6.2,
+              "fatG": 0
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "גביע שלם, לפי התווית.",
+          "kcalLow": 105,
+          "kcalHigh": 112
+        },
+        {
+          "time": "ערב",
+          "name": "שייק חלבון עוגיות 64 ג׳",
+          "kcal": 245,
+          "proteinG": 49.3,
+          "carbG": 6.8,
+          "fatG": 2.3,
+          "items": [
+            {
+              "cat": "protein",
+              "name": "אבקת חלבון עוגיות 64 ג׳ (383/77 ל-100 ג׳)",
+              "kcal": 245,
+              "proteinG": 49.3,
+              "carbG": 6.8,
+              "fatG": 2.3
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "64 ג׳ ותווית.",
+          "kcalLow": 242,
+          "kcalHigh": 249
+        },
+        {
+          "time": "ערב",
+          "name": "10 בוטנים קלויים מלוחים (5 ג׳)",
+          "kcal": 28,
+          "proteinG": 1.4,
+          "carbG": 0.8,
+          "fatG": 2.5,
+          "items": [
+            {
+              "cat": "snacks",
+              "name": "בוטנים קלויים, שוק הפיצוחים, ~5.5 ג׳ (518 קל׳ ל-100 ג׳)",
+              "kcal": 28,
+              "proteinG": 1.4,
+              "carbG": 0.8,
+              "fatG": 2.5
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "נשקל: 5 ג׳ (המשקל בקפיצות של 1 ג׳, לכן חושב 5.5 ג׳). ערכים לפי התווית; חלבון לא מופיע בתווית, הערכה.",
+          "kcalLow": 26,
+          "kcalHigh": 31
+        },
+        {
+          "time": "ערב",
+          "name": "יונו: חצי צלחת גבינות, בלי לחם ודבש",
+          "kcal": 472,
+          "proteinG": 27.7,
+          "carbG": 3.8,
+          "fatG": 38.2,
+          "items": [
+            {
+              "cat": "dairy",
+              "name": "מנצ׳גו, גאודה וגבינה כחולה ~110 ג׳ (חצי מכ-220 ג׳)",
+              "kcal": 415,
+              "proteinG": 27,
+              "carbG": 1,
+              "fatG": 33
+            },
+            {
+              "cat": "fat",
+              "name": "פקאן ~7 ג׳",
+              "kcal": 50,
+              "proteinG": 0.7,
+              "carbG": 1,
+              "fatG": 5.2
+            },
+            {
+              "cat": "snacks",
+              "name": "2 ענבים",
+              "kcal": 7,
+              "proteinG": 0,
+              "carbG": 1.8,
+              "fatG": 0
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "כמות הגבינה הוערכה מהתמונה (כ-220 ג׳ בצלחת); חצי לפי מה שאמרת. בלי הלחם והדבש.",
+          "kcalLow": 380,
+          "kcalHigh": 580
+        },
+        {
+          "time": "ערב",
+          "name": "יונו: חצי ירוקים בג׳וספר",
+          "kcal": 190,
+          "proteinG": 5,
+          "carbG": 9,
+          "fatG": 15,
+          "items": [
+            {
+              "cat": "veg",
+              "name": "שעועית ירוקה, ברוקולי, זוקיני, אספרגוס ~150 ג׳",
+              "kcal": 45,
+              "proteinG": 3,
+              "carbG": 7,
+              "fatG": 0.5
+            },
+            {
+              "cat": "fat",
+              "name": "צזיקי, שמן זית ואגוזי לוז (חצי)",
+              "kcal": 145,
+              "proteinG": 2,
+              "carbG": 2,
+              "fatG": 14.5
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "הערכה מהתמונה; השמן והצזיקי לא ידועים. חצי לפי מה שאמרת.",
+          "kcalLow": 140,
+          "kcalHigh": 250
+        },
+        {
+          "time": "ערב",
+          "name": "יין ~400 מ״ל",
+          "kcal": 340,
+          "proteinG": 0,
+          "carbG": 10,
+          "fatG": 0,
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "יין ~400 מ״ל",
+              "kcal": 340,
+              "proteinG": 0,
+              "carbG": 10,
+              "fatG": 0
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "כמות לפי מה שאמרת; כ-85 קל׳ ל-100 מ״ל.",
+          "kcalLow": 300,
+          "kcalHigh": 380
+        }
+      ],
+      "walks": [
+        {
+          "time": "10:38",
+          "km": 2.6,
+          "minutes": 47,
+          "seconds": 38,
+          "steps": 3822,
+          "avgHr": 92,
+          "deviceKcal": 268
+        },
+        {
+          "type": "אליפטיקל",
+          "time": "16:51",
+          "minutes": 30,
+          "seconds": 2,
+          "avgHr": 93,
+          "maxHr": 113,
+          "deviceKcal": 186
+        }
+      ],
+      "kcal": 1887,
+      "proteinG": 157.6,
+      "carbG": 78.3,
+      "fatG": 70.1,
+      "steps": 15424
+    },
+    {
+      "date": "2026-11-13",
+      "weightKg": 88.5,
+      "meals": [
+        {
+          "time": "צהריים",
+          "name": "2 ביצים קשות, חצי קוטג׳ 5%, טונה במים וגמבה",
+          "kcal": 438,
+          "proteinG": 54.2,
+          "carbG": 14.3,
+          "fatG": 18.3,
+          "items": [
+            {
+              "cat": "protein",
+              "name": "2 ביצים קשות",
+              "kcal": 144,
+              "proteinG": 12.6,
+              "carbG": 0.8,
+              "fatG": 10
+            },
+            {
+              "cat": "dairy",
+              "name": "קוטג׳ 5%, חצי גביע (125 ג׳)",
+              "kcal": 119,
+              "proteinG": 13.8,
+              "carbG": 2.5,
+              "fatG": 6.3
+            },
+            {
+              "cat": "protein",
+              "name": "טונה במים, מסוננת (~110 ג׳)",
+              "kcal": 120,
+              "proteinG": 26,
+              "carbG": 0,
+              "fatG": 1.5
+            },
+            {
+              "cat": "veg",
+              "name": "גמבה אחת (~180 ג׳)",
+              "kcal": 55,
+              "proteinG": 1.8,
+              "carbG": 11,
+              "fatG": 0.5
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "כמויות לפי יחידות ואריזות; ערכים טיפוסיים לפי תווית.",
+          "kcalLow": 403,
+          "kcalHigh": 478
+        },
+        {
+          "time": "צהריים",
+          "name": "שאריות חביתה, 62 ג׳",
+          "kcal": 124,
+          "proteinG": 8.7,
+          "carbG": 0.6,
+          "fatG": 9.7,
+          "items": [
+            {
+              "cat": "protein",
+              "name": "חביתה משתי ביצים ו-4 שפריצים, 62 ג׳ מתוך ~90 ג׳",
+              "kcal": 124,
+              "proteinG": 8.7,
+              "carbG": 0.6,
+              "fatG": 9.7
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "נשקל 62 ג׳. כל החביתה (2 ביצים ו-4 שפריצים) כ-180 קק\"ל ושוקלת כ-90 ג׳ מבושלת (הערכה), כלומר כ-69%.",
+          "kcalLow": 110,
+          "kcalHigh": 140
+        },
+        {
+          "time": "צהריים",
+          "name": "טעימות מאוכל ביתי: תפו״א, נקניקייה, בשר",
+          "kcal": 180,
+          "proteinG": 10.3,
+          "carbG": 10.3,
+          "fatG": 11.7,
+          "items": [
+            {
+              "cat": "grains",
+              "name": "2 קוביות תפוח אדמה מוקפץ עם בצל (~40 ג׳)",
+              "kcal": 60,
+              "proteinG": 0.8,
+              "carbG": 7,
+              "fatG": 3.2
+            },
+            {
+              "cat": "meat",
+              "name": "2 עיגולי נקניקייה (~10 ג׳)",
+              "kcal": 30,
+              "proteinG": 1.2,
+              "carbG": 0.3,
+              "fatG": 2.7
+            },
+            {
+              "cat": "meat",
+              "name": "2 קוביות בשר בקר מבושל (~30 ג׳)",
+              "kcal": 75,
+              "proteinG": 8,
+              "carbG": 0,
+              "fatG": 5.5
+            },
+            {
+              "cat": "grains",
+              "name": "אורז שנדבק לבשר (~10 ג׳)",
+              "kcal": 15,
+              "proteinG": 0.3,
+              "carbG": 3,
+              "fatG": 0.3
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "כמויות לפי יחידות, משקל ושמן הוערכו מהתמונה. הכין מישהו אחר.",
+          "kcalLow": 130,
+          "kcalHigh": 240
+        },
+        {
+          "time": "אחר הצהריים",
+          "name": "בראוניז 40 ג׳",
+          "kcal": 184,
+          "proteinG": 2.4,
+          "carbG": 22,
+          "fatG": 10,
+          "items": [
+            {
+              "cat": "snacks",
+              "name": "בראוניז, 40 ג׳ (~460 קל׳ ל-100 ג׳, הערכה)",
+              "kcal": 184,
+              "proteinG": 2.4,
+              "carbG": 22,
+              "fatG": 10
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "נשקל 40 ג׳. ערכים טיפוסיים לבראוניז, אין תווית.",
+          "kcalLow": 160,
+          "kcalHigh": 200
+        },
+        {
+          "time": "ערב",
+          "name": "יוגורט PRO 0%, גביע",
+          "kcal": 116,
+          "proteinG": 21,
+          "carbG": 6.7,
+          "fatG": 0,
+          "items": [
+            {
+              "cat": "dairy",
+              "name": "יוגורט PRO 0%, גביע 200 ג׳ (תווית)",
+              "kcal": 116,
+              "proteinG": 21,
+              "carbG": 6.7,
+              "fatG": 0
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "גביע שלם, לפי התווית.",
+          "kcalLow": 114,
+          "kcalHigh": 118
+        },
+        {
+          "time": "ערב",
+          "name": "דיינר: חצי כריך בשר, 5 כנפיים, 10 צ'יפס, טבעת בצל",
+          "kcal": 1270,
+          "proteinG": 56,
+          "carbG": 92,
+          "fatG": 70.2,
+          "items": [
+            {
+              "cat": "snacks",
+              "name": "טבעת בצל גדולה בבלילה",
+              "kcal": 70,
+              "proteinG": 1,
+              "carbG": 7,
+              "fatG": 4.2
+            },
+            {
+              "cat": "grains",
+              "name": "10 צ'יפסים עבים (~85 ג׳)",
+              "kcal": 240,
+              "proteinG": 3,
+              "carbG": 30,
+              "fatG": 12
+            },
+            {
+              "cat": "meat",
+              "name": "חצי כריך בשר מפורק בצ'יאבטה עם איולי",
+              "kcal": 500,
+              "proteinG": 24,
+              "carbG": 40,
+              "fatG": 24
+            },
+            {
+              "cat": "meat",
+              "name": "5 כנפיים באפלו בציפוי",
+              "kcal": 460,
+              "proteinG": 28,
+              "carbG": 15,
+              "fatG": 30
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "מסעדה, הערכה מהתמונות. הצ'יפס עבה, ולכן 10 יחידות הן כ-85 ג׳ ולא 50. הכנפיים בציפוי ורוטב.",
+          "kcalLow": 1100,
+          "kcalHigh": 1450
+        },
+        {
+          "time": "ערב",
+          "name": "ברד פודינג עם גלידת וניל, ~6 כפות",
+          "kcal": 350,
+          "proteinG": 6,
+          "carbG": 45,
+          "fatG": 16,
+          "items": [
+            {
+              "cat": "snacks",
+              "name": "ברד פודינג וגלידת וניל, ~6 כפות (~130 ג׳)",
+              "kcal": 350,
+              "proteinG": 6,
+              "carbG": 45,
+              "fatG": 16
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "הכמות לפי מה שאמרת (6 כפות). כל הקינוח כ-1,000 קק\"ל (הערכה מהתמונה).",
+          "kcalLow": 280,
+          "kcalHigh": 430
+        }
+      ],
+      "walks": [
+        {
+          "time": "09:41",
+          "km": 1.75,
+          "minutes": 25,
+          "seconds": 0,
+          "steps": 2500,
+          "avgHr": 93,
+          "deviceKcal": 148
+        },
+        {
+          "type": "אליפטיקל",
+          "time": "17:18",
+          "minutes": 47,
+          "seconds": 38,
+          "avgHr": 104,
+          "maxHr": 115,
+          "deviceKcal": 322
+        },
+        {
+          "time": "20:41",
+          "km": 0.89,
+          "minutes": 12,
+          "seconds": 9,
+          "steps": 1031,
+          "avgHr": 93,
+          "deviceKcal": 71
+        },
+        {
+          "time": "23:30",
+          "km": 1.14,
+          "minutes": 19,
+          "seconds": 41,
+          "steps": 1745,
+          "avgHr": 92,
+          "deviceKcal": 116
+        }
+      ],
+      "kcal": 2662,
+      "proteinG": 158.6,
+      "carbG": 190.9,
+      "fatG": 135.9,
+      "steps": 15084
+    },
+    {
+      "date": "2026-11-14",
+      "weightKg": 88.3,
+      "meals": [
+        {
+          "time": "צהריים",
+          "name": "16 עיגולי דפי אורז עם עוף טחון, 2 כפות סויה וכף צ'ילי מתוק",
+          "kcal": 408,
+          "proteinG": 47.1,
+          "carbG": 27.8,
+          "fatG": 12.8,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "16 עיגולי דפי אורז עם עוף טחון (~208 ג׳, ~1.72 קק\"ל לגרם)",
+              "kcal": 358,
+              "proteinG": 45.9,
+              "carbG": 16.8,
+              "fatG": 12.8
+            },
+            {
+              "cat": "veg",
+              "name": "2 כפות רוטב סויה (30 מ״ל)",
+              "kcal": 10,
+              "proteinG": 1.2,
+              "carbG": 1,
+              "fatG": 0
+            },
+            {
+              "cat": "snacks",
+              "name": "כף צ'ילי מתוק (~18 ג׳)",
+              "kcal": 40,
+              "proteinG": 0,
+              "carbG": 10,
+              "fatG": 0
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "המגש: 400 ג׳ חזה עוף טחון, 5 דפי אורז, 10 שפריצים (~740 קק\"ל, ~430 ג׳ אפוי). כל עיגול ~13 ג׳.",
+          "kcalLow": 340,
+          "kcalHigh": 470
+        },
+        {
+          "time": "צהריים ואחר הצהריים",
+          "name": "14 עיגולי טורטיית חלבון עם עוף טחון",
+          "kcal": 556,
+          "proteinG": 68.3,
+          "carbG": 26.6,
+          "fatG": 15.4,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "14 עיגולים מתוך 42",
+              "kcal": 556,
+              "proteinG": 68.3,
+              "carbG": 26.6,
+              "fatG": 15.4
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "המגש: ~718 ג׳ חזה עוף טחון (הערכה), 5 טורטיות חלבון, ביצה, 10 שפריצים, ~1,665 קק\"ל. 42 עיגולים.",
+          "kcalLow": 490,
+          "kcalHigh": 630
+        },
+        {
+          "time": "ערב",
+          "name": "פוקר: נשנושים ובירה",
+          "kcal": 699,
+          "proteinG": 17.3,
+          "carbG": 57.4,
+          "fatG": 35.5,
+          "items": [
+            {
+              "cat": "snacks",
+              "name": "14 יחידות ביסלי בצל (~21 ג׳)",
+              "kcal": 103,
+              "proteinG": 2.1,
+              "carbG": 13.3,
+              "fatG": 4.9
+            },
+            {
+              "cat": "fat",
+              "name": "22 בוטנים (~15 ג׳)",
+              "kcal": 85,
+              "proteinG": 3.7,
+              "carbG": 2.2,
+              "fatG": 7
+            },
+            {
+              "cat": "fat",
+              "name": "22 קשיו (~33 ג׳)",
+              "kcal": 187,
+              "proteinG": 5.9,
+              "carbG": 9.9,
+              "fatG": 14.5
+            },
+            {
+              "cat": "snacks",
+              "name": "10 יחידות במבה (~10 ג׳)",
+              "kcal": 54,
+              "proteinG": 1.6,
+              "carbG": 4,
+              "fatG": 3.4
+            },
+            {
+              "cat": "snacks",
+              "name": "3 יחידות סניידרס (~12 ג׳)",
+              "kcal": 60,
+              "proteinG": 1.2,
+              "carbG": 9,
+              "fatG": 2.1
+            },
+            {
+              "cat": "alcohol",
+              "name": "בירה גולדסטאר 330 מ״ל",
+              "kcal": 142,
+              "proteinG": 1.5,
+              "carbG": 11,
+              "fatG": 0
+            },
+            {
+              "cat": "snacks",
+              "name": "5 יחידות במבה נוגט (~13 ג׳)",
+              "kcal": 68,
+              "proteinG": 1.3,
+              "carbG": 8,
+              "fatG": 3.6
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "לפי מספר יחידות. משקל ליחידה הוא ערך טיפוסי.",
+          "kcalLow": 659,
+          "kcalHigh": 759
+        }
+      ],
+      "kcal": 1663,
+      "proteinG": 132.7,
+      "carbG": 111.8,
+      "fatG": 63.7,
+      "steps": 10055,
+      "nightWeight": {
+        "time": "01:03",
+        "kg": 88.9,
+        "note": "שקילת לילה לפני שינה, אחרי ערב פוקר. לא נכנסת לממוצעים."
+      },
+      "walks": [
+        {
+          "time": "16:53",
+          "km": 0.93,
+          "minutes": 14,
+          "seconds": 31,
+          "steps": 1461,
+          "avgHr": 100,
+          "deviceKcal": 86
+        },
+        {
+          "time": "20:30",
+          "km": 1.1,
+          "minutes": 17,
+          "seconds": 10,
+          "steps": 1579,
+          "avgHr": 103,
+          "deviceKcal": 99
+        }
+      ]
+    },
+    {
+      "date": "2026-11-15",
+      "weightKg": 87.8,
+      "meals": [
+        {
+          "time": "בוקר",
+          "name": "יוגורט GO טבעי, פסטרמה ומלפפונים",
+          "kcal": 289,
+          "proteinG": 41.7,
+          "carbG": 17.2,
+          "fatG": 5.6,
+          "items": [
+            {
+              "cat": "dairy",
+              "name": "יוגורט GO טבעי 200 ג׳ (לפי תווית)",
+              "kcal": 171,
+              "proteinG": 25,
+              "carbG": 8.8,
+              "fatG": 4
+            },
+            {
+              "cat": "meat",
+              "name": "4 פרוסות פסטרמה (~80 ג׳)",
+              "kcal": 88,
+              "proteinG": 15.2,
+              "carbG": 2.4,
+              "fatG": 1.6
+            },
+            {
+              "cat": "veg",
+              "name": "מלפפונים, ~2 (~250 ג׳)",
+              "kcal": 30,
+              "proteinG": 1.5,
+              "carbG": 6,
+              "fatG": 0
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "יוגורט לפי תווית. 4 פרוסות פסטרמה, ~20 ג׳ לפרוסה (הערכה).",
+          "kcalLow": 270,
+          "kcalHigh": 320
+        },
+        {
+          "time": "צהריים",
+          "name": "סלט טונה, קוטג׳ ויוגורט GO עם ירקות ופרוסת לחם",
+          "kcal": 673,
+          "proteinG": 74.8,
+          "carbG": 61.4,
+          "fatG": 13.8,
+          "items": [
+            {
+              "cat": "fish",
+              "name": "קופסת טונה במים, מסוננת (~112 ג׳)",
+              "kcal": 120,
+              "proteinG": 26,
+              "carbG": 0,
+              "fatG": 1.5
+            },
+            {
+              "cat": "dairy",
+              "name": "חצי קופסת קוטג׳ 5% (125 ג׳)",
+              "kcal": 119,
+              "proteinG": 13.8,
+              "carbG": 1.6,
+              "fatG": 6.3
+            },
+            {
+              "cat": "veg",
+              "name": "3 מלפפונים, 2 עגבניות וגמבה (~720 ג׳)",
+              "kcal": 138,
+              "proteinG": 5.5,
+              "carbG": 28,
+              "fatG": 1
+            },
+            {
+              "cat": "dairy",
+              "name": "יוגורט GO טבעי 200 ג׳ (לפי תווית)",
+              "kcal": 171,
+              "proteinG": 25,
+              "carbG": 8.8,
+              "fatG": 4
+            },
+            {
+              "cat": "carb",
+              "name": "פרוסת לחם מחמצת/חיטה מלאה (~45 ג׳, הערכה)",
+              "kcal": 125,
+              "proteinG": 4.5,
+              "carbG": 23,
+              "fatG": 1
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "טונה וקוטג׳ לפי ערכים מקובלים לאריזה; ירקות לפי גודל ממוצע. בלי שמן.",
+          "kcalLow": 620,
+          "kcalHigh": 730
+        },
+        {
+          "time": "ערב",
+          "name": "קופינאס: פרגית, שעועית, לביבה, ורדה רוסטו, ערק ויין",
+          "items": [
+            {
+              "cat": "meat",
+              "name": "פרגית על הגריל (~320 ג׳ מבושל)",
+              "kcal": 680,
+              "proteinG": 70,
+              "carbG": 2,
+              "fatG": 40
+            },
+            {
+              "cat": "veg",
+              "name": "שעועית ירוקה עם שמן",
+              "kcal": 120,
+              "proteinG": 3,
+              "carbG": 10,
+              "fatG": 8
+            },
+            {
+              "cat": "veg",
+              "name": "עגבנייה צלויה עם שום ומעט ממחית החצילים/בצל (רובה נשאר)",
+              "kcal": 90,
+              "proteinG": 2,
+              "carbG": 10,
+              "fatG": 5
+            },
+            {
+              "cat": "snacks",
+              "name": "1.25 לביבות כרישה עם ~4 כפות ציזיקי",
+              "kcal": 305,
+              "proteinG": 9,
+              "carbG": 20,
+              "fatG": 20
+            },
+            {
+              "cat": "veg",
+              "name": "ורדה רוסטו: 4 סלקים, קוביית קולורבי, מעט קרם פטה ופסטו",
+              "kcal": 180,
+              "proteinG": 4,
+              "carbG": 17,
+              "fatG": 10
+            },
+            {
+              "cat": "alcohol",
+              "name": "2.5 ערק עם מים (~125 מ״ל)",
+              "kcal": 275,
+              "proteinG": 0,
+              "carbG": 0,
+              "fatG": 0
+            },
+            {
+              "cat": "alcohol",
+              "name": "כוס יין אדום גדולה (~200 מ״ל)",
+              "kcal": 170,
+              "proteinG": 0,
+              "carbG": 5,
+              "fatG": 0
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "מסעדה, הערכה מתמונות לפני ואחרי. הפרגית כמנה מלאה (גבוה). צ׳ימיצ׳ורי לא נגעת; רוב מחית החצילים נשארה.",
+          "kcalLow": 1600,
+          "kcalHigh": 2050,
+          "kcal": 1820,
+          "proteinG": 88,
+          "carbG": 64,
+          "fatG": 83
+        }
+      ],
+      "walks": [
+        {
+          "time": "09:18",
+          "km": 2.13,
+          "minutes": 33,
+          "seconds": 40,
+          "steps": 3131,
+          "avgHr": 100,
+          "deviceKcal": 199
+        },
+        {
+          "time": "21:00",
+          "km": 1.17,
+          "minutes": 16,
+          "seconds": 45,
+          "steps": 1730,
+          "avgHr": 108,
+          "deviceKcal": 98
+        },
+        {
+          "time": "22:52",
+          "km": 1.17,
+          "minutes": 21,
+          "seconds": 44,
+          "steps": 1967,
+          "avgHr": 109,
+          "deviceKcal": 118
+        }
+      ],
+      "kcal": 2782,
+      "proteinG": 204.5,
+      "carbG": 142.6,
+      "fatG": 102.4,
+      "steps": 13082
+    },
+    {
+      "date": "2026-11-16",
+      "weightKg": 88.7,
+      "meals": [
+        {
+          "time": "צהריים",
+          "name": "קופסה: בשר מפלאו, 5 עיגולי טורטייה ואורז לבן",
+          "kcal": 650,
+          "proteinG": 52.5,
+          "carbG": 46.5,
+          "fatG": 26.5,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "בשר מהפלאו (בשר מס׳ 2) עם מעט אורז, 113 ג׳",
+              "kcal": 285,
+              "proteinG": 25,
+              "carbG": 4,
+              "fatG": 19
+            },
+            {
+              "cat": "meat",
+              "name": "5 עיגולי טורטיית חלבון עם עוף טחון, 108 ג׳",
+              "kcal": 200,
+              "proteinG": 24.5,
+              "carbG": 9.5,
+              "fatG": 5.5
+            },
+            {
+              "cat": "carb",
+              "name": "אורז לבן מבושל, 109 ג׳",
+              "kcal": 165,
+              "proteinG": 3,
+              "carbG": 33,
+              "fatG": 2
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "כל רכיב נשקל ב-15.11. הקלוריות לגרם הן הערכה: בשר כתף מבושל ~2.6, עיגולי טורטייה ~40 לעיגול, אורז 1.5 (גבוה).",
+          "kcalLow": 590,
+          "kcalHigh": 720
+        },
+        {
+          "time": "ערב",
+          "name": "עוף קוריאני באייר פריי (צ'ילי מתוק), 150 ג׳",
+          "kcal": 356,
+          "proteinG": 50.5,
+          "carbG": 19.5,
+          "fatG": 6.5,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "עוף קוריאני באייר פריי, 150 ג׳ מתוך 411 ג׳ (600 ג׳ חזה נא)",
+              "kcal": 356,
+              "proteinG": 50.5,
+              "carbG": 19.5,
+              "fatG": 6.5
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "כל המנה ~975 קק״ל ל-411 ג׳ (237 ל-100 ג׳): עוף 600 ג׳, קורנפלור 25, ~10 שפריצים, קטשופ דל סוכר 35, דבש 15, סויה 11, צ׳ילי מתוק ~25 (הנחה), שום ושומשום. 150 ג׳ שקולים.",
+          "kcalLow": 330,
+          "kcalHigh": 390
+        },
+        {
+          "time": "ערב",
+          "name": "2 קשיו",
+          "kcal": 20,
+          "proteinG": 0.6,
+          "carbG": 1,
+          "fatG": 1.6,
+          "items": [
+            {
+              "cat": "snacks",
+              "name": "2 קשיו (~3.5 ג׳)",
+              "kcal": 20,
+              "proteinG": 0.6,
+              "carbG": 1,
+              "fatG": 1.6
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "~1.7 ג׳ לקשיו.",
+          "kcalLow": 17,
+          "kcalHigh": 24
+        },
+        {
+          "time": "ערב",
+          "name": "נאפו: פילה סלמון בלי עור, ירקות ירוקים, אנשובי, קצת קיסר, יין ונגרוני",
+          "items": [
+            {
+              "cat": "fish",
+              "name": "פילה סלמון צלוי, בלי העור (~165 ג׳)",
+              "kcal": 325,
+              "proteinG": 36,
+              "carbG": 0,
+              "fatG": 18
+            },
+            {
+              "cat": "veg",
+              "name": "ירקות ירוקים צלויים: ברוקולי, קישוא, בוק צ'וי, עם שמן",
+              "kcal": 150,
+              "proteinG": 5,
+              "carbG": 10,
+              "fatG": 10
+            },
+            {
+              "cat": "fish",
+              "name": "צלוחית אנשובי בשמן (~35 ג׳)",
+              "kcal": 90,
+              "proteinG": 9,
+              "carbG": 0,
+              "fatG": 6
+            },
+            {
+              "cat": "alcohol",
+              "name": "יין ~400 מ״ל",
+              "kcal": 340,
+              "proteinG": 0,
+              "carbG": 10,
+              "fatG": 0
+            },
+            {
+              "cat": "veg",
+              "name": "מהקיסר: 6 עלי חסה עם רוטב, חצי ביצה רכה ופירורים (2 סבבים)",
+              "kcal": 200,
+              "proteinG": 6,
+              "carbG": 6,
+              "fatG": 16
+            },
+            {
+              "cat": "alcohol",
+              "name": "נגרוני (ג'ין, קמפרי, ורמוט אדום, ~90 מ״ל)",
+              "kcal": 190,
+              "proteinG": 0,
+              "carbG": 14,
+              "fatG": 0
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "מסעדה, הערכה מתמונות. סלמון כמו ב-10.11 (בלי העור).",
+          "kcalLow": 1160,
+          "kcalHigh": 1430,
+          "kcal": 1295,
+          "proteinG": 56,
+          "carbG": 40,
+          "fatG": 50
+        }
+      ],
+      "kcal": 2321,
+      "proteinG": 159.6,
+      "carbG": 107,
+      "fatG": 84.6,
+      "steps": 11845,
+      "walks": [
+        {
+          "time": "17:32",
+          "km": 1.89,
+          "minutes": 49,
+          "seconds": 21
+        },
+        {
+          "time": "20:26",
+          "km": 0.88,
+          "minutes": 12,
+          "seconds": 58
+        },
+        {
+          "time": "22:29",
+          "km": 1.06,
+          "minutes": 17,
+          "seconds": 20
+        }
+      ]
+    },
+    {
+      "date": "2026-11-17",
+      "weightKg": 89.1,
+      "kcal": 1082,
+      "proteinG": 150.7,
+      "carbG": 85.8,
+      "fatG": 10,
+      "meals": [
+        {
+          "time": "צהריים",
+          "name": "קופסה: חזה עוף ואורז לבן, עם גמבה, 2 עגבניות ו-3 מלפפונים",
+          "kcal": 639,
+          "proteinG": 66.5,
+          "carbG": 69,
+          "fatG": 5.5,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "חזה עוף במחבת בלי שמן, 174 ג׳",
+              "kcal": 282,
+              "proteinG": 57,
+              "carbG": 0,
+              "fatG": 4
+            },
+            {
+              "cat": "carb",
+              "name": "אורז לבן מבושל, 151 ג׳",
+              "kcal": 227,
+              "proteinG": 4,
+              "carbG": 42,
+              "fatG": 1
+            },
+            {
+              "cat": "veg",
+              "name": "גמבה, 2 עגבניות ו-3 מלפפונים",
+              "kcal": 130,
+              "proteinG": 5.5,
+              "carbG": 27,
+              "fatG": 0.5
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "העוף והאורז נשקלו (174 ג׳ ו-151 ג׳). את העוף מחשבים מהמשקל הנא: 560 ג׳ נא יצאו 390 ג׳ מבושל, כלומר ~1.6 קק״ל לגרם מבושל. האורז ב-1.5 קק״ל לגרם (הערכה גבוהה, המשקל היבש לא ידוע). משקל הירקות הוא הערכה.",
+          "kcalLow": 590,
+          "kcalHigh": 690
+        },
+        {
+          "time": "ערב",
+          "name": "עוף קוריאני (צ׳ילי מתוק), 35 ג׳",
+          "kcal": 83,
+          "proteinG": 11.8,
+          "carbG": 6.7,
+          "fatG": 1.1,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "חזה עוף ברוטב צ׳ילי מתוק, 35 ג׳",
+              "kcal": 83,
+              "proteinG": 11.8,
+              "carbG": 6.7,
+              "fatG": 1.1
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "נשקל 35 ג׳ (20 + 15). הערכים לגרם מהמנה שהכנו ב-16.11: 411 ג׳ מוכן = ~975 קק״ל (~2.37 לגרם).",
+          "kcalLow": 74,
+          "kcalHigh": 91
+        },
+        {
+          "time": "ערב",
+          "name": "שייק חלבון, אבקה בטעם עוגיות (תווית סגולה), 94 ג׳",
+          "kcal": 360,
+          "proteinG": 72.4,
+          "carbG": 10.1,
+          "fatG": 3.4,
+          "items": [
+            {
+              "cat": "protein",
+              "name": "אבקת חלבון עוגיות, 94 ג׳",
+              "kcal": 360,
+              "proteinG": 72.4,
+              "carbG": 10.1,
+              "fatG": 3.4
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "מהתווית: 383 קק״ל ו-77 ג׳ חלבון ל-100 ג׳. הכמות נשקלה (94 ג׳).",
+          "kcalLow": 355,
+          "kcalHigh": 365
+        }
+      ],
+      "walks": [
+        {
+          "time": "22:40",
+          "minutes": 30,
+          "seconds": 41,
+          "steps": 2796,
+          "kmh": 3.6,
+          "avgHr": 100,
+          "deviceKcal": 184,
+          "climbM": 11,
+          "km": 1.88
+        }
+      ],
+      "steps": 10025,
+      "stepsByHalfHour": {
+        "05:30": 25,
+        "08:30": 156,
+        "09:00": 516,
+        "09:30": 593,
+        "10:00": 145,
+        "10:30": 376,
+        "11:00": 86,
+        "11:30": 89,
+        "12:00": 233,
+        "12:30": 135,
+        "13:00": 79,
+        "13:30": 128,
+        "14:00": 184,
+        "14:30": 163,
+        "15:30": 222,
+        "16:00": 75,
+        "16:30": 236,
+        "17:00": 390,
+        "17:30": 40,
+        "18:00": 247,
+        "18:30": 47,
+        "19:00": 156,
+        "20:30": 1551,
+        "21:00": 747,
+        "21:30": 107,
+        "22:00": 93,
+        "22:30": 2006,
+        "23:00": 1104,
+        "23:30": 96
+      },
+      "stepsByHalfHourNote": "נמדד משני גרפים עם סקאלה (±15–50 צעדים לעמודה; 20:30 מדויק), מותאם לסה״כ 10,025."
+    },
+    {
+      "date": "2026-11-18",
+      "weightKg": 88,
+      "kcal": 1106,
+      "proteinG": 152.2,
+      "carbG": 90.6,
+      "fatG": 9,
+      "meals": [
+        {
+          "time": "בוקר",
+          "name": "יוגורט PRO, פסטרמה הודו ומלפפונים",
+          "kcal": 273,
+          "proteinG": 41.5,
+          "carbG": 22.7,
+          "fatG": 1.5,
+          "items": [
+            {
+              "cat": "dairy",
+              "name": "יוגורט PRO טבעי, 200 ג׳ (גביע)",
+              "kcal": 116,
+              "proteinG": 21,
+              "carbG": 6.7,
+              "fatG": 0
+            },
+            {
+              "cat": "meat",
+              "name": "4 פרוסות פסטרמה הודו (~90 ג׳)",
+              "kcal": 100,
+              "proteinG": 18,
+              "carbG": 3,
+              "fatG": 1.5
+            },
+            {
+              "cat": "veg",
+              "name": "3 מלפפונים",
+              "kcal": 57,
+              "proteinG": 2.5,
+              "carbG": 13,
+              "fatG": 0
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "היוגורט מהתווית (גביע 200 ג׳: 116 קק״ל, 21 ג׳ חלבון, 0 שומן). 4 פרוסות פסטרמה ומלפפונים — הערכה לפי ערכים קבועים מימים קודמים.",
+          "kcalLow": 255,
+          "kcalHigh": 295
+        },
+        {
+          "time": "צהריים",
+          "name": "קופסה: חזה עוף ואורז לבן, עם 2 מלפפונים, עגבנייה ופלפל אדום",
+          "kcal": 603,
+          "proteinG": 64.5,
+          "carbG": 61.5,
+          "fatG": 5.3,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "חזה עוף במחבת בלי שמן, 174 ג׳",
+              "kcal": 282,
+              "proteinG": 57,
+              "carbG": 0,
+              "fatG": 4
+            },
+            {
+              "cat": "carb",
+              "name": "אורז לבן מבושל, 151 ג׳",
+              "kcal": 227,
+              "proteinG": 4,
+              "carbG": 42,
+              "fatG": 1
+            },
+            {
+              "cat": "veg",
+              "name": "2 מלפפונים, עגבנייה ופלפל אדום",
+              "kcal": 94,
+              "proteinG": 3.5,
+              "carbG": 19.5,
+              "fatG": 0.3
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "העוף והאורז נשקלו (174 ג׳ ו-151 ג׳). העוף לפי המשקל הנא (~1.6 קק״ל לגרם מבושל), האורז 1.5 קק״ל לגרם (גבוה). הירקות הערכה: עגבנייה אחת ופלפל בינוני.",
+          "kcalLow": 560,
+          "kcalHigh": 655
+        },
+        {
+          "time": "ערב",
+          "name": "שייק חלבון, אבקה בטעם עוגיות (תווית סגולה), 60 ג׳",
+          "kcal": 230,
+          "proteinG": 46.2,
+          "carbG": 6.4,
+          "fatG": 2.2,
+          "items": [
+            {
+              "cat": "protein",
+              "name": "אבקת חלבון עוגיות, 60 ג׳",
+              "kcal": 230,
+              "proteinG": 46.2,
+              "carbG": 6.4,
+              "fatG": 2.2
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "מהתווית: 383 קק״ל ו-77 ג׳ חלבון ל-100 ג׳. הכמות נשקלה (60 ג׳).",
+          "kcalLow": 225,
+          "kcalHigh": 235
+        }
+      ],
+      "walks": [
+        {
+          "time": "08:45",
+          "km": 1.73,
+          "minutes": 26,
+          "seconds": 32,
+          "steps": 2454,
+          "kmh": 3.9,
+          "avgHr": 93,
+          "deviceKcal": 155,
+          "climbM": 18
+        }
+      ],
+      "steps": 11847,
+      "stepsByHalfHour": {
+        "00:00": 27,
+        "06:30": 110,
+        "07:00": 27,
+        "07:30": 264,
+        "08:00": 149,
+        "08:30": 1618,
+        "09:00": 1384,
+        "09:30": 89,
+        "10:00": 841,
+        "11:00": 404,
+        "11:30": 243,
+        "12:00": 198,
+        "12:30": 107,
+        "13:00": 205,
+        "13:30": 191,
+        "14:00": 359,
+        "15:30": 341,
+        "16:00": 247,
+        "16:30": 313,
+        "17:00": 285,
+        "17:30": 429,
+        "18:00": 27,
+        "18:30": 229,
+        "19:00": 400,
+        "19:30": 713,
+        "20:00": 324,
+        "20:30": 45,
+        "21:00": 45,
+        "21:30": 28,
+        "22:00": 1671,
+        "22:30": 205,
+        "23:00": 159,
+        "23:30": 170
+      },
+      "stepsByHalfHourNote": "נמדד מהגרף עם סקאלה (0–1,800): כל עמודה לפי הגובה, דיוק של כ-±15 צעדים. 19:00, 19:30, 20:00 מצילומי חצי שעה."
+    },
+    {
+      "date": "2026-11-19",
+      "weightKg": 87.4,
+      "kcal": 1043,
+      "proteinG": 152.6,
+      "carbG": 42.6,
+      "fatG": 26.5,
+      "meals": [
+        {
+          "time": "צהריים",
+          "name": "חזה עוף במחבת, 165 ג׳",
+          "kcal": 248,
+          "proteinG": 44.6,
+          "carbG": 0,
+          "fatG": 6.6,
+          "items": [
+            {
+              "cat": "meat",
+              "name": "חזה עוף במחבת (6 שפריצים לכל המנה), 165 ג׳",
+              "kcal": 248,
+              "proteinG": 44.6,
+              "carbG": 0,
+              "fatG": 6.6
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "נשקל: 415 ג׳ נא יצאו 353 ג׳ מבושל, עם 6 שפריצים (54 קק״ל). ~1.5 קק״ל לגרם מבושל. נועם אכל 165 ג׳ (57 + 158, פחות 50 שאכל מישהו אחר).",
+          "kcalLow": 226,
+          "kcalHigh": 274
+        },
+        {
+          "time": "צהריים",
+          "name": "סלט ירקות, בלי רוטב (חלק מקערה משותפת)",
+          "kcal": 60,
+          "proteinG": 3,
+          "carbG": 12,
+          "fatG": 0.5,
+          "items": [
+            {
+              "cat": "veg",
+              "name": "חסה, מלפפון, עגבנייה, פלפל, גזר, כרוב סגול, פטריות (~250 ג׳)",
+              "kcal": 60,
+              "proteinG": 3,
+              "carbG": 12,
+              "fatG": 0.5
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "הערכה מהתמונות: מקערה של ~550 ג׳ נשארו ~200 ג׳, והשאר חולק עם עוד אדם. ההערכה ~250 ג׳ לנועם (גבוה).",
+          "kcalLow": 40,
+          "kcalHigh": 90
+        },
+        {
+          "time": "ערב",
+          "name": "סלט עם קוטג׳, 2 פרוסות לחם PRO עם גבינה למריחה וצהובה",
+          "kcal": 482,
+          "proteinG": 54.2,
+          "carbG": 23.5,
+          "fatG": 17,
+          "items": [
+            {
+              "cat": "veg",
+              "name": "סלט ירקות (שארית, ~200 ג׳)",
+              "kcal": 50,
+              "proteinG": 2,
+              "carbG": 10,
+              "fatG": 0.3
+            },
+            {
+              "cat": "dairy",
+              "name": "קוטג׳ 5%, 150 ג׳",
+              "kcal": 143,
+              "proteinG": 16.5,
+              "carbG": 2,
+              "fatG": 7.5
+            },
+            {
+              "cat": "grains",
+              "name": "לחם PRO אנג׳ל, 2 פרוסות (63 ג׳)",
+              "kcal": 139,
+              "proteinG": 17.8,
+              "carbG": 8.1,
+              "fatG": 2.1
+            },
+            {
+              "cat": "dairy",
+              "name": "גבינה למריחה 5%, 45 ג׳",
+              "kcal": 43,
+              "proteinG": 2,
+              "carbG": 3.4,
+              "fatG": 2.3
+            },
+            {
+              "cat": "dairy",
+              "name": "צהובה עמק 9%, 53 ג׳",
+              "kcal": 107,
+              "proteinG": 15.9,
+              "carbG": 0,
+              "fatG": 4.8
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "לחם, גבינה למריחה וצהובה לפי תווית ומשקל שנשקל. קוטג׳ 150 ג׳ לפי ערכים מקובלים. הסלט הערכה מהתמונה.",
+          "kcalLow": 445,
+          "kcalHigh": 535
+        },
+        {
+          "time": "ערב",
+          "name": "שייק חלבון, אבקה בטעם עוגיות (תווית סגולה), 66 ג׳",
+          "kcal": 253,
+          "proteinG": 50.8,
+          "carbG": 7.1,
+          "fatG": 2.4,
+          "items": [
+            {
+              "cat": "protein",
+              "name": "אבקת חלבון עוגיות, 66 ג׳",
+              "kcal": 253,
+              "proteinG": 50.8,
+              "carbG": 7.1,
+              "fatG": 2.4
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "מהתווית: 383 קק״ל ו-77 ג׳ חלבון ל-100 ג׳. הכמות נשקלה (66 ג׳).",
+          "kcalLow": 248,
+          "kcalHigh": 258
+        }
+      ],
+      "walks": [
+        {
+          "time": "15:47",
+          "km": 2.04,
+          "minutes": 38,
+          "seconds": 25,
+          "steps": 2977,
+          "kmh": 3.1,
+          "avgHr": 85,
+          "deviceKcal": 221,
+          "climbM": 12
+        }
+      ],
+      "steps": 12919
+    },
+    {
+      "date": "2026-11-20",
+      "weightKg": 88,
+      "meals": [
+        {
+          "time": "בוקר",
+          "name": "בירה בלאונג׳, פחות מכוס (~350 מ\"ל)",
+          "kcal": 150,
+          "proteinG": 1.5,
+          "carbG": 12,
+          "fatG": 0,
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "בירה לאגר, ~350 מ\"ל",
+              "kcal": 150,
+              "proteinG": 1.5,
+              "carbG": 12,
+              "fatG": 0
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "נועם: בסך הכול פחות מכוס אחת של ~400 מ\"ל. הערכה ~350 מ\"ל, בירה בהירה ~43 קק״ל ל-100 מ\"ל.",
+          "kcalLow": 120,
+          "kcalHigh": 175
+        },
+        {
+          "time": "בוקר",
+          "name": "ביצה קשה, חלבון של ביצה נוספת, 2 מלפפונים",
+          "kcal": 125,
+          "proteinG": 11,
+          "carbG": 9,
+          "fatG": 5,
+          "items": [
+            {
+              "cat": "protein",
+              "name": "ביצה קשה שלמה",
+              "kcal": 72,
+              "proteinG": 6.3,
+              "carbG": 0.4,
+              "fatG": 5
+            },
+            {
+              "cat": "protein",
+              "name": "חלבון ביצה קשה",
+              "kcal": 17,
+              "proteinG": 3.6,
+              "carbG": 0.2,
+              "fatG": 0
+            },
+            {
+              "cat": "veg",
+              "name": "2 מלפפונים",
+              "kcal": 36,
+              "proteinG": 1.5,
+              "carbG": 8,
+              "fatG": 0
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "ערכים מקובלים לביצה (L) ולמלפפון בינוני.",
+          "kcalLow": 110,
+          "kcalHigh": 145
+        },
+        {
+          "time": "צהריים",
+          "name": "ביס עוגת גבינה קראמבל + ביס אקלר",
+          "kcal": 150,
+          "proteinG": 2.5,
+          "carbG": 15,
+          "fatG": 9,
+          "items": [
+            {
+              "cat": "sweet",
+              "name": "ביס עוגת גבינה עם קראמבל תפוחים (~25 גרם)",
+              "kcal": 90,
+              "proteinG": 1.5,
+              "carbG": 8,
+              "fatG": 5.5
+            },
+            {
+              "cat": "sweet",
+              "name": "ביס אקלר גנאש שוקולד לבן (~20 גרם)",
+              "kcal": 60,
+              "proteinG": 1,
+              "carbG": 7,
+              "fatG": 3.5
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "קונדיטוריה בסופיה, בלי תווית תזונתית. הערכה: עוגת גבינה ~360 קק״ל ל-100 גרם, אקלר ~365 ל-100 גרם. גודל הביס לא נמדד.",
+          "kcalLow": 100,
+          "kcalHigh": 200
+        }
+      ],
+      "weightNote": "נשקל ב-04:46, מוקדם מהרגיל (לפני טיסה)"
     }
-   ],
-   "meals": [
-    {
-     "time": "11:17",
-     "name": "גמבה עם קוטג' 5% ו-2 פרוסות צהובה 9%",
-     "kcal": 235,
-     "proteinG": 27,
-     "carbG": 11,
-     "fatG": 10,
-     "items": [
-      {
-       "cat": "veg",
-       "name": "גמבה",
-       "kcal": 35,
-       "proteinG": 1,
-       "carbG": 7,
-       "fatG": 0
-      },
-      {
-       "cat": "dairy",
-       "name": "קוטג׳ וצהובה",
-       "kcal": 200,
-       "proteinG": 26,
-       "carbG": 4,
-       "fatG": 10
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "התוויות של הקוטג׳ והצהובה ידועות; כמות הקוטג׳ והגמבה הערכה.",
-     "kcalLow": 200,
-     "kcalHigh": 260
-    },
-    {
-     "time": "15:50",
-     "name": "סלט מיקסי גדול בלי טחינה ולחם, 2 ביצים קטנות, בולגרית 5%, קופסת טונה במים",
-     "kcal": 605,
-     "proteinG": 62,
-     "carbG": 55,
-     "fatG": 16,
-     "items": [
-      {
-       "cat": "veg",
-       "name": "ירקות",
-       "kcal": 90,
-       "proteinG": 5,
-       "carbG": 17,
-       "fatG": 1
-      },
-      {
-       "cat": "grains",
-       "name": "בטטה, תפוח אדמה, בורגול",
-       "kcal": 145,
-       "proteinG": 4,
-       "carbG": 31,
-       "fatG": 0
-      },
-      {
-       "cat": "veg",
-       "name": "אדממה",
-       "kcal": 50,
-       "proteinG": 5,
-       "carbG": 4,
-       "fatG": 2
-      },
-      {
-       "cat": "dairy",
-       "name": "ביצים ובולגרית",
-       "kcal": 210,
-       "proteinG": 23,
-       "carbG": 3,
-       "fatG": 12
-      },
-      {
-       "cat": "meat",
-       "name": "טונה",
-       "kcal": 110,
-       "proteinG": 25,
-       "carbG": 0,
-       "fatG": 1
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "סלט מסעדה; הכמויות וגודל המנות הערכה שלי.",
-     "kcalLow": 480,
-     "kcalHigh": 700
-    },
-    {
-     "time": "17:30",
-     "name": "2 פרוסות פסטרמה הודו ביתית",
-     "kcal": 80,
-     "proteinG": 14,
-     "carbG": 1,
-     "fatG": 2,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "פסטרמה הודו",
-       "kcal": 80,
-       "proteinG": 14,
-       "carbG": 1,
-       "fatG": 2
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "משקל הפרוסות הערכה.",
-     "kcalLow": 50,
-     "kcalHigh": 90
-    },
-    {
-     "time": "ערב",
-     "name": "קיסו: 4 נאמס, פופקורן שרימפס, 10 קוביות אגאדשי טופו, נגרוני",
-     "kcal": 1570,
-     "proteinG": 60,
-     "carbG": 113,
-     "fatG": 78,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "שרימפס ומילוי הנאמס",
-       "kcal": 230,
-       "proteinG": 38,
-       "carbG": 2,
-       "fatG": 8
-      },
-      {
-       "cat": "veg",
-       "name": "טופו (~150 ג׳)",
-       "kcal": 120,
-       "proteinG": 15,
-       "carbG": 3,
-       "fatG": 7
-      },
-      {
-       "cat": "grains",
-       "name": "ציפוי ועטיפות (בצק, עמילן)",
-       "kcal": 330,
-       "proteinG": 7,
-       "carbG": 72,
-       "fatG": 1
-      },
-      {
-       "cat": "fat",
-       "name": "שמן טיגון ורטבים (מיונז חריף, צ׳ילי מתוק)",
-       "kcal": 690,
-       "proteinG": 0,
-       "carbG": 28,
-       "fatG": 62
-      },
-      {
-       "cat": "alcohol",
-       "name": "נגרוני",
-       "kcal": 200,
-       "proteinG": 0,
-       "carbG": 8,
-       "fatG": 0
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "מנות מסעדה בלי ערכים; הפירוק לשרימפס, ציפוי ושמן הוא ניחוש שלי.",
-     "kcalLow": 1200,
-     "kcalHigh": 1800
-    }
-   ],
-   "kcal": 2490,
-   "proteinG": 163,
-   "carbG": 180,
-   "fatG": 106,
-   "steps": 11870
-  },
-  {
-   "date": "2026-11-03",
-   "weightKg": 90.8,
-   "walks": [
-    {
-     "minutes": 35,
-     "seconds": 7,
-     "steps": 3691,
-     "kmh": 4.3,
-     "avgHr": 97,
-     "deviceKcal": 319,
-     "climbM": 15
-    }
-   ],
-   "meals": [
-    {
-     "time": "15:30",
-     "name": "סלט: ירקות, 145 ג׳ קוטג׳, 101 ג׳ בולגרית 5%, 154 ג׳ שייטל, שמן בתרסיס",
-     "kcal": 764,
-     "proteinG": 93,
-     "carbG": 52,
-     "fatG": 24,
-     "items": [
-      {
-       "cat": "veg",
-       "name": "ירקות",
-       "kcal": 225,
-       "proteinG": 15,
-       "carbG": 45,
-       "fatG": 2
-      },
-      {
-       "cat": "dairy",
-       "name": "קוטג׳ ובולגרית",
-       "kcal": 255,
-       "proteinG": 32,
-       "carbG": 7,
-       "fatG": 12
-      },
-      {
-       "cat": "meat",
-       "name": "שייטל",
-       "kcal": 257,
-       "proteinG": 46,
-       "carbG": 0,
-       "fatG": 7
-      },
-      {
-       "cat": "fat",
-       "name": "3 שפריצים שמן (9 קל׳ לשפריץ)",
-       "kcal": 27,
-       "proteinG": 0,
-       "carbG": 0,
-       "fatG": 3
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "הקוטג׳ והבולגרית לפי תווית ושקילה; כמה שמן ספג השניצל לא ידוע.",
-     "kcalLow": 720,
-     "kcalHigh": 860
-    },
-    {
-     "time": "ערב",
-     "name": "מנגל: 150 ג׳ נתח קצבים, חצי טי-בון, כ-455 ג׳ נא אנטריקוט",
-     "kcal": 1810,
-     "proteinG": 139,
-     "carbG": 0,
-     "fatG": 139,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "נתח קצבים, טי-בון, אנטריקוט",
-       "kcal": 1810,
-       "proteinG": 139,
-       "carbG": 0,
-       "fatG": 139
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "משקלי הבשר מהאריזות; כמה מזה נאכל הערכה.",
-     "kcalLow": 1550,
-     "kcalHigh": 2000
-    },
-    {
-     "time": "ערב",
-     "name": "250 מ״ל ערק",
-     "kcal": 555,
-     "proteinG": 0,
-     "carbG": 0,
-     "fatG": 0,
-     "items": [
-      {
-       "cat": "alcohol",
-       "name": "ערק",
-       "kcal": 555,
-       "proteinG": 0,
-       "carbG": 0,
-       "fatG": 0
-      }
-     ],
-     "basis": "exact",
-     "basisNote": "כמות ידועה (250 מ״ל) וערך סטנדרטי.",
-     "kcalLow": 540,
-     "kcalHigh": 570
-    }
-   ],
-   "kcal": 3129,
-   "proteinG": 232,
-   "carbG": 52,
-   "fatG": 163,
-   "steps": 8627
-  },
-  {
-   "date": "2026-11-04",
-   "weightKg": 91.2,
-   "walks": [
-    {
-     "minutes": 24,
-     "seconds": 27,
-     "steps": 2555,
-     "km": 1.8,
-     "kmh": 4.4,
-     "avgHr": 94,
-     "deviceKcal": 163,
-     "climbM": 16
-    },
-    {
-     "minutes": 19,
-     "seconds": 33,
-     "steps": 1922,
-     "km": 1.38,
-     "kmh": 4.2,
-     "avgHr": 95,
-     "deviceKcal": 132,
-     "climbM": 8
-    }
-   ],
-   "meals": [
-    {
-     "time": "14:29",
-     "name": "149 ג׳ כבד עוף עם בצל מטוגן",
-     "kcal": 275,
-     "proteinG": 30,
-     "carbG": 6,
-     "fatG": 14,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "כבד עוף",
-       "kcal": 195,
-       "proteinG": 29,
-       "carbG": 1,
-       "fatG": 8
-      },
-      {
-       "cat": "fat",
-       "name": "בצל מטוגן",
-       "kcal": 80,
-       "proteinG": 1,
-       "carbG": 5,
-       "fatG": 6
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "המשקל נשקל; כמה שמן בבצל ובכבד לא ידוע.",
-     "kcalLow": 230,
-     "kcalHigh": 340
-    },
-    {
-     "time": "14:30",
-     "name": "106 ג׳ קציצות בשר (2)",
-     "kcal": 255,
-     "proteinG": 20,
-     "carbG": 6,
-     "fatG": 17,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "קציצות בשר",
-       "kcal": 255,
-       "proteinG": 20,
-       "carbG": 6,
-       "fatG": 17
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "המשקל נשקל; אחוז השומן בבשר, הלחם בתערובת והטיגון לא ידועים.",
-     "kcalLow": 200,
-     "kcalHigh": 310
-    },
-    {
-     "time": "14:32",
-     "name": "152 ג׳ פתיתים מבושלים",
-     "kcal": 290,
-     "proteinG": 8,
-     "carbG": 50,
-     "fatG": 6,
-     "items": [
-      {
-       "cat": "grains",
-       "name": "פתיתים",
-       "kcal": 290,
-       "proteinG": 8,
-       "carbG": 50,
-       "fatG": 6
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "המשקל נשקל; כמה שמן בפתיתים לא ידוע.",
-     "kcalLow": 250,
-     "kcalHigh": 330
-    },
-    {
-     "time": "14:45",
-     "name": "עוד 137 ג׳ כבד עוף עם בצל",
-     "kcal": 253,
-     "proteinG": 28,
-     "carbG": 5,
-     "fatG": 13,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "כבד עוף",
-       "kcal": 180,
-       "proteinG": 27,
-       "carbG": 1,
-       "fatG": 7
-      },
-      {
-       "cat": "fat",
-       "name": "בצל מטוגן",
-       "kcal": 73,
-       "proteinG": 1,
-       "carbG": 4,
-       "fatG": 6
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "המשקל נשקל; כמה שמן בבצל ובכבד לא ידוע.",
-     "kcalLow": 210,
-     "kcalHigh": 315
-    },
-    {
-     "time": "21:41",
-     "name": "כ-60 ג׳ חזה עוף (הערכה שלך), 2 שפריצים שמן, כף פירורי לחם, כף אורז, כף פתיתים",
-     "kcal": 227,
-     "proteinG": 22,
-     "carbG": 21,
-     "fatG": 5,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "חזה עוף",
-       "kcal": 100,
-       "proteinG": 19,
-       "carbG": 0,
-       "fatG": 2
-      },
-      {
-       "cat": "fat",
-       "name": "2 שפריצים שמן (9 קל׳ לשפריץ)",
-       "kcal": 18,
-       "proteinG": 0,
-       "carbG": 0,
-       "fatG": 2
-      },
-      {
-       "cat": "grains",
-       "name": "פירורי לחם, אורז, פתיתים",
-       "kcal": 109,
-       "proteinG": 3,
-       "carbG": 21,
-       "fatG": 1
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "כמות החזה הערכה שלך, לא שקילה; הכפות והשמן הערכה.",
-     "kcalLow": 160,
-     "kcalHigh": 300
-    },
-    {
-     "time": "22:12",
-     "name": "58 ג׳ אבקת חלבון",
-     "kcal": 219,
-     "proteinG": 42,
-     "carbG": 6,
-     "fatG": 2,
-     "items": [
-      {
-       "cat": "protein",
-       "name": "אבקת חלבון",
-       "kcal": 219,
-       "proteinG": 42,
-       "carbG": 6,
-       "fatG": 2
-      }
-     ],
-     "basis": "exact",
-     "basisNote": "שקילה ותווית.",
-     "kcalLow": 215,
-     "kcalHigh": 225
-    }
-   ],
-   "kcal": 1519,
-   "proteinG": 150,
-   "carbG": 94,
-   "fatG": 57,
-   "steps": 8607
-  },
-  {
-   "date": "2026-11-05",
-   "weightKg": 90,
-   "walks": [
-    {
-     "minutes": 23,
-     "seconds": 9,
-     "steps": 2420,
-     "kmh": 4.4,
-     "avgHr": 95,
-     "deviceKcal": 140,
-     "climbM": 8
-    },
-    {
-     "type": "אליפטיקל",
-     "minutes": 31,
-     "seconds": 19,
-     "totalMinutes": 51,
-     "totalSeconds": 19,
-     "avgHr": 96,
-     "maxHr": 111,
-     "deviceKcal": 202,
-     "deviceTotalKcal": 228
-    }
-   ],
-   "meals": [
-    {
-     "time": "10:37",
-     "name": "גביע GO של תנובה בטעם תות (200 ג׳)",
-     "kcal": 190,
-     "proteinG": 20,
-     "carbG": 12,
-     "fatG": 6,
-     "items": [
-      {
-       "cat": "dairy",
-       "name": "GO",
-       "kcal": 190,
-       "proteinG": 20,
-       "carbG": 12,
-       "fatG": 6
-      }
-     ],
-     "basis": "exact",
-     "basisNote": "תווית ומנה ארוזה.",
-     "kcalLow": 190,
-     "kcalHigh": 190
-    },
-    {
-     "time": "14:57",
-     "name": "צ׳ומה: חזה עוף על האש, אפונה ברוטב, קוסקוס עם ירקות ומרק",
-     "kcal": 805,
-     "proteinG": 70,
-     "carbG": 83,
-     "fatG": 21,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "חזה עוף",
-       "kcal": 315,
-       "proteinG": 52,
-       "carbG": 0,
-       "fatG": 12
-      },
-      {
-       "cat": "veg",
-       "name": "אפונה",
-       "kcal": 190,
-       "proteinG": 9,
-       "carbG": 25,
-       "fatG": 6
-      },
-      {
-       "cat": "grains",
-       "name": "קוסקוס",
-       "kcal": 300,
-       "proteinG": 9,
-       "carbG": 58,
-       "fatG": 3
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "מגש מסעדה; הערכה מתמונה.",
-     "kcalLow": 600,
-     "kcalHigh": 900
-    },
-    {
-     "time": "15:03",
-     "name": "סלט כרוב לבן וגזר",
-     "kcal": 30,
-     "proteinG": 1,
-     "carbG": 6,
-     "fatG": 0,
-     "items": [
-      {
-       "cat": "veg",
-       "name": "כרוב",
-       "kcal": 30,
-       "proteinG": 1,
-       "carbG": 6,
-       "fatG": 0
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "הערכה מתמונה.",
-     "kcalLow": 20,
-     "kcalHigh": 50
-    },
-    {
-     "time": "18:42",
-     "name": "77 ג׳ אבקת חלבון",
-     "kcal": 295,
-     "proteinG": 59,
-     "carbG": 8,
-     "fatG": 3,
-     "items": [
-      {
-       "cat": "protein",
-       "name": "אבקת חלבון",
-       "kcal": 295,
-       "proteinG": 59,
-       "carbG": 8,
-       "fatG": 3
-      }
-     ],
-     "basis": "exact",
-     "basisNote": "שקילה ותווית.",
-     "kcalLow": 290,
-     "kcalHigh": 300
-    },
-    {
-     "time": "ערב",
-     "name": "פוקר: 150 מ״ל וודקה, 2 חופנים קשיו ובוטנים, גלידונית, וופל לימון, 2 חופנים סניידרס",
-     "kcal": 1070,
-     "proteinG": 21,
-     "carbG": 56,
-     "fatG": 49,
-     "items": [
-      {
-       "cat": "alcohol",
-       "name": "וודקה",
-       "kcal": 330,
-       "proteinG": 0,
-       "carbG": 0,
-       "fatG": 0
-      },
-      {
-       "cat": "snacks",
-       "name": "אגוזים, סניידרס, גלידונית, וופל",
-       "kcal": 740,
-       "proteinG": 21,
-       "carbG": 56,
-       "fatG": 49
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "חופנים ונשנושים בלי שקילה; הערכה.",
-     "kcalLow": 750,
-     "kcalHigh": 1250
-    },
-    {
-     "time": "ערב",
-     "name": "מרווח ביטחון לערב הפוקר",
-     "kcal": 160,
-     "proteinG": 0,
-     "carbG": 8,
-     "fatG": 14,
-     "items": [
-      {
-       "cat": "snacks",
-       "name": "מרווח ביטחון",
-       "kcal": 160,
-       "proteinG": 0,
-       "carbG": 8,
-       "fatG": 14
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "מרווח שהוספתי בגלל אי־ודאות.",
-     "kcalLow": 0,
-     "kcalHigh": 160
-    }
-   ],
-   "kcal": 2550,
-   "proteinG": 171,
-   "carbG": 173,
-   "fatG": 93,
-   "steps": 12622
-  },
-  {
-   "date": "2026-11-06",
-   "weightKg": 89.6,
-   "walks": [
-    {
-     "type": "אליפטיקל",
-     "minutes": 45,
-     "seconds": 15,
-     "steps": 3531,
-     "km": 11.08,
-     "avgHr": 95,
-     "maxHr": 114,
-     "deviceKcal": 298,
-     "machineKcal": 242
-    }
-   ],
-   "meals": [
-    {
-     "time": "צהריים",
-     "name": "פלטת נקניקים: פסטרמה, פרושוטו, כל הסלמי, 3 פרוסות לחם, חצי רוטב, מלפפונים",
-     "kcal": 1210,
-     "proteinG": 77,
-     "carbG": 82,
-     "fatG": 59,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "פסטרמה, פרושוטו, סלמי",
-       "kcal": 750,
-       "proteinG": 64,
-       "carbG": 4,
-       "fatG": 51
-      },
-      {
-       "cat": "grains",
-       "name": "3 פרוסות לחם",
-       "kcal": 390,
-       "proteinG": 13,
-       "carbG": 75,
-       "fatG": 2
-      },
-      {
-       "cat": "fat",
-       "name": "רוטב ומלפפונים",
-       "kcal": 70,
-       "proteinG": 0,
-       "carbG": 3,
-       "fatG": 6
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "פלטת מסעדה; הערכה מתמונה.",
-     "kcalLow": 900,
-     "kcalHigh": 1350
-    },
-    {
-     "time": "צהריים",
-     "name": "גבינות: חצי מהגבינות, עגבניות, חצי מהזיתים, בלי לחם וממרחים",
-     "kcal": 545,
-     "proteinG": 29,
-     "carbG": 10,
-     "fatG": 42,
-     "items": [
-      {
-       "cat": "dairy",
-       "name": "גבינות",
-       "kcal": 440,
-       "proteinG": 27,
-       "carbG": 1,
-       "fatG": 36
-      },
-      {
-       "cat": "veg",
-       "name": "עגבניות",
-       "kcal": 40,
-       "proteinG": 2,
-       "carbG": 8,
-       "fatG": 0
-      },
-      {
-       "cat": "fat",
-       "name": "זיתים",
-       "kcal": 65,
-       "proteinG": 0,
-       "carbG": 1,
-       "fatG": 6
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "פלטת מסעדה; הערכה מתמונה.",
-     "kcalLow": 400,
-     "kcalHigh": 650
-    },
-    {
-     "time": "צהריים",
-     "name": "פלטת נקניקים נוספת: פסטרמה, פרושוטו, 4 עיגולי סלמי",
-     "kcal": 500,
-     "proteinG": 51,
-     "carbG": 2,
-     "fatG": 30,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "פסטרמה, פרושוטו, סלמי",
-       "kcal": 500,
-       "proteinG": 51,
-       "carbG": 2,
-       "fatG": 30
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "פלטת מסעדה; הערכה מתמונה.",
-     "kcalLow": 380,
-     "kcalHigh": 580
-    },
-    {
-     "time": "צהריים",
-     "name": "2 כוסות רוזה, 3 כוסות יין אדום",
-     "kcal": 625,
-     "proteinG": 0,
-     "carbG": 20,
-     "fatG": 0,
-     "items": [
-      {
-       "cat": "alcohol",
-       "name": "יין",
-       "kcal": 625,
-       "proteinG": 0,
-       "carbG": 20,
-       "fatG": 0
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "מספר הכוסות ידוע; גודל הכוס הערכה.",
-     "kcalLow": 550,
-     "kcalHigh": 750
-    }
-   ],
-   "kcal": 2880,
-   "proteinG": 157,
-   "carbG": 114,
-   "fatG": 131,
-   "steps": 9344
-  },
-  {
-   "date": "2026-11-07",
-   "weightKg": 90.1,
-   "meals": [
-    {
-     "time": "13:16",
-     "name": "נורדר: כבד קצוץ מלא, כ-60% קממבר וסלט ביצים, חצי סלסלת לחמים וחמאה, נגרוני",
-     "items": [
-      {
-       "cat": "dairy",
-       "name": "קממבר עם ריבת פלפלים ופירורי אגוזים, כ-60%",
-       "kcal": 290,
-       "proteinG": 13,
-       "carbG": 13,
-       "fatG": 21
-      },
-      {
-       "cat": "meat",
-       "name": "כבד קצוץ, מלא",
-       "kcal": 380,
-       "proteinG": 20,
-       "carbG": 8,
-       "fatG": 30
-      },
-      {
-       "cat": "dairy",
-       "name": "סלט ביצים, כ-60%",
-       "kcal": 240,
-       "proteinG": 10,
-       "carbG": 2,
-       "fatG": 22
-      },
-      {
-       "cat": "grains",
-       "name": "חצי סלסלת לחמים",
-       "kcal": 335,
-       "proteinG": 11,
-       "carbG": 63,
-       "fatG": 4
-      },
-      {
-       "cat": "fat",
-       "name": "חצי מהחמאה",
-       "kcal": 145,
-       "proteinG": 0,
-       "carbG": 0,
-       "fatG": 16
-      },
-      {
-       "cat": "alcohol",
-       "name": "נגרוני",
-       "kcal": 200,
-       "proteinG": 0,
-       "carbG": 8,
-       "fatG": 0
-      }
-     ],
-     "kcal": 1590,
-     "proteinG": 54,
-     "carbG": 94,
-     "fatG": 93,
-     "basis": "estimate",
-     "basisNote": "מנות מסעדה; הכמויות הערכה מתמונות.",
-     "kcalLow": 1250,
-     "kcalHigh": 1750
-    },
-    {
-     "time": "13:35",
-     "name": "נורדר: כ-30% ממקושקשת על לחם דגנים, אבוקדו, גרעינים, הולנדייז",
-     "items": [
-      {
-       "cat": "grains",
-       "name": "פרוסת לחם דגנים עבה",
-       "kcal": 99,
-       "proteinG": 4,
-       "carbG": 14,
-       "fatG": 3
-      },
-      {
-       "cat": "dairy",
-       "name": "ביצים מקושקשות",
-       "kcal": 81,
-       "proteinG": 5,
-       "carbG": 1,
-       "fatG": 6
-      },
-      {
-       "cat": "veg",
-       "name": "אבוקדו",
-       "kcal": 20,
-       "proteinG": 0,
-       "carbG": 1,
-       "fatG": 2
-      },
-      {
-       "cat": "snacks",
-       "name": "גרעינים",
-       "kcal": 9,
-       "proteinG": 0,
-       "carbG": 0,
-       "fatG": 1
-      },
-      {
-       "cat": "fat",
-       "name": "רוטב הולנדייז",
-       "kcal": 60,
-       "proteinG": 0,
-       "carbG": 1,
-       "fatG": 6
-      }
-     ],
-     "kcal": 269,
-     "proteinG": 9,
-     "carbG": 17,
-     "fatG": 18,
-     "basis": "estimate",
-     "basisNote": "מנת מסעדה; הערכה מתמונה.",
-     "kcalLow": 200,
-     "kcalHigh": 320
-    },
-    {
-     "time": "14:21",
-     "name": "קוקטייל אולד פאשן",
-     "items": [
-      {
-       "cat": "alcohol",
-       "name": "אולד פאשן",
-       "kcal": 180,
-       "proteinG": 0,
-       "carbG": 10,
-       "fatG": 0
-      }
-     ],
-     "kcal": 180,
-     "proteinG": 0,
-     "carbG": 10,
-     "fatG": 0,
-     "basis": "estimate",
-     "basisNote": "קוקטייל; ערך טיפוסי.",
-     "kcalLow": 150,
-     "kcalHigh": 220
-    },
-    {
-     "time": "20:00",
-     "name": "ערב גבינות: רבע מהגבינות הקשות, שישית לחם וגבינת שמנת, ירקות",
-     "kcal": 1071,
-     "proteinG": 54,
-     "carbG": 68,
-     "fatG": 67,
-     "items": [
-      {
-       "cat": "dairy",
-       "name": "גאודה עיזים כמהין 43 ג׳ (רבע)",
-       "kcal": 164,
-       "proteinG": 11,
-       "carbG": 0,
-       "fatG": 13
-      },
-      {
-       "cat": "dairy",
-       "name": "גאודה עיזים הולנדית 47 ג׳ (רבע)",
-       "kcal": 169,
-       "proteinG": 12,
-       "carbG": 0,
-       "fatG": 13
-      },
-      {
-       "cat": "dairy",
-       "name": "מנצ׳גו שום 43 ג׳ (רבע)",
-       "kcal": 172,
-       "proteinG": 11,
-       "carbG": 0,
-       "fatG": 14
-      },
-      {
-       "cat": "dairy",
-       "name": "מונטניולו 34 ג׳ (רבע)",
-       "kcal": 141,
-       "proteinG": 5,
-       "carbG": 0,
-       "fatG": 13.5
-      },
-      {
-       "cat": "grains",
-       "name": "לחם איטלקי 67 ג׳ (שישית כיכר)",
-       "kcal": 178,
-       "proteinG": 4.5,
-       "carbG": 33,
-       "fatG": 3.5
-      },
-      {
-       "cat": "dairy",
-       "name": "גבינת שמנת כמהין ~33 ג׳ (שישית גביע, הערכה)",
-       "kcal": 84,
-       "proteinG": 1.5,
-       "carbG": 1,
-       "fatG": 8
-      },
-      {
-       "cat": "veg",
-       "name": "15 עגבניות שרי",
-       "kcal": 41,
-       "proteinG": 2,
-       "carbG": 9,
-       "fatG": 0.5
-      },
-      {
-       "cat": "veg",
-       "name": "2 מלפפונים",
-       "kcal": 45,
-       "proteinG": 2,
-       "carbG": 10,
-       "fatG": 0.5
-      },
-      {
-       "cat": "veg",
-       "name": "גמבה אחת",
-       "kcal": 50,
-       "proteinG": 1.5,
-       "carbG": 11,
-       "fatG": 0.5
-      },
-      {
-       "cat": "veg",
-       "name": "6 פטריות (~120 ג׳)",
-       "kcal": 27,
-       "proteinG": 3.5,
-       "carbG": 4,
-       "fatG": 0.5
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "משקלי האריזות ידועים; החלק שנאכל (רבע/שישית) הערכה שלך.",
-     "kcalLow": 850,
-     "kcalHigh": 1250
-    },
-    {
-     "time": "20:30",
-     "name": "¾ בקבוק יין אדום",
-     "kcal": 490,
-     "proteinG": 0,
-     "carbG": 15,
-     "fatG": 0,
-     "items": [
-      {
-       "cat": "alcohol",
-       "name": "¾ בקבוק יין אדום (~560 מ״ל)",
-       "kcal": 490,
-       "proteinG": 0,
-       "carbG": 15,
-       "fatG": 0
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "¾ בקבוק ידוע; ערך יין סטנדרטי.",
-     "kcalLow": 450,
-     "kcalHigh": 530
-    }
-   ],
-   "walks": [
-    {
-     "type": "אליפטיקל",
-     "minutes": 60,
-     "seconds": 2,
-     "avgHr": 107,
-     "maxHr": 128,
-     "deviceKcal": 413,
-     "km": 14.97,
-     "machineKcal": 329
-    }
-   ],
-   "kcal": 3600,
-   "proteinG": 117,
-   "carbG": 204,
-   "fatG": 178,
-   "steps": 11219
-  },
-  {
-   "date": "2026-11-08",
-   "weightKg": 90.7,
-   "meals": [
-    {
-     "time": "10:45",
-     "name": "בננה",
-     "kcal": 110,
-     "proteinG": 1.3,
-     "carbG": 28,
-     "fatG": 0.4,
-     "items": [
-      {
-       "cat": "veg",
-       "name": "בננה בינונית",
-       "kcal": 110,
-       "proteinG": 1.3,
-       "carbG": 28,
-       "fatG": 0.4
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "פרי ידוע; הגודל הערכה.",
-     "kcalLow": 90,
-     "kcalHigh": 120
-    },
-    {
-     "time": "11:05",
-     "name": "יוגורט חלבון, פסטרמה הודו ו-3 מלפפונים",
-     "kcal": 278,
-     "proteinG": 36.5,
-     "carbG": 22.3,
-     "fatG": 5.5,
-     "items": [
-      {
-       "cat": "dairy",
-       "name": "יוגורט GO טבעי 200 ג׳ (תווית)",
-       "kcal": 171,
-       "proteinG": 25,
-       "carbG": 8.8,
-       "fatG": 4
-      },
-      {
-       "cat": "meat",
-       "name": "2 פרוסות פסטרמה הודו (~45 ג׳)",
-       "kcal": 50,
-       "proteinG": 9,
-       "carbG": 1.5,
-       "fatG": 1
-      },
-      {
-       "cat": "veg",
-       "name": "3 מלפפונים",
-       "kcal": 57,
-       "proteinG": 2.5,
-       "carbG": 12,
-       "fatG": 0.5
-      }
-     ],
-     "basis": "exact",
-     "basisNote": "מוצרים ארוזים ומנות ידועות; טעות קטנה.",
-     "kcalLow": 260,
-     "kcalHigh": 300
-    },
-    {
-     "time": "13:45",
-     "name": "סלט בהרכבה 1000 מ״ל עם פטה, בלי רוטב ובלי לחם",
-     "kcal": 495,
-     "proteinG": 35.5,
-     "carbG": 74,
-     "fatG": 5.7,
-     "items": [
-      {
-       "cat": "grains",
-       "name": "קינואה",
-       "kcal": 70,
-       "proteinG": 2.5,
-       "carbG": 12,
-       "fatG": 1
-      },
-      {
-       "cat": "veg",
-       "name": "עדשים שחורות",
-       "kcal": 70,
-       "proteinG": 5,
-       "carbG": 11,
-       "fatG": 0.3
-      },
-      {
-       "cat": "veg",
-       "name": "עדשים ירוקות",
-       "kcal": 70,
-       "proteinG": 5,
-       "carbG": 11,
-       "fatG": 0.3
-      },
-      {
-       "cat": "veg",
-       "name": "שעועית מאש",
-       "kcal": 65,
-       "proteinG": 4.5,
-       "carbG": 11,
-       "fatG": 0.3
-      },
-      {
-       "cat": "veg",
-       "name": "אפונה ירוקה",
-       "kcal": 50,
-       "proteinG": 3.5,
-       "carbG": 8,
-       "fatG": 0.3
-      },
-      {
-       "cat": "veg",
-       "name": "סלק מבושל",
-       "kcal": 25,
-       "proteinG": 1,
-       "carbG": 5,
-       "fatG": 0
-      },
-      {
-       "cat": "veg",
-       "name": "ירקות קלים: עלה בייבי, עגבניות, מלפפון, גמבה, נבטים, שעועית ירוקה, כרוב לבן וסגול, פטריות, צנון",
-       "kcal": 90,
-       "proteinG": 6,
-       "carbG": 15,
-       "fatG": 1
-      },
-      {
-       "cat": "dairy",
-       "name": "פטה 5%",
-       "kcal": 55,
-       "proteinG": 8,
-       "carbG": 1,
-       "fatG": 2.5
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "סלט מסעדה בלי משקלים; הערכה גבוהה בכוונה.",
-     "kcalLow": 360,
-     "kcalHigh": 520
-    },
-    {
-     "time": "14:30",
-     "name": "טונה במים וחצי קוטג׳ לסלט",
-     "kcal": 240,
-     "proteinG": 38.8,
-     "carbG": 3.8,
-     "fatG": 7.8,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "קופסת טונה במים, מסוננת (~110 ג׳)",
-       "kcal": 120,
-       "proteinG": 26,
-       "carbG": 0,
-       "fatG": 1.5
-      },
-      {
-       "cat": "dairy",
-       "name": "חצי קוטג׳ 5% (125 ג׳)",
-       "kcal": 120,
-       "proteinG": 12.8,
-       "carbG": 3.8,
-       "fatG": 6.3
-      }
-     ],
-     "basis": "exact",
-     "basisNote": "קופסה וחצי גביע; ערכי תווית.",
-     "kcalLow": 225,
-     "kcalHigh": 255
-    },
-    {
-     "time": "15:10",
-     "name": "2 ביסים של לחם",
-     "kcal": 80,
-     "proteinG": 2.7,
-     "carbG": 15,
-     "fatG": 1,
-     "items": [
-      {
-       "cat": "grains",
-       "name": "2 ביסים לחם מהסלט (~30 ג׳)",
-       "kcal": 80,
-       "proteinG": 2.7,
-       "carbG": 15,
-       "fatG": 1
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "גודל הביסים הערכה.",
-     "kcalLow": 50,
-     "kcalHigh": 90
-    },
-    {
-     "time": "21:05",
-     "name": "10 ענבים",
-     "kcal": 40,
-     "proteinG": 0.4,
-     "carbG": 10,
-     "fatG": 0.1,
-     "items": [
-      {
-       "cat": "veg",
-       "name": "10 ענבים (~55 ג׳)",
-       "kcal": 40,
-       "proteinG": 0.4,
-       "carbG": 10,
-       "fatG": 0.1
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "מספר ידוע; הגודל הערכה.",
-     "kcalLow": 30,
-     "kcalHigh": 50
-    },
-    {
-     "time": "22:40",
-     "name": "שייק חלבון עוגיות 45 ג׳",
-     "kcal": 172,
-     "proteinG": 34.7,
-     "carbG": 4.8,
-     "fatG": 1.6,
-     "items": [
-      {
-       "cat": "protein",
-       "name": "אבקת חלבון עוגיות 45 ג׳ (383/77 ל-100 ג׳)",
-       "kcal": 172,
-       "proteinG": 34.7,
-       "carbG": 4.8,
-       "fatG": 1.6
-      }
-     ],
-     "basis": "exact",
-     "basisNote": "45 ג׳ ותווית.",
-     "kcalLow": 170,
-     "kcalHigh": 175
-    },
-    {
-     "time": "22:50",
-     "name": "חביתה מביצה אחת",
-     "kcal": 102,
-     "proteinG": 6.3,
-     "carbG": 0.5,
-     "fatG": 8,
-     "items": [
-      {
-       "cat": "dairy",
-       "name": "ביצה אחת",
-       "kcal": 75,
-       "proteinG": 6.3,
-       "carbG": 0.5,
-       "fatG": 5
-      },
-      {
-       "cat": "fat",
-       "name": "3 שפריצים שמן (9 קל׳ לשפריץ)",
-       "kcal": 27,
-       "proteinG": 0,
-       "carbG": 0,
-       "fatG": 3
-      }
-     ],
-     "basis": "exact",
-     "basisNote": "ביצה בגודל רגיל; השמן לפי 9 קל׳ לשפריץ.",
-     "kcalLow": 95,
-     "kcalHigh": 110
-    }
-   ],
-   "walks": [
-    {
-     "type": "אליפטיקל",
-     "minutes": 19,
-     "seconds": 16,
-     "avgHr": 95,
-     "maxHr": 108,
-     "deviceKcal": 124
-    }
-   ],
-   "kcal": 1517,
-   "proteinG": 156,
-   "carbG": 158,
-   "fatG": 30,
-   "steps": 10822
-  },
-  {
-   "date": "2026-11-09",
-   "weightKg": 89.1,
-   "meals": [
-    {
-     "time": "12:45",
-     "name": "לברק בפתיתים, 168 ג׳ (כמעט רק דג)",
-     "kcal": 225,
-     "proteinG": 34.4,
-     "carbG": 5.8,
-     "fatG": 7.6,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "לברק מבושל ~140 ג׳",
-       "kcal": 193,
-       "proteinG": 33.5,
-       "carbG": 0,
-       "fatG": 7
-      },
-      {
-       "cat": "grains",
-       "name": "פתיתים ורוטב שנדבקו ~28 ג׳",
-       "kcal": 32,
-       "proteinG": 0.9,
-       "carbG": 5.8,
-       "fatG": 0.6
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "כל רכיבי הסיר נשקלו ולפי תוויות; הצלחת נשקלה; רק היחס דג/פתיתים בצלחת הערכה.",
-     "kcalLow": 205,
-     "kcalHigh": 250
-    },
-    {
-     "time": "12:50",
-     "name": "עוד מנה לברק בפתיתים, 242 ג׳ (בעיקר פתיתים)",
-     "kcal": 292,
-     "proteinG": 18.3,
-     "carbG": 40,
-     "fatG": 4.6,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "לברק מבושל ~50 ג׳",
-       "kcal": 69,
-       "proteinG": 12,
-       "carbG": 0,
-       "fatG": 2.5
-      },
-      {
-       "cat": "grains",
-       "name": "פתיתים ברוטב עגבניות ~192 ג׳",
-       "kcal": 223,
-       "proteinG": 6.3,
-       "carbG": 40,
-       "fatG": 2.1
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "כל רכיבי הסיר נשקלו ולפי תוויות; הצלחת נשקלה; רק היחס דג/פתיתים בצלחת הערכה.",
-     "kcalLow": 265,
-     "kcalHigh": 320
-    },
-    {
-     "time": "17:50",
-     "name": "שייק חלבון עוגיות 55 ג׳",
-     "kcal": 211,
-     "proteinG": 42.4,
-     "carbG": 5.9,
-     "fatG": 2,
-     "items": [
-      {
-       "cat": "protein",
-       "name": "אבקת חלבון עוגיות 55 ג׳ (383/77 ל-100 ג׳)",
-       "kcal": 211,
-       "proteinG": 42.4,
-       "carbG": 5.9,
-       "fatG": 2
-      }
-     ],
-     "basis": "exact",
-     "basisNote": "55 ג׳ ותווית.",
-     "kcalLow": 208,
-     "kcalHigh": 214
-    },
-    {
-     "time": "18:40",
-     "name": "לברק בפתיתים, 310 ג׳ (חצי־חצי)",
-     "kcal": 394,
-     "proteinG": 42.3,
-     "carbG": 32.6,
-     "fatG": 9.5,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "לברק מבושל ~155 ג׳",
-       "kcal": 214,
-       "proteinG": 37.2,
-       "carbG": 0,
-       "fatG": 7.8
-      },
-      {
-       "cat": "grains",
-       "name": "פתיתים ברוטב עגבניות ~155 ג׳",
-       "kcal": 180,
-       "proteinG": 5.1,
-       "carbG": 32.6,
-       "fatG": 1.7
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "כל רכיבי הסיר נשקלו ולפי תוויות; הצלחת נשקלה; החלוקה חצי־חצי לפי מה שאמרת.",
-     "kcalLow": 355,
-     "kcalHigh": 430
-    },
-    {
-     "time": "18:50",
-     "name": "עוד לברק בפתיתים, 180 ג׳",
-     "kcal": 220,
-     "proteinG": 16.5,
-     "carbG": 27,
-     "fatG": 4,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "לברק מבושל ~51 ג׳ (לפי ממוצע הסיר)",
-       "kcal": 70,
-       "proteinG": 12.2,
-       "carbG": 0,
-       "fatG": 2.6
-      },
-      {
-       "cat": "grains",
-       "name": "פתיתים ברוטב עגבניות ~129 ג׳",
-       "kcal": 150,
-       "proteinG": 4.3,
-       "carbG": 27,
-       "fatG": 1.4
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "כל רכיבי הסיר נשקלו; הצלחת נשקלה; החלוקה דג/פתיתים לפי ממוצע הסיר.",
-     "kcalLow": 205,
-     "kcalHigh": 250
-    },
-    {
-     "time": "ערב",
-     "name": "ירקות ו-2 כפות מהתבשיל",
-     "kcal": 125,
-     "proteinG": 7.7,
-     "carbG": 20,
-     "fatG": 1.7,
-     "items": [
-      {
-       "cat": "veg",
-       "name": "6 עגבניות שרי",
-       "kcal": 16,
-       "proteinG": 0.8,
-       "carbG": 3.5,
-       "fatG": 0.2
-      },
-      {
-       "cat": "veg",
-       "name": "חצי מלפפון",
-       "kcal": 11,
-       "proteinG": 0.5,
-       "carbG": 2.5,
-       "fatG": 0.1
-      },
-      {
-       "cat": "veg",
-       "name": "חצי גמבה",
-       "kcal": 25,
-       "proteinG": 0.9,
-       "carbG": 5.5,
-       "fatG": 0.2
-      },
-      {
-       "cat": "grains",
-       "name": "2 כפות לברק בפתיתים (~60 ג׳, לפי ממוצע הסיר)",
-       "kcal": 73,
-       "proteinG": 5.5,
-       "carbG": 8.5,
-       "fatG": 1.2
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "גודל הירקות והכפות הערכה.",
-     "kcalLow": 95,
-     "kcalHigh": 150
-    }
-   ],
-   "walks": [
-    {
-     "time": "09:46",
-     "km": 1.51,
-     "minutes": 21,
-     "seconds": 28,
-     "steps": 2156,
-     "avgHr": 93,
-     "deviceKcal": 158
-    },
-    {
-     "type": "אליפטיקל",
-     "time": "17:05",
-     "minutes": 24,
-     "seconds": 8,
-     "avgHr": 94,
-     "maxHr": 103,
-     "deviceKcal": 153
-    },
-    {
-     "type": "אליפטיקל",
-     "time": "20:51",
-     "minutes": 60,
-     "seconds": 13,
-     "avgHr": 97,
-     "maxHr": 107,
-     "deviceKcal": 403
-    }
-   ],
-   "kcal": 1467,
-   "proteinG": 162,
-   "carbG": 131,
-   "fatG": 29,
-   "steps": 12304
-  },
-  {
-   "date": "2026-11-10",
-   "weightKg": 88.4,
-   "meals": [
-    {
-     "time": "11:40",
-     "name": "יוגורט GO, 4 פסטרמה הודו ו-3 מלפפונים",
-     "kcal": 328,
-     "proteinG": 45.5,
-     "carbG": 23.8,
-     "fatG": 6,
-     "items": [
-      {
-       "cat": "dairy",
-       "name": "יוגורט GO טבעי 200 ג׳ (תווית)",
-       "kcal": 171,
-       "proteinG": 25,
-       "carbG": 8.8,
-       "fatG": 4
-      },
-      {
-       "cat": "meat",
-       "name": "4 פרוסות פסטרמה הודו (~90 ג׳)",
-       "kcal": 100,
-       "proteinG": 18,
-       "carbG": 3,
-       "fatG": 1.5
-      },
-      {
-       "cat": "veg",
-       "name": "3 מלפפונים",
-       "kcal": 57,
-       "proteinG": 2.5,
-       "carbG": 12,
-       "fatG": 0.5
-      }
-     ],
-     "basis": "exact",
-     "basisNote": "מוצרים ארוזים ומנות ידועות; משקל הפרוסות הערכה.",
-     "kcalLow": 300,
-     "kcalHigh": 360
-    },
-    {
-     "time": "צהריים",
-     "name": "לברק בפתיתים, ~300 ג׳ (חצי־חצי)",
-     "kcal": 381,
-     "proteinG": 41,
-     "carbG": 31.5,
-     "fatG": 9.1,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "לברק מבושל ~150 ג׳",
-       "kcal": 207,
-       "proteinG": 36,
-       "carbG": 0,
-       "fatG": 7.5
-      },
-      {
-       "cat": "grains",
-       "name": "פתיתים ברוטב עגבניות ~150 ג׳",
-       "kcal": 174,
-       "proteinG": 5,
-       "carbG": 31.5,
-       "fatG": 1.6
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "רכיבי הסיר נשקלו; 300 ג׳ לפי התוכנית; חצי־חצי לפי מה שאמרת.",
-     "kcalLow": 340,
-     "kcalHigh": 420
-    },
-    {
-     "time": "צהריים",
-     "name": "צלחת ירקות: עגבנייה, גמבה, מלפפונים",
-     "kcal": 89,
-     "proteinG": 3.5,
-     "carbG": 19.5,
-     "fatG": 0.8,
-     "items": [
-      {
-       "cat": "veg",
-       "name": "עגבנייה",
-       "kcal": 22,
-       "proteinG": 1,
-       "carbG": 4.5,
-       "fatG": 0.2
-      },
-      {
-       "cat": "veg",
-       "name": "גמבה אדומה",
-       "kcal": 40,
-       "proteinG": 1.5,
-       "carbG": 9,
-       "fatG": 0.4
-      },
-      {
-       "cat": "veg",
-       "name": "מלפפון וחצי",
-       "kcal": 27,
-       "proteinG": 1,
-       "carbG": 6,
-       "fatG": 0.2
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "גודל הירקות הערכה מהתמונה.",
-     "kcalLow": 70,
-     "kcalHigh": 110
-    },
-    {
-     "time": "ערב",
-     "name": "נאפו: פילה סלמון (בלי העור) עם ירקות ירוקים",
-     "kcal": 475,
-     "proteinG": 41,
-     "carbG": 10,
-     "fatG": 27.5,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "פילה סלמון צלוי, בלי העור (~165 ג׳)",
-       "kcal": 325,
-       "proteinG": 36,
-       "carbG": 0,
-       "fatG": 18
-      },
-      {
-       "cat": "veg",
-       "name": "ירקות ירוקים: ברוקולי, קישוא, אפונה",
-       "kcal": 90,
-       "proteinG": 5,
-       "carbG": 10,
-       "fatG": 3
-      },
-      {
-       "cat": "fat",
-       "name": "שמן/פסטו על הירקות",
-       "kcal": 60,
-       "proteinG": 0,
-       "carbG": 0,
-       "fatG": 6.5
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "מנת מסעדה; גודל הפילה והשמן הערכה מהתמונה.",
-     "kcalLow": 400,
-     "kcalHigh": 560
-    },
-    {
-     "time": "ערב",
-     "name": "נאפו: קצת מסלט ברי פחם המשותף (~רבע, בלי הגבינה)",
-     "kcal": 94,
-     "proteinG": 1.3,
-     "carbG": 8,
-     "fatG": 6.4,
-     "items": [
-      {
-       "cat": "veg",
-       "name": "עלים, תפוח פינק ליידי, בצל סגול",
-       "kcal": 28,
-       "proteinG": 0.5,
-       "carbG": 6,
-       "fatG": 0.2
-      },
-      {
-       "cat": "fat",
-       "name": "פקאנים קלויים ובלסמי לבן",
-       "kcal": 66,
-       "proteinG": 0.8,
-       "carbG": 2,
-       "fatG": 6.2
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "\"קצת\" לפי מה שאמרת; חישבתי כרבע מהקערה (~445 לכל הסלט, לפי התפריט והתמונה).",
-     "kcalLow": 45,
-     "kcalHigh": 140
-    },
-    {
-     "time": "ערב",
-     "name": "נאפו: חצי טרין כבד עוף, בלי לחם וריבה",
-     "kcal": 165,
-     "proteinG": 7.5,
-     "carbG": 1.5,
-     "fatG": 14,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "חצי טרין כבד עוף (~50 ג׳)",
-       "kcal": 165,
-       "proteinG": 7.5,
-       "carbG": 1.5,
-       "fatG": 14
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "גודל הטרין הערכה מהתמונה; החלק לפי מה שאמרת.",
-     "kcalLow": 130,
-     "kcalHigh": 200
-    },
-    {
-     "time": "ערב",
-     "name": "נאפו: קערת זיתים",
-     "kcal": 85,
-     "proteinG": 0.5,
-     "carbG": 2,
-     "fatG": 8.5,
-     "items": [
-      {
-       "cat": "fat",
-       "name": "~8 זיתים גדולים, ירוקים וקלמטה",
-       "kcal": 85,
-       "proteinG": 0.5,
-       "carbG": 2,
-       "fatG": 8.5
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "ספרתי מהתמונה; גודל הזיתים הערכה.",
-     "kcalLow": 65,
-     "kcalHigh": 100
-    },
-    {
-     "time": "ערב",
-     "name": "נאפו: יין אדום, חצי בקבוק ומעט יותר (~400 מ״ל)",
-     "kcal": 340,
-     "proteinG": 0,
-     "carbG": 10,
-     "fatG": 0,
-     "items": [
-      {
-       "cat": "alcohol",
-       "name": "יין אדום ~400 מ״ל",
-       "kcal": 340,
-       "proteinG": 0,
-       "carbG": 10,
-       "fatG": 0
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "הכמות לפי מה שאמרת; ערך יין סטנדרטי.",
-     "kcalLow": 320,
-     "kcalHigh": 385
-    },
-    {
-     "time": "ערב",
-     "name": "נאפו: שוט טקילה 30 מ״ל",
-     "kcal": 67,
-     "proteinG": 0,
-     "carbG": 0,
-     "fatG": 0,
-     "items": [
-      {
-       "cat": "alcohol",
-       "name": "טקילה 30 מ״ל",
-       "kcal": 67,
-       "proteinG": 0,
-       "carbG": 0,
-       "fatG": 0
-      }
-     ],
-     "basis": "exact",
-     "basisNote": "כמות ידועה וערך סטנדרטי (40%).",
-     "kcalLow": 64,
-     "kcalHigh": 70
-    }
-   ],
-   "walks": [
-    {
-     "time": "08:41",
-     "km": 1.86,
-     "minutes": 23,
-     "seconds": 40,
-     "steps": 2555,
-     "avgHr": 93,
-     "deviceKcal": 159,
-     "kmh": 4.7
-    },
-    {
-     "time": "12:30",
-     "km": 1.6,
-     "minutes": 19,
-     "seconds": 32,
-     "steps": 2093,
-     "avgHr": 104,
-     "deviceKcal": 147,
-     "kmh": 4.9,
-     "climbM": 21
-    }
-   ],
-   "kcal": 2024,
-   "proteinG": 140,
-   "carbG": 106,
-   "fatG": 72,
-   "steps": 13863
-  },
-  {
-   "date": "2026-11-11",
-   "weightKg": 89.1,
-   "meals": [
-    {
-     "time": "11:30",
-     "name": "יוגורט GO, 4 פסטרמה הודו ו-3 מלפפונים",
-     "kcal": 328,
-     "proteinG": 45.5,
-     "carbG": 23.8,
-     "fatG": 6,
-     "items": [
-      {
-       "cat": "dairy",
-       "name": "יוגורט GO טבעי 200 ג׳ (תווית)",
-       "kcal": 171,
-       "proteinG": 25,
-       "carbG": 8.8,
-       "fatG": 4
-      },
-      {
-       "cat": "meat",
-       "name": "4 פרוסות פסטרמה הודו (~90 ג׳)",
-       "kcal": 100,
-       "proteinG": 18,
-       "carbG": 3,
-       "fatG": 1.5
-      },
-      {
-       "cat": "veg",
-       "name": "3 מלפפונים",
-       "kcal": 57,
-       "proteinG": 2.5,
-       "carbG": 12,
-       "fatG": 0.5
-      }
-     ],
-     "basis": "exact",
-     "basisNote": "יוגורט לפי תווית; משקל הפרוסות והמלפפונים הערכה קטנה.",
-     "kcalLow": 310,
-     "kcalHigh": 350
-    },
-    {
-     "time": "צהריים",
-     "name": "לברק בפתיתים, 402 ג׳ (חצי־חצי)",
-     "kcal": 510,
-     "proteinG": 54.8,
-     "carbG": 42.2,
-     "fatG": 12.2,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "לברק מבושל ~201 ג׳",
-       "kcal": 277,
-       "proteinG": 48.2,
-       "carbG": 0,
-       "fatG": 10
-      },
-      {
-       "cat": "grains",
-       "name": "פתיתים ברוטב עגבניות ~201 ג׳",
-       "kcal": 233,
-       "proteinG": 6.6,
-       "carbG": 42.2,
-       "fatG": 2.2
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "הצלחת נשקלה (402 ג׳) ורכיבי הסיר נשקלו; חצי־חצי לפי מה שאמרת.",
-     "kcalLow": 460,
-     "kcalHigh": 560
-    },
-    {
-     "time": "צהריים",
-     "name": "ירקות: עגבנייה, 3 מלפפונים, גמבה",
-     "kcal": 119,
-     "proteinG": 5,
-     "carbG": 25.5,
-     "fatG": 1.1,
-     "items": [
-      {
-       "cat": "veg",
-       "name": "עגבנייה",
-       "kcal": 22,
-       "proteinG": 1,
-       "carbG": 4.5,
-       "fatG": 0.2
-      },
-      {
-       "cat": "veg",
-       "name": "3 מלפפונים",
-       "kcal": 57,
-       "proteinG": 2.5,
-       "carbG": 12,
-       "fatG": 0.5
-      },
-      {
-       "cat": "veg",
-       "name": "גמבה",
-       "kcal": 40,
-       "proteinG": 1.5,
-       "carbG": 9,
-       "fatG": 0.4
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "כמות ידועה; הגודל הערכה.",
-     "kcalLow": 95,
-     "kcalHigh": 140
-    },
-    {
-     "time": "20:00",
-     "name": "שייק חלבון שוקולד 62 ג׳",
-     "kcal": 234,
-     "proteinG": 45.3,
-     "carbG": 6.8,
-     "fatG": 2.5,
-     "items": [
-      {
-       "cat": "protein",
-       "name": "אבקת חלבון שוקולד 62 ג׳ (377/73 ל-100 ג׳)",
-       "kcal": 234,
-       "proteinG": 45.3,
-       "carbG": 6.8,
-       "fatG": 2.5
-      }
-     ],
-     "basis": "exact",
-     "basisNote": "62 ג׳ ותווית.",
-     "kcalLow": 230,
-     "kcalHigh": 238
-    },
-    {
-     "time": "ערב",
-     "name": "ביס אחד מ-Shi-Shi Royal (לאפת אורז)",
-     "kcal": 60,
-     "proteinG": 3,
-     "carbG": 7,
-     "fatG": 2,
-     "items": [
-      {
-       "cat": "grains",
-       "name": "ביס מלאפת אורז סושי (אורז, דג, רוטב) ~30 ג׳",
-       "kcal": 60,
-       "proteinG": 3,
-       "carbG": 7,
-       "fatG": 2
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "ביס אחד, לא נשקל; פחות מעשירית מחצי. אורז סושי עם סוכר וחומץ, כ-170 קל׳ ל-100 ג׳ עם המילוי. הערכה כלפי מעלה.",
-     "kcalLow": 30,
-     "kcalHigh": 90
-    }
-   ],
-   "walks": [
-    {
-     "type": "אליפטיקל",
-     "time": "20:36",
-     "minutes": 60,
-     "seconds": 10,
-     "avgHr": 96,
-     "maxHr": 114,
-     "deviceKcal": 396
-    },
-    {
-     "time": "22:30",
-     "km": 1.07,
-     "minutes": 19,
-     "seconds": 31,
-     "steps": 1596,
-     "avgHr": 93,
-     "deviceKcal": 113
-    }
-   ],
-   "kcal": 1251,
-   "proteinG": 154,
-   "carbG": 105,
-   "fatG": 24,
-   "steps": 13986
-  },
-  {
-   "date": "2026-11-12",
-   "weightKg": 88.1,
-   "meals": [
-    {
-     "time": "צהריים",
-     "name": "לברק בפתיתים, 397 ג׳ (חצי־חצי)",
-     "kcal": 504,
-     "proteinG": 54.2,
-     "carbG": 41.7,
-     "fatG": 12.1,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "לברק מבושל ~199 ג׳",
-       "kcal": 274,
-       "proteinG": 47.6,
-       "carbG": 0,
-       "fatG": 9.9
-      },
-      {
-       "cat": "grains",
-       "name": "פתיתים ברוטב עגבניות ~199 ג׳",
-       "kcal": 230,
-       "proteinG": 6.6,
-       "carbG": 41.7,
-       "fatG": 2.2
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "הצלחת נשקלה: 553 ג׳, ואחרי שהורדת פתיתים 397 ג׳. רכיבי הסיר נשקלו. חצי־חצי לפי מה שאמרת.",
-     "kcalLow": 440,
-     "kcalHigh": 580
-    },
-    {
-     "time": "ערב",
-     "name": "יוגורט GO תות 0%",
-     "kcal": 108,
-     "proteinG": 20,
-     "carbG": 6.2,
-     "fatG": 0,
-     "items": [
-      {
-       "cat": "dairy",
-       "name": "יוגורט GO תות 0% (תווית: 108 קל׳, 20 ח׳)",
-       "kcal": 108,
-       "proteinG": 20,
-       "carbG": 6.2,
-       "fatG": 0
-      }
-     ],
-     "basis": "exact",
-     "basisNote": "גביע שלם, לפי התווית.",
-     "kcalLow": 105,
-     "kcalHigh": 112
-    },
-    {
-     "time": "ערב",
-     "name": "שייק חלבון עוגיות 64 ג׳",
-     "kcal": 245,
-     "proteinG": 49.3,
-     "carbG": 6.8,
-     "fatG": 2.3,
-     "items": [
-      {
-       "cat": "protein",
-       "name": "אבקת חלבון עוגיות 64 ג׳ (383/77 ל-100 ג׳)",
-       "kcal": 245,
-       "proteinG": 49.3,
-       "carbG": 6.8,
-       "fatG": 2.3
-      }
-     ],
-     "basis": "exact",
-     "basisNote": "64 ג׳ ותווית.",
-     "kcalLow": 242,
-     "kcalHigh": 249
-    },
-    {
-     "time": "ערב",
-     "name": "10 בוטנים קלויים מלוחים (5 ג׳)",
-     "kcal": 28,
-     "proteinG": 1.4,
-     "carbG": 0.8,
-     "fatG": 2.5,
-     "items": [
-      {
-       "cat": "snacks",
-       "name": "בוטנים קלויים, שוק הפיצוחים, ~5.5 ג׳ (518 קל׳ ל-100 ג׳)",
-       "kcal": 28,
-       "proteinG": 1.4,
-       "carbG": 0.8,
-       "fatG": 2.5
-      }
-     ],
-     "basis": "exact",
-     "basisNote": "נשקל: 5 ג׳ (המשקל בקפיצות של 1 ג׳, לכן חושב 5.5 ג׳). ערכים לפי התווית; חלבון לא מופיע בתווית, הערכה.",
-     "kcalLow": 26,
-     "kcalHigh": 31
-    },
-    {
-     "time": "ערב",
-     "name": "יונו: חצי צלחת גבינות, בלי לחם ודבש",
-     "kcal": 472,
-     "proteinG": 27.7,
-     "carbG": 3.8,
-     "fatG": 38.2,
-     "items": [
-      {
-       "cat": "dairy",
-       "name": "מנצ׳גו, גאודה וגבינה כחולה ~110 ג׳ (חצי מכ-220 ג׳)",
-       "kcal": 415,
-       "proteinG": 27,
-       "carbG": 1,
-       "fatG": 33
-      },
-      {
-       "cat": "fat",
-       "name": "פקאן ~7 ג׳",
-       "kcal": 50,
-       "proteinG": 0.7,
-       "carbG": 1,
-       "fatG": 5.2
-      },
-      {
-       "cat": "snacks",
-       "name": "2 ענבים",
-       "kcal": 7,
-       "proteinG": 0,
-       "carbG": 1.8,
-       "fatG": 0
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "כמות הגבינה הוערכה מהתמונה (כ-220 ג׳ בצלחת); חצי לפי מה שאמרת. בלי הלחם והדבש.",
-     "kcalLow": 380,
-     "kcalHigh": 580
-    },
-    {
-     "time": "ערב",
-     "name": "יונו: חצי ירוקים בג׳וספר",
-     "kcal": 190,
-     "proteinG": 5,
-     "carbG": 9,
-     "fatG": 15,
-     "items": [
-      {
-       "cat": "veg",
-       "name": "שעועית ירוקה, ברוקולי, זוקיני, אספרגוס ~150 ג׳",
-       "kcal": 45,
-       "proteinG": 3,
-       "carbG": 7,
-       "fatG": 0.5
-      },
-      {
-       "cat": "fat",
-       "name": "צזיקי, שמן זית ואגוזי לוז (חצי)",
-       "kcal": 145,
-       "proteinG": 2,
-       "carbG": 2,
-       "fatG": 14.5
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "הערכה מהתמונה; השמן והצזיקי לא ידועים. חצי לפי מה שאמרת.",
-     "kcalLow": 140,
-     "kcalHigh": 250
-    },
-    {
-     "time": "ערב",
-     "name": "יין ~400 מ״ל",
-     "kcal": 340,
-     "proteinG": 0,
-     "carbG": 10,
-     "fatG": 0,
-     "items": [
-      {
-       "cat": "alcohol",
-       "name": "יין ~400 מ״ל",
-       "kcal": 340,
-       "proteinG": 0,
-       "carbG": 10,
-       "fatG": 0
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "כמות לפי מה שאמרת; כ-85 קל׳ ל-100 מ״ל.",
-     "kcalLow": 300,
-     "kcalHigh": 380
-    }
-   ],
-   "walks": [
-    {
-     "time": "10:38",
-     "km": 2.6,
-     "minutes": 47,
-     "seconds": 38,
-     "steps": 3822,
-     "avgHr": 92,
-     "deviceKcal": 268
-    },
-    {
-     "type": "אליפטיקל",
-     "time": "16:51",
-     "minutes": 30,
-     "seconds": 2,
-     "avgHr": 93,
-     "maxHr": 113,
-     "deviceKcal": 186
-    }
-   ],
-   "kcal": 1887,
-   "proteinG": 157.6,
-   "carbG": 78.3,
-   "fatG": 70.1,
-   "steps": 15424
-  },
-  {
-   "date": "2026-11-13",
-   "weightKg": 88.5,
-   "meals": [
-    {
-     "time": "צהריים",
-     "name": "2 ביצים קשות, חצי קוטג׳ 5%, טונה במים וגמבה",
-     "kcal": 438,
-     "proteinG": 54.2,
-     "carbG": 14.3,
-     "fatG": 18.3,
-     "items": [
-      {
-       "cat": "protein",
-       "name": "2 ביצים קשות",
-       "kcal": 144,
-       "proteinG": 12.6,
-       "carbG": 0.8,
-       "fatG": 10
-      },
-      {
-       "cat": "dairy",
-       "name": "קוטג׳ 5%, חצי גביע (125 ג׳)",
-       "kcal": 119,
-       "proteinG": 13.8,
-       "carbG": 2.5,
-       "fatG": 6.3
-      },
-      {
-       "cat": "protein",
-       "name": "טונה במים, מסוננת (~110 ג׳)",
-       "kcal": 120,
-       "proteinG": 26,
-       "carbG": 0,
-       "fatG": 1.5
-      },
-      {
-       "cat": "veg",
-       "name": "גמבה אחת (~180 ג׳)",
-       "kcal": 55,
-       "proteinG": 1.8,
-       "carbG": 11,
-       "fatG": 0.5
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "כמויות לפי יחידות ואריזות; ערכים טיפוסיים לפי תווית.",
-     "kcalLow": 403,
-     "kcalHigh": 478
-    },
-    {
-     "time": "צהריים",
-     "name": "שאריות חביתה, 62 ג׳",
-     "kcal": 124,
-     "proteinG": 8.7,
-     "carbG": 0.6,
-     "fatG": 9.7,
-     "items": [
-      {
-       "cat": "protein",
-       "name": "חביתה משתי ביצים ו-4 שפריצים, 62 ג׳ מתוך ~90 ג׳",
-       "kcal": 124,
-       "proteinG": 8.7,
-       "carbG": 0.6,
-       "fatG": 9.7
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "נשקל 62 ג׳. כל החביתה (2 ביצים ו-4 שפריצים) כ-180 קק\"ל ושוקלת כ-90 ג׳ מבושלת (הערכה), כלומר כ-69%.",
-     "kcalLow": 110,
-     "kcalHigh": 140
-    },
-    {
-     "time": "צהריים",
-     "name": "טעימות מאוכל ביתי: תפו״א, נקניקייה, בשר",
-     "kcal": 180,
-     "proteinG": 10.3,
-     "carbG": 10.3,
-     "fatG": 11.7,
-     "items": [
-      {
-       "cat": "grains",
-       "name": "2 קוביות תפוח אדמה מוקפץ עם בצל (~40 ג׳)",
-       "kcal": 60,
-       "proteinG": 0.8,
-       "carbG": 7,
-       "fatG": 3.2
-      },
-      {
-       "cat": "meat",
-       "name": "2 עיגולי נקניקייה (~10 ג׳)",
-       "kcal": 30,
-       "proteinG": 1.2,
-       "carbG": 0.3,
-       "fatG": 2.7
-      },
-      {
-       "cat": "meat",
-       "name": "2 קוביות בשר בקר מבושל (~30 ג׳)",
-       "kcal": 75,
-       "proteinG": 8,
-       "carbG": 0,
-       "fatG": 5.5
-      },
-      {
-       "cat": "grains",
-       "name": "אורז שנדבק לבשר (~10 ג׳)",
-       "kcal": 15,
-       "proteinG": 0.3,
-       "carbG": 3,
-       "fatG": 0.3
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "כמויות לפי יחידות, משקל ושמן הוערכו מהתמונה. הכין מישהו אחר.",
-     "kcalLow": 130,
-     "kcalHigh": 240
-    },
-    {
-     "time": "אחר הצהריים",
-     "name": "בראוניז 40 ג׳",
-     "kcal": 184,
-     "proteinG": 2.4,
-     "carbG": 22,
-     "fatG": 10,
-     "items": [
-      {
-       "cat": "snacks",
-       "name": "בראוניז, 40 ג׳ (~460 קל׳ ל-100 ג׳, הערכה)",
-       "kcal": 184,
-       "proteinG": 2.4,
-       "carbG": 22,
-       "fatG": 10
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "נשקל 40 ג׳. ערכים טיפוסיים לבראוניז, אין תווית.",
-     "kcalLow": 160,
-     "kcalHigh": 200
-    },
-    {
-     "time": "ערב",
-     "name": "יוגורט PRO 0%, גביע",
-     "kcal": 116,
-     "proteinG": 21,
-     "carbG": 6.7,
-     "fatG": 0,
-     "items": [
-      {
-       "cat": "dairy",
-       "name": "יוגורט PRO 0%, גביע 200 ג׳ (תווית)",
-       "kcal": 116,
-       "proteinG": 21,
-       "carbG": 6.7,
-       "fatG": 0
-      }
-     ],
-     "basis": "exact",
-     "basisNote": "גביע שלם, לפי התווית.",
-     "kcalLow": 114,
-     "kcalHigh": 118
-    },
-    {
-     "time": "ערב",
-     "name": "דיינר: חצי כריך בשר, 5 כנפיים, 10 צ'יפס, טבעת בצל",
-     "kcal": 1270,
-     "proteinG": 56,
-     "carbG": 92,
-     "fatG": 70.2,
-     "items": [
-      {
-       "cat": "snacks",
-       "name": "טבעת בצל גדולה בבלילה",
-       "kcal": 70,
-       "proteinG": 1,
-       "carbG": 7,
-       "fatG": 4.2
-      },
-      {
-       "cat": "grains",
-       "name": "10 צ'יפסים עבים (~85 ג׳)",
-       "kcal": 240,
-       "proteinG": 3,
-       "carbG": 30,
-       "fatG": 12
-      },
-      {
-       "cat": "meat",
-       "name": "חצי כריך בשר מפורק בצ'יאבטה עם איולי",
-       "kcal": 500,
-       "proteinG": 24,
-       "carbG": 40,
-       "fatG": 24
-      },
-      {
-       "cat": "meat",
-       "name": "5 כנפיים באפלו בציפוי",
-       "kcal": 460,
-       "proteinG": 28,
-       "carbG": 15,
-       "fatG": 30
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "מסעדה, הערכה מהתמונות. הצ'יפס עבה, ולכן 10 יחידות הן כ-85 ג׳ ולא 50. הכנפיים בציפוי ורוטב.",
-     "kcalLow": 1100,
-     "kcalHigh": 1450
-    },
-    {
-     "time": "ערב",
-     "name": "ברד פודינג עם גלידת וניל, ~6 כפות",
-     "kcal": 350,
-     "proteinG": 6,
-     "carbG": 45,
-     "fatG": 16,
-     "items": [
-      {
-       "cat": "snacks",
-       "name": "ברד פודינג וגלידת וניל, ~6 כפות (~130 ג׳)",
-       "kcal": 350,
-       "proteinG": 6,
-       "carbG": 45,
-       "fatG": 16
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "הכמות לפי מה שאמרת (6 כפות). כל הקינוח כ-1,000 קק\"ל (הערכה מהתמונה).",
-     "kcalLow": 280,
-     "kcalHigh": 430
-    }
-   ],
-   "walks": [
-    {
-     "time": "09:41",
-     "km": 1.75,
-     "minutes": 25,
-     "seconds": 0,
-     "steps": 2500,
-     "avgHr": 93,
-     "deviceKcal": 148
-    },
-    {
-     "type": "אליפטיקל",
-     "time": "17:18",
-     "minutes": 47,
-     "seconds": 38,
-     "avgHr": 104,
-     "maxHr": 115,
-     "deviceKcal": 322
-    },
-    {
-     "time": "20:41",
-     "km": 0.89,
-     "minutes": 12,
-     "seconds": 9,
-     "steps": 1031,
-     "avgHr": 93,
-     "deviceKcal": 71
-    },
-    {
-     "time": "23:30",
-     "km": 1.14,
-     "minutes": 19,
-     "seconds": 41,
-     "steps": 1745,
-     "avgHr": 92,
-     "deviceKcal": 116
-    }
-   ],
-   "kcal": 2662,
-   "proteinG": 158.6,
-   "carbG": 190.9,
-   "fatG": 135.9,
-   "steps": 15084
-  },
-  {
-   "date": "2026-11-14",
-   "weightKg": 88.3,
-   "meals": [
-    {
-     "time": "צהריים",
-     "name": "16 עיגולי דפי אורז עם עוף טחון, 2 כפות סויה וכף צ'ילי מתוק",
-     "kcal": 408,
-     "proteinG": 47.1,
-     "carbG": 27.8,
-     "fatG": 12.8,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "16 עיגולי דפי אורז עם עוף טחון (~208 ג׳, ~1.72 קק\"ל לגרם)",
-       "kcal": 358,
-       "proteinG": 45.9,
-       "carbG": 16.8,
-       "fatG": 12.8
-      },
-      {
-       "cat": "veg",
-       "name": "2 כפות רוטב סויה (30 מ״ל)",
-       "kcal": 10,
-       "proteinG": 1.2,
-       "carbG": 1,
-       "fatG": 0
-      },
-      {
-       "cat": "snacks",
-       "name": "כף צ'ילי מתוק (~18 ג׳)",
-       "kcal": 40,
-       "proteinG": 0,
-       "carbG": 10,
-       "fatG": 0
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "המגש: 400 ג׳ חזה עוף טחון, 5 דפי אורז, 10 שפריצים (~740 קק\"ל, ~430 ג׳ אפוי). כל עיגול ~13 ג׳.",
-     "kcalLow": 340,
-     "kcalHigh": 470
-    },
-    {
-     "time": "צהריים ואחר הצהריים",
-     "name": "14 עיגולי טורטיית חלבון עם עוף טחון",
-     "kcal": 556,
-     "proteinG": 68.3,
-     "carbG": 26.6,
-     "fatG": 15.4,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "14 עיגולים מתוך 42",
-       "kcal": 556,
-       "proteinG": 68.3,
-       "carbG": 26.6,
-       "fatG": 15.4
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "המגש: ~718 ג׳ חזה עוף טחון (הערכה), 5 טורטיות חלבון, ביצה, 10 שפריצים, ~1,665 קק\"ל. 42 עיגולים.",
-     "kcalLow": 490,
-     "kcalHigh": 630
-    },
-    {
-     "time": "ערב",
-     "name": "פוקר: נשנושים ובירה",
-     "kcal": 699,
-     "proteinG": 17.3,
-     "carbG": 57.4,
-     "fatG": 35.5,
-     "items": [
-      {
-       "cat": "snacks",
-       "name": "14 יחידות ביסלי בצל (~21 ג׳)",
-       "kcal": 103,
-       "proteinG": 2.1,
-       "carbG": 13.3,
-       "fatG": 4.9
-      },
-      {
-       "cat": "fat",
-       "name": "22 בוטנים (~15 ג׳)",
-       "kcal": 85,
-       "proteinG": 3.7,
-       "carbG": 2.2,
-       "fatG": 7
-      },
-      {
-       "cat": "fat",
-       "name": "22 קשיו (~33 ג׳)",
-       "kcal": 187,
-       "proteinG": 5.9,
-       "carbG": 9.9,
-       "fatG": 14.5
-      },
-      {
-       "cat": "snacks",
-       "name": "10 יחידות במבה (~10 ג׳)",
-       "kcal": 54,
-       "proteinG": 1.6,
-       "carbG": 4,
-       "fatG": 3.4
-      },
-      {
-       "cat": "snacks",
-       "name": "3 יחידות סניידרס (~12 ג׳)",
-       "kcal": 60,
-       "proteinG": 1.2,
-       "carbG": 9,
-       "fatG": 2.1
-      },
-      {
-       "cat": "alcohol",
-       "name": "בירה גולדסטאר 330 מ״ל",
-       "kcal": 142,
-       "proteinG": 1.5,
-       "carbG": 11,
-       "fatG": 0
-      },
-      {
-       "cat": "snacks",
-       "name": "5 יחידות במבה נוגט (~13 ג׳)",
-       "kcal": 68,
-       "proteinG": 1.3,
-       "carbG": 8,
-       "fatG": 3.6
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "לפי מספר יחידות. משקל ליחידה הוא ערך טיפוסי.",
-     "kcalLow": 659,
-     "kcalHigh": 759
-    }
-   ],
-   "kcal": 1663,
-   "proteinG": 132.7,
-   "carbG": 111.8,
-   "fatG": 63.7,
-   "steps": 10055,
-   "nightWeight": {
-    "time": "01:03",
-    "kg": 88.9,
-    "note": "שקילת לילה לפני שינה, אחרי ערב פוקר. לא נכנסת לממוצעים."
-   },
-   "walks": [
-    {
-     "time": "16:53",
-     "km": 0.93,
-     "minutes": 14,
-     "seconds": 31,
-     "steps": 1461,
-     "avgHr": 100,
-     "deviceKcal": 86
-    },
-    {
-     "time": "20:30",
-     "km": 1.1,
-     "minutes": 17,
-     "seconds": 10,
-     "steps": 1579,
-     "avgHr": 103,
-     "deviceKcal": 99
-    }
-   ]
-  },
-  {
-   "date": "2026-11-15",
-   "weightKg": 87.8,
-   "meals": [
-    {
-     "time": "בוקר",
-     "name": "יוגורט GO טבעי, פסטרמה ומלפפונים",
-     "kcal": 289,
-     "proteinG": 41.7,
-     "carbG": 17.2,
-     "fatG": 5.6,
-     "items": [
-      {
-       "cat": "dairy",
-       "name": "יוגורט GO טבעי 200 ג׳ (לפי תווית)",
-       "kcal": 171,
-       "proteinG": 25,
-       "carbG": 8.8,
-       "fatG": 4
-      },
-      {
-       "cat": "meat",
-       "name": "4 פרוסות פסטרמה (~80 ג׳)",
-       "kcal": 88,
-       "proteinG": 15.2,
-       "carbG": 2.4,
-       "fatG": 1.6
-      },
-      {
-       "cat": "veg",
-       "name": "מלפפונים, ~2 (~250 ג׳)",
-       "kcal": 30,
-       "proteinG": 1.5,
-       "carbG": 6,
-       "fatG": 0
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "יוגורט לפי תווית. 4 פרוסות פסטרמה, ~20 ג׳ לפרוסה (הערכה).",
-     "kcalLow": 270,
-     "kcalHigh": 320
-    },
-    {
-     "time": "צהריים",
-     "name": "סלט טונה, קוטג׳ ויוגורט GO עם ירקות ופרוסת לחם",
-     "kcal": 673,
-     "proteinG": 74.8,
-     "carbG": 61.4,
-     "fatG": 13.8,
-     "items": [
-      {
-       "cat": "fish",
-       "name": "קופסת טונה במים, מסוננת (~112 ג׳)",
-       "kcal": 120,
-       "proteinG": 26,
-       "carbG": 0,
-       "fatG": 1.5
-      },
-      {
-       "cat": "dairy",
-       "name": "חצי קופסת קוטג׳ 5% (125 ג׳)",
-       "kcal": 119,
-       "proteinG": 13.8,
-       "carbG": 1.6,
-       "fatG": 6.3
-      },
-      {
-       "cat": "veg",
-       "name": "3 מלפפונים, 2 עגבניות וגמבה (~720 ג׳)",
-       "kcal": 138,
-       "proteinG": 5.5,
-       "carbG": 28,
-       "fatG": 1
-      },
-      {
-       "cat": "dairy",
-       "name": "יוגורט GO טבעי 200 ג׳ (לפי תווית)",
-       "kcal": 171,
-       "proteinG": 25,
-       "carbG": 8.8,
-       "fatG": 4
-      },
-      {
-       "cat": "carb",
-       "name": "פרוסת לחם מחמצת/חיטה מלאה (~45 ג׳, הערכה)",
-       "kcal": 125,
-       "proteinG": 4.5,
-       "carbG": 23,
-       "fatG": 1
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "טונה וקוטג׳ לפי ערכים מקובלים לאריזה; ירקות לפי גודל ממוצע. בלי שמן.",
-     "kcalLow": 620,
-     "kcalHigh": 730
-    },
-    {
-     "time": "ערב",
-     "name": "קופינאס: פרגית, שעועית, לביבה, ורדה רוסטו, ערק ויין",
-     "items": [
-      {
-       "cat": "meat",
-       "name": "פרגית על הגריל (~320 ג׳ מבושל)",
-       "kcal": 680,
-       "proteinG": 70,
-       "carbG": 2,
-       "fatG": 40
-      },
-      {
-       "cat": "veg",
-       "name": "שעועית ירוקה עם שמן",
-       "kcal": 120,
-       "proteinG": 3,
-       "carbG": 10,
-       "fatG": 8
-      },
-      {
-       "cat": "veg",
-       "name": "עגבנייה צלויה עם שום ומעט ממחית החצילים/בצל (רובה נשאר)",
-       "kcal": 90,
-       "proteinG": 2,
-       "carbG": 10,
-       "fatG": 5
-      },
-      {
-       "cat": "snacks",
-       "name": "1.25 לביבות כרישה עם ~4 כפות ציזיקי",
-       "kcal": 305,
-       "proteinG": 9,
-       "carbG": 20,
-       "fatG": 20
-      },
-      {
-       "cat": "veg",
-       "name": "ורדה רוסטו: 4 סלקים, קוביית קולורבי, מעט קרם פטה ופסטו",
-       "kcal": 180,
-       "proteinG": 4,
-       "carbG": 17,
-       "fatG": 10
-      },
-      {
-       "cat": "alcohol",
-       "name": "2.5 ערק עם מים (~125 מ״ל)",
-       "kcal": 275,
-       "proteinG": 0,
-       "carbG": 0,
-       "fatG": 0
-      },
-      {
-       "cat": "alcohol",
-       "name": "כוס יין אדום גדולה (~200 מ״ל)",
-       "kcal": 170,
-       "proteinG": 0,
-       "carbG": 5,
-       "fatG": 0
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "מסעדה, הערכה מתמונות לפני ואחרי. הפרגית כמנה מלאה (גבוה). צ׳ימיצ׳ורי לא נגעת; רוב מחית החצילים נשארה.",
-     "kcalLow": 1600,
-     "kcalHigh": 2050,
-     "kcal": 1820,
-     "proteinG": 88,
-     "carbG": 64,
-     "fatG": 83
-    }
-   ],
-   "walks": [
-    {
-     "time": "09:18",
-     "km": 2.13,
-     "minutes": 33,
-     "seconds": 40,
-     "steps": 3131,
-     "avgHr": 100,
-     "deviceKcal": 199
-    },
-    {
-     "time": "21:00",
-     "km": 1.17,
-     "minutes": 16,
-     "seconds": 45,
-     "steps": 1730,
-     "avgHr": 108,
-     "deviceKcal": 98
-    },
-    {
-     "time": "22:52",
-     "km": 1.17,
-     "minutes": 21,
-     "seconds": 44,
-     "steps": 1967,
-     "avgHr": 109,
-     "deviceKcal": 118
-    }
-   ],
-   "kcal": 2782,
-   "proteinG": 204.5,
-   "carbG": 142.6,
-   "fatG": 102.4,
-   "steps": 13082
-  },
-  {
-   "date": "2026-11-16",
-   "weightKg": 88.7,
-   "meals": [
-    {
-     "time": "צהריים",
-     "name": "קופסה: בשר מפלאו, 5 עיגולי טורטייה ואורז לבן",
-     "kcal": 650,
-     "proteinG": 52.5,
-     "carbG": 46.5,
-     "fatG": 26.5,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "בשר מהפלאו (בשר מס׳ 2) עם מעט אורז, 113 ג׳",
-       "kcal": 285,
-       "proteinG": 25,
-       "carbG": 4,
-       "fatG": 19
-      },
-      {
-       "cat": "meat",
-       "name": "5 עיגולי טורטיית חלבון עם עוף טחון, 108 ג׳",
-       "kcal": 200,
-       "proteinG": 24.5,
-       "carbG": 9.5,
-       "fatG": 5.5
-      },
-      {
-       "cat": "carb",
-       "name": "אורז לבן מבושל, 109 ג׳",
-       "kcal": 165,
-       "proteinG": 3,
-       "carbG": 33,
-       "fatG": 2
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "כל רכיב נשקל ב-15.11. הקלוריות לגרם הן הערכה: בשר כתף מבושל ~2.6, עיגולי טורטייה ~40 לעיגול, אורז 1.5 (גבוה).",
-     "kcalLow": 590,
-     "kcalHigh": 720
-    },
-    {
-     "time": "ערב",
-     "name": "עוף קוריאני באייר פריי (צ'ילי מתוק), 150 ג׳",
-     "kcal": 356,
-     "proteinG": 50.5,
-     "carbG": 19.5,
-     "fatG": 6.5,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "עוף קוריאני באייר פריי, 150 ג׳ מתוך 411 ג׳ (600 ג׳ חזה נא)",
-       "kcal": 356,
-       "proteinG": 50.5,
-       "carbG": 19.5,
-       "fatG": 6.5
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "כל המנה ~975 קק״ל ל-411 ג׳ (237 ל-100 ג׳): עוף 600 ג׳, קורנפלור 25, ~10 שפריצים, קטשופ דל סוכר 35, דבש 15, סויה 11, צ׳ילי מתוק ~25 (הנחה), שום ושומשום. 150 ג׳ שקולים.",
-     "kcalLow": 330,
-     "kcalHigh": 390
-    },
-    {
-     "time": "ערב",
-     "name": "2 קשיו",
-     "kcal": 20,
-     "proteinG": 0.6,
-     "carbG": 1,
-     "fatG": 1.6,
-     "items": [
-      {
-       "cat": "snacks",
-       "name": "2 קשיו (~3.5 ג׳)",
-       "kcal": 20,
-       "proteinG": 0.6,
-       "carbG": 1,
-       "fatG": 1.6
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "~1.7 ג׳ לקשיו.",
-     "kcalLow": 17,
-     "kcalHigh": 24
-    },
-    {
-     "time": "ערב",
-     "name": "נאפו: פילה סלמון בלי עור, ירקות ירוקים, אנשובי, קצת קיסר, יין ונגרוני",
-     "items": [
-      {
-       "cat": "fish",
-       "name": "פילה סלמון צלוי, בלי העור (~165 ג׳)",
-       "kcal": 325,
-       "proteinG": 36,
-       "carbG": 0,
-       "fatG": 18
-      },
-      {
-       "cat": "veg",
-       "name": "ירקות ירוקים צלויים: ברוקולי, קישוא, בוק צ'וי, עם שמן",
-       "kcal": 150,
-       "proteinG": 5,
-       "carbG": 10,
-       "fatG": 10
-      },
-      {
-       "cat": "fish",
-       "name": "צלוחית אנשובי בשמן (~35 ג׳)",
-       "kcal": 90,
-       "proteinG": 9,
-       "carbG": 0,
-       "fatG": 6
-      },
-      {
-       "cat": "alcohol",
-       "name": "יין ~400 מ״ל",
-       "kcal": 340,
-       "proteinG": 0,
-       "carbG": 10,
-       "fatG": 0
-      },
-      {
-       "cat": "veg",
-       "name": "מהקיסר: 6 עלי חסה עם רוטב, חצי ביצה רכה ופירורים (2 סבבים)",
-       "kcal": 200,
-       "proteinG": 6,
-       "carbG": 6,
-       "fatG": 16
-      },
-      {
-       "cat": "alcohol",
-       "name": "נגרוני (ג'ין, קמפרי, ורמוט אדום, ~90 מ״ל)",
-       "kcal": 190,
-       "proteinG": 0,
-       "carbG": 14,
-       "fatG": 0
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "מסעדה, הערכה מתמונות. סלמון כמו ב-10.11 (בלי העור).",
-     "kcalLow": 1160,
-     "kcalHigh": 1430,
-     "kcal": 1295,
-     "proteinG": 56,
-     "carbG": 40,
-     "fatG": 50
-    }
-   ],
-   "kcal": 2321,
-   "proteinG": 159.6,
-   "carbG": 107,
-   "fatG": 84.6,
-   "steps": 11845,
-   "walks": [
-    {
-     "time": "17:32",
-     "km": 1.89,
-     "minutes": 49,
-     "seconds": 21
-    },
-    {
-     "time": "20:26",
-     "km": 0.88,
-     "minutes": 12,
-     "seconds": 58
-    },
-    {
-     "time": "22:29",
-     "km": 1.06,
-     "minutes": 17,
-     "seconds": 20
-    }
-   ]
-  },
-  {
-   "date": "2026-11-17",
-   "weightKg": 89.1,
-   "kcal": 1082,
-   "proteinG": 150.7,
-   "carbG": 85.8,
-   "fatG": 10,
-   "meals": [
-    {
-     "time": "צהריים",
-     "name": "קופסה: חזה עוף ואורז לבן, עם גמבה, 2 עגבניות ו-3 מלפפונים",
-     "kcal": 639,
-     "proteinG": 66.5,
-     "carbG": 69,
-     "fatG": 5.5,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "חזה עוף במחבת בלי שמן, 174 ג׳",
-       "kcal": 282,
-       "proteinG": 57,
-       "carbG": 0,
-       "fatG": 4
-      },
-      {
-       "cat": "carb",
-       "name": "אורז לבן מבושל, 151 ג׳",
-       "kcal": 227,
-       "proteinG": 4,
-       "carbG": 42,
-       "fatG": 1
-      },
-      {
-       "cat": "veg",
-       "name": "גמבה, 2 עגבניות ו-3 מלפפונים",
-       "kcal": 130,
-       "proteinG": 5.5,
-       "carbG": 27,
-       "fatG": 0.5
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "העוף והאורז נשקלו (174 ג׳ ו-151 ג׳). את העוף מחשבים מהמשקל הנא: 560 ג׳ נא יצאו 390 ג׳ מבושל, כלומר ~1.6 קק״ל לגרם מבושל. האורז ב-1.5 קק״ל לגרם (הערכה גבוהה, המשקל היבש לא ידוע). משקל הירקות הוא הערכה.",
-     "kcalLow": 590,
-     "kcalHigh": 690
-    },
-    {
-     "time": "ערב",
-     "name": "עוף קוריאני (צ׳ילי מתוק), 35 ג׳",
-     "kcal": 83,
-     "proteinG": 11.8,
-     "carbG": 6.7,
-     "fatG": 1.1,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "חזה עוף ברוטב צ׳ילי מתוק, 35 ג׳",
-       "kcal": 83,
-       "proteinG": 11.8,
-       "carbG": 6.7,
-       "fatG": 1.1
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "נשקל 35 ג׳ (20 + 15). הערכים לגרם מהמנה שהכנו ב-16.11: 411 ג׳ מוכן = ~975 קק״ל (~2.37 לגרם).",
-     "kcalLow": 74,
-     "kcalHigh": 91
-    },
-    {
-     "time": "ערב",
-     "name": "שייק חלבון, אבקה בטעם עוגיות (תווית סגולה), 94 ג׳",
-     "kcal": 360,
-     "proteinG": 72.4,
-     "carbG": 10.1,
-     "fatG": 3.4,
-     "items": [
-      {
-       "cat": "protein",
-       "name": "אבקת חלבון עוגיות, 94 ג׳",
-       "kcal": 360,
-       "proteinG": 72.4,
-       "carbG": 10.1,
-       "fatG": 3.4
-      }
-     ],
-     "basis": "exact",
-     "basisNote": "מהתווית: 383 קק״ל ו-77 ג׳ חלבון ל-100 ג׳. הכמות נשקלה (94 ג׳).",
-     "kcalLow": 355,
-     "kcalHigh": 365
-    }
-   ],
-   "walks": [
-    {
-     "time": "22:40",
-     "minutes": 30,
-     "seconds": 41,
-     "steps": 2796,
-     "kmh": 3.6,
-     "avgHr": 100,
-     "deviceKcal": 184,
-     "climbM": 11,
-     "km": 1.88
-    }
-   ],
-   "steps": 10025,
-   "stepsByHalfHour": {
-    "05:30": 25,
-    "08:30": 156,
-    "09:00": 516,
-    "09:30": 593,
-    "10:00": 145,
-    "10:30": 376,
-    "11:00": 86,
-    "11:30": 89,
-    "12:00": 233,
-    "12:30": 135,
-    "13:00": 79,
-    "13:30": 128,
-    "14:00": 184,
-    "14:30": 163,
-    "15:30": 222,
-    "16:00": 75,
-    "16:30": 236,
-    "17:00": 390,
-    "17:30": 40,
-    "18:00": 247,
-    "18:30": 47,
-    "19:00": 156,
-    "20:30": 1551,
-    "21:00": 747,
-    "21:30": 107,
-    "22:00": 93,
-    "22:30": 2006,
-    "23:00": 1104,
-    "23:30": 96
-   },
-   "stepsByHalfHourNote": "נמדד משני גרפים עם סקאלה (±15–50 צעדים לעמודה; 20:30 מדויק), מותאם לסה״כ 10,025."
-  },
-  {
-   "date": "2026-11-18",
-   "weightKg": 88,
-   "kcal": 1106,
-   "proteinG": 152.2,
-   "carbG": 90.6,
-   "fatG": 9,
-   "meals": [
-    {
-     "time": "בוקר",
-     "name": "יוגורט PRO, פסטרמה הודו ומלפפונים",
-     "kcal": 273,
-     "proteinG": 41.5,
-     "carbG": 22.7,
-     "fatG": 1.5,
-     "items": [
-      {
-       "cat": "dairy",
-       "name": "יוגורט PRO טבעי, 200 ג׳ (גביע)",
-       "kcal": 116,
-       "proteinG": 21,
-       "carbG": 6.7,
-       "fatG": 0
-      },
-      {
-       "cat": "meat",
-       "name": "4 פרוסות פסטרמה הודו (~90 ג׳)",
-       "kcal": 100,
-       "proteinG": 18,
-       "carbG": 3,
-       "fatG": 1.5
-      },
-      {
-       "cat": "veg",
-       "name": "3 מלפפונים",
-       "kcal": 57,
-       "proteinG": 2.5,
-       "carbG": 13,
-       "fatG": 0
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "היוגורט מהתווית (גביע 200 ג׳: 116 קק״ל, 21 ג׳ חלבון, 0 שומן). 4 פרוסות פסטרמה ומלפפונים — הערכה לפי ערכים קבועים מימים קודמים.",
-     "kcalLow": 255,
-     "kcalHigh": 295
-    },
-    {
-     "time": "צהריים",
-     "name": "קופסה: חזה עוף ואורז לבן, עם 2 מלפפונים, עגבנייה ופלפל אדום",
-     "kcal": 603,
-     "proteinG": 64.5,
-     "carbG": 61.5,
-     "fatG": 5.3,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "חזה עוף במחבת בלי שמן, 174 ג׳",
-       "kcal": 282,
-       "proteinG": 57,
-       "carbG": 0,
-       "fatG": 4
-      },
-      {
-       "cat": "carb",
-       "name": "אורז לבן מבושל, 151 ג׳",
-       "kcal": 227,
-       "proteinG": 4,
-       "carbG": 42,
-       "fatG": 1
-      },
-      {
-       "cat": "veg",
-       "name": "2 מלפפונים, עגבנייה ופלפל אדום",
-       "kcal": 94,
-       "proteinG": 3.5,
-       "carbG": 19.5,
-       "fatG": 0.3
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "העוף והאורז נשקלו (174 ג׳ ו-151 ג׳). העוף לפי המשקל הנא (~1.6 קק״ל לגרם מבושל), האורז 1.5 קק״ל לגרם (גבוה). הירקות הערכה: עגבנייה אחת ופלפל בינוני.",
-     "kcalLow": 560,
-     "kcalHigh": 655
-    },
-    {
-     "time": "ערב",
-     "name": "שייק חלבון, אבקה בטעם עוגיות (תווית סגולה), 60 ג׳",
-     "kcal": 230,
-     "proteinG": 46.2,
-     "carbG": 6.4,
-     "fatG": 2.2,
-     "items": [
-      {
-       "cat": "protein",
-       "name": "אבקת חלבון עוגיות, 60 ג׳",
-       "kcal": 230,
-       "proteinG": 46.2,
-       "carbG": 6.4,
-       "fatG": 2.2
-      }
-     ],
-     "basis": "exact",
-     "basisNote": "מהתווית: 383 קק״ל ו-77 ג׳ חלבון ל-100 ג׳. הכמות נשקלה (60 ג׳).",
-     "kcalLow": 225,
-     "kcalHigh": 235
-    }
-   ],
-   "walks": [
-    {
-     "time": "08:45",
-     "km": 1.73,
-     "minutes": 26,
-     "seconds": 32,
-     "steps": 2454,
-     "kmh": 3.9,
-     "avgHr": 93,
-     "deviceKcal": 155,
-     "climbM": 18
-    }
-   ],
-   "steps": 11847,
-   "stepsByHalfHour": {
-    "00:00": 27,
-    "06:30": 110,
-    "07:00": 27,
-    "07:30": 264,
-    "08:00": 149,
-    "08:30": 1618,
-    "09:00": 1384,
-    "09:30": 89,
-    "10:00": 841,
-    "11:00": 404,
-    "11:30": 243,
-    "12:00": 198,
-    "12:30": 107,
-    "13:00": 205,
-    "13:30": 191,
-    "14:00": 359,
-    "15:30": 341,
-    "16:00": 247,
-    "16:30": 313,
-    "17:00": 285,
-    "17:30": 429,
-    "18:00": 27,
-    "18:30": 229,
-    "19:00": 400,
-    "19:30": 713,
-    "20:00": 324,
-    "20:30": 45,
-    "21:00": 45,
-    "21:30": 28,
-    "22:00": 1671,
-    "22:30": 205,
-    "23:00": 159,
-    "23:30": 170
-   },
-   "stepsByHalfHourNote": "נמדד מהגרף עם סקאלה (0–1,800): כל עמודה לפי הגובה, דיוק של כ-±15 צעדים. 19:00, 19:30, 20:00 מצילומי חצי שעה."
-  },
-  {
-   "date": "2026-11-19",
-   "weightKg": 87.4,
-   "kcal": 1043,
-   "proteinG": 152.6,
-   "carbG": 42.6,
-   "fatG": 26.5,
-   "meals": [
-    {
-     "time": "צהריים",
-     "name": "חזה עוף במחבת, 165 ג׳",
-     "kcal": 248,
-     "proteinG": 44.6,
-     "carbG": 0,
-     "fatG": 6.6,
-     "items": [
-      {
-       "cat": "meat",
-       "name": "חזה עוף במחבת (6 שפריצים לכל המנה), 165 ג׳",
-       "kcal": 248,
-       "proteinG": 44.6,
-       "carbG": 0,
-       "fatG": 6.6
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "נשקל: 415 ג׳ נא יצאו 353 ג׳ מבושל, עם 6 שפריצים (54 קק״ל). ~1.5 קק״ל לגרם מבושל. נועם אכל 165 ג׳ (57 + 158, פחות 50 שאכל מישהו אחר).",
-     "kcalLow": 226,
-     "kcalHigh": 274
-    },
-    {
-     "time": "צהריים",
-     "name": "סלט ירקות, בלי רוטב (חלק מקערה משותפת)",
-     "kcal": 60,
-     "proteinG": 3,
-     "carbG": 12,
-     "fatG": 0.5,
-     "items": [
-      {
-       "cat": "veg",
-       "name": "חסה, מלפפון, עגבנייה, פלפל, גזר, כרוב סגול, פטריות (~250 ג׳)",
-       "kcal": 60,
-       "proteinG": 3,
-       "carbG": 12,
-       "fatG": 0.5
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "הערכה מהתמונות: מקערה של ~550 ג׳ נשארו ~200 ג׳, והשאר חולק עם עוד אדם. ההערכה ~250 ג׳ לנועם (גבוה).",
-     "kcalLow": 40,
-     "kcalHigh": 90
-    },
-    {
-     "time": "ערב",
-     "name": "סלט עם קוטג׳, 2 פרוסות לחם PRO עם גבינה למריחה וצהובה",
-     "kcal": 482,
-     "proteinG": 54.2,
-     "carbG": 23.5,
-     "fatG": 17,
-     "items": [
-      {
-       "cat": "veg",
-       "name": "סלט ירקות (שארית, ~200 ג׳)",
-       "kcal": 50,
-       "proteinG": 2,
-       "carbG": 10,
-       "fatG": 0.3
-      },
-      {
-       "cat": "dairy",
-       "name": "קוטג׳ 5%, 150 ג׳",
-       "kcal": 143,
-       "proteinG": 16.5,
-       "carbG": 2,
-       "fatG": 7.5
-      },
-      {
-       "cat": "grains",
-       "name": "לחם PRO אנג׳ל, 2 פרוסות (63 ג׳)",
-       "kcal": 139,
-       "proteinG": 17.8,
-       "carbG": 8.1,
-       "fatG": 2.1
-      },
-      {
-       "cat": "dairy",
-       "name": "גבינה למריחה 5%, 45 ג׳",
-       "kcal": 43,
-       "proteinG": 2,
-       "carbG": 3.4,
-       "fatG": 2.3
-      },
-      {
-       "cat": "dairy",
-       "name": "צהובה עמק 9%, 53 ג׳",
-       "kcal": 107,
-       "proteinG": 15.9,
-       "carbG": 0,
-       "fatG": 4.8
-      }
-     ],
-     "basis": "partial",
-     "basisNote": "לחם, גבינה למריחה וצהובה לפי תווית ומשקל שנשקל. קוטג׳ 150 ג׳ לפי ערכים מקובלים. הסלט הערכה מהתמונה.",
-     "kcalLow": 445,
-     "kcalHigh": 535
-    },
-    {
-     "time": "ערב",
-     "name": "שייק חלבון, אבקה בטעם עוגיות (תווית סגולה), 66 ג׳",
-     "kcal": 253,
-     "proteinG": 50.8,
-     "carbG": 7.1,
-     "fatG": 2.4,
-     "items": [
-      {
-       "cat": "protein",
-       "name": "אבקת חלבון עוגיות, 66 ג׳",
-       "kcal": 253,
-       "proteinG": 50.8,
-       "carbG": 7.1,
-       "fatG": 2.4
-      }
-     ],
-     "basis": "exact",
-     "basisNote": "מהתווית: 383 קק״ל ו-77 ג׳ חלבון ל-100 ג׳. הכמות נשקלה (66 ג׳).",
-     "kcalLow": 248,
-     "kcalHigh": 258
-    }
-   ],
-   "walks": [
-    {
-     "time": "15:47",
-     "km": 2.04,
-     "minutes": 38,
-     "seconds": 25,
-     "steps": 2977,
-     "kmh": 3.1,
-     "avgHr": 85,
-     "deviceKcal": 221,
-     "climbM": 12
-    }
-   ],
-   "steps": 12919
-  },
-  {
-   "date": "2026-11-20",
-   "weightKg": 88,
-   "meals": [
-    {
-     "time": "בוקר",
-     "name": "בירה בלאונג׳, פחות מכוס (~350 מ\"ל)",
-     "kcal": 150,
-     "proteinG": 1.5,
-     "carbG": 12,
-     "fatG": 0,
-     "items": [
-      {
-       "cat": "alcohol",
-       "name": "בירה לאגר, ~350 מ\"ל",
-       "kcal": 150,
-       "proteinG": 1.5,
-       "carbG": 12,
-       "fatG": 0
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "נועם: בסך הכול פחות מכוס אחת של ~400 מ\"ל. הערכה ~350 מ\"ל, בירה בהירה ~43 קק״ל ל-100 מ\"ל.",
-     "kcalLow": 120,
-     "kcalHigh": 175
-    },
-    {
-     "time": "בוקר",
-     "name": "ביצה קשה, חלבון של ביצה נוספת, 2 מלפפונים",
-     "kcal": 125,
-     "proteinG": 11,
-     "carbG": 9,
-     "fatG": 5,
-     "items": [
-      {
-       "cat": "protein",
-       "name": "ביצה קשה שלמה",
-       "kcal": 72,
-       "proteinG": 6.3,
-       "carbG": 0.4,
-       "fatG": 5
-      },
-      {
-       "cat": "protein",
-       "name": "חלבון ביצה קשה",
-       "kcal": 17,
-       "proteinG": 3.6,
-       "carbG": 0.2,
-       "fatG": 0
-      },
-      {
-       "cat": "veg",
-       "name": "2 מלפפונים",
-       "kcal": 36,
-       "proteinG": 1.5,
-       "carbG": 8,
-       "fatG": 0
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "ערכים מקובלים לביצה (L) ולמלפפון בינוני.",
-     "kcalLow": 110,
-     "kcalHigh": 145
-    },
-    {
-     "time": "צהריים",
-     "name": "ביס עוגת גבינה קראמבל + ביס אקלר",
-     "kcal": 150,
-     "proteinG": 2.5,
-     "carbG": 15,
-     "fatG": 9,
-     "items": [
-      {
-       "cat": "sweet",
-       "name": "ביס עוגת גבינה עם קראמבל תפוחים (~25 גרם)",
-       "kcal": 90,
-       "proteinG": 1.5,
-       "carbG": 8,
-       "fatG": 5.5
-      },
-      {
-       "cat": "sweet",
-       "name": "ביס אקלר גנאש שוקולד לבן (~20 גרם)",
-       "kcal": 60,
-       "proteinG": 1,
-       "carbG": 7,
-       "fatG": 3.5
-      }
-     ],
-     "basis": "estimate",
-     "basisNote": "קונדיטוריה בסופיה, בלי תווית תזונתית. הערכה: עוגת גבינה ~360 קק״ל ל-100 גרם, אקלר ~365 ל-100 גרם. גודל הביס לא נמדד.",
-     "kcalLow": 100,
-     "kcalHigh": 200
-    }
-   ],
-   "weightNote": "נשקל ב-04:46, מוקדם מהרגיל (לפני טיסה)"
-  }
- ],
- "summary": {
-  "date": "2026-11-20",
-  "headline": "יום 19",
-  "tiles": [
-   {
-    "label": "משקל",
-    "value": "88.0",
-    "sub": "ק״ג"
-   },
-   {
-    "label": "נשאר עד 84",
-    "value": "4.0",
-    "sub": "ק״ג"
-   },
-   {
-    "label": "קלוריות ליום",
-    "value": "1,900",
-    "sub": "הערכה"
-   },
-   {
-    "label": "חלבון ליום",
-    "value": "150+",
-    "sub": "גרם"
-   }
   ],
-  "lines": [
-   "שקילות: 90.8, 90.8, 91.2, 90.0, 89.6, 90.1, 90.7, 89.1, 88.4, 89.1, 88.1, 88.5, 88.3, 87.8, 88.7, 89.1, 88.0. ממוצע 3 אחרונות 88.6.",
-   "יום 19.11: כ-1,043 קק״ל, 153 גרם חלבון, 12,919 צעדים. גירעון כ-1,690.",
-   "מצטבר 18 ימים: לפני התוכנית בכ-1,437 קק״ל. ספייר מול break even: כ-11,337."
+  "summary": {
+    "date": "2026-11-20",
+    "headline": "יום 19",
+    "tiles": [
+      {
+        "label": "משקל",
+        "value": "88.0",
+        "sub": "ק״ג"
+      },
+      {
+        "label": "נשאר עד 84",
+        "value": "4.0",
+        "sub": "ק״ג"
+      },
+      {
+        "label": "קלוריות ליום",
+        "value": "1,900",
+        "sub": "הערכה"
+      },
+      {
+        "label": "חלבון ליום",
+        "value": "150+",
+        "sub": "גרם"
+      }
+    ],
+    "lines": [
+      "שקילות: 90.8, 90.8, 91.2, 90.0, 89.6, 90.1, 90.7, 89.1, 88.4, 89.1, 88.1, 88.5, 88.3, 87.8, 88.7, 89.1, 88.0. ממוצע 3 אחרונות 88.6.",
+      "יום 19.11: כ-1,043 קק״ל, 153 גרם חלבון, 12,919 צעדים. גירעון כ-1,690.",
+      "מצטבר 18 ימים: לפני התוכנית בכ-1,437 קק״ל. ספייר מול break even: כ-11,337."
+    ]
+  },
+  "targets": {
+    "kcal": 1900,
+    "proteinG": 150,
+    "carbG": 180,
+    "fatG": 65,
+    "steps": 6700,
+    "stepsGoal": 10000
+  },
+  "balance": {
+    "baseBurn": 2150,
+    "kcalPerStep": 0.045,
+    "plannedDeficit": 550
+  },
+  "trips": [
+    {
+      "name": "סופיה",
+      "from": "2026-11-20",
+      "to": "2026-11-22",
+      "budgetKcal": 4000,
+      "stepsAssumed": 10000
+    }
   ]
- },
- "targets": {
-  "kcal": 1900,
-  "proteinG": 150,
-  "carbG": 180,
-  "fatG": 65,
-  "steps": 6700,
-  "stepsGoal": 10000
- },
- "balance": {
-  "baseBurn": 2150,
-  "kcalPerStep": 0.045,
-  "plannedDeficit": 550
- },
- "trips": [
-  {
-   "name": "סופיה",
-   "from": "2026-11-20",
-   "to": "2026-11-22",
-   "budgetKcal": 4000,
-   "stepsAssumed": 10000
-  }
- ]
 }
