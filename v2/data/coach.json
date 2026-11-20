@@ -3867,6 +3867,36 @@
           "proteinG": 21.5,
           "carbG": 73,
           "fatG": 49
+        },
+        {
+          "time": "ערב",
+          "name": "קוקטיילים: Old Fashioned + נגרוני מזקל",
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "Old Fashioned (~60 מ\"ל בורבון + סירופ סוכר)",
+              "kcal": 170,
+              "proteinG": 0,
+              "carbG": 8,
+              "fatG": 0
+            },
+            {
+              "cat": "alcohol",
+              "name": "נגרוני על מזקל (30/30/30 מ\"ל מזקל, קמפרי, ורמוט מתוק)",
+              "kcal": 190,
+              "proteinG": 0,
+              "carbG": 15,
+              "fatG": 0
+            }
+          ],
+          "kcal": 360,
+          "proteinG": 0,
+          "carbG": 23,
+          "fatG": 0,
+          "basis": "estimate",
+          "basisNote": "מתכונים קלאסיים. Old Fashioned: 60 מ\"ל בורבון ~140 + סוכר ~30. נגרוני: מזקל ~70 + קמפרי ~75 + ורמוט ~45. מוזיגה בבר יכולה להיות כפולה.",
+          "kcalLow": 320,
+          "kcalHigh": 450
         }
       ],
       "weightNote": "נשקל ב-04:46, מוקדם מהרגיל (לפני טיסה)",
