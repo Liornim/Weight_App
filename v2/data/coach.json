@@ -4029,24 +4029,24 @@
         },
         {
           "time": "בוקר",
-          "name": "בירת קרפט בולגרית (בקבוק ~500 מ\"ל)",
+          "name": "בירת קרפט בולגרית (בקבוק 330 מ\"ל)",
           "items": [
             {
               "cat": "alcohol",
-              "name": "בירת קרפט HD limited, ~500 מ\"ל",
-              "kcal": 250,
-              "proteinG": 2.5,
-              "carbG": 20,
+              "name": "בירת קרפט HD limited, 330 מ\"ל",
+              "kcal": 165,
+              "proteinG": 1.7,
+              "carbG": 13,
               "fatG": 0
             }
           ],
-          "basis": "estimate",
-          "basisNote": "גודל הבקבוק ואחוז האלכוהול לא ידועים. הנחה: 500 מ\"ל, ~5.5%, ~50 קק״ל ל-100 מ\"ל.",
-          "kcalLow": 200,
-          "kcalHigh": 320,
-          "kcal": 250,
-          "proteinG": 2.5,
-          "carbG": 20,
+          "basis": "partial",
+          "basisNote": "נועם: בקבוק 330 מ\"ל. אחוז האלכוהול לא ידוע; הנחה ~5.5%, ~50 קק״ל ל-100 מ\"ל.",
+          "kcalLow": 135,
+          "kcalHigh": 210,
+          "kcal": 165,
+          "proteinG": 1.7,
+          "carbG": 13,
           "fatG": 0
         },
         {
