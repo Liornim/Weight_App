@@ -3972,7 +3972,84 @@
       "date": "2026-11-21",
       "weightKg": 88.4,
       "weightNote": "המשקל מהבית (לקח איתו לסופיה), רצפה אחרת",
-      "meals": []
+      "meals": [
+        {
+          "time": "בוקר",
+          "name": "כריך פולד פורק (Fabrika Daga)",
+          "items": [
+            {
+              "cat": "carb",
+              "name": "צ׳בטה (~120 גרם)",
+              "kcal": 320,
+              "proteinG": 10,
+              "carbG": 60,
+              "fatG": 4
+            },
+            {
+              "cat": "protein",
+              "name": "פולד פורק ברוטב (~110 גרם)",
+              "kcal": 270,
+              "proteinG": 24,
+              "carbG": 6,
+              "fatG": 16
+            },
+            {
+              "cat": "fat",
+              "name": "מיונז וואסאבי-ליים (~25 גרם)",
+              "kcal": 170,
+              "proteinG": 0.3,
+              "carbG": 1,
+              "fatG": 18
+            },
+            {
+              "cat": "protein",
+              "name": "צ׳דר (~15 גרם)",
+              "kcal": 60,
+              "proteinG": 4,
+              "carbG": 0,
+              "fatG": 5
+            },
+            {
+              "cat": "veg",
+              "name": "כרוב, גזר, סלרי, מלפפון",
+              "kcal": 20,
+              "proteinG": 1,
+              "carbG": 4,
+              "fatG": 0
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "מנה 300 גרם לפי התפריט. פירוק לפי התמונה; כמות המיונז והצ׳דר הן ההנחות הגדולות.",
+          "kcalLow": 680,
+          "kcalHigh": 980,
+          "kcal": 840,
+          "proteinG": 39.3,
+          "carbG": 71,
+          "fatG": 43
+        },
+        {
+          "time": "בוקר",
+          "name": "בירת קרפט בולגרית (בקבוק ~500 מ\"ל)",
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "בירת קרפט HD limited, ~500 מ\"ל",
+              "kcal": 250,
+              "proteinG": 2.5,
+              "carbG": 20,
+              "fatG": 0
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "גודל הבקבוק ואחוז האלכוהול לא ידועים. הנחה: 500 מ\"ל, ~5.5%, ~50 קק״ל ל-100 מ\"ל.",
+          "kcalLow": 200,
+          "kcalHigh": 320,
+          "kcal": 250,
+          "proteinG": 2.5,
+          "carbG": 20,
+          "fatG": 0
+        }
+      ]
     }
   ],
   "summary": {
