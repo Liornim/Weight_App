@@ -4078,6 +4078,28 @@
           "proteinG": 8.5,
           "carbG": 62,
           "fatG": 25
+        },
+        {
+          "time": "ערב",
+          "name": "Mezcal Paloma spicy",
+          "kcal": 200,
+          "proteinG": 0,
+          "carbG": 20,
+          "fatG": 0,
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "Mezcal Paloma spicy (~50 מ\"ל מזקל, אשכולית, סודה, שוליים של צ׳ילי)",
+              "kcal": 200,
+              "proteinG": 0,
+              "carbG": 20,
+              "fatG": 0
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "מתכון קלאסי: מזקל 50 מ\"ל ~115, מיץ/סודת אשכולית ~70, סירופ ושוליים ~15.",
+          "kcalLow": 170,
+          "kcalHigh": 260
         }
       ],
       "steps": 12968
