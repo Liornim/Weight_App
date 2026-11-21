@@ -1529,3 +1529,24 @@ details.comph[open] > summary { padding-bottom: 6px; }
 .stp__axis { display: flex; justify-content: space-between; direction: ltr; font-size: 10px; opacity: .6; margin-bottom: 4px; }
 .comp__mid { font-size: 14px; margin: 2px 0; }
 .comp__mid b { font-family: var(--mono, monospace); }
+
+/* טאב נסיעה: גרפים */
+.trip__sum { display: grid; gap: 6px; font-size: 15px; line-height: 1.5; }
+.trip__bar { display: flex; height: 22px; border-radius: 11px; overflow: hidden; background: var(--good-bg); border: 1px solid var(--rule); margin: 6px 0; }
+.trip__bar i { display: block; height: 100%; }
+.trip__b-used { background: var(--bad); }
+.trip__b-bud { background: var(--warn); opacity: .55; }
+.trip__bar-l { font-size: 13px; color: var(--ink-soft); }
+.trip__k-used { background: var(--bad); } .trip__k-bud { background: var(--warn); opacity: .55; } .trip__k-left { background: var(--good-bg); border: 1px solid var(--good); }
+.trip__svg { width: 100%; height: auto; display: block; direction: ltr; }
+.trip__eat-ok { fill: var(--good); opacity: .8; } .trip__eat-no { fill: var(--bad); opacity: .8; }
+.trip__whisk { stroke: var(--ink); stroke-width: 1.4; opacity: .55; }
+.trip__burn { stroke: var(--ink); stroke-width: 3; stroke-linecap: round; }
+.trip__bud { stroke: var(--warn); stroke-width: 1.6; stroke-dasharray: 5 4; }
+.trip__val { font-size: 10px; font-weight: 700; fill: var(--ink); }
+.trip__k-eat { background: var(--good); } .trip__k-burn { background: var(--ink); height: 3px !important; } .trip__k-budl { background: var(--warn); height: 2px !important; }
+.trip__zero { stroke: var(--ink-soft); stroke-width: 1.2; }
+.trip__act { fill: none; stroke: var(--brand); stroke-width: 2.4; }
+.trip__plan { fill: none; stroke: var(--warn); stroke-width: 2; stroke-dasharray: 5 4; }
+.trip__dot-ok { fill: var(--good); } .trip__dot-no { fill: var(--bad); }
+.trip__k-act { background: var(--brand); } .trip__k-plan { background: var(--warn); }
