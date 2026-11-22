@@ -4111,7 +4111,7 @@
         },
         {
           "time": "ערב",
-          "name": "בר: Mezcal Margarita + נגרוני מזקל + Old Fashioned + צלחת בוטנים",
+          "name": "בר: Mezcal Margarita + נגרוני מזקל + Old Fashioned + צלחת בוטנים + צ׳ייסר מזקל",
           "items": [
             {
               "cat": "alcohol",
@@ -4144,13 +4144,21 @@
               "proteinG": 13,
               "carbG": 8,
               "fatG": 25
+            },
+            {
+              "cat": "alcohol",
+              "name": "צ׳ייסר מזקל (~40 מ\"ל)",
+              "kcal": 95,
+              "proteinG": 0,
+              "carbG": 0,
+              "fatG": 0
             }
           ],
           "basis": "estimate",
           "basisNote": "מתכונים קלאסיים; מוזיגה בבר יכולה להיות גדולה יותר. בוטנים: צלחת בר ~50 גרם, ~600 קק״ל ל-100 גרם; הנחה שנאכלה כולה.",
-          "kcalLow": 700,
-          "kcalHigh": 1130,
-          "kcal": 880,
+          "kcalLow": 775,
+          "kcalHigh": 1250,
+          "kcal": 975,
           "proteinG": 13,
           "carbG": 45,
           "fatG": 25
