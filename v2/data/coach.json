@@ -4089,11 +4089,7 @@
         },
         {
           "time": "ערב",
-          "name": "Mezcal Paloma spicy",
-          "kcal": 200,
-          "proteinG": 0,
-          "carbG": 20,
-          "fatG": 0,
+          "name": "בר מקסיקני: Mezcal Paloma spicy + Mezcal Margarita + צ׳ייסר מזקל",
           "items": [
             {
               "cat": "alcohol",
@@ -4102,17 +4098,7 @@
               "proteinG": 0,
               "carbG": 20,
               "fatG": 0
-            }
-          ],
-          "basis": "estimate",
-          "basisNote": "מתכון קלאסי: מזקל 50 מ\"ל ~115, מיץ/סודת אשכולית ~70, סירופ ושוליים ~15.",
-          "kcalLow": 170,
-          "kcalHigh": 260
-        },
-        {
-          "time": "ערב",
-          "name": "בר: Mezcal Margarita + נגרוני מזקל + Old Fashioned + צלחת בוטנים + צ׳ייסר מזקל",
-          "items": [
+            },
             {
               "cat": "alcohol",
               "name": "Mezcal Margarita (~50 מ\"ל מזקל, טריפל סק, ליים, אגבה)",
@@ -4120,30 +4106,6 @@
               "proteinG": 0,
               "carbG": 14,
               "fatG": 0
-            },
-            {
-              "cat": "alcohol",
-              "name": "נגרוני מזקל (30/30/30)",
-              "kcal": 190,
-              "proteinG": 0,
-              "carbG": 15,
-              "fatG": 0
-            },
-            {
-              "cat": "alcohol",
-              "name": "Old Fashioned (~60 מ\"ל בורבון + סירופ סוכר)",
-              "kcal": 170,
-              "proteinG": 0,
-              "carbG": 8,
-              "fatG": 0
-            },
-            {
-              "cat": "fat",
-              "name": "צלחת בוטנים (~50 גרם, הנחה: כולה)",
-              "kcal": 300,
-              "proteinG": 13,
-              "carbG": 8,
-              "fatG": 25
             },
             {
               "cat": "alcohol",
@@ -4155,17 +4117,17 @@
             }
           ],
           "basis": "estimate",
-          "basisNote": "מתכונים קלאסיים; מוזיגה בבר יכולה להיות גדולה יותר. בוטנים: צלחת בר ~50 גרם, ~600 קק״ל ל-100 גרם; הנחה שנאכלה כולה.",
-          "kcalLow": 775,
-          "kcalHigh": 1250,
-          "kcal": 975,
-          "proteinG": 13,
-          "carbG": 45,
-          "fatG": 25
+          "basisNote": "מתכונים קלאסיים. פלומה: מזקל ~115 + אשכולית/סודה ~70 + סירופ ושוליים ~15. צ׳ייסר ~40 מ\"ל.",
+          "kcalLow": 425,
+          "kcalHigh": 660,
+          "kcal": 515,
+          "proteinG": 0,
+          "carbG": 34,
+          "fatG": 0
         },
         {
           "time": "ערב",
-          "name": "פלטה: כל הפרושוטו + חצי מהשאר",
+          "name": "בר מקסיקני: פלטה – כל הפרושוטו + חצי מהשאר",
           "items": [
             {
               "cat": "protein",
@@ -4224,28 +4186,6 @@
           "proteinG": 42.5,
           "carbG": 49,
           "fatG": 42
-        },
-        {
-          "time": "ערב",
-          "name": "שארית יין אדום F2F Dornfelder, ~170 מ\"ל",
-          "kcal": 140,
-          "proteinG": 0,
-          "carbG": 4,
-          "fatG": 0,
-          "items": [
-            {
-              "cat": "alcohol",
-              "name": "יין אדום יבש 13%, ~170 מ\"ל (סיום בקבוק 250 מ\"ל)",
-              "kcal": 140,
-              "proteinG": 0,
-              "carbG": 4,
-              "fatG": 0
-            }
-          ],
-          "basis": "partial",
-          "basisNote": "בקבוק 250 מ\"ל, 13% (מהתווית). ב-20.11 נשתו ~80 מ\"ל; נועם סיים את השאר. ~83 קק״ל ל-100 מ\"ל.",
-          "kcalLow": 120,
-          "kcalHigh": 165
         },
         {
           "time": "ערב",
@@ -4308,6 +4248,66 @@
           "proteinG": 74,
           "carbG": 116,
           "fatG": 63.3
+        },
+        {
+          "time": "ערב",
+          "name": "בר בלילה: Old Fashioned + נגרוני מזקל + צלחת בוטנים",
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "Old Fashioned (~60 מ\"ל בורבון + סירופ סוכר)",
+              "kcal": 170,
+              "proteinG": 0,
+              "carbG": 8,
+              "fatG": 0
+            },
+            {
+              "cat": "alcohol",
+              "name": "נגרוני מזקל (30/30/30)",
+              "kcal": 190,
+              "proteinG": 0,
+              "carbG": 15,
+              "fatG": 0
+            },
+            {
+              "cat": "fat",
+              "name": "צלחת בוטנים (~50 גרם, הנחה: כולה)",
+              "kcal": 300,
+              "proteinG": 13,
+              "carbG": 8,
+              "fatG": 25
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "מתכונים קלאסיים; בוטנים: צלחת בר ~50 גרם, ~600 קק״ל ל-100 גרם, הנחה שנאכלה כולה.",
+          "kcalLow": 520,
+          "kcalHigh": 850,
+          "kcal": 660,
+          "proteinG": 13,
+          "carbG": 31,
+          "fatG": 25
+        },
+        {
+          "time": "ערב",
+          "name": "שארית יין אדום F2F Dornfelder, ~170 מ\"ל",
+          "kcal": 140,
+          "proteinG": 0,
+          "carbG": 4,
+          "fatG": 0,
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "יין אדום יבש 13%, ~170 מ\"ל (סיום בקבוק 250 מ\"ל)",
+              "kcal": 140,
+              "proteinG": 0,
+              "carbG": 4,
+              "fatG": 0
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "בקבוק 250 מ\"ל, 13% (מהתווית). ב-20.11 נשתו ~80 מ\"ל; נועם סיים את השאר. ~83 קק״ל ל-100 מ\"ל.",
+          "kcalLow": 120,
+          "kcalHigh": 165
         }
       ],
       "steps": 17612,
