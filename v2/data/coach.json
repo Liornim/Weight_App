@@ -4374,6 +4374,142 @@
           "proteinG": 7.4,
           "carbG": 43.0,
           "fatG": 18.7
+        },
+        {
+          "time": "צהריים",
+          "name": "מרק מקומי + חצי פיתה/לחם",
+          "items": [
+            {
+              "cat": "veg",
+              "name": "מרק מקומי עם יוגורט/גבינה, רוטב פלפלים וקרוטונים (קערה)",
+              "kcal": 350,
+              "proteinG": 12,
+              "carbG": 30,
+              "fatG": 20
+            },
+            {
+              "cat": "carb",
+              "name": "חצי לחם עגול (~60 גרם)",
+              "kcal": 150,
+              "proteinG": 5,
+              "carbG": 30,
+              "fatG": 1
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "לפי התמונה; הרכב המרק משוער (בסיס יוגורט/גבינה, חמאה וקרוטונים).",
+          "kcalLow": 360,
+          "kcalHigh": 650,
+          "kcal": 500,
+          "proteinG": 17,
+          "carbG": 60,
+          "fatG": 21
+        },
+        {
+          "time": "צהריים",
+          "name": "נקניקייה צלויה עם חרדל",
+          "items": [
+            {
+              "cat": "protein",
+              "name": "נקניקייה צלויה, ~10 חתיכות (~200 גרם)",
+              "kcal": 600,
+              "proteinG": 28,
+              "carbG": 4,
+              "fatG": 52
+            },
+            {
+              "cat": "fat",
+              "name": "חרדל (~30 גרם)",
+              "kcal": 25,
+              "proteinG": 1.5,
+              "carbG": 2,
+              "fatG": 1.5
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "נקניק חזיר/בקר צלוי ~300 קק״ל ל-100 גרם; משקל לפי התמונה.",
+          "kcalLow": 470,
+          "kcalHigh": 780,
+          "kcal": 625,
+          "proteinG": 29.5,
+          "carbG": 6,
+          "fatG": 53.5
+        },
+        {
+          "time": "צהריים",
+          "name": "חמישית מנת צ׳יפס עם מיונז וקטשופ",
+          "items": [
+            {
+              "cat": "carb",
+              "name": "חמישית צ׳יפס דק (~50 גרם)",
+              "kcal": 155,
+              "proteinG": 2,
+              "carbG": 20,
+              "fatG": 7
+            },
+            {
+              "cat": "fat",
+              "name": "חמישית מיונז (~10 גרם) + קטשופ",
+              "kcal": 75,
+              "proteinG": 0.1,
+              "carbG": 1.5,
+              "fatG": 7.5
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "מנה שלמה ~250 גרם צ׳יפס + ~50 גרם מיונז + קטשופ, חלקי 5.",
+          "kcalLow": 170,
+          "kcalHigh": 300,
+          "kcal": 230,
+          "proteinG": 2.1,
+          "carbG": 21.5,
+          "fatG": 14.5
+        },
+        {
+          "time": "צהריים",
+          "name": "שתייה: ליטר בירה, גליווין, נגרוני מזקל, חמישית בלאדי מרי",
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "בירה בהירה, ליטר",
+              "kcal": 430,
+              "proteinG": 5,
+              "carbG": 36,
+              "fatG": 0
+            },
+            {
+              "cat": "alcohol",
+              "name": "גליווין, כוס (~225 מ\"ל)",
+              "kcal": 225,
+              "proteinG": 0,
+              "carbG": 23,
+              "fatG": 0
+            },
+            {
+              "cat": "alcohol",
+              "name": "נגרוני מזקל (30/30/30)",
+              "kcal": 190,
+              "proteinG": 0,
+              "carbG": 15,
+              "fatG": 0
+            },
+            {
+              "cat": "alcohol",
+              "name": "חמישית בלאדי מרי",
+              "kcal": 35,
+              "proteinG": 0.3,
+              "carbG": 2,
+              "fatG": 0
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "בירה ~43 קק״ל ל-100 מ\"ל; גליווין ~100 ל-100 מ\"ל; מתכונים קלאסיים.",
+          "kcalLow": 760,
+          "kcalHigh": 1020,
+          "kcal": 880,
+          "proteinG": 5.3,
+          "carbG": 76,
+          "fatG": 0
         }
       ]
     }
