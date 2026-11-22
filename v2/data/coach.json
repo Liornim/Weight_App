@@ -4111,7 +4111,7 @@
         },
         {
           "time": "ערב",
-          "name": "בר: Mezcal Margarita + נגרוני מזקל",
+          "name": "בר: Mezcal Margarita + נגרוני מזקל + Old Fashioned + צלחת בוטנים",
           "items": [
             {
               "cat": "alcohol",
@@ -4128,16 +4128,32 @@
               "proteinG": 0,
               "carbG": 15,
               "fatG": 0
+            },
+            {
+              "cat": "alcohol",
+              "name": "Old Fashioned (~60 מ\"ל בורבון + סירופ סוכר)",
+              "kcal": 170,
+              "proteinG": 0,
+              "carbG": 8,
+              "fatG": 0
+            },
+            {
+              "cat": "fat",
+              "name": "צלחת בוטנים (~50 גרם, הנחה: כולה)",
+              "kcal": 300,
+              "proteinG": 13,
+              "carbG": 8,
+              "fatG": 25
             }
           ],
           "basis": "estimate",
-          "basisNote": "מתכונים קלאסיים; מוזיגה בבר יכולה להיות גדולה יותר.",
-          "kcalLow": 350,
-          "kcalHigh": 510,
-          "kcal": 410,
-          "proteinG": 0,
-          "carbG": 29,
-          "fatG": 0
+          "basisNote": "מתכונים קלאסיים; מוזיגה בבר יכולה להיות גדולה יותר. בוטנים: צלחת בר ~50 גרם, ~600 קק״ל ל-100 גרם; הנחה שנאכלה כולה.",
+          "kcalLow": 700,
+          "kcalHigh": 1130,
+          "kcal": 880,
+          "proteinG": 13,
+          "carbG": 45,
+          "fatG": 25
         },
         {
           "time": "ערב",
