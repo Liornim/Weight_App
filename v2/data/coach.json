@@ -4100,6 +4100,98 @@
           "basisNote": "מתכון קלאסי: מזקל 50 מ\"ל ~115, מיץ/סודת אשכולית ~70, סירופ ושוליים ~15.",
           "kcalLow": 170,
           "kcalHigh": 260
+        },
+        {
+          "time": "ערב",
+          "name": "בר: Mezcal Margarita + נגרוני מזקל",
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "Mezcal Margarita (~50 מ\"ל מזקל, טריפל סק, ליים, אגבה)",
+              "kcal": 220,
+              "proteinG": 0,
+              "carbG": 14,
+              "fatG": 0
+            },
+            {
+              "cat": "alcohol",
+              "name": "נגרוני מזקל (30/30/30)",
+              "kcal": 190,
+              "proteinG": 0,
+              "carbG": 15,
+              "fatG": 0
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "מתכונים קלאסיים; מוזיגה בבר יכולה להיות גדולה יותר.",
+          "kcalLow": 350,
+          "kcalHigh": 510,
+          "kcal": 410,
+          "proteinG": 0,
+          "carbG": 29,
+          "fatG": 0
+        },
+        {
+          "time": "ערב",
+          "name": "פלטה: כל הפרושוטו + חצי מהשאר",
+          "items": [
+            {
+              "cat": "protein",
+              "name": "פרושוטו, כל הכמות (~100 גרם)",
+              "kcal": 250,
+              "proteinG": 26,
+              "carbG": 0,
+              "fatG": 16
+            },
+            {
+              "cat": "protein",
+              "name": "חצי ממוצרלה בייבי (~60 גרם)",
+              "kcal": 150,
+              "proteinG": 11,
+              "carbG": 1,
+              "fatG": 11
+            },
+            {
+              "cat": "carb",
+              "name": "חצי משני מקלות בצק עלים (~30 גרם)",
+              "kcal": 150,
+              "proteinG": 3,
+              "carbG": 15,
+              "fatG": 9
+            },
+            {
+              "cat": "fruit",
+              "name": "חצי ממשמשים מיובשים וחמוציות/צימוקים (~45 גרם)",
+              "kcal": 120,
+              "proteinG": 1,
+              "carbG": 29,
+              "fatG": 0
+            },
+            {
+              "cat": "fat",
+              "name": "חצי מהזיתים (~40 גרם)",
+              "kcal": 60,
+              "proteinG": 0.5,
+              "carbG": 1,
+              "fatG": 6
+            },
+            {
+              "cat": "veg",
+              "name": "חצי מעגבניות שרי ותירס גמדי",
+              "kcal": 15,
+              "proteinG": 1,
+              "carbG": 3,
+              "fatG": 0
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "כמויות לפי התמונה. הפרושוטו כולו של נועם, השאר חולק לשניים.",
+          "kcalLow": 560,
+          "kcalHigh": 940,
+          "kcal": 745,
+          "proteinG": 42.5,
+          "carbG": 49,
+          "fatG": 42
         }
       ],
       "steps": 12968
