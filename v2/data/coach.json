@@ -4310,7 +4310,11 @@
           "fatG": 63.3
         }
       ],
-      "steps": 12968
+      "steps": 17612,
+      "kcal": 5060,
+      "proteinG": 180.5,
+      "carbG": 391,
+      "fatG": 198.3
     }
   ],
   "summary": {
