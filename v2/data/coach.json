@@ -4081,7 +4081,7 @@
         },
         {
           "time": "ערב",
-          "name": "בר מקסיקני: Mezcal Paloma spicy + Mezcal Margarita + צ׳ייסר מזקל",
+          "name": "בר מקסיקני: Mezcal Paloma spicy + Mezcal Margarita + נגרוני מזקל + צ׳ייסר מזקל",
           "items": [
             {
               "cat": "alcohol",
@@ -4106,15 +4106,23 @@
               "proteinG": 0,
               "carbG": 0,
               "fatG": 0
+            },
+            {
+              "cat": "alcohol",
+              "name": "נגרוני מזקל (30/30/30)",
+              "kcal": 190,
+              "proteinG": 0,
+              "carbG": 15,
+              "fatG": 0
             }
           ],
           "basis": "estimate",
           "basisNote": "מתכונים קלאסיים. פלומה: מזקל ~115 + אשכולית/סודה ~70 + סירופ ושוליים ~15. צ׳ייסר ~40 מ\"ל.",
-          "kcalLow": 425,
-          "kcalHigh": 660,
-          "kcal": 515,
+          "kcalLow": 595,
+          "kcalHigh": 890,
+          "kcal": 705,
           "proteinG": 0,
-          "carbG": 34,
+          "carbG": 49,
           "fatG": 0
         },
         {
@@ -4251,7 +4259,7 @@
         },
         {
           "time": "ערב",
-          "name": "בר בלילה: Old Fashioned + נגרוני מזקל + צלחת בוטנים",
+          "name": "בר בלילה: Old Fashioned + צלחת בוטנים",
           "items": [
             {
               "cat": "alcohol",
@@ -4259,14 +4267,6 @@
               "kcal": 170,
               "proteinG": 0,
               "carbG": 8,
-              "fatG": 0
-            },
-            {
-              "cat": "alcohol",
-              "name": "נגרוני מזקל (30/30/30)",
-              "kcal": 190,
-              "proteinG": 0,
-              "carbG": 15,
               "fatG": 0
             },
             {
@@ -4280,11 +4280,11 @@
           ],
           "basis": "estimate",
           "basisNote": "מתכונים קלאסיים; בוטנים: צלחת בר ~50 גרם, ~600 קק״ל ל-100 גרם, הנחה שנאכלה כולה.",
-          "kcalLow": 520,
-          "kcalHigh": 850,
-          "kcal": 660,
+          "kcalLow": 350,
+          "kcalHigh": 620,
+          "kcal": 470,
           "proteinG": 13,
-          "carbG": 31,
+          "carbG": 16,
           "fatG": 25
         },
         {
