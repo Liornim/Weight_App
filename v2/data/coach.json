@@ -4192,6 +4192,28 @@
           "proteinG": 42.5,
           "carbG": 49,
           "fatG": 42
+        },
+        {
+          "time": "ערב",
+          "name": "שארית יין אדום F2F Dornfelder, ~170 מ\"ל",
+          "kcal": 140,
+          "proteinG": 0,
+          "carbG": 4,
+          "fatG": 0,
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "יין אדום יבש 13%, ~170 מ\"ל (סיום בקבוק 250 מ\"ל)",
+              "kcal": 140,
+              "proteinG": 0,
+              "carbG": 4,
+              "fatG": 0
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "בקבוק 250 מ\"ל, 13% (מהתווית). ב-20.11 נשתו ~80 מ\"ל; נועם סיים את השאר. ~83 קק״ל ל-100 מ\"ל.",
+          "kcalLow": 120,
+          "kcalHigh": 165
         }
       ],
       "steps": 12968
