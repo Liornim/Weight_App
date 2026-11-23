@@ -4871,7 +4871,11 @@
           "kcalHigh": 156
         }
       ],
-      "steps": 8512
+      "steps": 10702,
+      "kcal": 1177,
+      "proteinG": 152.9,
+      "carbG": 56.8,
+      "fatG": 31.9
     }
   ],
   "summary": {
