@@ -598,7 +598,6 @@
     { value: 'home', label: 'ראשי' },
     { value: 'kpi', label: 'מדדים' },
     { value: 'comp', label: 'פיצויים' },
-    { value: 'catchup', label: 'סגירת פיגור' },
     { value: 'trip', label: 'נסיעה' },
     { value: 'meals', label: 'ארוחות' },
     { value: 'groups', label: 'קבוצות' },

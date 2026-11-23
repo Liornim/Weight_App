@@ -1483,8 +1483,14 @@
   }
 
   function catchupTab() {
+    var body = catchupCards();
+    return P.section('סגירת פיגור', body || P.card(null, null, P.empty('לא הוגדר פיגור לסגירה.')));
+  }
+
+  /** כרטיסי סגירת הפיגור (מוצגים בראש טאב הנסיעה). */
+  function catchupCards() {
     var state = read(), cu = state.catchup;
-    if (!cu) return P.section('סגירת פיגור', P.card(null, null, P.empty('לא הוגדר פיגור לסגירה.')));
+    if (!cu) return '';
     var cfg = cfg0(state), today = root.Dates.today();
     var C = catchupOf(state, cu, today);
     var n0 = function (v) { return (v < 0 ? '−' : '') + root.Fmt.n(Math.abs(v), 0); };
@@ -1496,7 +1502,7 @@
     var done = C.remaining <= 0;
 
     var lines = [];
-    lines.push('הפיגור בסוף ' + P.esc(cu.name || '') + ' (' + sd(cu.debtUntil) + '): <b>' + n0(C.debt) + '</b> קק״ל (~' + (C.debt / 7700).toFixed(2) + ' ק״ג).');
+    lines.push('הפיגור בסוף הנסיעה (' + sd(cu.debtUntil) + '): <b>' + n0(C.debt) + '</b> קק״ל (~' + (C.debt / 7700).toFixed(2) + ' ק״ג).');
     lines.push(done ? '<b class="score__mark--ok">הפיגור נסגר! לפני התוכנית ב-' + n0(-C.remaining) + '.</b>'
       : 'נסגרו עד עכשיו <b>' + n0(C.closed) + '</b> · נשאר <b class="score__mark--no">' + n0(C.remaining) + '</b> (' + Math.round(pct) + '%).');
     var tgt = 'יעד: ' + n0(cu.targetKcal) + ' קק״ל ו-' + n0(cu.targetSteps) + ' צעדים → שריפה ~' + n0(C.targetBurn) + ', גירעון ~' + n0(C.targetBurn - cu.targetKcal) + ' = <b>' + n0(C.targetExtra) + '</b> מעבר ל-' + n0(cfg.plannedDeficit) + ' ליום.';
@@ -1552,8 +1558,8 @@
         '<span class="comp__chip">נשאר <b>' + n0(dd.remaining) + '</b></span></div>';
     }).join('');
 
-    return P.section('סגירת פיגור',
-      P.card('סגירת הפיגור מ' + P.esc(cu.name || ''), 'פיגור = מתחת לתוכנית (גירעון ' + n0(cfg.plannedDeficit) + ' ליום) · כל יום סוגר את מה שמעבר ל-' + n0(cfg.plannedDeficit), head) +
+    return (
+      P.card('סגירת הפיגור: ' + P.esc(cu.name || ''), 'פיגור = מתחת לתוכנית (גירעון ' + n0(cfg.plannedDeficit) + ' ליום) · כל יום סוגר את מה שמעבר ל-' + n0(cfg.plannedDeficit), head) +
       liveCard +
       P.card('הפיגור לאורך זמן', null, chart) +
       (rows ? P.card('יום אחרי יום', null, rows) : '') +
@@ -1597,7 +1603,7 @@
         head + rows) +
         P.hint('ספייר = כל הגירעון מול break even (שריפה = ' + root.Fmt.n(cfg0(state).baseBurn, 0) + ' + צעדים × ' + cfg0(state).kcalPerStep + ') מתחילת המעקב עד יום לפני הנסיעה. ירוק = לא נגרע מהספייר (אכלת עד השריפה).');
     }).join('');
-    return P.section('נסיעה', html);
+    return P.section('נסיעה', catchupCards() + html);
   }
 
   // סימולציה: נשמר בזיכרון בלבד, כדי שמחר ייפתח נקי
