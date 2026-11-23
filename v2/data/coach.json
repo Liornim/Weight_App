@@ -4675,7 +4675,62 @@
     {
       "date": "2026-11-23",
       "weightKg": 90.1,
-      "meals": []
+      "meals": [
+        {
+          "time": "בוקר",
+          "name": "ארוחת בוקר במלון: 2 ביצים, קבבצ׳ה, גבינה לבנה, 4 פסטרמה, מלפפון",
+          "items": [
+            {
+              "cat": "protein",
+              "name": "2 ביצים קשות",
+              "kcal": 140,
+              "proteinG": 12,
+              "carbG": 1,
+              "fatG": 10
+            },
+            {
+              "cat": "protein",
+              "name": "קבבצ׳ה צלוי (~70 גרם)",
+              "kcal": 200,
+              "proteinG": 12,
+              "carbG": 1,
+              "fatG": 16
+            },
+            {
+              "cat": "protein",
+              "name": "גבינה לבנה בולגרית (~40 גרם)",
+              "kcal": 100,
+              "proteinG": 7,
+              "carbG": 0.5,
+              "fatG": 8
+            },
+            {
+              "cat": "protein",
+              "name": "4 פרוסות פסטרמה (~50 גרם)",
+              "kcal": 60,
+              "proteinG": 10,
+              "carbG": 1,
+              "fatG": 1.5
+            },
+            {
+              "cat": "veg",
+              "name": "מלפפונים",
+              "kcal": 20,
+              "proteinG": 1,
+              "carbG": 4,
+              "fatG": 0
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "מלון בסופיה, בלי תוויות. משקלים לפי התמונה; הקבבצ׳ה היא ההנחה הגדולה.",
+          "kcalLow": 420,
+          "kcalHigh": 620,
+          "kcal": 520,
+          "proteinG": 42,
+          "carbG": 7.5,
+          "fatG": 35.5
+        }
+      ]
     }
   ],
   "summary": {
