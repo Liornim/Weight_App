@@ -1474,13 +1474,11 @@
       var eaten = (openRow.meals || []).reduce(function (a, m) { return a + (m.kcal || 0); }, 0);
       var prot = (openRow.meals || []).reduce(function (a, m) { return a + (m.proteinG || 0); }, 0);
       live = { date: todayIso, eaten: eaten, protein: prot, steps: typeof openRow.steps === 'number' ? openRow.steps : null };
-      if (live.steps !== null) { live.burn = burnOf(live.steps); live.def = live.burn - eaten; live.extra = live.def - p; }
     }
-    var spareNow = rows.reduce(function (a, r) { return a + burnOf(r.steps) - r.kcal; }, 0);
     var targetExtra = burnOf(cu.targetSteps) - cu.targetKcal - p;
     var closedExtra = days.reduce(function (a, x) { return a + x.extra; }, 0);
     var avgExtra = days.length ? closedExtra / days.length : null;
-    return { cu: cu, debt: debt, days: days, remaining: remaining, closed: closedExtra, live: live, spareNow: spareNow,
+    return { cu: cu, debt: debt, days: days, remaining: remaining, closed: closedExtra, live: live,
       targetExtra: targetExtra, avgExtra: avgExtra, targetBurn: burnOf(cu.targetSteps) };
   }
 
@@ -1507,7 +1505,6 @@
     lines.push('הפיגור בסוף הנסיעה (' + sd(cu.debtUntil) + '): <b>' + n0(C.debt) + '</b> קק״ל (~' + (C.debt / 7700).toFixed(2) + ' ק״ג).');
     lines.push(done ? '<b class="score__mark--ok">הפיגור נסגר! לפני התוכנית ב-' + n0(-C.remaining) + '.</b>'
       : 'נסגרו עד עכשיו <b>' + n0(C.closed) + '</b> · נשאר <b class="score__mark--no">' + n0(C.remaining) + '</b> (' + Math.round(pct) + '%).');
-    lines.push('מעבר ל-break even (ספייר מצטבר מתחילת המעקב): <b>' + n0(C.spareNow) + '</b> (~' + (C.spareNow / 7700).toFixed(2) + ' ק״ג).');
     var tgt = 'יעד: ' + n0(cu.targetKcal) + ' קק״ל ו-' + n0(cu.targetSteps) + ' צעדים → שריפה ~' + n0(C.targetBurn) + ', גירעון ~' + n0(C.targetBurn - cu.targetKcal) + ' = <b>' + n0(C.targetExtra) + '</b> מעבר ל-' + n0(cfg.plannedDeficit) + ' ליום.';
     lines.push(tgt);
     if (!done && C.targetExtra > 0) {
@@ -1526,7 +1523,6 @@
       liveCard = P.card('היום', sd(L.date) + ' · עוד לא נסגר',
         '<div class="trip__sum"><div>אכלת עד עכשיו <b>' + n0(L.eaten) + '</b> · חלבון ' + n0(L.protein) + ' ג׳ · ' +
         (L.steps !== null ? n0(steps) + ' צעדים' : 'צעדים עוד לא נרשמו') + '</div>' +
-        (L.def !== undefined ? '<div>גירעון עד עכשיו: <b>' + n0(L.def) + '</b> מעבר ל-break even (שריפה ~' + n0(L.burn) + ') · <b class="score__mark--' + (L.extra >= 0 ? 'ok' : 'no') + '">' + n0(L.extra) + '</b> מעבר ל-' + n0(cfg.plannedDeficit) + '</div>' : '') +
         '<div>עד יעד ' + n0(cu.targetKcal) + ': <b class="score__mark--' + (leftKcal >= 0 ? 'ok' : 'no') + '">' + (leftKcal >= 0 ? 'נשארו ' + n0(leftKcal) : 'מעל ב-' + n0(-leftKcal)) + '</b> · חלבון: ' + (L.protein >= 150 ? 'הושג' : 'חסרים ' + n0(150 - L.protein) + ' ג׳') + '</div></div>');
     }
 
@@ -1557,8 +1553,8 @@
     var rows = C.days.slice().reverse().map(function (dd) {
       var ok = dd.extra > 0;
       return '<div class="comp__w"><div class="comp__h"><b>' + sd(dd.date) + '</b> · ' + n0(dd.kcal) + ' קק״ל · ' + n0(dd.steps) + ' צעדים · חלבון ' + n0(dd.protein || 0) + '</div>' +
-        '<span class="comp__chip">מעבר ל-break even <b>' + n0(dd.def) + '</b></span> ' +
-        '<span class="comp__chip comp__chip--' + (ok ? 'ok' : 'no') + '">' + (ok ? 'מעבר ל-' + n0(cfg.plannedDeficit) + ' (סגר) ' : 'מתחת ל-' + n0(cfg.plannedDeficit) + ' (הוסיף) ') + '<b>' + n0(Math.abs(dd.extra)) + '</b></span> ' +
+        '<span class="comp__chip">גירעון <b>' + n0(dd.def) + '</b></span> ' +
+        '<span class="comp__chip comp__chip--' + (ok ? 'ok' : 'no') + '">' + (ok ? 'סגר ' : 'הוסיף ') + '<b>' + n0(Math.abs(dd.extra)) + '</b></span> ' +
         '<span class="comp__chip">נשאר <b>' + n0(dd.remaining) + '</b></span></div>';
     }).join('');
 
