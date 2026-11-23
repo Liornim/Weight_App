@@ -1757,6 +1757,8 @@
     var rows = (state.rows || []).slice().reverse();
     if (!rows.length) return P.section('ארוחות', P.card(null, null, P.empty('עוד לא נרשמו ארוחות.')));
     var n = function (v) { return typeof v === 'number' ? root.Fmt.n(v, 0) : '—'; };
+    // מאקרו: עשרונית אחת כשיש (4.7 ולא 5), בלי ".0" למספרים שלמים
+    var n1 = function (v) { return typeof v !== 'number' ? '—' : (Math.round(v * 10) % 10 === 0 ? root.Fmt.n(v, 0) : root.Fmt.n(v, 1)); };
     var all = basisOf(rows);
     var overall = all.total ? P.card('כמה מזה נמדד', 'כל התקופה, לפי קק״ל', basisBar(all) +
       P.hint('מדויק = שקילה או תווית. חלקי = חלק נמדד וחלק הערכה. הערכה = בלי מדידה, מעוגל למעלה.')) : '';
@@ -1782,8 +1784,8 @@
               (function () { var r = mealRange(m); return r[0] !== r[1] ? '<small class="meals__range" dir="ltr">' + n(r[0]) + '–' + n(r[1]) + '</small>' : ''; })() +
             '</span></div>' +
           '<div class="meals__name">' + P.esc(m.name || '') + '</div>' +
-          '<div class="meals__macro">חלבון ' + n(m.proteinG) + ' · פחמימות ' + n(m.carbG) +
-            ' · שומן ' + n(m.fatG) + '</div>' +
+          '<div class="meals__macro">חלבון ' + n1(m.proteinG) + ' · פחמימות ' + n1(m.carbG) +
+            ' · שומן ' + n1(m.fatG) + '</div>' +
           (BASIS[m.basis] ? '<div class="meals__basis"><span class="basis__tag basis--' + m.basis + '">' +
             BASIS[m.basis].label + '</span>' + P.esc(m.basisNote || BASIS[m.basis].hint) + '</div>' : '') +
         '</li>';
