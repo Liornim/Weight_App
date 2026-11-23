@@ -4847,6 +4847,28 @@
           "proteinG": 28.6,
           "carbG": 17,
           "fatG": 4.3
+        },
+        {
+          "time": "ערב",
+          "name": "שייק חלבון עוגיות, 40 גרם אבקה במים",
+          "kcal": 153,
+          "proteinG": 30.8,
+          "carbG": 4.3,
+          "fatG": 1.4,
+          "items": [
+            {
+              "cat": "protein",
+              "name": "אבקת חלבון עוגיות, 40 גרם, עם מים",
+              "kcal": 153,
+              "proteinG": 30.8,
+              "carbG": 4.3,
+              "fatG": 1.4
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "נשקל: 40 גרם. תווית: 383 קק״ל, 77 חלבון ל-100 גרם.",
+          "kcalLow": 150,
+          "kcalHigh": 156
         }
       ],
       "steps": 8512
