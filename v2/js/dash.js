@@ -598,6 +598,7 @@
     { value: 'home', label: 'ראשי' },
     { value: 'kpi', label: 'מדדים' },
     { value: 'comp', label: 'פיצויים' },
+    { value: 'catchup', label: 'סגירת פיגור' },
     { value: 'trip', label: 'נסיעה' },
     { value: 'meals', label: 'ארוחות' },
     { value: 'groups', label: 'קבוצות' },
@@ -648,6 +649,7 @@
       : state.tab === 'trend' ? root.Coach.trend()
       : state.tab === 'score' ? root.Coach.scorecard()
       : state.tab === 'comp' ? root.Coach.compTab()
+      : state.tab === 'catchup' ? root.Coach.catchupTab()
       : state.tab === 'trip' ? root.Coach.tripTab()
       : state.tab === 'sim' ? root.Coach.simTab()
       : state.tab === 'steps' ? root.Coach.stepsTab()

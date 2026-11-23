@@ -116,7 +116,8 @@
         rows: validEntries(data),
         targets: data.targets || null,
         balance: data.balance || null,
-        trips: data.trips || null
+        trips: data.trips || null,
+        catchup: data.catchup || null
       };
       Object.keys(view).forEach(function (key) {
         if (JSON.stringify(state[key] === undefined ? null : state[key]) !== JSON.stringify(view[key])) {
@@ -1452,6 +1453,113 @@
       (balChart ? P.card('מול התוכנית לאורך זמן', 'גירעון מצטבר פחות ' + n0(cfg.plannedDeficit) + ' ליום', balChart) : '');
   }
 
+  /**
+   * סגירת פיגור: הפיגור מול התוכנית ביום debtUntil (גירעון מצטבר פחות 550 ליום), ומשם כל יום סגור
+   * מקטין אותו בגירעון שמעבר ל-550. היום הפתוח מוצג חי (ארוחות עד עכשיו).
+   */
+  function catchupOf(state, cu, todayIso) {
+    var cfg = cfg0(state), p = cfg.plannedDeficit;
+    var burnOf = function (steps) { return cfg.baseBurn + steps * cfg.kcalPerStep; };
+    var rows = (state.rows || []).filter(function (r) { return typeof r.kcal === 'number' && typeof r.steps === 'number' && (!state.startDate || r.date >= state.startDate); });
+    var debt = -rows.filter(function (r) { return r.date <= cu.debtUntil; }).reduce(function (a, r) { return a + burnOf(r.steps) - r.kcal - p; }, 0);
+    var days = [], remaining = debt;
+    rows.filter(function (r) { return r.date >= cu.from; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; }).forEach(function (r) {
+      var burn = burnOf(r.steps), def = burn - r.kcal, extra = def - p;
+      remaining -= extra;
+      days.push({ date: r.date, kcal: r.kcal, steps: r.steps, burn: burn, def: def, extra: extra, remaining: remaining, protein: r.proteinG });
+    });
+    var openRow = (state.rows || []).filter(function (r) { return r.date === todayIso && typeof r.kcal !== 'number'; })[0];
+    var live = null;
+    if (openRow && todayIso >= cu.from) {
+      var eaten = (openRow.meals || []).reduce(function (a, m) { return a + (m.kcal || 0); }, 0);
+      var prot = (openRow.meals || []).reduce(function (a, m) { return a + (m.proteinG || 0); }, 0);
+      live = { date: todayIso, eaten: eaten, protein: prot, steps: typeof openRow.steps === 'number' ? openRow.steps : null };
+    }
+    var targetExtra = burnOf(cu.targetSteps) - cu.targetKcal - p;
+    var closedExtra = days.reduce(function (a, x) { return a + x.extra; }, 0);
+    var avgExtra = days.length ? closedExtra / days.length : null;
+    return { cu: cu, debt: debt, days: days, remaining: remaining, closed: closedExtra, live: live,
+      targetExtra: targetExtra, avgExtra: avgExtra, targetBurn: burnOf(cu.targetSteps) };
+  }
+
+  function catchupTab() {
+    var state = read(), cu = state.catchup;
+    if (!cu) return P.section('סגירת פיגור', P.card(null, null, P.empty('לא הוגדר פיגור לסגירה.')));
+    var cfg = cfg0(state), today = root.Dates.today();
+    var C = catchupOf(state, cu, today);
+    var n0 = function (v) { return (v < 0 ? '−' : '') + root.Fmt.n(Math.abs(v), 0); };
+    var sd = function (x) { return P.esc(root.Dates.short(x)); };
+    var pct = C.debt > 0 ? Math.max(0, Math.min(100, (C.debt - C.remaining) / C.debt * 100)) : 100;
+    var trips = (state.trips || []).filter(function (t) { return t.from > today; }).sort(function (a, b) { return a.from < b.from ? -1 : 1; });
+    var next = trips[0];
+    var daysTo = next ? dayNum(next.from) - dayNum(today) : null; // ימים עד הטיסה, כולל היום
+    var done = C.remaining <= 0;
+
+    var lines = [];
+    lines.push('הפיגור בסוף ' + P.esc(cu.name || '') + ' (' + sd(cu.debtUntil) + '): <b>' + n0(C.debt) + '</b> קק״ל (~' + (C.debt / 7700).toFixed(2) + ' ק״ג).');
+    lines.push(done ? '<b class="score__mark--ok">הפיגור נסגר! לפני התוכנית ב-' + n0(-C.remaining) + '.</b>'
+      : 'נסגרו עד עכשיו <b>' + n0(C.closed) + '</b> · נשאר <b class="score__mark--no">' + n0(C.remaining) + '</b> (' + Math.round(pct) + '%).');
+    var tgt = 'יעד: ' + n0(cu.targetKcal) + ' קק״ל ו-' + n0(cu.targetSteps) + ' צעדים → שריפה ~' + n0(C.targetBurn) + ', גירעון ~' + n0(C.targetBurn - cu.targetKcal) + ' = <b>' + n0(C.targetExtra) + '</b> מעבר ל-' + n0(cfg.plannedDeficit) + ' ליום.';
+    lines.push(tgt);
+    if (!done && C.targetExtra > 0) {
+      var nT = Math.ceil(C.remaining / C.targetExtra);
+      lines.push('בקצב היעד: עוד <b>' + nT + '</b> ימים.' + (C.avgExtra !== null ? ' בקצב שלך עד עכשיו (' + n0(C.avgExtra) + ' ליום): ' + (C.avgExtra > 0 ? 'עוד <b>' + Math.ceil(C.remaining / C.avgExtra) + '</b> ימים.' : 'הפיגור לא קטן.') : ''));
+      if (next) lines.push('עד ' + P.esc(next.name || 'הנסיעה') + ' (' + sd(next.from) + ') נשארו ' + daysTo + ' ימים → בקצב היעד יישאר בטיסה <b>' + n0(Math.max(0, C.remaining - daysTo * C.targetExtra)) + '</b>.');
+    }
+    var head = '<div class="trip__sum">' + lines.map(function (l) { return '<div>' + l + '</div>'; }).join('') + '</div>' +
+      '<div class="trip__bar" style="margin-top:10px"><i class="trip__eat-ok" style="background:var(--good);width:' + pct.toFixed(1) + '%"></i></div>' +
+      '<div class="kpi__legend"><span><i class="kpi__k trip__k-eat"></i>נסגר ' + n0(Math.max(0, C.debt - C.remaining)) + '</span><span><i class="kpi__k trip__k-left"></i>נשאר ' + n0(Math.max(0, C.remaining)) + '</span></div>';
+
+    var liveCard = '';
+    if (C.live) {
+      var L = C.live, steps = L.steps || 0;
+      var leftKcal = cu.targetKcal - L.eaten;
+      liveCard = P.card('היום', sd(L.date) + ' · עוד לא נסגר',
+        '<div class="trip__sum"><div>אכלת עד עכשיו <b>' + n0(L.eaten) + '</b> · חלבון ' + n0(L.protein) + ' ג׳ · ' +
+        (L.steps !== null ? n0(steps) + ' צעדים' : 'צעדים עוד לא נרשמו') + '</div>' +
+        '<div>עד יעד ' + n0(cu.targetKcal) + ': <b class="score__mark--' + (leftKcal >= 0 ? 'ok' : 'no') + '">' + (leftKcal >= 0 ? 'נשארו ' + n0(leftKcal) : 'מעל ב-' + n0(-leftKcal)) + '</b> · חלבון: ' + (L.protein >= 150 ? 'הושג' : 'חסרים ' + n0(150 - L.protein) + ' ג׳') + '</div></div>');
+    }
+
+    // גרף: הפיגור לאורך הימים, מול קצב היעד
+    var W = 340, H = 190, Lm = 44, R = 10, Tp = 14, B = 26;
+    var pts = [{ date: cu.debtUntil, v: C.debt }].concat(C.days.map(function (x) { return { date: x.date, v: x.remaining }; }));
+    var nT2 = C.targetExtra > 0 ? Math.ceil(C.debt / C.targetExtra) : 30;
+    var endDn = Math.max(dayNum(cu.debtUntil) + nT2, dayNum(pts[pts.length - 1].date) + 3);
+    var d0 = dayNum(cu.debtUntil);
+    var mx = Math.max(C.debt, 0) * 1.08 + 100, mn = Math.min(0, C.remaining) - 300;
+    var x = function (dn) { return Lm + (dn - d0) / Math.max(1, endDn - d0) * (W - Lm - R); };
+    var y = function (v) { return Tp + (mx - v) / (mx - mn) * (H - Tp - B); };
+    var grid = '';
+    var step = C.debt > 6000 ? 2000 : 1000;
+    for (var g = 0; g <= mx; g += step) grid += '<line class="kpi__grid" x1="' + Lm + '" x2="' + (W - R) + '" y1="' + y(g).toFixed(1) + '" y2="' + y(g).toFixed(1) + '"/><text class="kpi__tick" x="' + (Lm - 4) + '" y="' + (y(g) + 3).toFixed(1) + '" text-anchor="end">' + (g / 1000) + 'k</text>';
+    var shade = (state.trips || []).map(function (t) {
+      var a = Math.max(dayNum(t.from), d0), b = Math.min(dayNum(t.to), endDn);
+      return b < a ? '' : '<rect class="kpi__trip" x="' + x(a).toFixed(1) + '" y="' + Tp + '" width="' + (x(b) - x(a) + 2).toFixed(1) + '" height="' + (H - Tp - B) + '"/>';
+    }).join('');
+    var tLine = '<path class="trip__plan" d="M' + x(d0).toFixed(1) + ' ' + y(C.debt).toFixed(1) + ' L' + x(d0 + C.debt / Math.max(1, C.targetExtra)).toFixed(1) + ' ' + y(0).toFixed(1) + '"/>';
+    var act = '<path class="trip__act" d="' + pts.map(function (q, i) { return (i ? 'L' : 'M') + x(dayNum(q.date)).toFixed(1) + ' ' + y(q.v).toFixed(1); }).join(' ') + '"/>' +
+      pts.map(function (q) { return '<circle class="trip__dot-ok" cx="' + x(dayNum(q.date)).toFixed(1) + '" cy="' + y(q.v).toFixed(1) + '" r="2.8"><title>' + sd(q.date) + ': ' + n0(q.v) + '</title></circle>'; }).join('');
+    var zero = '<line class="trip__zero" x1="' + Lm + '" x2="' + (W - R) + '" y1="' + y(0).toFixed(1) + '" y2="' + y(0).toFixed(1) + '"/>';
+    var ticks = [d0, Math.round((d0 + endDn) / 2), endDn].map(function (dn, i) { var iso = new Date(dn * 864e5).toISOString().slice(0, 10); return '<text class="kpi__tick" x="' + x(dn).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="' + (i === 0 ? 'start' : i === 2 ? 'end' : 'middle') + '">' + sd(iso) + '</text>'; }).join('');
+    var chart = '<svg class="trip__svg" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="פיגור לאורך זמן">' + grid + shade + zero + tLine + act + ticks + '</svg>' +
+      '<div class="kpi__legend"><span><i class="kpi__k trip__k-act"></i>הפיגור בפועל</span><span><i class="kpi__k trip__k-plan"></i>בקצב היעד</span><span><i class="kpi__k kpi__k--trip"></i>נסיעה</span></div>';
+
+    var rows = C.days.slice().reverse().map(function (dd) {
+      var ok = dd.extra > 0;
+      return '<div class="comp__w"><div class="comp__h"><b>' + sd(dd.date) + '</b> · ' + n0(dd.kcal) + ' קק״ל · ' + n0(dd.steps) + ' צעדים · חלבון ' + n0(dd.protein || 0) + '</div>' +
+        '<span class="comp__chip">גירעון <b>' + n0(dd.def) + '</b></span> ' +
+        '<span class="comp__chip comp__chip--' + (ok ? 'ok' : 'no') + '">' + (ok ? 'סגר ' : 'הוסיף ') + '<b>' + n0(Math.abs(dd.extra)) + '</b></span> ' +
+        '<span class="comp__chip">נשאר <b>' + n0(dd.remaining) + '</b></span></div>';
+    }).join('');
+
+    return P.section('סגירת פיגור',
+      P.card('סגירת הפיגור מ' + P.esc(cu.name || ''), 'פיגור = מתחת לתוכנית (גירעון ' + n0(cfg.plannedDeficit) + ' ליום) · כל יום סוגר את מה שמעבר ל-' + n0(cfg.plannedDeficit), head) +
+      liveCard +
+      P.card('הפיגור לאורך זמן', null, chart) +
+      (rows ? P.card('יום אחרי יום', null, rows) : '') +
+      P.hint('שריפה = ' + root.Fmt.n(cfg.baseBurn, 0) + ' + צעדים × ' + cfg.kcalPerStep + '. ימים בנסיעה נספרים כרגיל.'));
+  }
+
   function tripTab() {
     var state = read();
     var trips = state.trips || [];
@@ -2592,5 +2700,5 @@
       problems(state).map(function (line) { return P.hint('⚠ ' + line); }).join('')));
   }
 
-  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, macros: macros, macroOf: macroOf, scorecard: scorecard, scoresOf: scoresOf, compSheetOf: compSheetOf, compHistoryOf: compHistoryOf, compTab: compTab, simTab: simTab, stepsTab: stepsTab, tripTab: tripTab, tripOf: tripOf, bindComp: bindComp, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, breakEvenOf: breakEvenOf, bindBreakEven: bindBreakEven, kpi: kpi, kpiOf: kpiOf, etaHistory: etaHistory, bindKpi: bindKpi, KEY: KEY };
+  root.Coach = { start: start, load: load, card: card, today: today, balanceOf: balanceOf, macroTotals: macroTotals, weightAverage: weightAverage, stepsDiff: stepsDiff, stepsForGap: stepsForGap, meals: meals, groups: groups, split: split, splitOf: splitOf, trend: trend, trendOf: trendOf, forecastOf: forecastOf, weightSeries: weightSeries, macros: macros, macroOf: macroOf, scorecard: scorecard, scoresOf: scoresOf, compSheetOf: compSheetOf, compHistoryOf: compHistoryOf, compTab: compTab, simTab: simTab, stepsTab: stepsTab, tripTab: tripTab, tripOf: tripOf, catchupTab: catchupTab, catchupOf: catchupOf, bindComp: bindComp, workbookData: workbookData, exportXlsx: exportXlsx, exportButton: exportButton, basisOf: basisOf, deficitRange: deficitRange, dayRange: dayRange, catTotals: catTotals, breakEvenOf: breakEvenOf, bindBreakEven: bindBreakEven, kpi: kpi, kpiOf: kpiOf, etaHistory: etaHistory, bindKpi: bindKpi, KEY: KEY };
 })(typeof window !== 'undefined' ? window : globalThis);

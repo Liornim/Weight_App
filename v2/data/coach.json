@@ -4737,5 +4737,12 @@
       "budgetKcal": 2700,
       "stepsAssumed": 10000
     }
-  ]
+  ],
+  "catchup": {
+    "name": "סופיה",
+    "debtUntil": "2026-11-22",
+    "from": "2026-11-23",
+    "targetKcal": 1500,
+    "targetSteps": 12000
+  }
 }
