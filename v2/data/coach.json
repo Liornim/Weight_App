@@ -4510,6 +4510,160 @@
           "proteinG": 5.3,
           "carbG": 76,
           "fatG": 0
+        },
+        {
+          "time": "ערב",
+          "name": "Kuzina: Short Rib Pastitsio (לבד) + 1.5 לביבות קישוא",
+          "items": [
+            {
+              "cat": "protein",
+              "name": "Short Rib Pastitsio, מנה שלמה (450 גרם): צלע בקר, פסטה, רוטב יין, קרם גרוויירה",
+              "kcal": 1050,
+              "proteinG": 45,
+              "carbG": 80,
+              "fatG": 60
+            },
+            {
+              "cat": "carb",
+              "name": "1.5 מתוך 4 לביבות קישוא וטרחנה + יוגורט (מנה 250 גרם)",
+              "kcal": 205,
+              "proteinG": 6,
+              "carbG": 18,
+              "fatG": 12
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "משקלים מהתפריט. פסטיציו 450 גרם ~230 קק״ל ל-100 גרם; לביבות מטוגנות, מנה שלמה ~550.",
+          "kcalLow": 1060,
+          "kcalHigh": 1460,
+          "kcal": 1255,
+          "proteinG": 51,
+          "carbG": 98,
+          "fatG": 72
+        },
+        {
+          "time": "ערב",
+          "name": "Kuzina: חמישית מהמזטים לשולחן",
+          "items": [
+            {
+              "cat": "carb",
+              "name": "פיתה הבית עם שמן זית (חמישית מ-2 מנות)",
+              "kcal": 160,
+              "proteinG": 4,
+              "carbG": 24,
+              "fatG": 5
+            },
+            {
+              "cat": "carb",
+              "name": "תפוחי אדמה מטוגנים עם קרם פטה (חמישית מ-280 גרם)",
+              "kcal": 150,
+              "proteinG": 3,
+              "carbG": 15,
+              "fatG": 9
+            },
+            {
+              "cat": "fat",
+              "name": "חוריאטיקי (חמישית מ-600 גרם)",
+              "kcal": 140,
+              "proteinG": 4,
+              "carbG": 4,
+              "fatG": 12
+            },
+            {
+              "cat": "fat",
+              "name": "גבינת מצובונה אפויה בפילו עם דלעת ודבש (חמישית מ-220 גרם)",
+              "kcal": 130,
+              "proteinG": 5,
+              "carbG": 7,
+              "fatG": 9
+            },
+            {
+              "cat": "fat",
+              "name": "חטיפיטי פטה על עגבניות (חמישית מ-200 גרם)",
+              "kcal": 90,
+              "proteinG": 4,
+              "carbG": 2,
+              "fatG": 7
+            },
+            {
+              "cat": "veg",
+              "name": "מליצנוסלטה עם פטה (חמישית מ-350 גרם)",
+              "kcal": 80,
+              "proteinG": 2,
+              "carbG": 4,
+              "fatG": 6
+            },
+            {
+              "cat": "veg",
+              "name": "כרובית צלויה (חמישית)",
+              "kcal": 80,
+              "proteinG": 2,
+              "carbG": 5,
+              "fatG": 6
+            },
+            {
+              "cat": "fat",
+              "name": "צזיקי שום שחור (חמישית מ-250 גרם)",
+              "kcal": 60,
+              "proteinG": 3,
+              "carbG": 2,
+              "fatG": 4
+            },
+            {
+              "cat": "veg",
+              "name": "צלפים/עלי גפן",
+              "kcal": 20,
+              "proteinG": 0.5,
+              "carbG": 2,
+              "fatG": 1
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "משקלים מהתפריט, חלוקה ל-5. הכמות האישית בפועל לא ידועה.",
+          "kcalLow": 650,
+          "kcalHigh": 1200,
+          "kcal": 910,
+          "proteinG": 27.5,
+          "carbG": 65,
+          "fatG": 59
+        },
+        {
+          "time": "ערב",
+          "name": "שתייה ונשנוש: ג׳ין טוניק, ליטר גינס, קשיו ושקדים",
+          "items": [
+            {
+              "cat": "alcohol",
+              "name": "ג׳ין טוניק",
+              "kcal": 180,
+              "proteinG": 0,
+              "carbG": 17,
+              "fatG": 0
+            },
+            {
+              "cat": "alcohol",
+              "name": "גינס, ליטר",
+              "kcal": 370,
+              "proteinG": 3,
+              "carbG": 30,
+              "fatG": 0
+            },
+            {
+              "cat": "fat",
+              "name": "קשיו ושקדים (~50 גרם, הנחה)",
+              "kcal": 300,
+              "proteinG": 9,
+              "carbG": 13,
+              "fatG": 25
+            }
+          ],
+          "basis": "estimate",
+          "basisNote": "גינס ~37 קק״ל ל-100 מ\"ל; ג׳ין 50 מ\"ל + טוניק 200 מ\"ל; כמות האגוזים לא ידועה.",
+          "kcalLow": 690,
+          "kcalHigh": 1020,
+          "kcal": 850,
+          "proteinG": 12,
+          "carbG": 60,
+          "fatG": 25
         }
       ]
     },
