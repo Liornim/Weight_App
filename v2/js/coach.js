@@ -1475,10 +1475,20 @@
       var prot = (openRow.meals || []).reduce(function (a, m) { return a + (m.proteinG || 0); }, 0);
       live = { date: todayIso, eaten: eaten, protein: prot, steps: typeof openRow.steps === 'number' ? openRow.steps : null };
     }
+    // מול break even: כמה הנסיעה גרעה מהספייר וכמה הוחזר מאז (כולל היום הפתוח)
+    var trip = (state.trips || []).filter(function (t) { return t.to === cu.debtUntil; })[0];
+    var spareOf = function (pred) { return rows.filter(pred).reduce(function (a, r) { return a + burnOf(r.steps) - r.kcal; }, 0); };
+    var be = null;
+    if (trip) {
+      var tripUsed = -spareOf(function (r) { return r.date >= trip.from && r.date <= trip.to; });
+      var back = spareOf(function (r) { return r.date >= cu.from; });
+      if (live && live.steps !== null) back += burnOf(live.steps) - live.eaten;
+      be = { used: tripUsed, back: back, left: tripUsed - back };
+    }
     var targetExtra = burnOf(cu.targetSteps) - cu.targetKcal - p;
     var closedExtra = days.reduce(function (a, x) { return a + x.extra; }, 0);
     var avgExtra = days.length ? closedExtra / days.length : null;
-    return { cu: cu, debt: debt, days: days, remaining: remaining, closed: closedExtra, live: live,
+    return { cu: cu, debt: debt, days: days, remaining: remaining, closed: closedExtra, live: live, be: be,
       targetExtra: targetExtra, avgExtra: avgExtra, targetBurn: burnOf(cu.targetSteps) };
   }
 
@@ -1505,6 +1515,8 @@
     lines.push('הפיגור בסוף הנסיעה (' + sd(cu.debtUntil) + '): <b>' + n0(C.debt) + '</b> קק״ל (~' + (C.debt / 7700).toFixed(2) + ' ק״ג).');
     lines.push(done ? '<b class="score__mark--ok">הפיגור נסגר! לפני התוכנית ב-' + n0(-C.remaining) + '.</b>'
       : 'נסגרו עד עכשיו <b>' + n0(C.closed) + '</b> · נשאר <b class="score__mark--no">' + n0(C.remaining) + '</b> (' + Math.round(pct) + '%).');
+    if (C.be) lines.push('מול break even (בלי 550): הנסיעה גרעה <b>' + n0(C.be.used) + '</b> · הוחזרו ' + n0(C.be.back) + (C.live ? ' (כולל היום)' : '') + ' · ' +
+      (C.be.left > 0 ? 'נשאר <b class="score__mark--no">' + n0(C.be.left) + '</b> (' + Math.round(Math.max(0, C.be.back) / C.be.used * 100) + '%)' : '<b class="score__mark--ok">הוחזר במלואו</b>') + '.');
     var tgt = 'יעד: ' + n0(cu.targetKcal) + ' קק״ל ו-' + n0(cu.targetSteps) + ' צעדים → שריפה ~' + n0(C.targetBurn) + ', גירעון ~' + n0(C.targetBurn - cu.targetKcal) + ' = <b>' + n0(C.targetExtra) + '</b> מעבר ל-' + n0(cfg.plannedDeficit) + ' ליום.';
     lines.push(tgt);
     if (!done && C.targetExtra > 0) {
