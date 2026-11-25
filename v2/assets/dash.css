@@ -1550,3 +1550,14 @@ details.comph[open] > summary { padding-bottom: 6px; }
 .trip__plan { fill: none; stroke: var(--warn); stroke-width: 2; stroke-dasharray: 5 4; }
 .trip__dot-ok { fill: var(--good); } .trip__dot-no { fill: var(--bad); }
 .trip__k-act { background: var(--brand); } .trip__k-plan { background: var(--warn); }
+
+/* טאב נסיעה פשוט */
+.trip__bars { display: grid; gap: 8px; margin: 12px 0; }
+.trip__row { display: grid; grid-template-columns: 92px 1fr; align-items: center; gap: 8px; font-size: 13px; }
+.trip__track { height: 22px; border-radius: 11px; background: var(--good-bg); border: 1px solid var(--rule); overflow: hidden; }
+.trip__track i { display: block; height: 100%; }
+.trip__days { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+.trip__days h4 { margin: 0 0 4px; font-size: 13px; color: var(--ink-soft); font-weight: 600; }
+.trip__d { display: flex; justify-content: space-between; font-size: 14px; padding: 2px 0; border-bottom: 1px dashed var(--rule); }
+.trip__b-ok { background: var(--good); }
+.trip__track { display: flex; direction: rtl; }

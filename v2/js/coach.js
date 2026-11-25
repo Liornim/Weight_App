@@ -1578,7 +1578,52 @@
       P.hint('שריפה = ' + root.Fmt.n(cfg.baseBurn, 0) + ' + צעדים × ' + cfg.kcalPerStep + '. ימים בנסיעה נספרים כרגיל.'));
   }
 
+  /**
+   * טאב נסיעה (פשוט): לכל נסיעה שהסתיימה — כמה עודף היה בה (אכלת מעל השריפה), וכמה ממנו כבר סגרת
+   * בימים שאחריה (גירעון מול השריפה). שני פסים: סה״כ עודף מול סגרתי, ופירוט לפי ימים.
+   */
   function tripTab() {
+    var state = read(), cfg = cfg0(state);
+    var trips = (state.trips || []).slice().sort(function (a, b) { return a.from < b.from ? -1 : 1; });
+    if (!trips.length) return P.section('נסיעה', P.card(null, null, P.empty('אין נסיעה מוגדרת.')));
+    var today = root.Dates.today();
+    var n0 = function (v) { return root.Fmt.n(Math.round(Math.abs(v)), 0); };
+    var sd = function (x) { return P.esc(root.Dates.short(x)); };
+    var burnOf = function (r) { return cfg.baseBurn + r.steps * cfg.kcalPerStep; };
+    var rows = (state.rows || []).filter(function (r) { return typeof r.kcal === 'number' && typeof r.steps === 'number'; })
+      .sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    var bar = function (w, cls, label) {
+      return '<div class="trip__row"><span class="trip__lbl">' + label + '</span>' +
+        '<div class="trip__track"><i class="' + cls + '" style="width:' + Math.max(0, Math.min(100, w)).toFixed(1) + '%"></i></div></div>';
+    };
+    var html = trips.map(function (trip, i) {
+      var tripDays = rows.filter(function (r) { return r.date >= trip.from && r.date <= trip.to; });
+      if (trip.from > today || !tripDays.length) {
+        return P.card(trip.name || 'נסיעה', sd(trip.from) + '–' + sd(trip.to), '<div class="trip__sum">עוד לא התחילה.</div>');
+      }
+      var excess = tripDays.reduce(function (a, r) { return a + r.kcal - burnOf(r); }, 0);
+      var next = trips[i + 1];
+      var after = rows.filter(function (r) { return r.date > trip.to && (!next || r.date < next.from); });
+      var closed = after.reduce(function (a, r) { return a + burnOf(r) - r.kcal; }, 0);
+      var left = excess - closed;
+      var pct = excess > 0 ? closed / excess * 100 : 100;
+      var big = '<div class="trip__sum">' +
+        '<div>עודף בנסיעה: <b class="score__mark--no">' + n0(excess) + '</b> קק״ל (~' + (excess / 7700).toFixed(2) + ' ק״ג)</div>' +
+        '<div>סגרת מאז: <b class="score__mark--ok">' + n0(Math.max(0, closed)) + '</b> (' + Math.round(Math.max(0, pct)) + '%)</div>' +
+        '<div>' + (left > 0 ? 'נשאר לסגור: <b>' + n0(left) + '</b> (~' + (left / 7700).toFixed(2) + ' ק״ג)' : '<b class="score__mark--ok">נסגר במלואו!</b>') + '</div></div>';
+      var chart = '<div class="trip__bars">' +
+        bar(100, 'trip__b-used', 'עודף ' + n0(excess)) +
+        bar(pct, 'trip__b-ok', 'סגרת ' + n0(Math.max(0, closed))) + '</div>';
+      var perTrip = tripDays.map(function (r) { return '<div class="trip__d"><span>' + sd(r.date) + '</span><b class="score__mark--no">+' + n0(r.kcal - burnOf(r)) + '</b></div>'; }).join('');
+      var perAfter = after.map(function (r) { var v = burnOf(r) - r.kcal; return '<div class="trip__d"><span>' + sd(r.date) + '</span><b class="score__mark--' + (v >= 0 ? 'ok' : 'no') + '">' + (v >= 0 ? '−' : '+') + n0(v) + '</b></div>'; }).join('');
+      var days = '<div class="trip__days"><div><h4>בנסיעה (אכלת מעל השריפה)</h4>' + perTrip + '</div>' +
+        (perAfter ? '<div><h4>אחרי (סגרת)</h4>' + perAfter + '</div>' : '') + '</div>';
+      return P.card(trip.name || 'נסיעה', 'עודף = מה שאכלת מעל השריפה (2,150 + צעדים × 0.045). סגירה = גירעון בימים שאחרי.', big + chart + days);
+    }).join('');
+    return P.section('נסיעה', html + P.hint('יום פתוח (היום) נספר רק אחרי שהוא נסגר.'));
+  }
+
+  function tripTabOld() {
     var state = read();
     var trips = state.trips || [];
     if (!trips.length) return P.section('נסיעה', P.card(null, null, P.empty('אין נסיעה מוגדרת.')));
