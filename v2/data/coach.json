@@ -5051,7 +5051,11 @@
     {
       "date": "2026-11-25",
       "weightKg": 88.2,
-      "meals": []
+      "meals": [],
+      "measurements": {
+        "waistNavelCm": 98,
+        "thighCm": 48
+      }
     }
   ],
   "summary": {
