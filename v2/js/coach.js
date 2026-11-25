@@ -1277,6 +1277,7 @@
       return '<div class="comp__w"><div class="comp__h"><b>' + w.n + ' ימים</b> · ' + range + ' · נשארו ' + w.left + ' ' + (w.left === 1 ? 'יום' : 'ימים') + '</div>' +
         (w.now ? nowChips((sim ? 'כולל הסימולציה' : 'עד עכשיו') + ' (' + w.closed + ' ' + (w.closed === 1 ? 'יום' : 'ימים') + ', ממוצע):') : '') +
         (w.closed ? '<div class="comp__now"><span>סה״כ עד עכשיו:</span>' +
+          '<span class="comp__chip comp__chip--' + (w.now.def >= 0 ? 'ok' : 'no') + '">' + (w.now.def >= 0 ? 'גירעון' : 'עודף') + ' סה״כ מול השריפה: <b>' + n0(Math.abs(w.now.def * w.closed)) + '</b></span>' +
           '<span class="comp__chip comp__chip--' + (w.kcalOver > 0 ? 'no' : 'ok') + '">קק״ל מול ' + n0(cap) + ' ליום: <b>' + (w.kcalOver > 0 ? 'עודף ' : 'חוסר ') + n0(w.kcalOver) + '</b></span>' +
           '<span class="comp__chip comp__chip--' + (bal >= 0 ? 'ok' : 'no') + '">גירעון מול ' + n0(plan) + ' ליום: <b>' + (bal >= 0 ? 'יתרה ' : 'חוב ') + n0(bal) + '</b></span></div>' : '') +
         '<div class="comp__t" style="margin-top:6px"><b>לסגירת החלון, בכל יום שנשאר (' + w.left + '):</b></div>' +
