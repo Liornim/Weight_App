@@ -1607,6 +1607,12 @@
       var closed = after.reduce(function (a, r) { return a + burnOf(r) - r.kcal; }, 0);
       var left = excess - closed;
       var pct = excess > 0 ? closed / excess * 100 : 100;
+      if (excess <= 0) {
+        var perDef = tripDays.map(function (r) { var v = r.kcal - burnOf(r); return '<div class="trip__d"><span>' + sd(r.date) + '</span><b class="score__mark--' + (v > 0 ? 'no' : 'ok') + '">' + (v > 0 ? '+' : '−') + n0(v) + '</b></div>'; }).join('');
+        return P.card(trip.name || 'נסיעה', 'סה״כ מול השריפה (2,150 + צעדים × 0.045), בלי יעד 550.',
+          '<div class="trip__sum"><div>גירעון בנסיעה: <b class="score__mark--ok">' + n0(-excess) + '</b> קק״ל (~' + (-excess / 7700).toFixed(2) + ' ק״ג) — אין מה לסגור.</div></div>' +
+          '<div class="trip__days"><div><h4>לפי ימים (+ עודף / − גירעון)</h4>' + perDef + '</div></div>');
+      }
       var big = '<div class="trip__sum">' +
         '<div>עודף בנסיעה: <b class="score__mark--no">' + n0(excess) + '</b> קק״ל (~' + (excess / 7700).toFixed(2) + ' ק״ג)</div>' +
         '<div>סגרת מאז: <b class="score__mark--ok">' + n0(Math.max(0, closed)) + '</b> (' + Math.round(Math.max(0, pct)) + '%)</div>' +
@@ -1614,11 +1620,11 @@
       var chart = '<div class="trip__bars">' +
         bar(100, 'trip__b-used', 'עודף ' + n0(excess)) +
         bar(pct, 'trip__b-ok', 'סגרת ' + n0(Math.max(0, closed))) + '</div>';
-      var perTrip = tripDays.map(function (r) { return '<div class="trip__d"><span>' + sd(r.date) + '</span><b class="score__mark--no">+' + n0(r.kcal - burnOf(r)) + '</b></div>'; }).join('');
+      var perTrip = tripDays.map(function (r) { var v = r.kcal - burnOf(r); return '<div class="trip__d"><span>' + sd(r.date) + '</span><b class="score__mark--' + (v > 0 ? 'no' : 'ok') + '">' + (v > 0 ? '+' : '−') + n0(v) + '</b></div>'; }).join('');
       var perAfter = after.map(function (r) { var v = burnOf(r) - r.kcal; return '<div class="trip__d"><span>' + sd(r.date) + '</span><b class="score__mark--' + (v >= 0 ? 'ok' : 'no') + '">' + (v >= 0 ? '−' : '+') + n0(v) + '</b></div>'; }).join('');
-      var days = '<div class="trip__days"><div><h4>בנסיעה (אכלת מעל השריפה)</h4>' + perTrip + '</div>' +
+      var days = '<div class="trip__days"><div><h4>בנסיעה (+ עודף / − גירעון)</h4>' + perTrip + '</div>' +
         (perAfter ? '<div><h4>אחרי (סגרת)</h4>' + perAfter + '</div>' : '') + '</div>';
-      return P.card(trip.name || 'נסיעה', 'עודף = מה שאכלת מעל השריפה (2,150 + צעדים × 0.045). סגירה = גירעון בימים שאחרי.', big + chart + days);
+      return P.card(trip.name || 'נסיעה', 'סה״כ מול השריפה (2,150 + צעדים × 0.045), בלי יעד 550. סגירה = גירעון בימים שאחרי.', big + chart + days);
     }).join('');
     return P.section('נסיעה', html + P.hint('יום פתוח (היום) נספר רק אחרי שהוא נסגר.'));
   }
