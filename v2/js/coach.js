@@ -1282,6 +1282,11 @@
           '<span class="comp__chip comp__chip--' + (bal >= 0 ? 'ok' : 'no') + '">גירעון מול ' + n0(plan) + ' ליום: <b>' + (bal >= 0 ? 'יתרה ' : 'חוב ') + n0(bal) + '</b></span></div>' : '') +
         '<div class="comp__t" style="margin-top:6px"><b>לסגירת החלון, בכל יום שנשאר (' + w.left + '):</b></div>' +
         '<div class="comp__big">עד ' + kc(kcal) + ' קק״ל · שומן עד <b>' + n0(w.fatCap) + '</b> · לפחות <b>' + n0(w.stepsNeed) + '</b> צעדים</div>' +
+        (w.needPerDay !== null ? '<div class="comp__t" style="margin-top:6px"><b>רק הגירעון (' + n0(plan) + ' ממוצע ליום בחלון, בלי מגבלת ' + n0(cap) + '):</b> ' +
+          (w.kcalAt > 0
+            ? (w.needPerDay > 0 ? 'צריך גירעון של <b>' + n0(w.needPerDay) + '</b> ליום' : 'כבר יש לך מספיק — מותר אפילו עודף של <b class="score__mark--ok">' + n0(-w.needPerDay) + '</b> ליום') + ' → עד <b>' + n0(w.kcalAt) + '</b> קק״ל ב-' + n0(w.stepsRef) + ' צעדים, עד <b>' + n0(w.kcalAt + (w.stepsGoal - w.stepsRef) * w.kps) + '</b> ב-' + n0(w.stepsGoal) + ' (כל 1,000 צעדים = עוד ' + n0(1000 * w.kps) + ').'
+            : 'צריך גירעון של <b class="score__mark--no">' + n0(w.needPerDay) + '</b> ליום — לא אפשרי. השריפה ב-' + n0(w.stepsGoal) + ' צעדים היא רק ~' + n0(w.kcalAt + w.needPerDay + (w.stepsGoal - w.stepsRef) * w.kps) + '.') +
+          '</div>' : '') +
         (w.greenToday !== null && w.closed && w.left > 1 && !sim ? '<div class="comp__t" style="margin-top:6px"><b>כדי שמחר בבוקר יהיה ירוק, רק היום:</b></div>' +
           '<div class="comp__mid">עד ' + kc(w.greenToday) + ' קק״ל · שומן עד <b>' + n0(Math.max(0, w.greenFat)) + '</b> · לפחות <b>' + n0(Math.max(0, w.greenSteps)) + '</b> צעדים</div>' : '') +
         '<div class="comp__t" style="margin-top:6px">' + balTxt + ' ' + why + '</div></div>';
