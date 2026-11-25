@@ -1257,49 +1257,28 @@
       (green !== null && !sim ? '<div style="margin-top:8px">כדי שמחר בבוקר הכל יהיה ירוק, רק היום: <b>עד ' + kc(green) + ' קק״ל</b> · <b>שומן עד ' + n0(Math.max(0, greenFat)) + ' ג׳</b> · <b>לפחות ' + n0(Math.max(0, greenSteps)) + ' צעדים</b></div>' : '') + '</div>' : '';
     var items = list.map(function (w) {
       var range = '<bdi dir="ltr" style="white-space:nowrap">' + P.esc(root.Dates.short(w.from)) + '–' + P.esc(root.Dates.short(w.to)) + '</bdi>';
-      var bal = -w.behind, kcal = kcalOf(w);
-      var nowChips = function (lbl) {
-        return '<div class="comp__now"><span>' + lbl + '</span>' +
-          chip('גירעון', w.now.def, w.now.def >= plan, true) + chip('קק״ל', w.now.kcal, Math.round(w.now.kcal) <= cap) +
-          chip('שומן', w.now.fat, Math.round(w.now.fat) <= ((state.targets || {}).fatG || 65)) + chip('צעדים', w.now.steps, Math.round(w.now.steps) >= w.stepsGoal) + '</div>';
-      };
-      if (!w.left) {
-        var okAll = w.now.def >= plan && Math.round(w.now.kcal) <= cap;
-        return '<div class="comp__w"><div class="comp__h"><b>' + w.n + ' ימים</b> · ' + range + ' · <b class="score__mark--' + (okAll ? 'ok' : 'no') + '">נסגר ' + (okAll ? 'ביעד' : 'מחוץ ליעד') + '</b></div>' +
-          nowChips('ממוצע סופי:') + '<div class="comp__t">' + (bal >= 0 ? 'נסגר לפני התוכנית ב-' + n0(bal) + '.' : 'נסגר עם חוב של ' + n0(bal) + ' מול התוכנית.') + '</div></div>';
+      var b0 = cfg0(state).baseBurn + w.stepsRef * w.kps; // שריפה ב-6,700
+      var head = '<div class="comp__h"><b>' + w.n + ' ימים</b> · ' + range + ' · ' + (w.left ? 'נשארו ' + w.left + ' ' + (w.left === 1 ? 'יום' : 'ימים') : 'נסגר') + '</div>';
+      var line = function (k, v) { return '<div class="comp__ln"><span>' + k + '</span><b>' + v + '</b></div>'; };
+      var body = '';
+      if (w.now) {
+        body += line('ממוצע קלוריות שאכלת', root.Fmt.n(Math.round(w.now.kcal), 0) +
+          ' <small>(' + w.closed + ' ' + (w.closed === 1 ? 'יום' : 'ימים') + ')</small>');
+        body += line(w.sum >= 0 ? 'גירעון סה״כ' : 'עודף סה״כ', '<span class="score__mark--' + (w.sum >= 0 ? 'ok' : 'no') + '">' + n0(w.sum) + '</span>');
+        body += line('ממוצע צעדים', root.Fmt.n(Math.round(w.now.steps), 0));
+      } else body += '<div class="comp__t">החלון מתחיל היום, עוד אין ימים סגורים.</div>';
+      if (w.left) {
+        var k550 = b0 - (plan * w.n - w.sum) / w.left, kBE = b0 + w.sum / w.left;
+        var fmtK = function (v) { return v > 0 ? 'עד <span class="score__mark--' + (v >= cap ? 'ok' : 'no') + '">' + n0(v) + '</span>' : '<span class="score__mark--no">לא אפשרי</span>'; };
+        var per = w.left === 1 ? 'היום' : 'בכל יום שנשאר';
+        body += line('לעמוד ב-' + n0(plan) + ' גירעון ממוצע — ' + per, fmtK(k550));
+        body += line('להיות ב-break even — ' + per, fmtK(kBE));
       }
-      var balTxt = !w.closed ? 'החלון מתחיל היום, אין עדיין יתרה.'
-        : bal >= 0 ? 'בימים שעברו עשית <b class="score__mark--ok">' + n0(bal) + '</b> גירעון יותר מהתוכנית.'
-        : 'בימים שעברו חסרו <b class="score__mark--no">' + n0(bal) + '</b> גירעון מול התוכנית.';
-      var why = w.kcalCap !== null && w.kcalCap <= w.kcalAt
-        ? 'המגבלה: שממוצע הקלוריות בחלון יישאר עד ' + n0(cap) + '.'
-        : 'המגבלה: שהגירעון הממוצע בחלון יישאר ' + n0(plan) + ' (מספיק גירעון של ' + n0(Math.max(0, w.needPerDay)) + ' ביום, בהנחה של ' + n0(w.stepsRef) + ' צעדים).';
-      return '<div class="comp__w"><div class="comp__h"><b>' + w.n + ' ימים</b> · ' + range + ' · נשארו ' + w.left + ' ' + (w.left === 1 ? 'יום' : 'ימים') + '</div>' +
-        (w.now ? nowChips((sim ? 'כולל הסימולציה' : 'עד עכשיו') + ' (' + w.closed + ' ' + (w.closed === 1 ? 'יום' : 'ימים') + ', ממוצע):') : '') +
-        (w.closed ? '<div class="comp__now"><span>סה״כ עד עכשיו:</span>' +
-          '<span class="comp__chip comp__chip--' + (w.now.def >= 0 ? 'ok' : 'no') + '">' + (w.now.def >= 0 ? 'גירעון' : 'עודף') + ' סה״כ מול השריפה: <b>' + n0(Math.abs(w.now.def * w.closed)) + '</b></span>' +
-          '<span class="comp__chip comp__chip--' + (w.kcalOver > 0 ? 'no' : 'ok') + '">קק״ל מול ' + n0(cap) + ' ליום: <b>' + (w.kcalOver > 0 ? 'עודף ' : 'חוסר ') + n0(w.kcalOver) + '</b></span>' +
-          '<span class="comp__chip comp__chip--' + (bal >= 0 ? 'ok' : 'no') + '">גירעון מול ' + n0(plan) + ' ליום: <b>' + (bal >= 0 ? 'יתרה ' : 'חוב ') + n0(bal) + '</b></span></div>' : '') +
-        '<div class="comp__t" style="margin-top:6px"><b>לסגירת החלון, בכל יום שנשאר (' + w.left + '):</b></div>' +
-        '<div class="comp__big">עד ' + kc(kcal) + ' קק״ל · שומן עד <b>' + n0(w.fatCap) + '</b> · לפחות <b>' + n0(w.stepsNeed) + '</b> צעדים</div>' +
-        (w.needPerDay !== null ? '<div class="comp__t" style="margin-top:6px"><b>רק הגירעון (' + n0(plan) + ' ממוצע ליום בחלון, בלי מגבלת ' + n0(cap) + '):</b> ' +
-          (w.kcalAt > 0
-            ? (w.needPerDay > 0 ? 'צריך גירעון של <b>' + n0(w.needPerDay) + '</b> ליום' : 'כבר יש לך מספיק — מותר אפילו עודף של <b class="score__mark--ok">' + n0(-w.needPerDay) + '</b> ליום') + ' → עד <b>' + n0(w.kcalAt) + '</b> קק״ל ב-' + n0(w.stepsRef) + ' צעדים, עד <b>' + n0(w.kcalAt + (w.stepsGoal - w.stepsRef) * w.kps) + '</b> ב-' + n0(w.stepsGoal) + ' (כל 1,000 צעדים = עוד ' + n0(1000 * w.kps) + ').'
-            : 'צריך גירעון של <b class="score__mark--no">' + n0(w.needPerDay) + '</b> ליום — לא אפשרי. השריפה ב-' + n0(w.stepsGoal) + ' צעדים היא רק ~' + n0(w.kcalAt + w.needPerDay + (w.stepsGoal - w.stepsRef) * w.kps) + '.') +
-          '</div>' : '') +
-        (w.left ? (function () {
-          var zPer = -w.sum / w.left, b0 = cfg0(state).baseBurn + w.stepsRef * w.kps, kz = b0 - zPer;
-          return '<div class="comp__t" style="margin-top:6px"><b>לפחות גירעון כלשהו (סה״כ החלון ≥ 0):</b> ' +
-            (zPer > 0 ? 'צריך גירעון של <b>' + n0(zPer) + '</b> ליום → עד <b>' + n0(kz) + '</b> קק״ל ב-' + n0(w.stepsRef) + ' צעדים, עד <b>' + n0(kz + (w.stepsGoal - w.stepsRef) * w.kps) + '</b> ב-' + n0(w.stepsGoal) + '.'
-              : 'כבר בגירעון — מותר עודף של עד <b class="score__mark--ok">' + n0(-zPer) + '</b> ליום → עד <b>' + n0(kz) + '</b> קק״ל ב-' + n0(w.stepsRef) + ' צעדים.') + '</div>';
-        })() : '') +
-        (w.greenToday !== null && w.closed && w.left > 1 && !sim ? '<div class="comp__t" style="margin-top:6px"><b>כדי שמחר בבוקר יהיה ירוק, רק היום:</b></div>' +
-          '<div class="comp__mid">עד ' + kc(w.greenToday) + ' קק״ל · שומן עד <b>' + n0(Math.max(0, w.greenFat)) + '</b> · לפחות <b>' + n0(Math.max(0, w.greenSteps)) + '</b> צעדים</div>' : '') +
-        '<div class="comp__t" style="margin-top:6px">' + balTxt + ' ' + why + '</div></div>';
+      return '<div class="comp__w">' + head + body + '</div>';
     }).join('');
     return P.card('גיליון פיצויים', 'לכל אורך חלון (3–7 ימים, בגבולות קבועים מ-' + P.esc(root.Dates.short(state.startDate || list[0].from)) + '): כמה מותר לאכול בכל יום שנשאר כדי שהחלון ייסגר על היעדים.',
       top + items +
-      P.hint('לפי המודל (' + root.Fmt.n(cfg0(state).baseBurn, 0) + ' + צעדים × ' + cfg0(state).kcalPerStep + '). בימים שנשארו מניחים רק ' + root.Fmt.n(list[0].stepsRef, 0) + ' צעדים (המינימום); כל צעד מעבר לזה הוא בונוס. חלבון לא נכנס: הוא יעד יומי.'));
+      P.hint('לפי המודל (' + root.Fmt.n(cfg0(state).baseBurn, 0) + ' + צעדים × ' + cfg0(state).kcalPerStep + '). הקלוריות המותרות מחושבות ב-' + root.Fmt.n(list[0].stepsRef, 0) + ' צעדים; כל 1,000 צעדים נוספים = עוד ' + root.Fmt.n(1000 * cfg0(state).kcalPerStep, 0) + '.'));
   }
 
   /** טאב שעות צעדים: לכל יום רצועה של 48 חצאי שעה, וממוצע לפי שעה בכל הימים */

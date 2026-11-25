@@ -1561,3 +1561,5 @@ details.comph[open] > summary { padding-bottom: 6px; }
 .trip__d { display: flex; justify-content: space-between; font-size: 14px; padding: 2px 0; border-bottom: 1px dashed var(--rule); }
 .trip__b-ok { background: var(--good); }
 .trip__track { display: flex; direction: rtl; }
+.comp__ln { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; font-size: 14px; border-bottom: 1px dashed var(--rule); }
+.comp__ln > span:first-child { color: var(--ink-soft); }
