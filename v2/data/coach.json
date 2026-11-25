@@ -5047,6 +5047,11 @@
       "proteinG": 150.6,
       "carbG": 165.5,
       "fatG": 44.7
+    },
+    {
+      "date": "2026-11-25",
+      "weightKg": 88.2,
+      "meals": []
     }
   ],
   "summary": {
