@@ -11,7 +11,7 @@
   var Dates = root.Dates, Store = root.Store, Fmt = root.Fmt;
 
   var App = {
-    BUILD: 'v95c',
+    BUILD: 'v95d',
     // גרסה גלויה למשתמש, עולה באחד בכל עדכון שמשנה את האתר
     VERSION: 'V95',
     state: {

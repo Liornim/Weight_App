@@ -1287,6 +1287,12 @@
             ? (w.needPerDay > 0 ? 'צריך גירעון של <b>' + n0(w.needPerDay) + '</b> ליום' : 'כבר יש לך מספיק — מותר אפילו עודף של <b class="score__mark--ok">' + n0(-w.needPerDay) + '</b> ליום') + ' → עד <b>' + n0(w.kcalAt) + '</b> קק״ל ב-' + n0(w.stepsRef) + ' צעדים, עד <b>' + n0(w.kcalAt + (w.stepsGoal - w.stepsRef) * w.kps) + '</b> ב-' + n0(w.stepsGoal) + ' (כל 1,000 צעדים = עוד ' + n0(1000 * w.kps) + ').'
             : 'צריך גירעון של <b class="score__mark--no">' + n0(w.needPerDay) + '</b> ליום — לא אפשרי. השריפה ב-' + n0(w.stepsGoal) + ' צעדים היא רק ~' + n0(w.kcalAt + w.needPerDay + (w.stepsGoal - w.stepsRef) * w.kps) + '.') +
           '</div>' : '') +
+        (w.left ? (function () {
+          var zPer = -w.sum / w.left, b0 = cfg0(state).baseBurn + w.stepsRef * w.kps, kz = b0 - zPer;
+          return '<div class="comp__t" style="margin-top:6px"><b>לפחות גירעון כלשהו (סה״כ החלון ≥ 0):</b> ' +
+            (zPer > 0 ? 'צריך גירעון של <b>' + n0(zPer) + '</b> ליום → עד <b>' + n0(kz) + '</b> קק״ל ב-' + n0(w.stepsRef) + ' צעדים, עד <b>' + n0(kz + (w.stepsGoal - w.stepsRef) * w.kps) + '</b> ב-' + n0(w.stepsGoal) + '.'
+              : 'כבר בגירעון — מותר עודף של עד <b class="score__mark--ok">' + n0(-zPer) + '</b> ליום → עד <b>' + n0(kz) + '</b> קק״ל ב-' + n0(w.stepsRef) + ' צעדים.') + '</div>';
+        })() : '') +
         (w.greenToday !== null && w.closed && w.left > 1 && !sim ? '<div class="comp__t" style="margin-top:6px"><b>כדי שמחר בבוקר יהיה ירוק, רק היום:</b></div>' +
           '<div class="comp__mid">עד ' + kc(w.greenToday) + ' קק״ל · שומן עד <b>' + n0(Math.max(0, w.greenFat)) + '</b> · לפחות <b>' + n0(Math.max(0, w.greenSteps)) + '</b> צעדים</div>' : '') +
         '<div class="comp__t" style="margin-top:6px">' + balTxt + ' ' + why + '</div></div>';
