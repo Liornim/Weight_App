@@ -1256,7 +1256,7 @@
     var greenFat = gl.length ? Math.min.apply(null, gl.map(function (w) { return w.greenFat === null ? Infinity : w.greenFat; })) : null;
     var greenSteps = gl.length ? Math.max.apply(null, gl.map(function (w) { return w.greenSteps === null ? 0 : w.greenSteps; })) : null;
     var top = tight ? '<div class="comp__top">' + (sim ? 'אחרי הסימולציה, מ-' + P.esc(root.Dates.short(new Date((dayNum(sim) + 1) * 864e5).toISOString().slice(0, 10))) + ', בכל יום: ' : 'לסגירת כל החלונות, בכל יום מהיום: ') + '<b>עד ' + kc(kcalOf(tight)) + ' קק״ל · שומן עד ' + n0(capFat) + ' · לפחות ' + n0(needSteps) + ' צעדים</b>' +
-      '<small>אם תעמוד בזה בכל יום עד סוף החלון המחמיר, כל החלונות ייסגרו על היעדים. החלון המחמיר: ' + tight.n + ' ימים (<bdi dir="ltr">' + P.esc(root.Dates.short(tight.from)) + '–' + P.esc(root.Dates.short(tight.to)) + '</bdi>).</small>' +
+      '<small>הנמוך מבין: גירעון 550 בממוצע וממוצע קלוריות עד ' + n0(cap) + ' (כאן מגביל: ' + (tight.kcalCap !== null && tight.kcalCap <= tight.kcalAt ? 'ממוצע ' + n0(cap) : 'הגירעון') + '). שומן וצעדים — כדי שהממוצע בחלון יעמוד ביעד. החלון המחמיר: ' + tight.n + ' ימים (<bdi dir="ltr">' + P.esc(root.Dates.short(tight.from)) + '–' + P.esc(root.Dates.short(tight.to)) + '</bdi>).</small>' +
       (lost.length ? '<small style="display:block;margin-top:6px">לא נכלל (דורש פחות מ-500 ביום): ' + lost.map(function (w) { return w.n + ' ימים'; }).join(', ') + '.</small>' : '') +
       (green !== null && !sim ? '<div style="margin-top:8px">כדי שמחר בבוקר הכל יהיה ירוק, רק היום: <b>עד ' + kc(green) + ' קק״ל</b> · <b>שומן עד ' + n0(Math.max(0, greenFat)) + ' ג׳</b> · <b>לפחות ' + n0(Math.max(0, greenSteps)) + ' צעדים</b></div>' : '') + '</div>' : '';
     var items = list.map(function (w) {
@@ -1277,6 +1277,7 @@
         var per = w.left === 1 ? 'היום' : 'בכל יום שנשאר';
         body += line('לעמוד ב-' + n0(plan) + ' גירעון ממוצע — ' + per, fmtK(k550));
         body += line('להיות ב-break even — ' + per, fmtK(kBE));
+        if (w.kcalCap !== null) body += line('לשמור ממוצע קלוריות עד ' + n0(cap) + ' — ' + per, fmtK(w.kcalCap));
       }
       return '<div class="comp__w">' + head + body + '</div>';
     }).join('');
