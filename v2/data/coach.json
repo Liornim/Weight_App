@@ -5051,7 +5051,46 @@
     {
       "date": "2026-11-25",
       "weightKg": 88.2,
-      "meals": [],
+      "meals": [
+        {
+          "time": "בוקר",
+          "name": "GO טבעי + 4 פרוסות פסטרמה + מלפפונים",
+          "items": [
+            {
+              "cat": "protein",
+              "name": "GO by Yoplait טבעי, 200 גרם",
+              "kcal": 171,
+              "proteinG": 25,
+              "carbG": 8.8,
+              "fatG": 4
+            },
+            {
+              "cat": "protein",
+              "name": "4 פרוסות פסטרמה הודו",
+              "kcal": 100,
+              "proteinG": 18,
+              "carbG": 2,
+              "fatG": 1.5
+            },
+            {
+              "cat": "veg",
+              "name": "3 מלפפונים",
+              "kcal": 57,
+              "proteinG": 2.5,
+              "carbG": 13,
+              "fatG": 0
+            }
+          ],
+          "basis": "partial",
+          "basisNote": "GO מהתווית (171 קק״ל / 25 חלבון לגביע). פסטרמה ומלפפונים כמו בארוחה הקבועה מ-18.11.",
+          "kcalLow": 310,
+          "kcalHigh": 350,
+          "kcal": 328,
+          "proteinG": 45.5,
+          "carbG": 23.8,
+          "fatG": 5.5
+        }
+      ],
       "measurements": {
         "waistNavelCm": 103,
         "thighCm": 57,
