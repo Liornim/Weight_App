@@ -5053,9 +5053,10 @@
       "weightKg": 88.2,
       "meals": [],
       "measurements": {
-        "waistNavelCm": 98,
+        "waistNavelCm": 103,
         "thighCm": 48,
-        "neckCm": 40
+        "neckCm": 40,
+        "note": "מותניים: נקרא 98 קודם, בתמונה 103 בפתח הבית של הסרט. ממתין לבדיקת כיול."
       }
     }
   ],
