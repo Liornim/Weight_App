@@ -1244,16 +1244,20 @@
     // צבע לפי היעד: פחות מ-1,900 ביום = צריך להדק (אדום), 1,900 ומעלה = מרווח (ירוק)
     var kc = function (v) { return '<b class="score__mark--' + (v < cap ? 'no' : 'ok') + '">' + n0(Math.max(0, v)) + '</b>'; };
     var kcalOf = function (w) { return w.kcalAt === null ? null : Math.min(w.kcalAt, w.kcalCap === null ? Infinity : w.kcalCap); };
-    var open = list.filter(function (w) { return w.left > 0; });
+    var openAll = list.filter(function (w) { return w.left > 0; });
+    // חלון שאי אפשר לסגור (מותר 0 או פחות) לא נכנס לחישוב למעלה — עדיף שהשאר יהיו ירוקים
+    var lost = openAll.filter(function (w) { var k = kcalOf(w); return k === null || k < 1200; }); // מתחת ל-1,200 ביום = לא ריאלי
+    var open = openAll.filter(function (w) { return lost.indexOf(w) < 0; });
     var tight = open.slice().sort(function (x, y) { return kcalOf(x) - kcalOf(y); })[0];
     var capFat = open.length ? Math.min.apply(null, open.map(function (w) { return w.fatCap === null ? Infinity : w.fatCap; })) : null;
     var needSteps = open.length ? Math.max.apply(null, open.map(function (w) { return w.stepsNeed === null ? 0 : w.stepsNeed; })) : null;
-    var gl = open.filter(function (w) { return w.closed && w.greenToday !== null; }); // חלון שמתחיל היום לא נספר: מחר יהיה בו רק יום אחד
+    var gl = open.filter(function (w) { return w.closed && w.greenToday !== null && w.greenToday >= 1200; }); // חלון שמתחיל היום לא נספר: מחר יהיה בו רק יום אחד
     var green = gl.length ? Math.min.apply(null, gl.map(function (w) { return w.greenToday; })) : null;
     var greenFat = gl.length ? Math.min.apply(null, gl.map(function (w) { return w.greenFat === null ? Infinity : w.greenFat; })) : null;
     var greenSteps = gl.length ? Math.max.apply(null, gl.map(function (w) { return w.greenSteps === null ? 0 : w.greenSteps; })) : null;
     var top = tight ? '<div class="comp__top">' + (sim ? 'אחרי הסימולציה, מ-' + P.esc(root.Dates.short(new Date((dayNum(sim) + 1) * 864e5).toISOString().slice(0, 10))) + ', בכל יום: ' : 'לסגירת כל החלונות, בכל יום מהיום: ') + '<b>עד ' + kc(kcalOf(tight)) + ' קק״ל · שומן עד ' + n0(capFat) + ' · לפחות ' + n0(needSteps) + ' צעדים</b>' +
       '<small>אם תעמוד בזה בכל יום עד סוף החלון המחמיר, כל החלונות ייסגרו על היעדים. החלון המחמיר: ' + tight.n + ' ימים (<bdi dir="ltr">' + P.esc(root.Dates.short(tight.from)) + '–' + P.esc(root.Dates.short(tight.to)) + '</bdi>).</small>' +
+      (lost.length ? '<small style="display:block;margin-top:6px">לא נכלל (דורש פחות מ-1,200 ביום): ' + lost.map(function (w) { return w.n + ' ימים'; }).join(', ') + '.</small>' : '') +
       (green !== null && !sim ? '<div style="margin-top:8px">כדי שמחר בבוקר הכל יהיה ירוק, רק היום: <b>עד ' + kc(green) + ' קק״ל</b> · <b>שומן עד ' + n0(Math.max(0, greenFat)) + ' ג׳</b> · <b>לפחות ' + n0(Math.max(0, greenSteps)) + ' צעדים</b></div>' : '') + '</div>' : '';
     var items = list.map(function (w) {
       var range = '<bdi dir="ltr" style="white-space:nowrap">' + P.esc(root.Dates.short(w.from)) + '–' + P.esc(root.Dates.short(w.to)) + '</bdi>';
