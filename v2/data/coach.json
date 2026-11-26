@@ -5332,6 +5332,28 @@
           "proteinG": 26.5,
           "carbG": 110,
           "fatG": 41.5
+        },
+        {
+          "time": "ערב",
+          "name": "שייק חלבון עוגיות, 65 גרם אבקה במים",
+          "kcal": 249,
+          "proteinG": 50,
+          "carbG": 7,
+          "fatG": 2.3,
+          "items": [
+            {
+              "cat": "protein",
+              "name": "אבקת חלבון עוגיות, 65 גרם, עם מים",
+              "kcal": 249,
+              "proteinG": 50,
+              "carbG": 7,
+              "fatG": 2.3
+            }
+          ],
+          "basis": "exact",
+          "basisNote": "נשקל: 65 גרם. תווית: 383 קק״ל, 77 חלבון ל-100 גרם.",
+          "kcalLow": 246,
+          "kcalHigh": 252
         }
       ],
       "steps": 15456
