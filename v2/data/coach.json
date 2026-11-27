@@ -5472,7 +5472,12 @@
           "carbG": 9.7,
           "fatG": 3.2
         }
-      ]
+      ],
+      "kcal": 1371,
+      "proteinG": 151.3,
+      "carbG": 65.7,
+      "fatG": 56.6,
+      "steps": 12249
     }
   ],
   "summary": {
